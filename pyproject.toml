@@ -1,0 +1,60 @@
+[tool.poetry]
+name = "SBART"
+version = "0.1.0"
+description = "semi-Bayesian Radial Velocities"
+authors = ["Kamuish <andremiguel952@gmail.com>"]
+build = "build.py"
+packages = [
+	{ include = "SBART" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.22.3"
+corner = "^2.2.1"
+tabletexifier = "^0.1.9"
+astropy = "^5.0.4"
+iCCF = "^0.3.10"
+astroquery = "^0.4.6"
+tqdm = "^4.64.0"
+matplotlib = "^3.5.1"
+emcee = "^3.1.1"
+eniric = "^0.5.1"
+loguru = "^0.6.0"
+PyYAML = "^6.0"
+Cython = "^0.29.28"
+requests = "^2.27.1"
+python-dateutil = "^2.8.2"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.18.1"
+isort = "^5.10.1"
+black = "^22.3.0"
+Sphinx = "^4.5.0"
+sphinx-autodoc-typehints = "^1.18.1"
+nbsphinx = "^0.8.8"
+ipython = "^8.2.0"
+ipykernel = "^6.13.0"
+jupyter = "^1.0.0"
+pylint = "^2.13.7"
+towncrier = "^21.9.0"
+sphinx-book-theme = "^0.3.2"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "Cython>=0.29.27", "setuptools>=60.8.1"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = "E0401"
+
+
+[tool.towncrier]
+name = "SBART"
+package = "SBART"
+directory = "newsfragments/"
+filename = "docs/NEWS.rst"
+issue_format = "`#{issue} <https://github.com/iastro-pt/sBART/issues/{issue}>`_"
+underlines = "-~~"
