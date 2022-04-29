@@ -4,6 +4,21 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-1-0 (2022-04-29)
+------------------------
+
+Features
+~~~~~~~~
+
+- Allowing to run SBART from single function (`#6 <https://github.com/iastro-pt/sBART/issues/6>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Fixing missing imports that crept it (`#7 <https://github.com/iastro-pt/sBART/issues/7>`_)
+
+
 SBART 0-1-0 (2022-04-28)
 ------------------------
 

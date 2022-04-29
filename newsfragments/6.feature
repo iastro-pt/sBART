@@ -1,1 +1,0 @@
-Allowing to run SBART from single function
