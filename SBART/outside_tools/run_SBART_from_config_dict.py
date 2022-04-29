@@ -1,28 +1,19 @@
 import math
 import os
-import sys
 
-import matplotlib.pyplot as plt
-
-from SBART.data_objects import DataClassManager
-from SBART.data_objects.DataClass import DataClass
 from SBART.Instruments import ESPRESSO, HARPS
-from SBART.outside_tools.create_logger import setup_SBART_logger
 from SBART.Quality_Control.activity_indicators import Indicators
+from SBART.Samplers import chi_squared_sampler, Laplace_approx
+from SBART.data_objects import DataClassManager
+from SBART.outside_tools.create_logger import setup_SBART_logger
 from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
 from SBART.rv_calculation.rv_stepping.RV_step import RV_step
-from SBART.Samplers import CHI_squared_Sampler, Laplace_approx
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.spectral_conditions import (
     Empty_condition,
-    FNAME_condition,
-    KEYWORD_condition,
-    SubInstrument_condition,
 )
-from SBART.utils.status_codes import FATAL_KW
-from SBART.utils.units import kilometer_second, meter_second
 
 
 def config_update_with_fallback_to_default(
@@ -179,7 +170,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     }
 
     if rv_method == "RV_step":
-        sampler = CHI_squared_Sampler(RVstep, RV_limits)
+        sampler = chi_squared_sampler(RVstep, RV_limits)
         rv_model = RV_step(
             stellar_template_genesis_configs["NUMBER_WORKERS"][0],
             1,
