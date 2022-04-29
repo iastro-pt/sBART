@@ -105,7 +105,7 @@ class DataClass(BASE):
         # TODO: find a better way of doing this!
         self.Target = Target(
             self.collect_KW_observations(
-                "OBJECT", self._inst_type.sub_instruments, include_invalid=is_carmenes_data
+                "OBJECT", self._inst_type.sub_instruments, include_invalid=False
             ),
             original_name=target_name,
         )

@@ -5,6 +5,7 @@ from SBART.Instruments import ESPRESSO, HARPS
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.Samplers import chi_squared_sampler, Laplace_approx
 from SBART.data_objects import DataClassManager
+from SBART.data_objects import DataClass
 from SBART.outside_tools.create_logger import setup_SBART_logger
 from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
 from SBART.rv_calculation.rv_stepping.RV_step import RV_step
