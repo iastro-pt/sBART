@@ -10,9 +10,9 @@ from tabletexifier import Table
 from SBART import __version__
 from SBART.Base_Models.BASE import BASE
 from SBART.Base_Models.Frame import Frame
-from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.Target import Target
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
@@ -25,28 +25,15 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     Status,
 )
 from SBART.utils.types import UI_PATH
-from SBART.utils.units import kilometer_second
+from SBART.utils.units import kilometer_second, meter_second
 
 
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
+    Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
+    and optimize the speed of the code.
 
-    .. note::
-
-         To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
-          it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
-
-          SBART already provides a DataClass object that is wrapped by a proxyObject:
-
-        .. code-block:: python
-
-            from SBART.data_objects import DataClassManager
-            manager = DataClassManager()
-            manager.start()
-            data_object = manager.DataClass(*args, **kwargs)
-
-        This *data_object* has all the functions that the DataClass object implements!
     """
 
     def __init__(
