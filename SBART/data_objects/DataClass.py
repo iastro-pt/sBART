@@ -31,8 +31,8 @@ from SBART.utils import custom_exceptions
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
-
-    .. note::
+    Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
+    and optimize the speed of the code.
 
          To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
           it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
