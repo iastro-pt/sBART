@@ -39,6 +39,9 @@ jupyter = "^1.0.0"
 pylint = "^2.13.7"
 towncrier = "^21.9.0"
 sphinx-book-theme = "^0.3.2"
+tinygp = "^0.2.2"
+jax = "^0.3.8"
+jaxopt = "^0.3.1"
 
 
 [build-system]
