@@ -7,7 +7,7 @@ Welcome to sBART's documentation!
 =================================
 
 .. warning::
-   The docs are still under construction. Thread carefully, as they are neither complete nor well written
+   The docs are still under construction. Thread carefully, as they are not complete
 
 Check out the :doc:`guide` section for further information.
 
