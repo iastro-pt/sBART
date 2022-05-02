@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Iterable, List, NoReturn, Optional, Type, Union
 
@@ -9,9 +10,9 @@ from tabletexifier import Table
 from SBART import __version__
 from SBART.Base_Models.BASE import BASE
 from SBART.Base_Models.Frame import Frame
-from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.Target import Target
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
@@ -24,28 +25,15 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     Status,
 )
 from SBART.utils.types import UI_PATH
-from SBART.utils.units import kilometer_second
+from SBART.utils.units import kilometer_second, meter_second
 
 
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
+    Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
+    and optimize the speed of the code.
 
-    .. note::
-
-         To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
-          it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
-
-          SBART already provides a DataClass object that is wrapped by a proxyObject:
-
-        .. code-block:: python
-
-            from SBART.data_objects import DataClassManager
-            manager = DataClassManager()
-            manager.start()
-            data_object = manager.DataClass(*args, **kwargs)
-
-        This *data_object* has all the functions that the DataClass object implements!
     """
 
     def __init__(
@@ -102,10 +90,12 @@ class DataClass(BASE):
 
         self._collect_MetaData()
 
+        # The carmenes files are invalid by default!
         # TODO: find a better way of doing this!
+        is_carmenes_data = self.observations[0].is_Instrument("CARMENES")
         self.Target = Target(
             self.collect_KW_observations(
-                "OBJECT", self._inst_type.sub_instruments, include_invalid=False
+                "OBJECT", self._inst_type.sub_instruments, include_invalid=is_carmenes_data
             ),
             original_name=target_name,
         )
@@ -116,6 +106,9 @@ class DataClass(BASE):
         self._applied_telluric_removal = False
 
         self.StellarModel = None
+
+        if is_carmenes_data:
+            self.load_CARMENES_extra_information(instrument_options["shaq_output_folder"])
 
         for frame in self.observations:
             frame.finalize_data_load()
@@ -679,6 +672,80 @@ class DataClass(BASE):
         logger.info(tab)
 
         return tab
+
+    def load_CARMENES_extra_information(self, shaq_folder: str) -> None:
+        """CARMENES pipeline does not give RVs, we have to do an external load of the information
+
+        Parameters
+        ----------
+        shaq_folder : str
+            Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
+        """
+
+        name_to_search = self.Target.true_name
+        if "KOBE-" not in name_to_search:
+            name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+
+        # TODO: Change to pathlib
+        shaqfile = os.path.join(shaq_folder, name_to_search, f"{name_to_search}_RVs.dat")
+
+        logger.info("Loading extra CARMENES data from {}", shaqfile)
+
+        number_loads = 0
+        locs = []
+        loaded_BJDs = [frame.get_KW_value("BJD") for frame in self.observations]
+        with open(shaqfile) as file:
+            for line in file:
+                if "#" in line:  # header or other "BAD" files
+                    continue
+                # TODO: implement a more thorough check in here, to mark the "bad" frames as invalid!
+                ll = line.strip().split()
+                if len(ll) == 0:
+                    logger.warning(f"shaq RV from {name_to_search} has empty line")
+                    continue
+                bjd = round(float(ll[1]) - 2400000.0, 7)  # we have the full bjd date
+
+                try:
+                    index = loaded_BJDs.index(
+                        bjd
+                    )  # to make sure that everything is loaded in the same order
+                    locs.append(index)
+                except ValueError:
+                    logger.warning("RV shaq has entry that does not exist in the S2D files")
+                    continue
+
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV", float(ll[5]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV_ERR", float(ll[4]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "BERV", float(ll[10]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "FWHM", float(ll[11]), optional=True
+                )
+                self.observations[index].import_KW_from_outside(
+                    "BIS SPAN", float(ll[13]), optional=True
+                )
+
+                drift_val = np.nan_to_num(float(ll[7])) * meter_second
+                drift_err = np.nan_to_num(float(ll[8])) * meter_second
+                self.observations[index].import_KW_from_outside("drift", drift_val, optional=False)
+                self.observations[index].import_KW_from_outside(
+                    "drift_ERR", drift_err, optional=False
+                )
+
+                number_loads += 1
+
+                self.observations[index].finalize_SHAQ_load()
+        if number_loads < len(self.observations):
+            msg = "RV shaq outputs does not have value for all S2D files of {} ({}/{})".format(
+                name_to_search, number_loads, len(self.observations)
+            )
+            logger.critical(msg)
+            raise FrameError(msg)
 
     def __repr__(self):
         return (
