@@ -41,9 +41,28 @@ class Target:
         }
 
         self.extra_KW = {
+            "KOBE-": "",
             "HD-": "HD",
             " ": "",  # TODO: do we really want to replace empty spaces in the middle of the name?
         }
+
+        self.KOBE_alias = {}
+
+        KOBEdict_path = os.path.join(SBART_LOC, "resources/dictionary_KOBE.csv")
+
+        try:
+            complete_removal = {**self.to_replace, **self.extra_KW}
+            with open(KOBEdict_path) as dicion:
+                logger.debug("Found KOBE dictionary; Loading keys")
+                for entry in dicion:
+                    combination = entry.split(",")
+                    KOBE_key = combination[0]
+                    for key, replace in complete_removal.items():
+                        KOBE_key = KOBE_key.replace(key, replace)
+                    simbad_resolvable = combination[1]
+                    self.KOBE_alias[KOBE_key] = simbad_resolvable
+        except:
+            logger.warning("KOBE dictionary not found in {}".format(KOBEdict_path))
 
         target_list = self.clean_targ_list(target_list)
         self.validate_target_list(target_list)
@@ -120,6 +139,7 @@ class Target:
             "tauCet": "tau Cet",
         }
 
+        alias_list = {**alias_list, **self.KOBE_alias}
         return star if star not in alias_list else alias_list[star]
 
     @property

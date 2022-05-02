@@ -25,7 +25,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     SIGMA_CLIP_REJECTION
 )
 from SBART.utils.types import UI_PATH
-from SBART.utils.units import kilometer_second
+from SBART.utils.units import kilometer_second, meter_second
 from SBART.utils import custom_exceptions
 
 class DataClass(BASE):
@@ -465,7 +465,7 @@ class DataClass(BASE):
     def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
             raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
-            
+
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
         self.StellarModel.update_interpol_properties(new_properties)
@@ -736,7 +736,7 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
-        
+
         for frame in self.observations:
             frame.trigger_data_storage()
 
@@ -818,7 +818,7 @@ class DataClass(BASE):
         See if the given instrument is one of the ones that has extra information to load.
         If so, then
         """
-        info_load_map = {
+        info_load_map = {"CARMENES": self.load_CARMENES_extra_information()
         }
 
         logger.info("Checking if the instrument has extra data to load")
@@ -829,6 +829,80 @@ class DataClass(BASE):
                 return
 
         logger.info("Current instrument does not need to load anything from the outside")
+
+    def load_CARMENES_extra_information(self, shaq_folder: str) -> None:
+        """CARMENES pipeline does not give RVs, we have to do an external load of the information
+
+        Parameters
+        ----------
+        shaq_folder : str
+            Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
+        """
+
+        name_to_search = self.Target.true_name
+        if "KOBE-" not in name_to_search:
+            name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+        shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
+        # TODO: Change to pathlib
+        shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
+
+        logger.info("Loading extra CARMENES data from {}", shaqfile)
+
+        number_loads = 0
+        locs = []
+        loaded_BJDs = [frame.get_KW_value("BJD") for frame in self.observations]
+        with open(shaqfile) as file:
+            for line in file:
+                if "#" in line:  # header or other "BAD" files
+                    continue
+                # TODO: implement a more thorough check in here, to mark the "bad" frames as invalid!
+                ll = line.strip().split()
+                if len(ll) == 0:
+                    logger.warning(f"shaq RV from {name_to_search} has empty line")
+                    continue
+                bjd = round(float(ll[1]) - 2400000.0, 7)  # we have the full bjd date
+
+                try:
+                    index = loaded_BJDs.index(
+                        bjd
+                    )  # to make sure that everything is loaded in the same order
+                    locs.append(index)
+                except ValueError:
+                    logger.warning("RV shaq has entry that does not exist in the S2D files")
+                    continue
+
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV", float(ll[5]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV_ERR", float(ll[4]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "BERV", float(ll[10]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "FWHM", float(ll[11]), optional=True
+                )
+                self.observations[index].import_KW_from_outside(
+                    "BIS SPAN", float(ll[13]), optional=True
+                )
+
+                drift_val = np.nan_to_num(float(ll[7])) * meter_second
+                drift_err = np.nan_to_num(float(ll[8])) * meter_second
+                self.observations[index].import_KW_from_outside("drift", drift_val, optional=False)
+                self.observations[index].import_KW_from_outside(
+                    "drift_ERR", drift_err, optional=False
+                )
+
+                number_loads += 1
+
+                self.observations[index].finalize_SHAQ_load()
+        if number_loads < len(self.observations):
+            msg = "RV shaq outputs does not have value for all S2D files of {} ({}/{})".format(
+                name_to_search, number_loads, len(self.observations)
+            )
+            logger.critical(msg)
+            raise FrameError(msg)
 
     def __repr__(self):
         return (
