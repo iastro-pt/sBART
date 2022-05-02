@@ -16,5 +16,6 @@ with all providing the same user-interface (after they load all the necessary in
 
 from .ESPRESSO import ESPRESSO
 from .HARPS import HARPS
+from .CARMENES import CARMENES
 
-instrument_dict = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
+instrument_dict = {"ESPRESSO": ESPRESSO, "HARPS": HARPS, "CARMENES": CARMENES}
