@@ -3,6 +3,8 @@ User Guide
 
 The following pages provide a (for now) quite incomplete documentation of how to install and configure the SBART pipeline. 
 
+.. warning::
+    It is highly advised to not run SBART inside jupyter notebooks, as one might run into issues due to  terminal logging.
 
 .. toctree::
    :maxdepth: 2
