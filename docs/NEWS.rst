@@ -4,6 +4,15 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-1-4 (2022-05-03)
+------------------------
+
+Bugfixes
+~~~~~~~~
+
+- Fixed installation for python3.9 (`#8 <https://github.com/iastro-pt/sBART/issues/8>`_)
+
+
 SBART 0-1-0 (2022-04-29)
 ------------------------
 
