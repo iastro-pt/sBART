@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SBART"
-version = "0.1.4"
+version = "0.1.5"
 description = "semi-Bayesian Radial Velocities"
 authors = ["Kamuish <andremiguel952@gmail.com>"]
 build = "build.py"
