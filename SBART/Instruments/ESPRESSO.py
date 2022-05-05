@@ -12,7 +12,7 @@ from SBART.Base_Models import Frame
 from SBART.utils.RV_utilities.CCF_errors import ccffitRV
 from SBART.utils.status_codes import ERROR_THRESHOLD, FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
+from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam, ValueFromList
 
 
 class ESPRESSO(Frame):
@@ -33,9 +33,11 @@ class ESPRESSO(Frame):
     ================================ ================ ================ ================ ================
     apply_FluxCorr                    False              False         boolean          Apply polynomial flux correction to flux to preserve red-blue balance
     Telluric_Corrected                False              False         boolean          Use S2D data in the format given by R. Allart's correction tool
+    spectra_format                     False            S2D             S2D / S1D       When passing S1D files this should be set to "S1D
     ================================ ================ ================ ================ ================
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
@@ -44,6 +46,9 @@ class ESPRESSO(Frame):
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
     )
 
+    _default_params.update("spectra_format",
+                           UserParam("S2D", constraint=ValueFromList(("S1D", "S2D")))
+                           )
     sub_instruments = {
         "ESPRESSO18": datetime.datetime.strptime("2019-06-27", r"%Y-%m-%d"),
         "ESPRESSO19": datetime.datetime.strptime("2020-12-18", r"%Y-%m-%d"),

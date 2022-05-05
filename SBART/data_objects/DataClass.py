@@ -639,6 +639,15 @@ class DataClass(BASE):
     #          MISC        #
     ########################
 
+    def has_instrument_data(self, instrument: str) -> bool:
+        """
+        Check if the first loaded frame is of a given Instrument
+
+        .. warning::
+            in the off-chance that we mix data this will give problems...
+        """
+        return self.observations[0].is_Instrument(instrument)
+
     def _build_frameID_map(self) -> None:
         """Populate the self.frameID_map with the frameIDs available for each subInstrument"""
         for frame_ID, frame in enumerate(self.observations):
