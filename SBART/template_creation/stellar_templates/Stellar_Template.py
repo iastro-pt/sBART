@@ -134,7 +134,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         try:
             self.frameIDs_to_use = dataClass.get_frameIDs_from_subInst(self._associated_subInst)
         except NoDataError as exc:
-            logger.warning(
+            logger.critical(
                 "{} has no valid observations. Not computing {} template",
                 self._associated_subInst,
                 self.__class__.template_type,
@@ -142,6 +142,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             self.add_to_status(
                 MISSING_DATA("No valid observations from {}".format(self._associated_subInst))
             )
+
+        self._base_checks_for_template_creation()
 
         self._conditions = conditions
 
@@ -180,11 +182,14 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
                 logger.warning(msg)
                 self.add_to_status(MISSING_DATA(msg))
 
+        self._base_checks_for_template_creation()
+
         self.frameIDs_to_use = IDS_to_use
 
         if len(self.frameIDs_to_use) < self._internal_configs["MINIMUM_NUMBER_OBS"]:
             logger.critical(
-                "Construction of stellar template using less observations ({}) than the limit ({})",
+                "Construction of stellar template from {} using less observations ({}) than the limit ({})",
+                self._associated_subInst,
                 len(self.frameIDs_to_use),
                 self._internal_configs["MINIMUM_NUMBER_OBS"],
             )
