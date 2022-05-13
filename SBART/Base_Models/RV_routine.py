@@ -258,6 +258,7 @@ class RV_routine(BASE):
         if isinstance(storage_path, str):
             # Emsure pathlib path
             storage_path = Path(storage_path)
+        storage_path = storage_path.absolute()
 
         self.iteration_number = dataClass.get_stellar_model().iteration_number
 
