@@ -1,1 +1,0 @@
-Standardizing the disk names of Stellar and Telluric templates
