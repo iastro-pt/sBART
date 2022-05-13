@@ -4,6 +4,31 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-1-5 (2022-05-13)
+------------------------
+
+Features
+~~~~~~~~
+
+- Standardizing the disk names of Stellar and Telluric templates (`#12 <https://github.com/iastro-pt/sBART/issues/12>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Not allowing to try load of S1D data of non-ESPRESSO instruments (`#10 <https://github.com/iastro-pt/sBART/issues/10>`_)
+- Properly flagging mandatory parameter with no value (`#11 <https://github.com/iastro-pt/sBART/issues/11>`_)
+- Fixed bug that prevented previous Stellar templates from being loaded from disk (`#12 <https://github.com/iastro-pt/sBART/issues/12>`_)
+- Ensuring that RV routines get a pathlib.Path object even if a str is passed (`#14 <https://github.com/iastro-pt/sBART/issues/14>`_)
+- Laplace sampler no longer raises an error when trying to access a (now) non-existing parameter (`#18 <https://github.com/iastro-pt/sBART/issues/18>`_)
+
+
+Improved Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+- Improving quickstart guide to use a pathlib.Path as the storage option (`#14 <https://github.com/iastro-pt/sBART/issues/14>`_)
+
+
 SBART 0-1-4 (2022-05-03)
 ------------------------
 

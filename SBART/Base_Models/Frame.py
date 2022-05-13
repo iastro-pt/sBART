@@ -89,7 +89,7 @@ class Frame(Spectrum, Spectral_Modelling):
     bypass_QualCheck                    False              False         boolean         If True, avoid checking the pixel-wise QC checks
     reject_order_percentage             False               0.25         range [0 ,1]    Smallest percentage of "valid" pixels in a "valid" order
     minimum_order_SNR                   False               20           int/float >= 0  If the order's SNR is below this value, reject the order
-    spectra_format                      False               S2D          "S2D" or "S1D"  Indicates where we are using S2D or S1D data. Not all instruments support S1D
+    spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     ================================ ================ ================ ================ ================
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
@@ -119,7 +119,7 @@ class Frame(Spectrum, Spectral_Modelling):
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
-        spectra_format=UserParam("S2D", constraint=ValueFromList(("S1D", "S2D"))),
+        spectra_format=UserParam("S2D", constraint=ValueFromList(("S2D",))),
     )
 
     def __init__(
