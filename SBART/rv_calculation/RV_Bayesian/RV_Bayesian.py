@@ -52,7 +52,7 @@ class RV_Bayesian(RV_routine):
 
     _default_params = RV_routine._default_params + DefaultValues(
         include_jitter=UserParam(False, constraint=BooleanValue),
-        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))),
+        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))), # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
         application=UserParam("epoch-wise", constraint=ValueFromList(("epoch-wise", "order-wise"))),
         # only used if we compute order-wise RVs
@@ -117,6 +117,7 @@ class RV_Bayesian(RV_routine):
                     ModelComponent(param_name, initial_guess=0, bounds=(None, None))
                 )
                 self.sampler.enable_param(param_name)
+                raise NotImplementedError("Chromatic trend is currently unavailable")
 
         self.sampler.set_mode(self._internal_configs["application"])
 
