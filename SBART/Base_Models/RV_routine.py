@@ -1,5 +1,6 @@
 import time
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 
 import numpy as np
@@ -243,7 +244,7 @@ class RV_routine(BASE):
             By default False
         store_data: bool
             If True, saves the data to disk. By default True
-        storage_path: str
+        storage_path: Union[pathlib.Path, str]
             Path in which the outputs of the run will be stored
         dataClass : :class:`~SBART.data_objects.DataClass.DataClass`
             [description]
@@ -253,6 +254,12 @@ class RV_routine(BASE):
             (if the key does not exist, assume that there are None to skip). If str, load a previous RV cube from disk and use the
             orders that the previous run used!. By default ()
         """
+
+        if isinstance(storage_path, str):
+            # Emsure pathlib path
+            storage_path = Path(storage_path)
+        storage_path = storage_path.absolute()
+
         self.iteration_number = dataClass.get_stellar_model().iteration_number
 
         # Note: self.storage_name from RV_Bayesian also includes the sampler name!
