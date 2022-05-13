@@ -211,22 +211,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             self.frameIDs_to_use[0]
         ).is_BERV_corrected
 
-    def generate_root_path(self, storage_path: Path) -> NoReturn:
-        """
-        The stellar templates can be iteration over, which means that we also want an extra layer of folders
-        that the Telluric template doesn't need
-
-        Parameters
-        ----------
-        storage_path
-
-        Returns
-        -------
-
-        """
-        storage_path /= "Iteration_{}".format(self.iteration_number)
-
-        super().generate_root_path(storage_path)
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
