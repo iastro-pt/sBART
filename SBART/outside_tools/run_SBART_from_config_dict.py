@@ -156,7 +156,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         ModelStell.store_templates_to_disk(storage_path)
     except InvalidConfiguration:
         return
-
     data.ingest_StellarModel(ModelStell)
 
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
