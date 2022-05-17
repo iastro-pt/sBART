@@ -233,6 +233,31 @@ class Frame(Spectrum, Spectral_Modelling):
 
         if need_external_data_load:
             self.add_to_status(LOADING_EXTERNAL_DATA)
+    
+    def import_KW_from_outside(self, KW, value, optional: bool):
+        """
+        Allow to manually override frame parameters from the outside
+        """
+        if KW not in self.observation_info:
+            logger.critical(
+                "Keyword <{}> is not supported by the Frames. Couldn't load it from the outside",
+                KW,
+            )
+
+        if not np.isfinite(value):
+            if not optional:
+                logger.critical(
+                    "Loaded mandatory keyword <{}> with a non-finite value for frame {}",
+                    KW,
+                    self.fname,
+                )
+                raise FrameError
+            logger.critical(
+                "Loaded keyword <{}> has a non-finite value for frame {}",
+                KW,
+                self.fname,
+            )
+        self.observation_info[KW] = value
 
     def mark_wavelength_region(self, reason: Flag, wavelength_blocks: List[List[int]]) -> None:
         """Add wavelength regions to be removed whenever the S2D file is opened
