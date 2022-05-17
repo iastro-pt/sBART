@@ -107,8 +107,7 @@ class DataClass(BASE):
 
         self.StellarModel = None
 
-        if is_carmenes_data:
-            self.load_CARMENES_extra_information(instrument_options["shaq_output_folder"])
+        self.load_instrument_extra_information()
 
         for frame in self.observations:
             frame.finalize_data_load()
@@ -681,7 +680,25 @@ class DataClass(BASE):
 
         return tab
 
-    def load_CARMENES_extra_information(self, shaq_folder: str) -> None:
+    def load_instrument_extra_information(self):
+        """
+        See if the given instrument is one of the ones that has extra information to load.
+        If so, then
+        """
+        info_load_map = {"CARMENES": self.load_CARMENES_extra_information
+                         }
+
+        logger.info("Checking if the instrument has extra data to load")
+        for key, load_func in info_load_map.items():
+            if self.has_instrument_data(key):
+                logger.info(f"Dataclass has {key} data. Extra loading is being triggered")
+                load_func()
+                return
+
+        logger.info("Current instrument does not need to load anything from the outside")
+
+
+    def load_CARMENES_extra_information(self) -> None:
         """CARMENES pipeline does not give RVs, we have to do an external load of the information
 
         Parameters
