@@ -117,6 +117,8 @@ class DataClass(BASE):
 
         self.StellarModel = None
 
+        self.load_instrument_extra_information()
+
         for frame in self.observations:
             frame.finalize_data_load()
 
@@ -688,6 +690,23 @@ class DataClass(BASE):
         logger.info(tab)
 
         return tab
+
+    def load_instrument_extra_information(self):
+        """
+        See if the given instrument is one of the ones that has extra information to load.
+        If so, then
+        """
+        info_load_map = {
+                         }
+
+        logger.info("Checking if the instrument has extra data to load")
+        for key, load_func in info_load_map.items():
+            if self.has_instrument_data(key):
+                logger.info(f"Dataclass has {key} data. Extra loading is being triggered")
+                load_func()
+                return
+
+        logger.info("Current instrument does not need to load anything from the outside")
 
     def __repr__(self):
         return (
