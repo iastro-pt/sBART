@@ -765,7 +765,7 @@ class DataClass(BASE):
 
                 number_loads += 1
 
-                self.observations[index].finalize_SHAQ_load()
+                self.observations[index].finalized_external_data_load()
         if number_loads < len(self.observations):
             msg = "RV shaq outputs does not have value for all S2D files of {} ({}/{})".format(
                 name_to_search, number_loads, len(self.observations)

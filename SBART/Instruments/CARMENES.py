@@ -170,21 +170,6 @@ class CARMENES(Frame):
 
         self.assess_bad_orders()
 
-    def finalize_SHAQ_load(self) -> NoReturn:
-        """Tuns an invalid CARMENES::KOBE frame into a valid one (assuming that the only problem is missing the SHAQ loads)
-
-        If the status of the frame is different than MISSING_SHAQ_DATA (meaning that something went bad with the data load)
-        Returns
-        -------
-        NoReturn
-        """
-        logger.info("Finalizing SHAQ data loading")
-        if not self.is_valid:
-            logger.warning("Frame has already been rejected.")
-        else:
-            logger.info("{} is a valid observation", self)
-            self._status.reset()
-
     def close_arrays(self):
         super().close_arrays()
         self.is_BERV_corrected = False
