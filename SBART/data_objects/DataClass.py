@@ -707,6 +707,7 @@ class DataClass(BASE):
             Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
         """
 
+        shaq_folder = self.get_frame_by_ID(0)._internal_configs["shaq_output_folder"]
         name_to_search = self.Target.true_name
         if "KOBE-" not in name_to_search:
             name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
