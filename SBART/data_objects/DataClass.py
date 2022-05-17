@@ -762,6 +762,14 @@ class DataClass(BASE):
     ########################
     #          MISC        #
     ########################
+    def has_instrument_data(self, instrument: str) -> bool:
+        """
+        Check if the first loaded frame is of a given Instrument
+
+        .. warning::
+            in the off-chance that we mix data this will give problems...
+        """
+        return self.observations[0].is_Instrument(instrument)
 
     def has_instrument_data(self, instrument: str) -> bool:
         """
