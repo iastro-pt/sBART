@@ -250,7 +250,7 @@ class Frame(Spectrum, Spectral_Modelling):
 
         if need_external_data_load:
             self.add_to_status(LOADING_EXTERNAL_DATA)
-    
+
     def import_KW_from_outside(self, KW, value, optional: bool):
         """
         Allow to manually override frame parameters from the outside
