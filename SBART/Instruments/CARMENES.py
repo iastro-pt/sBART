@@ -170,28 +170,6 @@ class CARMENES(Frame):
 
         self.assess_bad_orders()
 
-    def import_KW_from_outside(self, KW, value, optional: bool):
-        if KW not in self.observation_info:
-            logger.critical(
-                "Keyword <{}> is not supported by the Frames. Couldn't load from SHAQ",
-                KW,
-            )
-
-        if not np.isfinite(value):
-            if not optional:
-                logger.critical(
-                    "Loaded mandatory keyword <{}> with a non-finite value for frame {}",
-                    KW,
-                    self.fname,
-                )
-                raise FrameError
-            logger.critical(
-                "Loaded keyword <{}> has a non-finite value for frame {}",
-                KW,
-                self.fname,
-            )
-        self.observation_info[KW] = value
-
     def finalize_SHAQ_load(self) -> NoReturn:
         """Tuns an invalid CARMENES::KOBE frame into a valid one (assuming that the only problem is missing the SHAQ loads)
 
