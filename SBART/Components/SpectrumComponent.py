@@ -225,7 +225,7 @@ class Spectrum(BASE):
         OrderStatus
         """
         DeprecationWarning("Use 'OrderWiseStatus' instead of this method")
-        return self.OrderWiseStatusr
+        return self.OrderWiseStatus
 
     @property
     def OrderWiseStatus(self) -> OrderStatus:

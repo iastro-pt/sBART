@@ -141,7 +141,7 @@ class Laplace_approx(SbartBaseSampler):
                 output_pkg["jitter"] = optimization_output.x[1]
                 output_pkg["jitter_uncertainty"] = 0
 
-            if self.model_params.check_if_enabled("chromatic_trend"):
+            if self.model_params.check_if_enabled("trend::slope"):
                 # The jitter will be the second entry of the optimization vector (see in self.params_of_model)
                 # The params of the chromatic trend will start afterwards!
                 trend_offset = 1 if self.model_params.check_if_enabled("jitter") else 0

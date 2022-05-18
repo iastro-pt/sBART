@@ -24,6 +24,27 @@ def SBART_target(params, **kwargs):
     else:
         jitter = 0
 
+    squared_jitter = jitter ** 2
+
+    if kwargs["chromatic_trend"] != "none":
+        # if the jitter is not included, the chromatic polynomial starts at index 1
+        # Otherwise, it starts at index 2
+        poly_params = params[1 + kwargs["include_jitter"] :]
+    else:
+        poly_params = [0]
+
+    # interpolate template to spectra wavelengths
+    if kwargs["chromatic_trend"] == "PixelWise":
+        # TODO: apply the PixelWise computation here
+        polynomial_contribution = 0
+        print("there is no PixelWise trend!!!!!!!!!!!!")
+        pass
+    elif kwargs["chromatic_trend"] == "OrderWise":
+        polynomial_contribution = evaluate_polynomial(poly_params, central_wavelength)
+    else:
+        polynomial_contribution = 0
+
+
     trimmed_template = kwargs["template_wave"]
     template = kwargs["template"]
     wave_spectra_starframe = apply_RVshift(trimmed_template, RV_shift)
@@ -67,7 +88,7 @@ def SBART_target(params, **kwargs):
     # template not assumed to be noise free
 
     diag = (
-        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2
+        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
     ) / interpolated_template ** 2
 
     # Build H matrix
@@ -123,7 +144,7 @@ def SBART_target(params, **kwargs):
         normalizer = chosen_trend(current_wavelength[indexes], *coefs)
 
         misspec_metric = (spectra[indexes] - interpolated_template * normalizer) / np.sqrt(
-            kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2
+            kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
         )
 
         return -1 * order_value / weight, misspec_metric

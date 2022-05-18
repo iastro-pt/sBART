@@ -156,7 +156,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         ModelStell.store_templates_to_disk(storage_path)
     except InvalidConfiguration:
         return
-
     data.ingest_StellarModel(ModelStell)
 
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
@@ -191,7 +190,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             RV_configs=confsRV,
             sampler=sampler,
         )
-        orders = os.path.join(storage_path, "RV_step")
+        orders = os.path.join(storage_path, "Iteration_0" , "RV_step")
 
     rv_model.run_routine(data, storage_path, orders)
 

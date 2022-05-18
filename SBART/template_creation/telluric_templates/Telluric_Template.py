@@ -411,7 +411,7 @@ class TelluricTemplate(BaseTemplate):
 
     @property
     def storage_name(self) -> str:
-        return f"{self.__class__.method_name}-{self._extension_mode}-{self.__class__.template_type}"
+        return f"{self.__class__.method_name}_{self._extension_mode}_{self.__class__.template_type}"
 
     @property
     def for_feature_removal(self) -> bool:

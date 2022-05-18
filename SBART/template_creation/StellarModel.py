@@ -144,7 +144,7 @@ class StellarModel(TemplateFramework):
                 logger.critical("SBART RV loading routine failed. Stopping template creation")
                 return
 
-            self.add_relative_path("Stellar", "Stellar/Iteration_{}".format(self.iteration_number))
+        self.add_relative_path("Stellar", "Stellar/Iteration_{}".format(self.iteration_number))
 
         super().Generate_Model(
             dataClass=dataClass,

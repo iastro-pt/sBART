@@ -11,12 +11,12 @@ from SBART import __version__
 from SBART.Base_Models.BASE import BASE
 from SBART.Base_Models.Frame import Frame
 from SBART.data_objects.MetaData import MetaData
+from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
-from SBART.utils.paths_tools.Load_RVoutputs import find_RVoutputs
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
@@ -31,9 +31,22 @@ from SBART.utils.units import kilometer_second, meter_second
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
-    Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
-    and optimize the speed of the code.
 
+    .. note::
+
+         To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
+          it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
+
+          SBART already provides a DataClass object that is wrapped by a proxyObject:
+
+        .. code-block:: python
+
+            from SBART.data_objects import DataClassManager
+            manager = DataClassManager()
+            manager.start()
+            data_object = manager.DataClass(*args, **kwargs)
+
+        This *data_object* has all the functions that the DataClass object implements!
     """
 
     def __init__(
@@ -140,13 +153,13 @@ class DataClass(BASE):
 
         logger.info("Loading RVs from previous SBART run as the starting-RVs")
         try:
-            RV_holder = find_RVoutputs(LoadingPath_previousRun)
+            RV_RESULTS = RV_holder.load_from_disk(LoadingPath_previousRun)
         except FileNotFoundError:
             raise InvalidConfiguration("RV outputs couldn't be found on the provided path")
 
         for frameID, frame in enumerate(self.observations):
 
-            cube = RV_holder.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
+            cube = RV_RESULTS.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
 
             previous_filename = cube.cached_info["bare_filename"][frameID]
             if previous_filename != frame.bare_fname:
@@ -630,6 +643,7 @@ class DataClass(BASE):
     ########################
     #          MISC        #
     ########################
+
     def has_instrument_data(self, instrument: str) -> bool:
         """
         Check if the first loaded frame is of a given Instrument

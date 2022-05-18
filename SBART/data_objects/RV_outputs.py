@@ -4,7 +4,7 @@ computed RVs)
 """
 import glob
 from pathlib import Path
-from typing import List, NoReturn, Optional
+from typing import List, NoReturn, Optional, Union
 
 import numpy as np
 from loguru import logger
@@ -13,7 +13,7 @@ from tabletexifier import Table
 from SBART.Base_Models.BASE import BASE
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
-from SBART.utils.paths_tools import build_filename
+from SBART.utils.paths_tools import build_filename, find_latest_version, ensure_path_from_input
 
 
 class RV_holder(BASE):
@@ -28,7 +28,7 @@ class RV_holder(BASE):
 
     .. note::
         It is possible to load the RV results from disk by using:
-        :py:func:`~SBART.utils.paths_tools.Load_RVoutputs.find_RVoutputs`
+        :py:func:`~SBART.outside_tools.Load_RVoutputs.find_RVoutputs`
     """
 
     _valid_keys = [
@@ -347,11 +347,18 @@ class RV_holder(BASE):
     @classmethod
     def load_from_disk(
         cls,
-        high_level_path: Path,
+        high_level_path: Union[Path, str],
         load_full_flags=False,
         load_work_pkgs=False,
         SBART_version: Optional[str] = None,
     ):
+        high_level_path = ensure_path_from_input(high_level_path,
+                                                 ensure_existence=True
+                                                 )
+
+        most_recent_version = find_latest_version(high_level_path)
+
+        SBART_version = SBART_version if SBART_version is not None else most_recent_version
 
         logger.info("Loading RV outputs from {}", high_level_path)
         if SBART_version is None:

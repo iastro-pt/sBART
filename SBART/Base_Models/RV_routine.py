@@ -1,5 +1,6 @@
 import time
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 
 import numpy as np
@@ -18,7 +19,6 @@ from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     InvalidConfiguration,
 )
-from SBART.utils.paths_tools.Load_RVoutputs import find_RVoutputs
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
@@ -154,7 +154,7 @@ class RV_routine(BASE):
         # TODO: understand what is going on!:
         # when comparing metadata this is called. Not sure if I want this or not ....
         logger.info("Loading previous RVoutputs from disk")
-        self._output_RVcubes = find_RVoutputs(self._internalPaths.root_storage_path)
+        self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
 
         self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
 
@@ -243,7 +243,7 @@ class RV_routine(BASE):
             By default False
         store_data: bool
             If True, saves the data to disk. By default True
-        storage_path: str
+        storage_path: Union[pathlib.Path, str]
             Path in which the outputs of the run will be stored
         dataClass : :class:`~SBART.data_objects.DataClass.DataClass`
             [description]
@@ -253,6 +253,12 @@ class RV_routine(BASE):
             (if the key does not exist, assume that there are None to skip). If str, load a previous RV cube from disk and use the
             orders that the previous run used!. By default ()
         """
+
+        if isinstance(storage_path, str):
+            # Emsure pathlib path
+            storage_path = Path(storage_path)
+        storage_path = storage_path.absolute()
+
         self.iteration_number = dataClass.get_stellar_model().iteration_number
 
         # Note: self.storage_name from RV_Bayesian also includes the sampler name!
@@ -522,7 +528,7 @@ class RV_routine(BASE):
         elif isinstance(to_skip, str):
             logger.info("Loading orders to skip from previous run of SBART: {}", to_skip)
             self.loaded_from_previous_run = True
-            previous_RV_outputs = find_RVoutputs(to_skip)
+            previous_RV_outputs = RV_holder.load_from_disk(to_skip)
             orders_to_skip = {}
 
             for key in self._subInsts_to_use:

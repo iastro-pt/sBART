@@ -17,6 +17,8 @@ from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.work_packages import Package
 
+from SBART.ModelParameters import ModelComponent
+
 
 class SbartBaseSampler(SamplerModel):
     """
@@ -44,7 +46,10 @@ class SbartBaseSampler(SamplerModel):
         Approximate the posterior distribution with a LaPlace approximation;
         """
         extra_model_components = [
+            ModelComponent("jitter", initial_guess=10, bounds=[0, None]),
+            ModelComponent("trend::slope", initial_guess=0, bounds=[None, None]),
         ]
+
         super().__init__(
             mode="order-wise",
             RV_step=RV_step,
