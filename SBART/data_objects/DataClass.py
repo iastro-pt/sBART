@@ -785,7 +785,6 @@ class DataClass(BASE):
                 name_to_search, number_loads, len(self.observations)
             )
             logger.critical(msg)
-            raise FrameError(msg)
 
     def __repr__(self):
         return (
