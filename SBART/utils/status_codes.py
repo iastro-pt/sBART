@@ -586,6 +586,7 @@ MISSING_FILE = Flag("MISS_FILE", value="M")
 NO_VALID_ORDERS = Flag("NO_VALID_ORDERS", value="NO")
 
 MISSING_EXTERNAL_DATA = Flag("MISS_EXTERNAL_LOAD", value="S")
+MISSING_SHAQ_RVS = Flag("MISS_SHAQ_RV", value="S")
 LOADING_EXTERNAL_DATA = Flag("LOADING_EXTERNAL", value="LS", fatal_flag=False)
 
 CREATING_MODEL = Flag("CREATING MODEL", value="CM", fatal_flag=False)
