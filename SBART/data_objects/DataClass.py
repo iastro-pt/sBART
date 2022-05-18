@@ -11,11 +11,11 @@ from SBART.Base_Models.BASE import BASE
 from SBART.Base_Models.Frame import Frame
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
+from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
-from SBART.utils.paths_tools.Load_RVoutputs import find_RVoutputs
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
@@ -150,13 +150,13 @@ class DataClass(BASE):
 
         logger.info("Loading RVs from previous SBART run as the starting-RVs")
         try:
-            RV_holder = find_RVoutputs(LoadingPath_previousRun)
+            RV_RESULTS = RV_holder.load_from_disk(LoadingPath_previousRun)
         except FileNotFoundError:
             raise InvalidConfiguration("RV outputs couldn't be found on the provided path")
 
         for frameID, frame in enumerate(self.observations):
 
-            cube = RV_holder.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
+            cube = RV_RESULTS.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
 
             previous_filename = cube.cached_info["bare_filename"][frameID]
             if previous_filename != frame.bare_fname:
