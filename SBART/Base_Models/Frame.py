@@ -288,6 +288,8 @@ class Frame(Spectrum, Spectral_Modelling):
         """
         if self._status.has_flag(LOADING_EXTERNAL_DATA):
             logger.critical("Frame {} did not load the external data that it needed!", self.name)
+
+            self._status.delete_flag(LOADING_EXTERNAL_DATA)
             self.add_to_status(MISSING_EXTERNAL_DATA)
 
     def finalized_external_data_load(self):
