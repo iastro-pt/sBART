@@ -11,7 +11,7 @@ from SBART.Base_Models import Frame
 from SBART.Masks import Mask
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.shift_spectra import apply_BERV_correction
-from SBART.utils.status_codes import MISSING_DATA
+from SBART.utils.status_codes import MISSING_DATA, Flag, MISSING_SHAQ_RVS
 from SBART.utils.units import kilometer_second
 from SBART.utils.UserConfigs import DefaultValues, StringValue, UserParam
 
@@ -155,6 +155,10 @@ class CARMENES(Frame):
         self.build_mask(bypass_QualCheck=True)
         self.apply_BERV_correction(self.get_KW_value("BERV"))
         return 1
+
+    def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> NoReturn:
+        bad_flag = MISSING_SHAQ_RVS
+        super().finalize_data_load(bad_flag)
 
     def load_S1D_data(self) -> Mask:
         raise NotImplementedError
