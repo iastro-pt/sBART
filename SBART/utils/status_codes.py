@@ -128,7 +128,7 @@ class Status:
 
     def delete_flag(self, flag):
         try:
-            del self._stored_flags[flag]
+            self._stored_flags.remove(flag)
         except KeyError:
             logger.warning(f"Trying to remove flag that doesn't exist (flag)")
     ###
