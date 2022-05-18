@@ -276,7 +276,7 @@ class Frame(Spectrum, Spectral_Modelling):
             self.wavelengths_to_keep = {}
         self.wavelengths_to_keep[order] = wavelength_blocks
 
-    def finalize_data_load(self) -> NoReturn:
+    def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> NoReturn:
         """
         Called for all Instruments, even those that do not need an external data load.
         Checks if the non-fatal Flag "LOADING_EXTERNAL_DATA" exists in the Status. If so, add the fatal Flag
@@ -290,7 +290,10 @@ class Frame(Spectrum, Spectral_Modelling):
             logger.critical("Frame {} did not load the external data that it needed!", self.name)
 
             self._status.delete_flag(LOADING_EXTERNAL_DATA)
-            self.add_to_status(MISSING_EXTERNAL_DATA)
+            if bad_flag is None:
+                self.add_to_status(MISSING_EXTERNAL_DATA)
+            else:
+                self.add_to_status(bad_flag)
 
     def finalized_external_data_load(self):
         """Tuns an invalid CARMENES::KOBE frame into a valid one (assuming that the only problem is missing the SHAQ loads)
