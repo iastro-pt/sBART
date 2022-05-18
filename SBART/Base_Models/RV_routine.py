@@ -154,9 +154,13 @@ class RV_routine(BASE):
         # TODO: understand what is going on!:
         # when comparing metadata this is called. Not sure if I want this or not ....
         logger.info("Loading previous RVoutputs from disk")
-        self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
+        try:
+            self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
+            self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
+        except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
+            logger.warning("Couldn't load previous RV outputs")
+            raise custom_exceptions.StopComputationError from exc
 
-        self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
 
     def find_subInstruments_to_use(self, dataClass, check_metadata: bool) -> None:
         """Check to see which subInstruments should be used!
@@ -189,9 +193,9 @@ class RV_routine(BASE):
                 previous_metadata = MetaData.load_from_json(
                     dataClass.get_internalPaths().root_storage_path
                 )
-            except custom_exceptions.NoDataError:
+            except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
-                return
+                raise custom_exceptions.StopComputationError from exc
 
             self.load_previous_RVoutputs()
             bad_subInst = []
