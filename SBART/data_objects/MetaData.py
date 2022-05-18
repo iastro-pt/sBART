@@ -119,7 +119,7 @@ class MetaData:
         except FileNotFoundError:
             msg = "Failed to find metadata file in {}".format(storage_path)
             logger.warning(msg)
-            raise custom_exceptions.NoDataError(msg)
+            raise custom_exceptions.StopComputationError(msg)
 
         return MetaData(information)
 
