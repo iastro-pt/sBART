@@ -2,8 +2,8 @@
 SBART library.
 """
 
-__version_info__ = (0, 1, 6)
-__version__ = "-".join(map(str, __version_info__))
+__version__ = "0.1.6"
+__version_info__ = (int(i) for i in __version__.split("."))
 
 # To avoid having supressed warnings during the SBART application
 # https://docs.python.org/3/library/warnings.html

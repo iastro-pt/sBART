@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SBART"
-version = "0.1.6"
+version = "0.1.7"
 description = "semi-Bayesian Radial Velocities"
 authors = ["Kamuish <andremiguel952@gmail.com>"]
 build = "build.py"
@@ -39,6 +39,7 @@ jupyter = "^1.0.0"
 pylint = "^2.13.7"
 towncrier = "^21.9.0"
 sphinx-book-theme = "^0.3.2"
+bump2version = "^1.0.1"
 
 
 [build-system]
