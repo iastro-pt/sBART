@@ -4,6 +4,21 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-1-6 (2022-05-19)
+------------------------
+
+Features
+~~~~~~~~
+
+- Added interface to the external_tools to load RV results from disk (`#23 <https://github.com/iastro-pt/sBART/issues/23>`_)
+
+
+Bugfixes
+~~~~~~~~
+
+- Removed circular import on RV loading function (`#23 <https://github.com/iastro-pt/sBART/issues/23>`_)
+
+
 SBART 0-1-5 (2022-05-13)
 ------------------------
 
