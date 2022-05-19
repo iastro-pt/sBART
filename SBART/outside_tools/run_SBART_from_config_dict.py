@@ -28,7 +28,7 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs):
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, force_stellar_creation = False, force_telluric_creation=False):
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
@@ -72,11 +72,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     inds = Indicators()
     data.remove_activity_lines(inds)
 
-    if rv_method == "RV_step" and 0:
-        force_stellar_computation = True
-    else:
-        force_stellar_computation = False
-
     telluric_model_configs = {}
 
     telluric_model_configs = config_update_with_fallback_to_default(
@@ -114,7 +109,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     ModelTell.Generate_Model(
         dataClass=data,
         telluric_configs=telluric_template_genesis_configs,
-        force_computation=False,
+        force_computation=force_telluric_creation,
         store_templates=True,
     )
     data.remove_telluric_features(ModelTell)
@@ -151,7 +146,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             data,
             stellar_template_genesis_configs,
             StellarTemplateConditions,
-            force_computation=force_stellar_computation,
+            force_computation=force_stellar_creation,
         )
         ModelStell.store_templates_to_disk(storage_path)
     except InvalidConfiguration:
