@@ -28,7 +28,7 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, force_stellar_creation = False, force_telluric_creation=False):
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False):
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
@@ -103,7 +103,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     ModelTell = TelluricModel(
         usage_mode="individual",
         user_configs=telluric_model_configs,
-        root_folder_path=storage_path,
+        root_folder_path=storage_path if share_telluric is None else share_telluric,
     )
 
     ModelTell.Generate_Model(
@@ -120,8 +120,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
     )
 
-    ModelStell = StellarModel(user_configs=stellar_model_configs, root_folder_path=storage_path)
 
+    ModelStell = StellarModel(user_configs=stellar_model_configs,
+                            root_folder_path=storage_path if share_stellar is None else share_stellar
+                            )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
     except KeyError:
