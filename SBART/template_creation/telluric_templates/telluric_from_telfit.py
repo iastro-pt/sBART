@@ -44,7 +44,11 @@ def download_gdas_archive(archive_name, storage_path):
 
 @contextlib.contextmanager
 def get_atmospheric_profile(instrument, datetime, storage_folder):
-    coords = atmospheric_profiles_coords_dict[instrument]
+    try:
+        coords = atmospheric_profiles_coords_dict[instrument]
+    except KeyError as exc:
+        raise custom_exceptions.InvalidConfiguration(f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}") from exc
+
     archive_name = f"gdas_profiles_C{coords}.tar.gz"
     profile_archive = os.path.join(storage_folder, f"gdas_profiles_C{coords}.tar.gz")
     # NOTE: these archives have thousands of files, maybe don't extract them

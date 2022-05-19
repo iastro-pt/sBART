@@ -148,6 +148,8 @@ class RV_Bayesian(RV_routine):
             )
         except custom_exceptions.NoDataError:
             logger.info("No data to process after checking metadata")
+        except custom_exceptions.StopComputationError:
+            logger.critical("Computation was halted")
         except Exception as e:
             logger.opt(exception=True).critical("Found unknown error")
 

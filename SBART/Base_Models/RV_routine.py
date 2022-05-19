@@ -19,7 +19,6 @@ from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     InvalidConfiguration,
 )
-from SBART.utils.paths_tools.Load_RVoutputs import find_RVoutputs
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
@@ -155,9 +154,13 @@ class RV_routine(BASE):
         # TODO: understand what is going on!:
         # when comparing metadata this is called. Not sure if I want this or not ....
         logger.info("Loading previous RVoutputs from disk")
-        self._output_RVcubes = find_RVoutputs(self._internalPaths.root_storage_path)
+        try:
+            self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
+            self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
+        except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
+            logger.warning("Couldn't load previous RV outputs")
+            raise custom_exceptions.StopComputationError from exc
 
-        self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
 
     def find_subInstruments_to_use(self, dataClass, check_metadata: bool) -> None:
         """Check to see which subInstruments should be used!
@@ -190,9 +193,9 @@ class RV_routine(BASE):
                 previous_metadata = MetaData.load_from_json(
                     dataClass.get_internalPaths().root_storage_path
                 )
-            except custom_exceptions.NoDataError:
+            except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
-                return
+                raise custom_exceptions.StopComputationError from exc
 
             self.load_previous_RVoutputs()
             bad_subInst = []
@@ -529,7 +532,7 @@ class RV_routine(BASE):
         elif isinstance(to_skip, str):
             logger.info("Loading orders to skip from previous run of SBART: {}", to_skip)
             self.loaded_from_previous_run = True
-            previous_RV_outputs = find_RVoutputs(to_skip)
+            previous_RV_outputs = RV_holder.load_from_disk(to_skip)
             orders_to_skip = {}
 
             for key in self._subInsts_to_use:

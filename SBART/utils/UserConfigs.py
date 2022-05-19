@@ -186,7 +186,7 @@ class InternalParameters:
             if key not in self._user_configs:
 
                 if default_param.is_mandatory:
-                    raise InvalidConfiguration("SBART parameter <{}> is mandatory.")
+                    raise InvalidConfiguration(f"SBART parameter <{key}> is mandatory.")
 
                 logger.debug(
                     "Configuration <{}> using the default value: {}",
