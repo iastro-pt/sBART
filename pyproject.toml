@@ -60,3 +60,6 @@ filename = "docs/NEWS.rst"
 issue_format = "`#{issue} <https://github.com/iastro-pt/sBART/issues/{issue}>`_"
 underlines = "-~~"
 template = "towncrier_template.rst"
+
+[tool.towncrier.fragment.misc]
+	showcontent = true
