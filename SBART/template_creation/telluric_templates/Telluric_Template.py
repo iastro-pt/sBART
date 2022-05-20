@@ -239,7 +239,7 @@ class TelluricTemplate(BaseTemplate):
         metric_to_select = [-1 if m is None else m for m in metric_to_select]
 
         if not np.isfinite(metric_to_select[0]):
-            warnings.warn(
+            logger.warning(
                 "Relative humidity keyword was not loaded. Using airmass to select the reference observation for {}",
                 self._associated_subInst,
             )
