@@ -864,8 +864,6 @@ class RV_cube(BASE):
         )
         information = {
             "FrameID": self.frameIDs,
-            "BJD": self.cached_info["BJD"],
-            "MJD": self.cached_info["MJD"],
             "DRS_RV": prev_RV,
             "DRS_RV_ERR": prev_ERR,
             "prevSBART_RV": prev_sbart_RV,
@@ -886,6 +884,12 @@ class RV_cube(BASE):
         coldefs = []
         for key, array in information.items():
             coldefs.append(fits.Column(name=key, format="D", array=array))
+
+        for key in ["BJD", "MJD"]:
+            array = self.cached_info[key]
+            if array[0] is not None:
+                coldefs.append(fits.Column(name=key, format="D", array=array))
+
         hdu_timeseries = fits.BinTableHDU.from_columns(coldefs, name="TIMESERIES_DATA")
 
         header = fits.Header()
@@ -988,8 +992,11 @@ class RV_cube(BASE):
 
         convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
-        new_cube.cached_info["BJD"] = timeseries_table["BJD"]
-        new_cube.cached_info["MJD"] = timeseries_table["MJD"]
+        for key in ["BJD", "MJD"]:
+            try:
+                new_cube.cached_info[key] = timeseries_table[key]
+            except KeyError:
+                logger.info(f"Key <{key}> does not exist! Skipping it")
 
         entries = {
             "DRS_RV": "DRS_RV",
