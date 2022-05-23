@@ -33,6 +33,7 @@ class RV_holder(BASE):
 
     _valid_keys = [
         "BJD",
+        "MJD",
         "RVc",
         "RVc_ERR",
         "OBJ",
@@ -258,7 +259,21 @@ class RV_holder(BASE):
                     data_block = cube.build_datablock()
                 except InvalidConfiguration:
                     continue
-                sorted_indexes = np.argsort(data_block["BJD"])
+
+                found_key = False
+
+                for key in ["BJD", "MJD"]:
+                    time_list = data_block[key]
+                    if time_list[0] is not None:
+                        found_key = True
+                    selected_key = key
+
+                if not found_key:
+                    msg = f"{self.name} couldn't find time-related KW with valid values"
+                    logger.warning(msg)
+                    raise InvalidConfiguration(msg)
+
+                sorted_indexes = np.argsort(data_block[selected_key])
 
                 for sort_index in sorted_indexes:
                     row = []
@@ -286,13 +301,21 @@ class RV_holder(BASE):
             If we find a key that is not supported
         """
         logger.debug("Validating keys for outputs")
-        for key_index, key in enumerate(["BJD", "RVc", "RVc_ERR"]):
+
+        time_keys = ["BJD", "MJD"]
+        if self.output_keys[0] not in time_keys:
+            logger.warning("Missing time-related key in the selected outputs. Adding it")
+
+            # TODO: do we want to search for the "optimal" one?
+            self.output_keys.insert(0, time_keys[0])
+
+        for key_index, key in enumerate(["RVc", "RVc_ERR"]):
             if key not in self.output_keys:
                 logger.warning(
                     "Mandatory key <{}> not present in the selected outputs. Adding it",
                     key,
                 )
-                self.output_keys.insert(key_index, "BJD")
+                self.output_keys.insert(key_index + 1, key)
 
         for key in self.output_keys:
             if key not in self.__class__._valid_keys:

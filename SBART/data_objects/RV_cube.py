@@ -423,7 +423,8 @@ class RV_cube(BASE):
             which="SBART", apply_SA_corr=True, as_value=True, units=kilometer_second
         )
         data_blocks = {
-            "BJD": self.obs_times,
+            "BJD": self.cached_info["BJD"],
+            "MJD": self.cached_info["MJD"],
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
