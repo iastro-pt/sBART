@@ -47,7 +47,7 @@ class RV_routine(BASE):
     order_removal_mode              False        per_subInstrument    per_subInstrument / global    How to combine the bad orders of the different sub-Instruments [1]
     sigma_outliers_tolerance        False            6                  Integer >= 0                 Tolerance to flag pixels as outliers (when compared with the template)
     min_block_size                  False           50                  Integer >= 0                If we have less than this number of consecutive valid pixels, reject that region
-    output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk
+    output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk [4]
     MEMORY_SAVE_MODE                False           False                  boolean                  Save RAM at the expense of more disk operations
     CONTINUUM_FIT_POLY_DEGREE       False           1                  Integer >= 0                 Degree of the polynomial fit to the continuum.
     ========================== ================ ==================== ============================== ==================================================================================
@@ -56,6 +56,24 @@ class RV_routine(BASE):
 
         - per_subInstrument: each sub-Instrument is assumes to be independent, no ensurance that we are always using the same spectral orders
         - global: We compute a global set of bad orders which is applied for all sub-Instruments
+
+    - [2] The default output format is: "BJD","RVc","RVc_ERR","SA","DRIFT","DRIFT_ERR","filename","frameIDs",
+
+    - [3] The valid options are:
+            - BJD :
+            - MJD :
+            - RVc : RV corrected from SA and drift
+            - RVc_ERR : RV uncertainty
+            - OBJ : Object name
+            - SA : SA correction value
+            - DRIFT : Drift value
+            - DRIFT_ERR : Drift uncertainty
+            - full_path : Full path to S2D file
+            - filename : Only the filename
+            - frameIDs : Internal ID of the observation
+
+    - [4] This User parameter is a list where the entries can be options specified in [3]. The list **must** start with
+        a "time-related" key (BJD/MJD), followed by RVc and RVc_ERR.
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
