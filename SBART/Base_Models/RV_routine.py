@@ -609,7 +609,7 @@ class RV_routine(BASE):
         logger.debug("Sending shutdown signal to workers")
 
         good, bad = evaluate_shutdown(self.output_pool)
-        logger.critical("{} - {}".format(good, bad))
+        logger.debug("Good shutdowns: {}; Bad shutdowns: {}".format(good, bad))
 
         self._live_workers -= good + bad
         logger.debug(

@@ -36,6 +36,7 @@ class RV_cube(BASE):
     - Create plots and (crude) statistical analysis of the RV timeseries.
 
     """
+
     def __init__(self, subInst: str, frameIDs: List[int], instrument_properties: dict):
         """
         It contains:
@@ -209,12 +210,12 @@ class RV_cube(BASE):
     # #################################
 
     def get_RV_timeseries(
-        self,
-        which: str,
-        apply_SA_corr: bool,
-        as_value: bool,
-        units=None,
-        apply_drift_corr=None,
+            self,
+            which: str,
+            apply_SA_corr: bool,
+            as_value: bool,
+            units=None,
+            apply_drift_corr=None,
     ) -> Tuple[list, list, list]:
         """Return the RV timeseries
 
@@ -291,13 +292,13 @@ class RV_cube(BASE):
         return self.obs_times, final_RVs, final_RVs_ERR
 
     def get_RV_from_ID(
-        self,
-        frameID: int,
-        which: str,
-        apply_SA_corr: bool,
-        as_value: bool,
-        units,
-        apply_drift_corr=None,
+            self,
+            frameID: int,
+            which: str,
+            apply_SA_corr: bool,
+            as_value: bool,
+            units,
+            apply_drift_corr=None,
     ):
         """Retrieve the BJD, RV and RV_ERR from a given frameID
 
@@ -344,8 +345,18 @@ class RV_cube(BASE):
         min_time = 55500  # always use the same reference frame
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
+        OBS_times = self.cached_info["BJD"]
+
+        if self.obs_times[0] is None:
+            logger.warning("BJD was not properly loaded. Falling back to MJD for SA correction")
+
+            if self.cached_info["MJD"][0] is None:
+                logger.warning("MJD was not properly loaded. No way of computing SA correction, returning array of Zero m/s")
+                return [0 * meter_second for _ in self.obs_times]
+            OBS_times = self.cached_info["MJD"]
+
         secular_correction = [
-            SA * (self.obs_times[i] - min_time) / 365.25 for i in range(len(self.obs_times))
+            SA * (OBS_time - min_time) / 365.25 for OBS_time in OBS_times
         ]
         self.cached_info["SA_correction"] = secular_correction
 
@@ -492,7 +503,7 @@ class RV_cube(BASE):
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                self._associated_subInst, include_invalid=True
+                    self._associated_subInst, include_invalid=True
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(
@@ -546,13 +557,13 @@ class RV_cube(BASE):
                         file.write(f"\n\t\t\t{flag}:{description}")
 
     def export_results(
-        self,
-        keys: List[str],
-        header: List[str],
-        dataClassProxy,
-        text=True,
-        rdb=True,
-        append=False,
+            self,
+            keys: List[str],
+            header: List[str],
+            dataClassProxy,
+            text=True,
+            rdb=True,
+            append=False,
     ):
         if self._saved_to_disk:
             return
@@ -886,11 +897,11 @@ class RV_cube(BASE):
 
     @classmethod
     def load_cube_from_disk(
-        cls,
-        subInst_path,
-        load_full_flag: bool = False,
-        load_work_pkgs: bool = False,
-        SBART_version: Optional[str] = None,
+            cls,
+            subInst_path,
+            load_full_flag: bool = False,
+            load_work_pkgs: bool = False,
+            SBART_version: Optional[str] = None,
     ):
         # TODO: load and store the data units!!
 
@@ -1005,7 +1016,5 @@ class RV_cube(BASE):
                 Package.create_from_json(elem) for elem in work_packages["work_packages"]
             ]
             new_cube.update_worker_information(converted_work_packages)
-
-
 
         return new_cube
