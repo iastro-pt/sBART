@@ -349,7 +349,6 @@ class RV_cube(BASE):
 
         if self.obs_times[0] is None:
             logger.warning("BJD was not properly loaded. Falling back to MJD for SA correction")
-
             if self.cached_info["MJD"][0] is None:
                 logger.warning("MJD was not properly loaded. No way of computing SA correction, returning array of Zero m/s")
                 return [0 * meter_second for _ in self.obs_times]
@@ -385,7 +384,20 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        return self.cached_info["BJD"]
+        found_key = False
+
+        for key in ["BJD", "MJD"]:
+            time_list = self.cached_info[key]
+            if time_list[0] is not None:
+                found_key = True
+            selected_key = key
+
+        if not found_key:
+            msg = f"{self.name} couldn't find time-related KW with valid values"
+            logger.warning(msg)
+            raise InvalidConfiguration(msg)
+
+        return self.cached_info[selected_key]
 
     @property
     def N_orders(self) -> int:
