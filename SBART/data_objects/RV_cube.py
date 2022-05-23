@@ -711,6 +711,9 @@ class RV_cube(BASE):
             ax[1].set_ylabel(r"$\sigma_{RV}$")
             ax[1].set_xlabel("Order")
 
+            ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
+            ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
+
         final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
         fig_full.tight_layout()
         fig_full.savefig(final_path)
