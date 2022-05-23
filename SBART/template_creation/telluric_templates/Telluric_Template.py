@@ -497,7 +497,7 @@ class TelluricTemplate(BaseTemplate):
         axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
         axis.set_xlabel(r"Wavelength [$\AA$]")
         axis.set_ylabel("Transmittance")
-        fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.fits")
+        fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.png")
         fig.close()
 
     def load_from_file(self, root_path: Path, loading_path: str) -> None:
