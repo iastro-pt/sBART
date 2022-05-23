@@ -751,7 +751,7 @@ class RV_cube(BASE):
 
         table = Table(header=header, table_style="NoLines")
 
-        for epoch in np.argsort(data_blocks["BJD"]):
+        for epoch in np.argsort(self.obs_times):
             line = []
             for key in keys:
                 line.append(data_blocks[key][epoch])
@@ -864,7 +864,8 @@ class RV_cube(BASE):
         )
         information = {
             "FrameID": self.frameIDs,
-            "BJD": OBS_date,
+            "BJD": self.cached_info["BJD"],
+            "MJD": self.cached_info["MJD"],
             "DRS_RV": prev_RV,
             "DRS_RV_ERR": prev_ERR,
             "prevSBART_RV": prev_sbart_RV,
@@ -988,6 +989,7 @@ class RV_cube(BASE):
         convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
         new_cube.cached_info["BJD"] = timeseries_table["BJD"]
+        new_cube.cached_info["MJD"] = timeseries_table["MJD"]
 
         entries = {
             "DRS_RV": "DRS_RV",
