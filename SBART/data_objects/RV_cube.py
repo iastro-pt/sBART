@@ -389,8 +389,8 @@ class RV_cube(BASE):
                 time_list = self.cached_info[key]
                 if time_list[0] is not None:
                     found_key = True
+                    selected_key = key
                     break
-                selected_key = key
 
             if not found_key:
                 msg = f"{self.name} couldn't find time-related KW with valid values"
