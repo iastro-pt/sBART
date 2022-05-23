@@ -94,6 +94,7 @@ class RV_cube(BASE):
             "BIS SPAN",
             "FWHM",
         ]
+        self.time_key = None
         self.cached_info = {key: [] for key in needed_keys}
 
         self._loaded_inst_info = False
@@ -345,18 +346,10 @@ class RV_cube(BASE):
         min_time = 55500  # always use the same reference frame
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
-        OBS_times = self.cached_info["BJD"]
-
-        if self.obs_times[0] is None:
-            logger.warning("BJD was not properly loaded. Falling back to MJD for SA correction")
-            if self.cached_info["MJD"][0] is None:
-                logger.warning("MJD was not properly loaded. No way of computing SA correction, returning array of Zero m/s")
-                return [0 * meter_second for _ in self.obs_times]
-            OBS_times = self.cached_info["MJD"]
-
         secular_correction = [
-            SA * (OBS_time - min_time) / 365.25 for OBS_time in OBS_times
+            SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times
         ]
+
         self.cached_info["SA_correction"] = secular_correction
 
         return secular_correction
@@ -384,20 +377,29 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        found_key = False
+        """
+        Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
+        returns the BJD
+        """
 
-        for key in ["BJD", "MJD"]:
-            time_list = self.cached_info[key]
-            if time_list[0] is not None:
-                found_key = True
-            selected_key = key
+        if self.time_key is None:
+            found_key = False
 
-        if not found_key:
-            msg = f"{self.name} couldn't find time-related KW with valid values"
-            logger.warning(msg)
-            raise InvalidConfiguration(msg)
+            for key in ["BJD", "MJD"]:
+                time_list = self.cached_info[key]
+                if time_list[0] is not None:
+                    found_key = True
+                    break
+                selected_key = key
 
-        return self.cached_info[selected_key]
+            if not found_key:
+                msg = f"{self.name} couldn't find time-related KW with valid values"
+                logger.warning(msg)
+                raise InvalidConfiguration(msg)
+
+            self.time_key = selected_key
+
+        return self.cached_info[self.time_key]
 
     @property
     def N_orders(self) -> int:

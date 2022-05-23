@@ -260,18 +260,12 @@ class RV_holder(BASE):
                 except InvalidConfiguration:
                     continue
 
-                found_key = False
-
-                for key in ["BJD", "MJD"]:
-                    time_list = data_block[key]
-                    if time_list[0] is not None:
-                        found_key = True
-                    selected_key = key
-
-                if not found_key:
-                    msg = f"{self.name} couldn't find time-related KW with valid values"
-                    logger.warning(msg)
-                    raise InvalidConfiguration(msg)
+                selected_key = cube.time_key
+                if self.output_keys[0] != selected_key:
+                    logger.warning("User asking for time-key <{}> but we must use <{}>",
+                                   self.output_keys[0],
+                                   selected_key)
+                    self.output_keys[0] = selected_key
 
                 sorted_indexes = np.argsort(data_block[selected_key])
 
