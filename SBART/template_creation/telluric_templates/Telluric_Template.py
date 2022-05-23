@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 from typing import List, NoReturn, Optional, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
@@ -489,6 +490,15 @@ class TelluricTemplate(BaseTemplate):
         filename = f"{self.storage_name}_{self._associated_subInst}.fits"
         logger.debug("Storing template to {}", self._internalPaths.root_storage_path / filename)
         hdul.writeto(self._internalPaths.root_storage_path / filename, overwrite=True)
+
+        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
+
+        fig, axis = plt.subplots()
+        axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
+        axis.set_xlabel(r"Wavelength [$\AA$]")
+        axis.set_ylabel("Transmittance")
+        fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.fits")
+        fig.close()
 
     def load_from_file(self, root_path: Path, loading_path: str) -> None:
         """
