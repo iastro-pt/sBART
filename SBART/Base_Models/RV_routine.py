@@ -29,6 +29,7 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromDtype,
     ValueFromList,
+    IterableMustHave
 )
 from SBART.utils.work_packages import ShutdownPackage
 
@@ -97,6 +98,7 @@ class RV_routine(BASE):
         min_block_size=UserParam(
             50, constraint=Positive_Value_Constraint
         ),  # Min number of consecutive points to not reject a region
+
         output_fmt=UserParam(
             [
                 "BJD",
@@ -107,7 +109,10 @@ class RV_routine(BASE):
                 "DRIFT_ERR",
                 "filename",
                 "frameIDs",
-            ]
+            ],
+            constraint=ValueFromList(
+                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
+                ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
@@ -125,14 +130,14 @@ class RV_routine(BASE):
     )
 
     def __init__(
-        self,
-        N_jobs: int,
-        workers_per_job: int,
-        RV_configs: dict,
-        sampler,
-        target,
-        valid_samplers: Iterable[str],
-        extra_folders_needed: Optional[Dict[str, str]] = None,
+            self,
+            N_jobs: int,
+            workers_per_job: int,
+            RV_configs: dict,
+            sampler,
+            target,
+            valid_samplers: Iterable[str],
+            extra_folders_needed: Optional[Dict[str, str]] = None,
     ):
         super().__init__(RV_configs, needed_folders=extra_folders_needed)
         self.package_pool = None
@@ -178,7 +183,6 @@ class RV_routine(BASE):
         except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
             logger.warning("Couldn't load previous RV outputs")
             raise custom_exceptions.StopComputationError from exc
-
 
     def find_subInstruments_to_use(self, dataClass, check_metadata: bool) -> None:
         """Check to see which subInstruments should be used!
@@ -247,13 +251,13 @@ class RV_routine(BASE):
                 raise custom_exceptions.NoDataError("Metadata check removed all subInsts")
 
     def run_routine(
-        self,
-        dataClass,
-        storage_path: UI_PATH,
-        orders_to_skip: Union[Iterable, str, dict] = (),
-        store_data: bool = True,
-        check_metadata: bool = False,
-        store_cube_to_disk=True,
+            self,
+            dataClass,
+            storage_path: UI_PATH,
+            orders_to_skip: Union[Iterable, str, dict] = (),
+            store_data: bool = True,
+            check_metadata: bool = False,
+            store_cube_to_disk=True,
     ) -> None:
         """
         Trigger the RV extraction for all sub-Instruments

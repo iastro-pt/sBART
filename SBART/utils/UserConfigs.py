@@ -4,7 +4,7 @@ from typing import Any, Dict, NoReturn, Optional
 import numpy as np
 from loguru import logger
 
-from SBART.utils.custom_exceptions import InvalidConfiguration
+from SBART.utils.custom_exceptions import InvalidConfiguration, InternalError
 
 
 class Constraint:
@@ -103,6 +103,34 @@ class ValueFromList(Constraint):
             )
 
 
+class IterableMustHave(Constraint):
+    def __init__(self, available_options, mode: str = "all"):
+        super().__init__(const_text=f"Must have value from list <{available_options}>")
+        self.available_options = available_options
+        self.mode = mode
+
+        if mode not in ["all", "either"]:
+            raise InternalError("Using the wrong mode")
+
+    def evaluate(self, param_name, value) -> NoReturn:
+        if not isinstance(value, (list, tuple)):
+            raise InvalidConfiguration("Constraint needs a list or tuple")
+
+        evaluation = [i in value for i in self.available_options]
+
+        good_value = False
+
+        if self.mode == "all":
+            good_value = all(evaluation)
+        elif self.mode == "either":
+            good_value = any(evaluation)
+
+        if not good_value:
+            raise InvalidConfiguration(
+                f"Config ({param_name}) value {value} does not have {self.mode} of {self.available_options}"
+            )
+
+
 Positive_Value_Constraint = ValueInInterval([0, np.inf], include_edges=True)
 StringValue = ValueFromDtype((str,))
 NumericValue = ValueFromDtype((int, float))
@@ -115,11 +143,11 @@ class UserParam:
     __slots__ = ("_valueConstraint", "_default_value", "_mandatory", "quiet")
 
     def __init__(
-        self,
-        default_value: Optional[Any] = None,
-        constraint: Optional[Constraint] = None,
-        mandatory: bool = False,
-        quiet: bool = False,
+            self,
+            default_value: Optional[Any] = None,
+            constraint: Optional[Constraint] = None,
+            mandatory: bool = False,
+            quiet: bool = False,
     ):
         self._valueConstraint = constraint if constraint is not None else Constraint("")
         self._default_value = default_value
