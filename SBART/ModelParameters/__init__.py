@@ -1,3 +1,2 @@
-from .Model import Model
+from .Model import Model, RV_Model
 from .Parameter import ModelComponent, RV_component
-from .RV_Model import RV_Model
