@@ -80,6 +80,7 @@ class RV_cube(BASE):
         # NOTE: must also add any **new** key to the load_from_disk function!
         needed_keys = [
             "BJD",
+            "MJD",
             "drift",
             "drift_ERR",
             "BERV",
