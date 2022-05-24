@@ -296,6 +296,9 @@ class RV_holder(BASE):
         """
         logger.debug("Validating keys for outputs")
 
+        if self.output_keys is None:
+            self.output_keys = []
+
         time_keys = ["BJD", "MJD"]
         if len(self.output_keys) == 0:
             logger.warning("Output keys is an empty list... Manually creating the output array")
