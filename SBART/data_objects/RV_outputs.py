@@ -297,6 +297,10 @@ class RV_holder(BASE):
         logger.debug("Validating keys for outputs")
 
         time_keys = ["BJD", "MJD"]
+        if len(self.output_keys) == 0:
+            logger.warning("Output keys is an empty list... Manually creating the output array")
+            self.output_keys.append(time_keys[0])
+
         if self.output_keys[0] not in time_keys:
             logger.warning("Missing time-related key in the selected outputs. Adding it")
 
