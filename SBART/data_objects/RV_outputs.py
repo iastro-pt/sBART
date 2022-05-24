@@ -294,7 +294,7 @@ class RV_holder(BASE):
         InvalidConfiguration
             If we find a key that is not supported
         """
-        logger.debug("Validating keys for outputs")
+        logger.debug(f"Validating keys for outputs: {self.output_keys}")
 
         if self.output_keys is None:
             self.output_keys = []
