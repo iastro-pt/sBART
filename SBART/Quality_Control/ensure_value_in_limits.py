@@ -1,7 +1,7 @@
 from typing import Iterable
 
 from loguru import logger
-
+from SBART.utils import  custom_exceptions
 
 def ensure_value_in_window(tentative_value: float, desired_interval: Iterable[float]):
     """Ensure that a given radial velocity is inside the effective RV limits
@@ -24,4 +24,4 @@ def ensure_value_in_window(tentative_value: float, desired_interval: Iterable[fl
             tentative_value, desired_interval
         )
         logger.critical(msg)
-        raise Exception(msg)
+        raise custom_exceptions.InvalidConfiguration(msg)

@@ -36,6 +36,7 @@ class RV_cube(BASE):
     - Create plots and (crude) statistical analysis of the RV timeseries.
 
     """
+
     def __init__(self, subInst: str, frameIDs: List[int], instrument_properties: dict):
         """
         It contains:
@@ -79,6 +80,7 @@ class RV_cube(BASE):
         # NOTE: must also add any **new** key to the load_from_disk function!
         needed_keys = [
             "BJD",
+            "MJD",
             "drift",
             "drift_ERR",
             "BERV",
@@ -93,6 +95,7 @@ class RV_cube(BASE):
             "BIS SPAN",
             "FWHM",
         ]
+        self.time_key = None
         self.cached_info = {key: [] for key in needed_keys}
 
         self._loaded_inst_info = False
@@ -209,12 +212,12 @@ class RV_cube(BASE):
     # #################################
 
     def get_RV_timeseries(
-        self,
-        which: str,
-        apply_SA_corr: bool,
-        as_value: bool,
-        units=None,
-        apply_drift_corr=None,
+            self,
+            which: str,
+            apply_SA_corr: bool,
+            as_value: bool,
+            units=None,
+            apply_drift_corr=None,
     ) -> Tuple[list, list, list]:
         """Return the RV timeseries
 
@@ -291,13 +294,13 @@ class RV_cube(BASE):
         return self.obs_times, final_RVs, final_RVs_ERR
 
     def get_RV_from_ID(
-        self,
-        frameID: int,
-        which: str,
-        apply_SA_corr: bool,
-        as_value: bool,
-        units,
-        apply_drift_corr=None,
+            self,
+            frameID: int,
+            which: str,
+            apply_SA_corr: bool,
+            as_value: bool,
+            units,
+            apply_drift_corr=None,
     ):
         """Retrieve the BJD, RV and RV_ERR from a given frameID
 
@@ -345,8 +348,9 @@ class RV_cube(BASE):
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
         secular_correction = [
-            SA * (self.obs_times[i] - min_time) / 365.25 for i in range(len(self.obs_times))
+            SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times
         ]
+
         self.cached_info["SA_correction"] = secular_correction
 
         return secular_correction
@@ -374,7 +378,29 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        return self.cached_info["BJD"]
+        """
+        Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
+        returns the BJD
+        """
+
+        if self.time_key is None:
+            found_key = False
+
+            for key in ["BJD", "MJD"]:
+                time_list = self.cached_info[key]
+                if time_list[0] is not None:
+                    found_key = True
+                    selected_key = key
+                    break
+
+            if not found_key:
+                msg = f"{self.name} couldn't find time-related KW with valid values"
+                logger.warning(msg)
+                raise InvalidConfiguration(msg)
+
+            self.time_key = selected_key
+
+        return self.cached_info[self.time_key]
 
     @property
     def N_orders(self) -> int:
@@ -412,7 +438,8 @@ class RV_cube(BASE):
             which="SBART", apply_SA_corr=True, as_value=True, units=kilometer_second
         )
         data_blocks = {
-            "BJD": self.obs_times,
+            "BJD": self.cached_info["BJD"],
+            "MJD": self.cached_info["MJD"],
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
@@ -492,7 +519,7 @@ class RV_cube(BASE):
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                self._associated_subInst, include_invalid=True
+                    self._associated_subInst, include_invalid=True
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(
@@ -546,13 +573,13 @@ class RV_cube(BASE):
                         file.write(f"\n\t\t\t{flag}:{description}")
 
     def export_results(
-        self,
-        keys: List[str],
-        header: List[str],
-        dataClassProxy,
-        text=True,
-        rdb=True,
-        append=False,
+            self,
+            keys: List[str],
+            header: List[str],
+            dataClassProxy,
+            text=True,
+            rdb=True,
+            append=False,
     ):
         if self._saved_to_disk:
             return
@@ -685,6 +712,9 @@ class RV_cube(BASE):
             ax[1].set_ylabel(r"$\sigma_{RV}$")
             ax[1].set_xlabel("Order")
 
+            ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
+            ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
+
         final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
         fig_full.tight_layout()
         fig_full.savefig(final_path)
@@ -725,7 +755,7 @@ class RV_cube(BASE):
 
         table = Table(header=header, table_style="NoLines")
 
-        for epoch in np.argsort(data_blocks["BJD"]):
+        for epoch in np.argsort(self.obs_times):
             line = []
             for key in keys:
                 line.append(data_blocks[key][epoch])
@@ -838,7 +868,6 @@ class RV_cube(BASE):
         )
         information = {
             "FrameID": self.frameIDs,
-            "BJD": OBS_date,
             "DRS_RV": prev_RV,
             "DRS_RV_ERR": prev_ERR,
             "prevSBART_RV": prev_sbart_RV,
@@ -859,6 +888,12 @@ class RV_cube(BASE):
         coldefs = []
         for key, array in information.items():
             coldefs.append(fits.Column(name=key, format="D", array=array))
+
+        for key in ["BJD", "MJD"]:
+            array = self.cached_info[key]
+            if array[0] is not None:
+                coldefs.append(fits.Column(name=key, format="D", array=array))
+
         hdu_timeseries = fits.BinTableHDU.from_columns(coldefs, name="TIMESERIES_DATA")
 
         header = fits.Header()
@@ -886,11 +921,11 @@ class RV_cube(BASE):
 
     @classmethod
     def load_cube_from_disk(
-        cls,
-        subInst_path,
-        load_full_flag: bool = False,
-        load_work_pkgs: bool = False,
-        SBART_version: Optional[str] = None,
+            cls,
+            subInst_path,
+            load_full_flag: bool = False,
+            load_work_pkgs: bool = False,
+            SBART_version: Optional[str] = None,
     ):
         # TODO: load and store the data units!!
 
@@ -961,7 +996,11 @@ class RV_cube(BASE):
 
         convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
-        new_cube.cached_info["BJD"] = timeseries_table["BJD"]
+        for key in ["BJD", "MJD"]:
+            try:
+                new_cube.cached_info[key] = timeseries_table[key]
+            except KeyError:
+                logger.info(f"Key <{key}> does not exist! Skipping it")
 
         entries = {
             "DRS_RV": "DRS_RV",
@@ -1005,7 +1044,5 @@ class RV_cube(BASE):
                 Package.create_from_json(elem) for elem in work_packages["work_packages"]
             ]
             new_cube.update_worker_information(converted_work_packages)
-
-
 
         return new_cube

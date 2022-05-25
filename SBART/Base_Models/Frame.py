@@ -89,7 +89,7 @@ class Frame(Spectrum, Spectral_Modelling):
     bypass_QualCheck                    False              False         boolean         If True, avoid checking the pixel-wise QC checks
     reject_order_percentage             False               0.25         range [0 ,1]    Smallest percentage of "valid" pixels in a "valid" order
     minimum_order_SNR                   False               20           int/float >= 0  If the order's SNR is below this value, reject the order
-    spectra_format                      False               S2D          "S2D" or "S1D"  Indicates where we are using S2D or S1D data. Not all instruments support S1D
+    spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     ================================ ================ ================ ================ ================
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
@@ -119,7 +119,7 @@ class Frame(Spectrum, Spectral_Modelling):
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
-        spectra_format=UserParam("S2D", constraint=ValueFromList(("S1D", "S2D"))),
+        spectra_format=UserParam("S2D", constraint=ValueFromList(("S2D",))),
     )
 
     def __init__(
@@ -233,6 +233,31 @@ class Frame(Spectrum, Spectral_Modelling):
 
         if need_external_data_load:
             self.add_to_status(LOADING_EXTERNAL_DATA)
+    
+    def import_KW_from_outside(self, KW, value, optional: bool):
+        """
+        Allow to manually override frame parameters from the outside
+        """
+        if KW not in self.observation_info:
+            logger.critical(
+                "Keyword <{}> is not supported by the Frames. Couldn't load it from the outside",
+                KW,
+            )
+
+        if not np.isfinite(value):
+            if not optional:
+                logger.critical(
+                    "Loaded mandatory keyword <{}> with a non-finite value for frame {}",
+                    KW,
+                    self.fname,
+                )
+                raise FrameError
+            logger.critical(
+                "Loaded keyword <{}> has a non-finite value for frame {}",
+                KW,
+                self.fname,
+            )
+        self.observation_info[KW] = value
 
     def mark_wavelength_region(self, reason: Flag, wavelength_blocks: List[List[int]]) -> None:
         """Add wavelength regions to be removed whenever the S2D file is opened
@@ -251,7 +276,7 @@ class Frame(Spectrum, Spectral_Modelling):
             self.wavelengths_to_keep = {}
         self.wavelengths_to_keep[order] = wavelength_blocks
 
-    def finalize_data_load(self) -> NoReturn:
+    def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> NoReturn:
         """
         Called for all Instruments, even those that do not need an external data load.
         Checks if the non-fatal Flag "LOADING_EXTERNAL_DATA" exists in the Status. If so, add the fatal Flag
@@ -263,7 +288,27 @@ class Frame(Spectrum, Spectral_Modelling):
         """
         if self._status.has_flag(LOADING_EXTERNAL_DATA):
             logger.critical("Frame {} did not load the external data that it needed!", self.name)
-            self.add_to_status(MISSING_EXTERNAL_DATA)
+
+            self._status.delete_flag(LOADING_EXTERNAL_DATA)
+            if bad_flag is None:
+                self.add_to_status(MISSING_EXTERNAL_DATA)
+            else:
+                self.add_to_status(bad_flag)
+
+    def finalized_external_data_load(self):
+        """Tuns an invalid CARMENES::KOBE frame into a valid one (assuming that the only problem is missing the SHAQ loads)
+
+        If the status of the frame is different than MISSING_SHAQ_DATA (meaning that something went bad with the data load)
+        Returns
+        -------
+        NoReturn
+        """
+        logger.info("Finalizing external data loading")
+        if not self.is_valid:
+            logger.warning("Frame has already been rejected.")
+        else:
+            logger.info("{} is a valid observation. Finishing external data load", self)
+            self._status.delete_flag(LOADING_EXTERNAL_DATA)
 
     def add_to_status(self, new_flag: Flag) -> NoReturn:
         logger.info("Updating Frame ({}) status to {}", self.fname, new_flag)

@@ -160,7 +160,7 @@ class TemplateFramework(BASE):
         for temp_path in available_templates:
             temp_disk_name = os.path.basename(temp_path)
 
-            temp_name = temp_disk_name.split("-")[0]
+            temp_name = temp_disk_name.split("_")[0]
             temp_subInst = temp_disk_name.split("_")[-1].split(".fits")[0]
 
             template_header = fits.getheader(temp_path)
@@ -208,9 +208,8 @@ class TemplateFramework(BASE):
 
         which = which.capitalize()
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
-        logger.info("Loading {} template from disk inside directory", self.__class__.model_type)
+        logger.info("Loading {} template of type {} from disk inside directory", self.__class__.model_type, which)
         logger.info("\t" + loading_path)
-
         available_templates = [
             i for i in os.listdir(loading_path) if which in i and i.endswith("fits")
         ]
@@ -220,6 +219,7 @@ class TemplateFramework(BASE):
             available_templates,
             which,
         )
+
         if len(available_templates) == 0:
             logger.warning("Could not find template to load in {}".format(loading_path))
             raise custom_exceptions.TemplateNotExistsError()

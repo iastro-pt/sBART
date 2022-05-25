@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any, Dict, List, NoReturn, Tuple, Union
 
 import jax.numpy as jnp
@@ -30,7 +31,7 @@ class ModelComponent(BASE):
         self,
         name,
         initial_guess=None,
-        bounds=None,
+        bounds=(None, None),
         user_configs=None,
         default_enabled=False,
         param_type="general",
@@ -54,6 +55,16 @@ class ModelComponent(BASE):
         name
         """
         super().__init__(user_configs=user_configs)
+
+        if not isinstance(bounds, (list, tuple, np.ndarray)):
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must be an iterable")
+
+        if len(bounds) != 2:
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must have two elements")
+
+        if isinstance(bounds, tuple):
+            bounds = list(bounds)
+
         self.param_name = name
         self._default_limits = bounds
         self._default_init_guess = initial_guess
@@ -96,6 +107,12 @@ class ModelComponent(BASE):
 
     def _update_frameID_info(self, frameID, init_guess, bound, bypass_QC=False):
 
+        if self._default_init_guess is None and init_guess is None:
+            if "RV_component" in self.name:
+                msg = "RV component has a non-valid initial guess"
+                raise custom_exceptions.InternalError(msg)
+            raise custom_exceptions.InvalidConfiguration("Model component must have an initial guess")
+
         if self.is_locked:
             logger.debug("Can't update the values of a locked parameter")
             return
@@ -106,7 +123,8 @@ class ModelComponent(BASE):
             return
 
         if not bypass_QC:
-            window = bound.copy()
+            window = copy(bound)
+
             if bound[0] is None:
                 window[0] = -np.inf
             if bound[1] is None:
@@ -318,9 +336,16 @@ class RV_component(ModelComponent):
     _name = ModelComponent._name + "::RV_component"
 
     def __init__(self, RVwindow, RV_keyword, user_configs):
+
         self.RVwindow = RVwindow
         self.RV_key = RV_keyword
-        super().__init__(name="RV", user_configs=user_configs, default_enabled=True)
+        # RVwindow is only passed to take advantage of sanity checks in the parent class
+
+        super().__init__(name="RV", bounds=RVwindow, user_configs=user_configs, default_enabled=True)
+
+        for edge in RVwindow:
+            if not isinstance(edge, RV_measurement):
+                raise custom_exceptions.InvalidConfiguration("RV window edge must be astropy quantity")
 
     def generate_priors(self, DataClassProxy):
 

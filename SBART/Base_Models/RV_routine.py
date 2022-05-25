@@ -1,5 +1,6 @@
 import time
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 
 import numpy as np
@@ -18,7 +19,6 @@ from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     InvalidConfiguration,
 )
-from SBART.utils.paths_tools.Load_RVoutputs import find_RVoutputs
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
@@ -29,6 +29,7 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromDtype,
     ValueFromList,
+    IterableMustHave
 )
 from SBART.utils.work_packages import ShutdownPackage
 
@@ -47,7 +48,7 @@ class RV_routine(BASE):
     order_removal_mode              False        per_subInstrument    per_subInstrument / global    How to combine the bad orders of the different sub-Instruments [1]
     sigma_outliers_tolerance        False            6                  Integer >= 0                 Tolerance to flag pixels as outliers (when compared with the template)
     min_block_size                  False           50                  Integer >= 0                If we have less than this number of consecutive valid pixels, reject that region
-    output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk
+    output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk [4]
     MEMORY_SAVE_MODE                False           False                  boolean                  Save RAM at the expense of more disk operations
     CONTINUUM_FIT_POLY_DEGREE       False           1                  Integer >= 0                 Degree of the polynomial fit to the continuum.
     ========================== ================ ==================== ============================== ==================================================================================
@@ -56,6 +57,24 @@ class RV_routine(BASE):
 
         - per_subInstrument: each sub-Instrument is assumes to be independent, no ensurance that we are always using the same spectral orders
         - global: We compute a global set of bad orders which is applied for all sub-Instruments
+
+    - [2] The default output format is: "BJD","RVc","RVc_ERR","SA","DRIFT","DRIFT_ERR","filename","frameIDs",
+
+    - [3] The valid options are:
+            - BJD :
+            - MJD :
+            - RVc : RV corrected from SA and drift
+            - RVc_ERR : RV uncertainty
+            - OBJ : Object name
+            - SA : SA correction value
+            - DRIFT : Drift value
+            - DRIFT_ERR : Drift uncertainty
+            - full_path : Full path to S2D file
+            - filename : Only the filename
+            - frameIDs : Internal ID of the observation
+
+    - [4] This User parameter is a list where the entries can be options specified in [3]. The list **must** start with
+        a "time-related" key (BJD/MJD), followed by RVc and RVc_ERR.
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
@@ -79,6 +98,7 @@ class RV_routine(BASE):
         min_block_size=UserParam(
             50, constraint=Positive_Value_Constraint
         ),  # Min number of consecutive points to not reject a region
+
         output_fmt=UserParam(
             [
                 "BJD",
@@ -89,7 +109,10 @@ class RV_routine(BASE):
                 "DRIFT_ERR",
                 "filename",
                 "frameIDs",
-            ]
+            ],
+            constraint=ValueFromList(
+                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
+                ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
@@ -107,14 +130,14 @@ class RV_routine(BASE):
     )
 
     def __init__(
-        self,
-        N_jobs: int,
-        workers_per_job: int,
-        RV_configs: dict,
-        sampler,
-        target,
-        valid_samplers: Iterable[str],
-        extra_folders_needed: Optional[Dict[str, str]] = None,
+            self,
+            N_jobs: int,
+            workers_per_job: int,
+            RV_configs: dict,
+            sampler,
+            target,
+            valid_samplers: Iterable[str],
+            extra_folders_needed: Optional[Dict[str, str]] = None,
     ):
         super().__init__(RV_configs, needed_folders=extra_folders_needed)
         self.package_pool = None
@@ -154,9 +177,12 @@ class RV_routine(BASE):
         # TODO: understand what is going on!:
         # when comparing metadata this is called. Not sure if I want this or not ....
         logger.info("Loading previous RVoutputs from disk")
-        self._output_RVcubes = find_RVoutputs(self._internalPaths.root_storage_path)
-
-        self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
+        try:
+            self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
+            self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
+        except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
+            logger.warning("Couldn't load previous RV outputs")
+            raise custom_exceptions.StopComputationError from exc
 
     def find_subInstruments_to_use(self, dataClass, check_metadata: bool) -> None:
         """Check to see which subInstruments should be used!
@@ -189,9 +215,9 @@ class RV_routine(BASE):
                 previous_metadata = MetaData.load_from_json(
                     dataClass.get_internalPaths().root_storage_path
                 )
-            except custom_exceptions.NoDataError:
+            except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
-                return
+                raise custom_exceptions.StopComputationError from exc
 
             self.load_previous_RVoutputs()
             bad_subInst = []
@@ -225,13 +251,13 @@ class RV_routine(BASE):
                 raise custom_exceptions.NoDataError("Metadata check removed all subInsts")
 
     def run_routine(
-        self,
-        dataClass,
-        storage_path: UI_PATH,
-        orders_to_skip: Union[Iterable, str, dict] = (),
-        store_data: bool = True,
-        check_metadata: bool = False,
-        store_cube_to_disk=True,
+            self,
+            dataClass,
+            storage_path: UI_PATH,
+            orders_to_skip: Union[Iterable, str, dict] = (),
+            store_data: bool = True,
+            check_metadata: bool = False,
+            store_cube_to_disk=True,
     ) -> None:
         """
         Trigger the RV extraction for all sub-Instruments
@@ -243,7 +269,7 @@ class RV_routine(BASE):
             By default False
         store_data: bool
             If True, saves the data to disk. By default True
-        storage_path: str
+        storage_path: Union[pathlib.Path, str]
             Path in which the outputs of the run will be stored
         dataClass : :class:`~SBART.data_objects.DataClass.DataClass`
             [description]
@@ -253,6 +279,12 @@ class RV_routine(BASE):
             (if the key does not exist, assume that there are None to skip). If str, load a previous RV cube from disk and use the
             orders that the previous run used!. By default ()
         """
+
+        if isinstance(storage_path, str):
+            # Emsure pathlib path
+            storage_path = Path(storage_path)
+        storage_path = storage_path.absolute()
+
         self.iteration_number = dataClass.get_stellar_model().iteration_number
 
         # Note: self.storage_name from RV_Bayesian also includes the sampler name!
@@ -522,7 +554,7 @@ class RV_routine(BASE):
         elif isinstance(to_skip, str):
             logger.info("Loading orders to skip from previous run of SBART: {}", to_skip)
             self.loaded_from_previous_run = True
-            previous_RV_outputs = find_RVoutputs(to_skip)
+            previous_RV_outputs = RV_holder.load_from_disk(to_skip)
             orders_to_skip = {}
 
             for key in self._subInsts_to_use:
@@ -599,7 +631,7 @@ class RV_routine(BASE):
         logger.debug("Sending shutdown signal to workers")
 
         good, bad = evaluate_shutdown(self.output_pool)
-        logger.critical("{} - {}".format(good, bad))
+        logger.debug("Good shutdowns: {}; Bad shutdowns: {}".format(good, bad))
 
         self._live_workers -= good + bad
         logger.debug(

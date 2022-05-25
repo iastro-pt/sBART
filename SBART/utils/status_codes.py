@@ -126,6 +126,11 @@ class Status:
     def has_flag(self, flag) -> bool:
         return flag in self._stored_flags
 
+    def delete_flag(self, flag):
+        try:
+            self._stored_flags.remove(flag)
+        except KeyError:
+            logger.warning(f"Trying to remove flag that doesn't exist (flag)")
     ###
     #   Adding new flags
     ###

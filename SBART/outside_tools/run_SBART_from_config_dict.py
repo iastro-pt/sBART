@@ -28,7 +28,7 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs):
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False):
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
@@ -72,11 +72,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     inds = Indicators()
     data.remove_activity_lines(inds)
 
-    if rv_method == "RV_step" and 0:
-        force_stellar_computation = True
-    else:
-        force_stellar_computation = False
-
     telluric_model_configs = {}
 
     telluric_model_configs = config_update_with_fallback_to_default(
@@ -108,13 +103,13 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     ModelTell = TelluricModel(
         usage_mode="individual",
         user_configs=telluric_model_configs,
-        root_folder_path=storage_path,
+        root_folder_path=storage_path if share_telluric is None else share_telluric,
     )
 
     ModelTell.Generate_Model(
         dataClass=data,
         telluric_configs=telluric_template_genesis_configs,
-        force_computation=False,
+        force_computation=force_telluric_creation,
         store_templates=True,
     )
     data.remove_telluric_features(ModelTell)
@@ -125,8 +120,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
     )
 
-    ModelStell = StellarModel(user_configs=stellar_model_configs, root_folder_path=storage_path)
 
+    ModelStell = StellarModel(user_configs=stellar_model_configs,
+                            root_folder_path=storage_path if share_stellar is None else share_stellar
+                            )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
     except KeyError:
@@ -151,12 +148,11 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             data,
             stellar_template_genesis_configs,
             StellarTemplateConditions,
-            force_computation=force_stellar_computation,
+            force_computation=force_stellar_creation,
         )
         ModelStell.store_templates_to_disk(storage_path)
     except InvalidConfiguration:
         return
-
     data.ingest_StellarModel(ModelStell)
 
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
@@ -191,7 +187,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             RV_configs=confsRV,
             sampler=sampler,
         )
-        orders = os.path.join(storage_path, "RV_step")
+        orders = os.path.join(storage_path, "Iteration_0" , "RV_step")
 
     rv_model.run_routine(data, storage_path, orders)
 

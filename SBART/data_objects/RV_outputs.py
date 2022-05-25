@@ -4,16 +4,17 @@ computed RVs)
 """
 import glob
 from pathlib import Path
-from typing import List, NoReturn, Optional
+from typing import List, NoReturn, Optional, Union
 
 import numpy as np
 from loguru import logger
 from tabletexifier import Table
 
+from SBART import __version__
 from SBART.Base_Models.BASE import BASE
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
-from SBART.utils.paths_tools import build_filename
+from SBART.utils.paths_tools import build_filename, find_latest_version, ensure_path_from_input
 
 
 class RV_holder(BASE):
@@ -28,11 +29,12 @@ class RV_holder(BASE):
 
     .. note::
         It is possible to load the RV results from disk by using:
-        :py:func:`~SBART.utils.paths_tools.Load_RVoutputs.find_RVoutputs`
+        :py:func:`~SBART.outside_tools.Load_RVoutputs.find_RVoutputs`
     """
 
     _valid_keys = [
         "BJD",
+        "MJD",
         "RVc",
         "RVc_ERR",
         "OBJ",
@@ -258,7 +260,15 @@ class RV_holder(BASE):
                     data_block = cube.build_datablock()
                 except InvalidConfiguration:
                     continue
-                sorted_indexes = np.argsort(data_block["BJD"])
+
+                selected_key = cube.time_key
+                if self.output_keys[0] != selected_key:
+                    logger.warning("User asking for time-key <{}> but we must use <{}>",
+                                   self.output_keys[0],
+                                   selected_key)
+                    self.output_keys[0] = selected_key
+
+                sorted_indexes = np.argsort(data_block[selected_key])
 
                 for sort_index in sorted_indexes:
                     row = []
@@ -285,14 +295,29 @@ class RV_holder(BASE):
         InvalidConfiguration
             If we find a key that is not supported
         """
-        logger.debug("Validating keys for outputs")
-        for key_index, key in enumerate(["BJD", "RVc", "RVc_ERR"]):
+        logger.debug(f"Validating keys for outputs: {self.output_keys}")
+
+        if self.output_keys is None:
+            self.output_keys = []
+
+        time_keys = ["BJD", "MJD"]
+        if len(self.output_keys) == 0:
+            logger.warning("Output keys is an empty list... Manually creating the output array")
+            self.output_keys.append(time_keys[0])
+
+        if self.output_keys[0] not in time_keys:
+            logger.warning("Missing time-related key in the selected outputs. Adding it")
+
+            # TODO: do we want to search for the "optimal" one?
+            self.output_keys.insert(0, time_keys[0])
+
+        for key_index, key in enumerate(["RVc", "RVc_ERR"]):
             if key not in self.output_keys:
                 logger.warning(
                     "Mandatory key <{}> not present in the selected outputs. Adding it",
                     key,
                 )
-                self.output_keys.insert(key_index, "BJD")
+                self.output_keys.insert(key_index + 1, key)
 
         for key in self.output_keys:
             if key not in self.__class__._valid_keys:
@@ -347,17 +372,24 @@ class RV_holder(BASE):
     @classmethod
     def load_from_disk(
         cls,
-        high_level_path: Path,
+        high_level_path: Union[Path, str],
         load_full_flags=False,
         load_work_pkgs=False,
         SBART_version: Optional[str] = None,
     ):
-
+        high_level_path = ensure_path_from_input(high_level_path,
+                                                 ensure_existence=True
+                                                 )
         logger.info("Loading RV outputs from {}", high_level_path)
-        if SBART_version is None:
-            logger.info("Searching for outputs of current SBART version")
-        else:
-            logger.info("Using SBART version: {}", SBART_version)
+
+        most_recent_version = find_latest_version(high_level_path)
+
+        SBART_version = SBART_version if SBART_version is not None else most_recent_version
+
+        logger.info("Loading data from SBART version {}", SBART_version)
+
+        if __version__ != SBART_version:
+            logger.warning("Current SBART version is {}", __version__)
 
         # Oh god, my eyes, this is uglyyyyyyyy
         available_paths = [
