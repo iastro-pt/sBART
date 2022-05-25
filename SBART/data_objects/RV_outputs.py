@@ -10,6 +10,7 @@ import numpy as np
 from loguru import logger
 from tabletexifier import Table
 
+from SBART import __version__
 from SBART.Base_Models.BASE import BASE
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
@@ -379,16 +380,16 @@ class RV_holder(BASE):
         high_level_path = ensure_path_from_input(high_level_path,
                                                  ensure_existence=True
                                                  )
+        logger.info("Loading RV outputs from {}", high_level_path)
 
         most_recent_version = find_latest_version(high_level_path)
 
         SBART_version = SBART_version if SBART_version is not None else most_recent_version
 
-        logger.info("Loading RV outputs from {}", high_level_path)
-        if SBART_version is None:
-            logger.info("Searching for outputs of current SBART version")
-        else:
-            logger.info("Using SBART version: {}", SBART_version)
+        logger.info("Loading data from SBART version {}", SBART_version)
+
+        if __version__ != SBART_version:
+            logger.warning("Current SBART version is {}", __version__)
 
         # Oh god, my eyes, this is uglyyyyyyyy
         available_paths = [
