@@ -132,7 +132,6 @@ class RV_routine(BASE):
     def __init__(
             self,
             N_jobs: int,
-            workers_per_job: int,
             RV_configs: dict,
             sampler,
             target,
@@ -145,7 +144,6 @@ class RV_routine(BASE):
 
         self.N_jobs = N_jobs
         self._live_workers = 0
-        self.workers_per_job = workers_per_job
 
         self.to_skip = {}
         self._output_RVcubes = None
@@ -450,7 +448,6 @@ class RV_routine(BASE):
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
-            "workers_per_job": self.workers_per_job,
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
         }
