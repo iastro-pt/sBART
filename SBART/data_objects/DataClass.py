@@ -25,7 +25,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
 )
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second
-
+from SBART.utils import custom_exceptions
 
 class DataClass(BASE):
     """
@@ -374,6 +374,11 @@ class DataClass(BASE):
     def update_interpol_properties_of_all_frames(self, new_properties):
         for frame in self.observations:
             frame.set_interpolation_properties(new_properties)
+
+    def update_interpol_properties_of_stellar_model(self, new_properties):
+        if self.StellarModel is None:
+            raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
+        self.StellarModel.update_interpol_properties(new_properties)
 
     def update_frame_interpol_properties(self, frameID, new_properties) -> NoReturn:
         """
