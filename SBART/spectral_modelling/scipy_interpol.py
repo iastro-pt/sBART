@@ -65,7 +65,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         """
         return
 
-    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
         """
         Interpolate the order of this spectrum to a given wavelength, using a spline.
         Parameters
