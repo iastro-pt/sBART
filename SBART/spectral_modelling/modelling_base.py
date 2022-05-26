@@ -8,13 +8,17 @@ from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
     UserParam,
+    Positive_Value_Constraint,
+    ValueFromDtype
 )
 
 
 class ModellingBase(BASE):
     _name = "SpecModelBase"
     _default_params = BASE._default_params + DefaultValues(
-        FORCE_MODEL_GENERATION=UserParam("False", constraint=BooleanValue)
+        FORCE_MODEL_GENERATION=UserParam("False", constraint=BooleanValue),
+        NUMBER_WORKERS=UserParam(10, constraint=Positive_Value_Constraint + ValueFromDtype((int,)))
+
     )
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
