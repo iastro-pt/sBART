@@ -1,10 +1,15 @@
 from typing import NoReturn
 
+import numpy as np
+
 from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
 )
+from scipy.interpolate import CubicSpline
+
+from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
 
 from modelling_base import ModellingBase
 
@@ -29,6 +34,9 @@ class ScipyInterpolSpecModel(ModellingBase):
         SPLINE_TYPE=UserParam("cubic",
                               constraint=ValueFromList(["cubic", "quadratic"])
                               ),
+        ERROR_PROP_MODE=UserParam("interpolation",
+                                  constraint=ValueFromList(["none", "interpolation", "propagation"])
+                                  )
     )
 
     def __init__(self, obj_info, user_configs):
@@ -49,7 +57,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         """
         return
 
-    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths):
         """
         Interpolate the order of this spectrum to a given wavelength, using a spline.
         Parameters
@@ -73,3 +81,28 @@ class ScipyInterpolSpecModel(ModellingBase):
         """
 
         ...
+        propagate_interpol_errors = self._internal_configs["ERROR_PROP_MODE"]
+
+        if propagate_interpol_errors == "propagation":
+            # Custom Cubic spline routine!
+            CSplineInterpolator = CustomCubicSpline(
+                og_lambda,
+                og_spectra,
+                og_err,
+                n_threads=self._internal_configs["NUMBER_WORKERS"],
+            )
+            new_data, new_errors = CSplineInterpolator.interpolate(new_wavelengths)
+
+        elif propagate_interpol_errors in ["interpolation", "none"]:
+            CSplineInterpolator = CubicSpline(og_lambda, og_spectra)
+            new_data = CSplineInterpolator(new_wavelengths)
+
+            if propagate_interpol_errors == "none":
+                new_errors = np.zeros(new_data.shape)
+            else:
+                CSplineInterpolator = CubicSpline(og_lambda, og_err)
+                new_errors = CSplineInterpolator(new_wavelengths)
+        else:
+            raise Exception(f"{propagate_interpol_errors=} is not a valid choice!")
+
+        return new_data, new_errors
