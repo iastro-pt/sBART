@@ -67,6 +67,7 @@ class Spectral_Modelling(BASE):
         for comp in self._modelling_interfaces.values():
             comp.generate_root_path(storage_path)
 
+
     @property
     def interpol_mode(self) -> str:
         return self._internal_configs["INTERPOL_MODE"]
@@ -76,11 +77,18 @@ class Spectral_Modelling(BASE):
         return self._modelling_interfaces[self.interpol_mode]
 
     def set_interpolation_properties(self, new_properties):
+        try:
+            key = "INTERPOL_MODE"
+            self._internal_configs.update_configs_with_values({key: new_properties[key]})
+            del new_properties[key]
+        except KeyError:
+            pass
+
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
-    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode):
+    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
 
-        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order)
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
         desired_inds = ~mask
 
         og_lambda, og_spectra, og_errs = wavelength[desired_inds], flux[desired_inds], uncertainties[desired_inds]
