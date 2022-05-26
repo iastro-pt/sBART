@@ -23,7 +23,11 @@ class ScipyInterpolSpecModel(ModellingBase):
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
     ============================ ================ ================ ======================== ================
     SPLINE_TYPE                     False           cubic               cubic/quadratic       Which spline
+    INTERPOLATION_ERR_PROP          False           interpolation     [1]                       [2]
     ============================ ================ ================ ======================== ================
+
+    - [1] : One of interpolation / none / propagation
+    - [2] - How the uncertainties are propagated through the spline interpolation
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
@@ -34,9 +38,9 @@ class ScipyInterpolSpecModel(ModellingBase):
         SPLINE_TYPE=UserParam("cubic",
                               constraint=ValueFromList(["cubic", "quadratic"])
                               ),
-        ERROR_PROP_MODE=UserParam("interpolation",
-                                  constraint=ValueFromList(["none", "interpolation", "propagation"])
-                                  )
+        INTERPOLATION_ERR_PROP=UserParam("interpolation",
+                                         constraint=ValueFromList(["none", "interpolation", "propagation"])
+                                         )
     )
 
     def __init__(self, obj_info, user_configs):
@@ -76,7 +80,7 @@ class ScipyInterpolSpecModel(ModellingBase):
             If the fit for this order failed
         """
 
-        propagate_interpol_errors = self._internal_configs["ERROR_PROP_MODE"]
+        propagate_interpol_errors = self._internal_configs["INTERPOLATION_ERR_PROP"]
 
         if propagate_interpol_errors == "propagation":
             # Custom Cubic spline routine!
