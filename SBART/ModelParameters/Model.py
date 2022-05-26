@@ -222,7 +222,6 @@ class Model:
         full_json["result_flags"] = {
             int(d_ID): flag.to_json() for d_ID, flag in self._results_flags.items()
         }
-        print(full_json)
         with open(storage_path, mode="w") as handle:
             json.dump(full_json, handle, indent=4)
 
