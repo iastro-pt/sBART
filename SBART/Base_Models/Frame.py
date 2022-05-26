@@ -81,6 +81,7 @@ class Frame(Spectrum, Spectral_Modelling):
         SPEC_TYPE              ""
     ========================= ===========================
 
+
     **User parameters:**
 
     ================================ ================ ================ ================ ================
@@ -92,7 +93,12 @@ class Frame(Spectrum, Spectral_Modelling):
     spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     ================================ ================ ================ ================ ================
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+       This class also uses the User parameters defined by the :class:`~SBART.Components.Modelling.Spectral_Modelling`
+    class
+
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
@@ -630,6 +636,10 @@ class Frame(Spectrum, Spectral_Modelling):
     @property
     def min_pixel_in_order(self) -> int:
         return self._internal_configs["reject_order_percentage"] * self.pixels_per_order
+
+    @property
+    def spectrum_information(self):
+        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information()}
 
     def __repr__(self):
         return self.__str__()

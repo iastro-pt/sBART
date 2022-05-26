@@ -214,6 +214,14 @@ class BaseTemplate(Spectrum):
         return self._loaded
 
     @property
+    def sub_instrument(self):
+        return self._associated_subInst
+
+    @property
+    def spectrum_information(self):
+        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information()}
+
+    @property
     def name(self) -> str:
         return f"{self.__class__.method_name}-{self.__class__.template_type} from {self._associated_subInst}"
 

@@ -240,6 +240,13 @@ class Spectrum(BASE):
         return self._OrderStatus
 
     @property
+    def spectrum_information(self):
+        return {"N_orders": self.N_orders,
+                "object_type": self._object_type,
+                "blaze_corrected": self.is_blaze_corrected
+                }
+
+    @property
     def N_orders(self) -> int:
         """
         Returns
