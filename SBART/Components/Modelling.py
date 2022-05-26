@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Dict
 
 from SBART.Base_Models.BASE import BASE
 from SBART.utils.UserConfigs import (
@@ -8,7 +8,10 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 
+from SBART.spectral_modelling.modelling_base import ModellingBase
 from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
+from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.utils import custom_exceptions
 
 
 class Spectral_Modelling(BASE):
@@ -54,7 +57,7 @@ class Spectral_Modelling(BASE):
                           "user_configs": kwargs["user_configs"]
                           }
 
-        self._modelling_interfaces = {
+        self._modelling_interfaces: Dict[str, ModellingBase] = {
             "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init)
         }
@@ -68,6 +71,32 @@ class Spectral_Modelling(BASE):
     def interpol_mode(self) -> str:
         return self._internal_configs["INTERPOL_MODE"]
 
-    def interpolate_spectrum_to_wavelength(self, order):
-        # TODO: implement this!
+    @property
+    def interpolation_interface(self):
         return self._modelling_interfaces[self.interpol_mode]
+
+    def set_interpolation_properties(self, new_properties):
+        self.interpolation_interface.set_interpolation_properties(new_properties)
+
+    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode):
+
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order)
+        desired_inds = ~mask
+
+        og_lambda, og_spectra, og_errs = wavelength[desired_inds], flux[desired_inds], uncertainties[desired_inds]
+
+        if RV_shift_mode == "apply":
+            shift_function = apply_RVshift
+        elif RV_shift_mode == "remove":
+            shift_function = remove_RVshift
+        else:
+            raise custom_exceptions.InvalidConfiguration("Unknown mode")
+
+        og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
+
+        new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
+                                                                                  og_spectra=og_spectra,
+                                                                                  og_err=og_errs,
+                                                                                  new_wavelengths=new_wavelengths
+                                                                                  )
+        return new_flux, new_errors
