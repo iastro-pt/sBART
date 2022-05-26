@@ -46,7 +46,7 @@ class RV_step(RV_routine):
         )
     )
 
-    def __init__(self, processes: int, sub_processes: int, RV_configs: dict, sampler):
+    def __init__(self, processes: int, RV_configs: dict, sampler):
         """
         Parameters
         ----------------
@@ -72,7 +72,6 @@ class RV_step(RV_routine):
 
         super().__init__(
             N_jobs=processes,
-            workers_per_job=sub_processes,
             RV_configs=RV_configs_copy,
             sampler=sampler,
             target=target,
