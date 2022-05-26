@@ -6,6 +6,8 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
+    IntegerValue,
+    Positive_Value_Constraint
 )
 from scipy.interpolate import CubicSpline
 
@@ -24,11 +26,12 @@ class ScipyInterpolSpecModel(ModellingBase):
     ============================ ================ ================ ======================== ================
     SPLINE_TYPE                     False           cubic               cubic/quadratic       Which spline
     INTERPOLATION_ERR_PROP          False           interpolation     [1]                       [2]
+    NUMBER_WORKERS                  False           1                   Interger >= 0           [3]
     ============================ ================ ================ ======================== ================
 
     - [1] : One of interpolation / none / propagation
     - [2] - How the uncertainties are propagated through the spline interpolation
-
+    - [3] - Number of workers to launch (this will happen for each core if [1] is propagation)
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
@@ -40,7 +43,8 @@ class ScipyInterpolSpecModel(ModellingBase):
                               ),
         INTERPOLATION_ERR_PROP=UserParam("interpolation",
                                          constraint=ValueFromList(["none", "interpolation", "propagation"])
-                                         )
+                                         ),
+        NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
     )
 
     def __init__(self, obj_info, user_configs):
