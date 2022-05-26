@@ -80,7 +80,7 @@ class DataClass(BASE):
         self.input_file = path
 
         # Hold all of the frames
-        self.observations = []
+        self.observations: Iterable[Frame] = []
 
         self.metaData = MetaData()
 
@@ -424,6 +424,30 @@ class DataClass(BASE):
         """
         frame = self.get_frame_by_ID(frameID)
         return frame.get_data_from_spectral_order(order, include_invalid)
+
+    def update_interpol_properties_of_all_frames(self, new_properties):
+        for frame in self.observations:
+            frame.set_interpolation_properties(new_properties)
+
+    def update_frame_interpol_properties(self, frameID, new_properties) -> NoReturn:
+        """
+        Allow to update the interpolation settings from the outside, so that any object can configure
+        the interpolation as it wishes
+        """
+
+        frame = self.get_frame_by_ID(frameID)
+        frame.set_interpolation_properties(new_properties)
+
+    def interpolate_frame_order(self, frameID, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+        """
+        Interpolate a given order to a new wavelength solution
+        """
+        frame = self.get_frame_by_ID(frameID)
+        return frame.interpolate_spectrum_to_wavelength(order=order, new_wavelengths=new_wavelengths,
+                                                        shift_RV_by=shift_RV_by,
+                                                        RV_shift_mode=RV_shift_mode,
+                                                        include_invalid=include_invalid
+                                                        )
 
     def get_frame_arrays_by_ID(self, frameID: int):
         """
