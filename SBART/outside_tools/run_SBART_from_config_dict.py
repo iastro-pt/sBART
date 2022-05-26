@@ -159,6 +159,9 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         return
     data.ingest_StellarModel(ModelStell)
 
+    data.update_interpol_properties_of_stellar_model(new_properties={"NUMBER_WORKERS": 3}
+                                                     )
+
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
 
     confsRV = config_update_with_fallback_to_default(
@@ -174,7 +177,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         sampler = chi_squared_sampler(RVstep, RV_limits)
         rv_model = RV_step(
             stellar_template_genesis_configs["NUMBER_WORKERS"][0],
-            1,
             RV_configs=confsRV,
             sampler=sampler,
         )
@@ -187,7 +189,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         sampler = Laplace_approx(RVstep, RV_limits)
         rv_model = RV_Bayesian(
             math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"][0] / 2),
-            3,
             RV_configs=confsRV,
             sampler=sampler,
         )
