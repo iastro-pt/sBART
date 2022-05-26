@@ -103,12 +103,12 @@ class GPSpecModel(ModellingBase):
         full_fname = build_filename(output_folder, f"{filename_start}_GP_model", "json")
         return full_fname
 
-    def load_previous_model_results_from_disk(self, default_component):
+    def load_previous_model_results_from_disk(self, model_component_in_use):
         model_component_in_use = JaxComponent
         # TODO: ensure that loaded information is in accordance with the current parameters!
         return super().load_previous_model_results_from_disk(model_component_in_use)
 
-    def generate_model_from_order(self, order: int) -> NoReturn:
+    def generate_model_from_order(self, og_lambda, og_spectra, og_err, new_wavelengths, order) -> NoReturn:
         """
         Fit the stellar spectrum from a given order. If it has already been recomputed (or if it has previously failed)
         does nothing
@@ -132,7 +132,7 @@ class GPSpecModel(ModellingBase):
             return
 
         try:
-            solution_array, result_flag = self._launch_GP_fit(order=order)
+            solution_array, result_flag = self._launch_GP_fit( og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
             msg = "Unknown error found when fitting GP: {}".format(
                 traceback.print_tb(e.__traceback__)
@@ -149,7 +149,7 @@ class GPSpecModel(ModellingBase):
         # TODO: store information related with the GP parameters!
         return super()._store_model_to_disk()
 
-    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
         """
         Interpolate the order of this spectrum to a given wavelength, using a GP. If the GP fit is yet to be done,
         then it is done beforehand.
@@ -174,7 +174,7 @@ class GPSpecModel(ModellingBase):
             If the fit for this order failed
         """
 
-        self.generate_model_from_order(order)
+        self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
 
         global kern_type
 
@@ -189,21 +189,19 @@ class GPSpecModel(ModellingBase):
         param_names = self._modelling_parameters.get_enabled_params()
 
         optimal_combinations = {i: j for i, j in zip(param_names, fit_results)}
-        wavelengths, fluxes, uncertainties, mask = self.get_data_from_spectral_order(order=order)
-        order_mask = ~mask
         data_dict = {
-            "XX_data": jnp.asarray(wavelengths[order_mask]),
-            "YY_variance": jnp.asarray(uncertainties[order_mask] ** 2),
+            "XX_data": jnp.asarray(og_lambda),
+            "YY_variance": jnp.asarray(og_err ** 2),
         }
 
         gp_object = build_gp(optimal_combinations, **data_dict)
-        _, cond = gp_object.condition(fluxes[order_mask], X_test=new_wavelengths)
+        _, cond = gp_object.condition(og_spectra, X_test=new_wavelengths)
 
         mu = cond.loc
         std = np.sqrt(cond.variance)
         return mu, std
 
-    def _launch_GP_fit(self, order):
+    def _launch_GP_fit(self,  og_lambda, og_spectra, og_err, new_wavelengths, order):
 
         initial_params, bounds = self._modelling_parameters.generate_optimizer_inputs(
             order, rv_units=None
@@ -212,12 +210,10 @@ class GPSpecModel(ModellingBase):
 
         result_flag = SUCCESS
         initial_guess = {i: j for i, j in zip(param_names, initial_params)}
-        wavelengths, fluxes, uncertainties, mask = self.get_data_from_spectral_order(order=order)
-        order_mask = ~mask
         data_dict = {
-            "XX_data": jnp.asarray(wavelengths[order_mask]),
-            "YY_data": jnp.asarray(fluxes[order_mask]),
-            "YY_variance": jnp.asarray(uncertainties[order_mask] ** 2),
+            "XX_data": jnp.asarray(og_lambda),
+            "YY_data": jnp.asarray(og_spectra),
+            "YY_variance": jnp.asarray(og_err ** 2),
         }
 
         global kern_type
@@ -227,8 +223,8 @@ class GPSpecModel(ModellingBase):
         self._modelling_parameters.update_params_initial_guesses(
             frameID=order,
             guesses={
-                "log_mean": jnp.log(np.mean(fluxes[order_mask])),
-                "log_amplitude": jnp.log(np.max(fluxes[order_mask]) - np.min(fluxes[order_mask])),
+                "log_mean": jnp.log(np.mean(og_spectra)),
+                "log_amplitude": jnp.log(np.max(og_spectra) - np.min(og_spectra)),
             },
         )
 
