@@ -190,10 +190,7 @@ class InternalParameters:
         self._name_of_parent = name_of_parent
         self.no_logs = no_logs
 
-    def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
-        if not self.no_logs:
-            logger.debug("Generating internal configs of {}", self._name_of_parent)
-
+    def update_configs_with_values(self, user_configs):
         for key, value in user_configs.items():
             try:
                 parameter_def_information = self._default_params[key]
@@ -216,6 +213,12 @@ class InternalParameters:
                     logger.debug("Configuration <{}> taking the value: {}", key, value)
                 else:
                     logger.debug("Configuration <{}> was updated")
+
+    def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
+        if not self.no_logs:
+            logger.debug("Generating internal configs of {}", self._name_of_parent)
+
+        self.update_configs_with_values(user_configs)
 
         for key, default_param in self._default_params.items():
             if key not in self._user_configs:
