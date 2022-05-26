@@ -69,6 +69,9 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         instrument_options=inst_options,
     )
 
+    interpol_properties = user_configs.get("INTERPOL_CONFIG_TEMPLATE", {})
+    data.update_interpol_properties_of_all_frames(interpol_properties)
+
     inds = Indicators()
     data.remove_activity_lines(inds)
 
@@ -155,8 +158,8 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         return
     data.ingest_StellarModel(ModelStell)
 
-    data.update_interpol_properties_of_stellar_model(new_properties={"NUMBER_WORKERS": 3}
-                                                     )
+    interpol_properties = user_configs.get("INTERPOL_CONFIG_RV_EXTRACTION", {})
+    data.update_interpol_properties_of_stellar_model(interpol_properties)
 
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
 
