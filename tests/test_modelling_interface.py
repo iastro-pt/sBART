@@ -59,7 +59,12 @@ for ind, mode in enumerate(["cubic", "quadratic", "pchip"]):
     new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0, RV_shift_mode="apply")
     axis[0].plot(XX, new_spec, color=colors[ind], linestyle="-.")
 
-
+frames[0].set_interpolation_properties({"INTERPOL_MODE": "GP"})
+new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0,
+                                                                  RV_shift_mode="apply"
+                                                                  )
+axis[0].plot(XX, new_spec, color="orange", linestyle="-.")
+frames[0].trigger_data_storage()
 # for f_index, frame in enumerate(frames):
     # mean, mu = f_path.interpolate_spectrum_to_wavelength(new_wavelengths=XX, order=order)
     # axis[0].plot(XX, mean, color=colors[f_index], linestyle="--")
