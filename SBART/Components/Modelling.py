@@ -75,6 +75,8 @@ class Spectral_Modelling(BASE):
             "splines": ScipyInterpolSpecModel(**interface_init)
         }
         self.initialized_interface = True
+        for comp in self._modelling_interfaces.values():
+            comp.generate_root_path(self._internalPaths.root_storage_path)
 
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         super().generate_root_path(storage_path)
@@ -121,12 +123,13 @@ class Spectral_Modelling(BASE):
         new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
                                                                                                og_spectra=og_spectra,
                                                                                                og_err=og_errs,
-                                                                                               new_wavelengths=new_wavelengths
+                                                                                               new_wavelengths=new_wavelengths,
+                                                                                               order=order
                                                                                                )
         return new_flux, new_errors
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(*args, **kwargs)
-        for model_name, comp in self._modelling_interfaces:
+        for model_name, comp in self._modelling_interfaces.items():
             logger.debug("Triggering data storage routines for {}", model_name)
             comp.trigger_data_storage()
