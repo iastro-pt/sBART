@@ -22,7 +22,7 @@ from SBART.utils.custom_exceptions import (
     BadTemplateError,
     InvalidConfiguration,
 )
-from SBART.utils.shift_spectra import interpolate_data, remove_RVshift
+from SBART.utils.shift_spectra import remove_RVshift
 from SBART.utils.status_codes import INTERNAL_ERROR
 from SBART.utils.units import kilometer_second
 from .Stellar_Template import StellarTemplate
