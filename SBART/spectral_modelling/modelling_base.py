@@ -64,7 +64,7 @@ class ModellingBase(BASE):
         self._attempted_to_load_disk_model = True
 
         self._init_model()
-        logger.debug("Searching for previous model on disk")
+        logger.debug("Searching for previous model on disk: {}".format(self._get_model_storage_filename()))
 
         try:
             storage_name = self._get_model_storage_filename()
@@ -93,7 +93,7 @@ class ModellingBase(BASE):
         if not self._modelling_parameters.has_results_stored:
             msg = "No results have been stored. Skipping data storage"
             logger.warning(msg)
-            raise custom_exceptions.InternalError(msg)
+            return
 
         full_fname = self._get_model_storage_filename()
 
