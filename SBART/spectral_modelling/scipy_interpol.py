@@ -9,11 +9,11 @@ from SBART.utils.UserConfigs import (
     IntegerValue,
     Positive_Value_Constraint
 )
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline, PchipInterpolator, interp1d
 
 from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
 from SBART.utils import custom_exceptions
-from modelling_base import ModellingBase
+from SBART.spectral_modelling.modelling_base import ModellingBase
 
 
 class ScipyInterpolSpecModel(ModellingBase):
@@ -24,7 +24,7 @@ class ScipyInterpolSpecModel(ModellingBase):
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
     ============================ ================ ================ ======================== ================
-    SPLINE_TYPE                     False           cubic               cubic/quadratic       Which spline
+    SPLINE_TYPE                     False           cubic            cubic/quadratic/pchip       Which spline
     INTERPOLATION_ERR_PROP          False           interpolation     [1]                       [2]
     NUMBER_WORKERS                  False           1                   Interger >= 0           [3]
     ============================ ================ ================ ======================== ================
@@ -39,7 +39,7 @@ class ScipyInterpolSpecModel(ModellingBase):
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam("cubic",
-                              constraint=ValueFromList(["cubic", "quadratic"])
+                              constraint=ValueFromList(["cubic", "quadratic", "pchip"])
                               ),
         INTERPOLATION_ERR_PROP=UserParam("interpolation",
                                          constraint=ValueFromList(["none", "interpolation", "propagation"])
@@ -86,8 +86,14 @@ class ScipyInterpolSpecModel(ModellingBase):
 
         propagate_interpol_errors = self._internal_configs["INTERPOLATION_ERR_PROP"]
 
+        interpolator_map = {"cubic": CubicSpline,
+                            "pchip": PchipInterpolator,
+                            "quadratic": lambda x, y: interp1d(x,y, kind="quadratic")
+                            }
         if propagate_interpol_errors == "propagation":
             # Custom Cubic spline routine!
+            if self._internal_configs["SPLINE_TYPE"] != "cubic":
+                raise custom_exceptions.InvalidConfiguration("Can't use non cubic-splines with propagation")
             CSplineInterpolator = CustomCubicSpline(
                 og_lambda,
                 og_spectra,
@@ -97,13 +103,13 @@ class ScipyInterpolSpecModel(ModellingBase):
             new_data, new_errors = CSplineInterpolator.interpolate(new_wavelengths)
 
         elif propagate_interpol_errors in ["interpolation", "none"]:
-            CSplineInterpolator = CubicSpline(og_lambda, og_spectra)
+            CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](og_lambda, og_spectra)
             new_data = CSplineInterpolator(new_wavelengths)
 
             if propagate_interpol_errors == "none":
                 new_errors = np.zeros(new_data.shape)
             else:
-                CSplineInterpolator = CubicSpline(og_lambda, og_err)
+                CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](og_lambda, og_err)
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:
             raise custom_exceptions.InvalidConfiguration(f"How did we get {propagate_interpol_errors=}?")
