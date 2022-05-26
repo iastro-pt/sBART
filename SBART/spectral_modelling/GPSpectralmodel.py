@@ -26,7 +26,7 @@ from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
 
 global kern_type
 
-from modelling_base import ModellingBase
+from SBART.spectral_modelling.modelling_base import ModellingBase
 
 
 class GPSpecModel(ModellingBase):
