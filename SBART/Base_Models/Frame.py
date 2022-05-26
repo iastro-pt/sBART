@@ -660,7 +660,7 @@ class Frame(Spectrum, Spectral_Modelling):
 
     @property
     def spectrum_information(self):
-        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information()}
+        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information}
 
     def __repr__(self):
         return self.__str__()
