@@ -51,8 +51,11 @@ class ModellingBase(BASE):
             logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
             raise custom_exceptions.AlreadyLoaded
 
-    def interpolate_spectrum_to_wavelength(self):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths):
         ...
+
+    def set_interpolation_properties(self, new_properties) -> NoReturn:
+        self._internal_configs.update_configs_with_values(new_properties)
 
     def load_previous_model_results_from_disk(self, model_component_in_use):
         if self._loaded_disk_model or self._attempted_to_load_disk_model:
