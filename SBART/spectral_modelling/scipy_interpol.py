@@ -10,7 +10,7 @@ from SBART.utils.UserConfigs import (
 from scipy.interpolate import CubicSpline
 
 from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
-
+from SBART.utils import custom_exceptions
 from modelling_base import ModellingBase
 
 
@@ -69,10 +69,6 @@ class ScipyInterpolSpecModel(ModellingBase):
 
         Returns
         -------
-        mu
-            Mean prediction
-        sigma
-            Model uncertainty
 
         Raises
         --------
@@ -80,7 +76,6 @@ class ScipyInterpolSpecModel(ModellingBase):
             If the fit for this order failed
         """
 
-        ...
         propagate_interpol_errors = self._internal_configs["ERROR_PROP_MODE"]
 
         if propagate_interpol_errors == "propagation":
@@ -103,6 +98,6 @@ class ScipyInterpolSpecModel(ModellingBase):
                 CSplineInterpolator = CubicSpline(og_lambda, og_err)
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:
-            raise Exception(f"{propagate_interpol_errors=} is not a valid choice!")
+            raise custom_exceptions.InvalidConfiguration(f"How did we get {propagate_interpol_errors=}?")
 
         return new_data, new_errors
