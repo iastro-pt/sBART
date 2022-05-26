@@ -1,4 +1,5 @@
 from pathlib import Path
+from loguru import logger
 from typing import NoReturn, Dict
 
 from SBART.Base_Models.BASE import BASE
@@ -28,11 +29,17 @@ class Spectral_Modelling(BASE):
     INTERPOL_MODE                   False           splines              splines / GP           [1]
     ============================ ================ ================ ======================== ================
 
-    - [1] This flag will select which algorithm we will use to interpolate the spectra. Depending on the selection,
-    we might want to pass extra-parameters, as defined in:
-        - splines: :class:`SBART.Components.scipy_interpol.ScipyInterpolSpecModel`
-        - GP: :class:`SBART.Components.GPSectralmodel.GPSpecModel`
+    .. note::
+        This flag will select which algorithm we will use to interpolate the spectra. Depending on the selection,
+        we might want to pass extra-parameters, which can be set by passing a dictionary with the parameters
+        defined in:
+            - splines: :class:`SBART.Components.scipy_interpol.ScipyInterpolSpecModel`
+            - GP: :class:`SBART.Components.GPSectralmodel.GPSpecModel`
 
+        Those configuration are passed in different ways, depending on if we are dealing with Frames or
+        a StellarModel object. The easy way to change them both is to call the following functions:
+            -   DataClass.update_interpol_properties_of_all_frames
+            -   DataClass.update_interpol_properties_of_stellar_model
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
@@ -66,7 +73,6 @@ class Spectral_Modelling(BASE):
         super().generate_root_path(storage_path)
         for comp in self._modelling_interfaces.values():
             comp.generate_root_path(storage_path)
-
 
     @property
     def interpol_mode(self) -> str:
@@ -103,8 +109,14 @@ class Spectral_Modelling(BASE):
         og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
 
         new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
-                                                                                  og_spectra=og_spectra,
-                                                                                  og_err=og_errs,
-                                                                                  new_wavelengths=new_wavelengths
-                                                                                  )
+                                                                                               og_spectra=og_spectra,
+                                                                                               og_err=og_errs,
+                                                                                               new_wavelengths=new_wavelengths
+                                                                                               )
         return new_flux, new_errors
+
+    def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
+        super().trigger_data_storage(*args, **kwargs)
+        for model_name, comp in self._modelling_interfaces:
+            logger.debug("Triggering data storage routines for {}", model_name)
+            comp.trigger_data_storage()
