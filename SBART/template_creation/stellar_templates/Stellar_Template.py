@@ -50,7 +50,12 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     [4] - Minimum number of  **valid** observations needed to proceed with template creation
     [5] - Propagate flux uncertanties to the stellar template
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+       This class also uses the User parameters defined by the :class:`~SBART.Components.Modelling.Spectral_Modelling`
+    class
+
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
