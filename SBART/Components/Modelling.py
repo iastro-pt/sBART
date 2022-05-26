@@ -60,14 +60,21 @@ class Spectral_Modelling(BASE):
             # TODO 1: won't this raise an Exception depending on the instantiation order???
             raise Exception("Can't add modelling component to class without a spectrum")
 
-        interface_init = {"obj_info": self.spectrum_information,
-                          "user_configs": kwargs["user_configs"]
-                          }
+        self.initialized_interface = False
 
+        self._modelling_interfaces: Dict[str, ModellingBase] = {}
+
+    def initialize_interface(self):
+        if self.initialized_interface:
+            return
+        interface_init = {"obj_info": self.spectrum_information,
+                          "user_configs": self._internal_configs.get_user_configs()
+                          }
         self._modelling_interfaces: Dict[str, ModellingBase] = {
             "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init)
         }
+        self.initialized_interface = True
 
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         super().generate_root_path(storage_path)
@@ -80,9 +87,11 @@ class Spectral_Modelling(BASE):
 
     @property
     def interpolation_interface(self):
+        self.initialize_interface()
         return self._modelling_interfaces[self.interpol_mode]
 
     def set_interpolation_properties(self, new_properties):
+        self.initialize_interface()
         try:
             key = "INTERPOL_MODE"
             self._internal_configs.update_configs_with_values({key: new_properties[key]})
@@ -93,6 +102,7 @@ class Spectral_Modelling(BASE):
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
     def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+        self.initialize_interface()
 
         wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
         desired_inds = ~mask
