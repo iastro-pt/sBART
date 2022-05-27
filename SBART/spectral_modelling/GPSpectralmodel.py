@@ -239,7 +239,7 @@ class GPSpecModel(ModellingBase):
             # [print(np.exp(i)) for i in solution_array]
 
         elif self._internal_configs["POSTERIOR_CHARACTERIZATON"] == "MCMC":
-            raise NotImplementedError
+            raise NotImplementedError("MCMC characterization is not supported")
 
         # TODO: evaluate convergence and raise warnings/errors if needed
 
