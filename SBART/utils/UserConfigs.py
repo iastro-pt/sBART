@@ -80,7 +80,6 @@ class ValueFromDtype(Constraint):
                 f"Config ({param_name}) value ({value}) not from the valid dtypes: {type(value)} vs {self.valid_dtypes}"
             )
 
-
 class ValueFromList(Constraint):
     def __init__(self, available_options):
         super().__init__(const_text=f"Value from list <{available_options}>")
@@ -191,6 +190,7 @@ class InternalParameters:
 
     def update_configs_with_values(self, user_configs):
         for key, value in user_configs.items():
+            print(key, value)
             try:
                 parameter_def_information = self._default_params[key]
             except KeyError:
@@ -200,8 +200,11 @@ class InternalParameters:
                     key,
                 )
                 continue
-
-            parameter_def_information.apply_constraints_to_value(key, value)
+            try:
+                parameter_def_information.apply_constraints_to_value(key, value)
+            except InvalidConfiguration as exc:
+                logger.critical("User-given parameter {} does not meet the constraints", key)
+                raise InternalError from exc
             self._user_configs[key] = value
             if not self._default_params[key].quiet_output:
                 logger.debug("Configuration <{}> taking the value: {}", key, value)
