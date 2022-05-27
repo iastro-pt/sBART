@@ -219,7 +219,7 @@ class BaseTemplate(Spectrum):
 
     @property
     def spectrum_information(self):
-        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information()}
+        return {**{"subInstrument": self.sub_instrument}, ** super().spectrum_information}
 
     @property
     def name(self) -> str:
