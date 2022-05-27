@@ -69,6 +69,8 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         instrument_options=inst_options,
     )
 
+    data.generate_root_path(storage_path)
+    
     interpol_properties = user_configs.get("INTERPOL_CONFIG_TEMPLATE", {})
     data.update_interpol_properties_of_all_frames(interpol_properties)
 
@@ -123,9 +125,8 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
     )
 
-
     ModelStell = StellarModel(user_configs=stellar_model_configs,
-                            root_folder_path=storage_path if share_stellar is None else share_stellar
+                             root_folder_path=storage_path if share_stellar is None else share_stellar
                             )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
@@ -134,7 +135,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     stellar_template_genesis_configs = {
         "MEMORY_SAVE_MODE": user_configs.get("MEMORY_SAVING_MODE", True),
-        "NUMBER_WORKERS": (user_configs.get("NUMBER_WORKERS", 8), 1),
+        "NUMBER_WORKERS": user_configs.get("NUMBER_WORKERS", 8)
     }
 
     stellar_template_genesis_configs = {
@@ -175,7 +176,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     if rv_method == "RV_step":
         sampler = chi_squared_sampler(RVstep, RV_limits)
         rv_model = RV_step(
-            stellar_template_genesis_configs["NUMBER_WORKERS"][0],
+            stellar_template_genesis_configs["NUMBER_WORKERS"],
             RV_configs=confsRV,
             sampler=sampler,
         )
@@ -187,7 +188,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         )
         sampler = Laplace_approx(RVstep, RV_limits)
         rv_model = RV_Bayesian(
-            math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"][0] / 2),
+            math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,
             sampler=sampler,
         )
