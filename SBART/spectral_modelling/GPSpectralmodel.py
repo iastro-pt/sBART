@@ -232,11 +232,11 @@ class GPSpecModel(ModellingBase):
             solver = jaxopt.ScipyMinimize(
                 fun=loss, options={"maxiter": 1000, "disp": True}, method="BFGS", tol=1e-10
             )
-            print(initial_guess, "\n --..-- \n", data_dict)
+            # print(initial_guess, "\n --..-- \n", data_dict)
             soln = solver.run(jax.tree_map(jnp.asarray, initial_guess), **data_dict)
-            print(soln)
+            # print(soln)
             solution_array = [soln.params[name] for name in param_names]
-            [print(np.exp(i)) for i in solution_array]
+            # [print(np.exp(i)) for i in solution_array]
 
         elif self._internal_configs["POSTERIOR_CHARACTERIZATON"] == "MCMC":
             raise NotImplementedError
