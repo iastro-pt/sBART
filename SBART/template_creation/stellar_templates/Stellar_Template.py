@@ -200,12 +200,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self._base_checks_for_template_creation()
 
         # TODO: ensure that they all observations are consistent!
-        self.was_telluric_corrected = dataClass.get_frame_by_ID(
-            self.frameIDs_to_use[0]
-        ).was_telluric_corrected
-        self.is_BERV_corrected = dataClass.get_frame_by_ID(
-            self.frameIDs_to_use[0]
-        ).is_BERV_corrected
+        first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
+
+        self.is_blaze_corrected = first_frame.is_blaze_corrected
+        self.was_telluric_corrected = first_frame.was_telluric_corrected
+        self.is_BERV_corrected =first_frame.is_BERV_corrected
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
