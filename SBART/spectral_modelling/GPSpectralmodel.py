@@ -122,7 +122,7 @@ class GPSpecModel(ModellingBase):
 
         """
         if not self.object_info["blaze_corrected"]:
-            msg = "Currently the mean function can't handle the blaze spectrum"
+            msg = "Currently the GP mean function can't handle the blaze spectrum"
             logger.critical(msg)
             raise NotImplementedError(msg)
 
