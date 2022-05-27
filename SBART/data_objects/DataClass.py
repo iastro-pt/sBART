@@ -667,6 +667,7 @@ class DataClass(BASE):
         """
         super().generate_root_path(storage_path)
 
+        logger.info("Generating root path of the frames")
         # The Frames don't store data inside the Iteration folder!
         frame_root_path = storage_path.parent.parent
         for frame in self.observations:
