@@ -58,6 +58,7 @@ class Spectral_Modelling(BASE):
         if not self.has_spectrum_component:
             # TODO: ensure that it is safe to do this in here
             # TODO 1: won't this raise an Exception depending on the instantiation order???
+            logger.critical("Can't add modelling component to class without a spectrum")
             raise Exception("Can't add modelling component to class without a spectrum")
 
         self.initialized_interface = False
@@ -75,8 +76,7 @@ class Spectral_Modelling(BASE):
             "splines": ScipyInterpolSpecModel(**interface_init)
         }
         self.initialized_interface = True
-        for comp in self._modelling_interfaces.values():
-            comp.generate_root_path(self._internalPaths.root_storage_path)
+
 
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         super().generate_root_path(storage_path)
@@ -97,6 +97,7 @@ class Spectral_Modelling(BASE):
         try:
             key = "INTERPOL_MODE"
             self._internal_configs.update_configs_with_values({key: new_properties[key]})
+            logger.debug("Changing the interpolation mode to {}", key)
             del new_properties[key]
         except KeyError:
             pass
