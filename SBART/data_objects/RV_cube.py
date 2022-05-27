@@ -80,6 +80,7 @@ class RV_cube(BASE):
         # NOTE: must also add any **new** key to the load_from_disk function!
         needed_keys = [
             "BJD",
+            "MJD",
             "drift",
             "drift_ERR",
             "BERV",
@@ -94,6 +95,7 @@ class RV_cube(BASE):
             "BIS SPAN",
             "FWHM",
         ]
+        self.time_key = None
         self.cached_info = {key: [] for key in needed_keys}
 
         self._loaded_inst_info = False
@@ -345,19 +347,10 @@ class RV_cube(BASE):
         min_time = 55500  # always use the same reference frame
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
-        OBS_times = self.cached_info["BJD"]
-
-        if self.obs_times[0] is None:
-            logger.warning("BJD was not properly loaded. Falling back to MJD for SA correction")
-
-            if self.cached_info["MJD"][0] is None:
-                logger.warning("MJD was not properly loaded. No way of computing SA correction, returning array of Zero m/s")
-                return [0 * meter_second for _ in self.obs_times]
-            OBS_times = self.cached_info["MJD"]
-
         secular_correction = [
-            SA * (OBS_time - min_time) / 365.25 for OBS_time in OBS_times
+            SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times
         ]
+
         self.cached_info["SA_correction"] = secular_correction
 
         return secular_correction
@@ -385,7 +378,29 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        return self.cached_info["BJD"]
+        """
+        Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
+        returns the BJD
+        """
+
+        if self.time_key is None:
+            found_key = False
+
+            for key in ["BJD", "MJD"]:
+                time_list = self.cached_info[key]
+                if time_list[0] is not None:
+                    found_key = True
+                    selected_key = key
+                    break
+
+            if not found_key:
+                msg = f"{self.name} couldn't find time-related KW with valid values"
+                logger.warning(msg)
+                raise InvalidConfiguration(msg)
+
+            self.time_key = selected_key
+
+        return self.cached_info[self.time_key]
 
     @property
     def N_orders(self) -> int:
@@ -423,7 +438,8 @@ class RV_cube(BASE):
             which="SBART", apply_SA_corr=True, as_value=True, units=kilometer_second
         )
         data_blocks = {
-            "BJD": self.obs_times,
+            "BJD": self.cached_info["BJD"],
+            "MJD": self.cached_info["MJD"],
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
@@ -696,6 +712,9 @@ class RV_cube(BASE):
             ax[1].set_ylabel(r"$\sigma_{RV}$")
             ax[1].set_xlabel("Order")
 
+            ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
+            ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
+
         final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
         fig_full.tight_layout()
         fig_full.savefig(final_path)
@@ -736,7 +755,7 @@ class RV_cube(BASE):
 
         table = Table(header=header, table_style="NoLines")
 
-        for epoch in np.argsort(data_blocks["BJD"]):
+        for epoch in np.argsort(self.obs_times):
             line = []
             for key in keys:
                 line.append(data_blocks[key][epoch])
@@ -849,7 +868,6 @@ class RV_cube(BASE):
         )
         information = {
             "FrameID": self.frameIDs,
-            "BJD": OBS_date,
             "DRS_RV": prev_RV,
             "DRS_RV_ERR": prev_ERR,
             "prevSBART_RV": prev_sbart_RV,
@@ -870,6 +888,12 @@ class RV_cube(BASE):
         coldefs = []
         for key, array in information.items():
             coldefs.append(fits.Column(name=key, format="D", array=array))
+
+        for key in ["BJD", "MJD"]:
+            array = self.cached_info[key]
+            if array[0] is not None:
+                coldefs.append(fits.Column(name=key, format="D", array=array))
+
         hdu_timeseries = fits.BinTableHDU.from_columns(coldefs, name="TIMESERIES_DATA")
 
         header = fits.Header()
@@ -972,7 +996,11 @@ class RV_cube(BASE):
 
         convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
-        new_cube.cached_info["BJD"] = timeseries_table["BJD"]
+        for key in ["BJD", "MJD"]:
+            try:
+                new_cube.cached_info[key] = timeseries_table[key]
+            except KeyError:
+                logger.info(f"Key <{key}> does not exist! Skipping it")
 
         entries = {
             "DRS_RV": "DRS_RV",

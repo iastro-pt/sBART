@@ -7,7 +7,7 @@ from loguru import logger
 from SBART import SBART_LOC
 from SBART.utils.RV_utilities import secular_acceleration
 from SBART.utils.units import meter_second
-
+from SBART.utils import custom_exceptions
 
 class Target:
     """
@@ -29,6 +29,12 @@ class Target:
             List of target names that have been collected across all files that have been loaded from disk.
         original_name
         """
+
+        if len(target_list) == 0:
+            msg = "No valid observations. Can't create a target name"
+            logger.critical(msg)
+            raise custom_exceptions.NoDataError(msg)
+
         self.to_replace = {
             "NAME": "",
             "star": "",
