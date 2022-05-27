@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union
+from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any
 
 import numpy as np
 from loguru import logger
@@ -371,11 +371,17 @@ class DataClass(BASE):
         frame = self.get_frame_by_ID(frameID)
         return frame.get_data_from_spectral_order(order, include_invalid)
 
-    def update_interpol_properties_of_all_frames(self, new_properties):
+    def update_interpol_properties_of_all_frames(self, new_properties: Dict[str, Any]):
+        if not isinstance(new_properties, dict):
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+
         for frame in self.observations:
             frame.set_interpolation_properties(new_properties)
 
-    def update_interpol_properties_of_stellar_model(self, new_properties):
+    def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
+        if not isinstance(new_properties, dict):
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+            
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
         self.StellarModel.update_interpol_properties(new_properties)
