@@ -306,6 +306,12 @@ class RV_routine(BASE):
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
+
+            # Check here if the Stellar template will be interpolated with a GP:
+            logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
+            if "GP" in dataClass.get_stellar_model().get_interpol_modes():
+                raise custom_exceptions.InternalError("Can't interpolate with GPs without having the memory saving mode enabled")
+
             self.sampler.disable_memory_savings()
 
         if self._output_RVcubes is None:
