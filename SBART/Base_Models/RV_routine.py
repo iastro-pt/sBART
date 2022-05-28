@@ -648,11 +648,9 @@ class RV_routine(BASE):
                     "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
                 )
             else:
+                if no_shutdown_counter == 400:
+                    logger.warning("Workers are refusing to shutdown!")
                 no_shutdown_counter += 1
-            
-            if no_shutdown_counter > 200:
-                logger.warning("Workers are refusing to shutdown!")
-                no_shutdown_counter = 0
 
         if self._live_workers < 0:
             logger.critical("Number of live workers is negative ...")
