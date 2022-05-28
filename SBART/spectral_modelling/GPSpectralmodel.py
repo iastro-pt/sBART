@@ -137,12 +137,12 @@ class GPSpecModel(ModellingBase):
         try:
             solution_array, result_flag = self._launch_GP_fit( og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
-            msg = "Unknown error found when fitting GP to order {}: {}".format(order,
-                traceback.print_tb(e.__traceback__)
-            )
+            msg = "Unknown error found when fitting GP to order {}: {}".format(order,traceback.print_tb(e.__traceback__))
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
             solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
+
+            raise custom_exceptions.StopComputationError("Unknown error encounterd") from e
 
         self._modelling_parameters.store_frameID_results(
             order, result_vector=solution_array, result_flag=result_flag
