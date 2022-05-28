@@ -644,12 +644,21 @@ class RV_routine(BASE):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
 
+        no_shutdown_counter = 0
         while self._live_workers > 0:
             good, bad = evaluate_shutdown(self.output_pool)
             self._live_workers -= good + bad
-            logger.debug(
-                "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
-            )
+            
+            if good + bad != 0:
+                logger.debug(
+                    "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
+                )
+            else:
+                no_shutdown_counter += 1
+            
+            if no_shutdown_counter > 200:
+                logger.warning("Workers are refusing to shutdown!")
+                no_shutdown_counter = 0
 
         if self._live_workers < 0:
             logger.critical("Number of live workers is negative ...")
