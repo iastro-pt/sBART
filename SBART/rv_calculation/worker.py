@@ -11,6 +11,7 @@ from SBART.utils.concurrent_tools.open_buffers import open_buffer
 from SBART.utils.custom_exceptions import (
     BadOrderError,
     InvalidConfiguration,
+    StopComputationError
 )
 from SBART.utils.status_codes import (
     HIGH_CONTAMINATION,
@@ -232,7 +233,7 @@ def worker(
                             print("------> ", current_epochID, current_order)
                             print("spectra", spec_s2d[current_order_mask])
                             print("template: ", temp[template_order_mask])
-                            raise e
+                            raise StopComputationError(f"RV optimization failed on {current_epochID=}, {current_order=}") from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
                             #     spec_wave[current_order_mask],
