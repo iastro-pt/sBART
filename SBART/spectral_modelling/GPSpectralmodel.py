@@ -134,7 +134,7 @@ class GPSpecModel(ModellingBase):
         try:
             solution_array, result_flag = self._launch_GP_fit( og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
-            msg = "Unknown error found when fitting GP: {}".format(
+            msg = "Unknown error found when fitting GP to order {}: {}".format(order,
                 traceback.print_tb(e.__traceback__)
             )
             logger.critical(msg)
@@ -223,14 +223,14 @@ class GPSpecModel(ModellingBase):
         self._modelling_parameters.update_params_initial_guesses(
             frameID=order,
             guesses={
-                "log_mean": jnp.log(np.mean(og_spectra)),
-                "log_amplitude": jnp.log(np.max(og_spectra) - np.min(og_spectra)),
+                "log_mean": jnp.log(jnp.mean(og_spectra)),
+                "log_amplitude": jnp.log(jnp.max(og_spectra) - jnp.min(og_spectra)),
             },
         )
 
         if self._internal_configs["POSTERIOR_CHARACTERIZATION"] == "minimize":
             solver = jaxopt.ScipyMinimize(
-                fun=loss, options={"maxiter": 1000, "disp": True}, method="BFGS", tol=1e-10
+                fun=loss, options={"maxiter": 10000, "disp": True}, method="BFGS", tol=1e-10
             )
             # print(initial_guess, "\n --..-- \n", data_dict)
             soln = solver.run(jax.tree_map(jnp.asarray, initial_guess), **data_dict)
