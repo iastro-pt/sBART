@@ -212,6 +212,10 @@ class Spectrum(BASE):
         self.uncertainties = None
 
     @property
+    def valid_orders(self):
+        return (i for i in range(self.N_orders) if i not in self.bad_orders)
+
+    @property
     def bad_orders(self) -> Set[int]:
         return self._OrderStatus.bad_orders
 
