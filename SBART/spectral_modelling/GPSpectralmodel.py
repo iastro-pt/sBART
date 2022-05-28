@@ -87,6 +87,9 @@ class GPSpecModel(ModellingBase):
         ]
         for parameter in params_of_model:
             self._modelling_parameters.add_extra_param(parameter)
+        
+        # Ensuring that we initialize the model again, as we added new parameters!
+        self._init_model()
 
     def _get_model_storage_filename(self) -> str:
         """
