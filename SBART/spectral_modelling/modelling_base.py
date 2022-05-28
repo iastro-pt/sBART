@@ -32,8 +32,10 @@ class ModellingBase(BASE):
 
         self._modelling_parameters = Model(params_of_model=[])
         self.object_info = obj_info
+        self._init_model()
 
     def _init_model(self):
+        logger.info(f"Initializing model for {self.name}")
         for order in range(self.object_info["N_orders"]):
             self._modelling_parameters.generate_prior_from_frameID(order)
 
@@ -63,7 +65,6 @@ class ModellingBase(BASE):
 
         self._attempted_to_load_disk_model = True
 
-        self._init_model()
         logger.debug("Searching for previous model on disk: {}".format(self._get_model_storage_filename()))
 
         try:
