@@ -103,6 +103,7 @@ class Spectral_Modelling(BASE):
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
     def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+        
         self.initialize_interface()
 
         wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
@@ -119,12 +120,17 @@ class Spectral_Modelling(BASE):
 
         og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
 
-        new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
-                                                                                               og_spectra=og_spectra,
-                                                                                               og_err=og_errs,
-                                                                                               new_wavelengths=new_wavelengths,
-                                                                                               order=order
-                                                                                               )
+        try:
+            new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
+                                                                                                og_spectra=og_spectra,
+                                                                                                og_err=og_errs,
+                                                                                                new_wavelengths=new_wavelengths,
+                                                                                                order=order
+                                                                                                )
+        except custom_exceptions.StopComputationError as exc:
+            logger.critical("Interpolation of {} has failed", self.name)
+            raise exc 
+
         return new_flux, new_errors
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
