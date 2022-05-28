@@ -706,6 +706,9 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
+        
+        for frame in self.observations:
+            frame.trigger_data_storage()
 
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         """
