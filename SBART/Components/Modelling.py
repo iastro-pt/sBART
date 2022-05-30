@@ -2,6 +2,7 @@ from pathlib import Path
 from loguru import logger
 from typing import NoReturn, Dict
 
+import numpy as np 
 from SBART.Base_Models.BASE import BASE
 from SBART.utils.UserConfigs import (
     DefaultValues,
@@ -131,7 +132,7 @@ class Spectral_Modelling(BASE):
             logger.critical("Interpolation of {} has failed", self.name)
             raise exc 
 
-        return new_flux, new_errors
+        return np.asarray(new_flux), np.asarray(new_errors)
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         logger.debug("MOdelling data storage: {} - {}".format(list(self._modelling_interfaces.keys()), self.initialized_interface))
