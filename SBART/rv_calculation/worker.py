@@ -233,6 +233,11 @@ def worker(
                             print("------> ", current_epochID, current_order)
                             print("spectra", spec_s2d[current_order_mask])
                             print("template: ", temp[template_order_mask])
+                            logger.critical(f"{full_target_kwargs}")
+                            logger.critical(f"{list(full_target_kwargs.keys())}")
+                            logger.critical(f"{spec_s2d[current_order_mask]}")
+                            logger.critical(f"{temp[template_order_mask]}")
+
                             raise StopComputationError(f"RV optimization failed on {current_epochID=}, {current_order=}") from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
