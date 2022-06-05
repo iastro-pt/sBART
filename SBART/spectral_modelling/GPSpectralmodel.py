@@ -1,6 +1,6 @@
 import traceback
 from typing import NoReturn
-
+from functools import partial
 import jax
 import jax.numpy as jnp
 import jaxopt
@@ -20,11 +20,11 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
+    Positive_Value_Constraint
 )
 
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
 
-global kern_type
 
 from SBART.spectral_modelling.modelling_base import ModellingBase
 
@@ -53,6 +53,7 @@ class GPSpecModel(ModellingBase):
         POSTERIOR_CHARACTERIZATION=UserParam(
             "minimize", constraint=ValueFromList(["minimize", "MCMC"])
         ),
+        OPTIMIZATION_MAX_ITER=UserParam(1000, constraint=Positive_Value_Constraint)
     )
 
     def __init__(self, obj_info, user_configs):
@@ -67,6 +68,8 @@ class GPSpecModel(ModellingBase):
                          )
 
         # Going to treat the orders as frameIDs to use the Model class!
+
+
 
         params_of_model = [
             JaxComponent(
@@ -87,7 +90,7 @@ class GPSpecModel(ModellingBase):
         ]
         for parameter in params_of_model:
             self._modelling_parameters.add_extra_param(parameter)
-        
+
         # Ensuring that we initialize the model again, as we added new parameters!
         self._init_model()
 
@@ -135,9 +138,9 @@ class GPSpecModel(ModellingBase):
             return
 
         try:
-            solution_array, result_flag = self._launch_GP_fit( og_lambda, og_spectra, og_err, new_wavelengths, order)
+            solution_array, result_flag = self._launch_GP_fit(og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
-            msg = "Unknown error found when fitting GP to order {}: {}".format(order,traceback.print_tb(e.__traceback__))
+            msg = "Unknown error found when fitting GP to order {}: {}".format(order, traceback.print_tb(e.__traceback__))
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
             solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
@@ -177,9 +180,12 @@ class GPSpecModel(ModellingBase):
             If the fit for this order failed
         """
 
-        self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
+        import time 
+        t0 = time.time() 
 
-        global kern_type
+        t1 = time.time()
+        self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
+        print("Model eneration took: ", time.time() - t1)
 
         kern_type = self._internal_configs["GP_KERNEL"]
 
@@ -195,16 +201,20 @@ class GPSpecModel(ModellingBase):
         data_dict = {
             "XX_data": jnp.asarray(og_lambda),
             "YY_variance": jnp.asarray(og_err ** 2),
+            "kern_type": kern_type
         }
 
+        t1 = time.time()
         gp_object = build_gp(optimal_combinations, **data_dict)
+        print("GP build: ", time.time() - t1 , new_wavelengths.shape)
         _, cond = gp_object.condition(og_spectra, X_test=new_wavelengths)
 
         mu = cond.loc
         std = np.sqrt(cond.variance)
+        print("Total: ", time.time() - t0)
         return mu, std
 
-    def _launch_GP_fit(self,  og_lambda, og_spectra, og_err, new_wavelengths, order):
+    def _launch_GP_fit(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
 
         initial_params, bounds = self._modelling_parameters.generate_optimizer_inputs(
             order, rv_units=None
@@ -219,10 +229,6 @@ class GPSpecModel(ModellingBase):
             "YY_variance": jnp.asarray(og_err ** 2),
         }
 
-        global kern_type
-
-        kern_type = self._internal_configs["GP_KERNEL"]
-
         self._modelling_parameters.update_params_initial_guesses(
             frameID=order,
             guesses={
@@ -231,9 +237,16 @@ class GPSpecModel(ModellingBase):
             },
         )
 
+        loss_opt = partial(loss, kern_type=self._internal_configs["GP_KERNEL"])
+
         if self._internal_configs["POSTERIOR_CHARACTERIZATION"] == "minimize":
             solver = jaxopt.ScipyMinimize(
-                fun=loss, options={"maxiter": 10000, "disp": True}, method="BFGS", tol=1e-10
+                fun=loss_opt,
+                options={"maxiter": self._internal_configs["OPTIMIZATION_MAX_ITER"],
+                         "disp": True
+                         },
+                method="BFGS",
+                tol=1e-10
             )
             # print(initial_guess, "\n --..-- \n", data_dict)
             soln = solver.run(jax.tree_map(jnp.asarray, initial_guess), **data_dict)
@@ -249,7 +262,7 @@ class GPSpecModel(ModellingBase):
         return solution_array, result_flag
 
 
-def generate_kernel(amplitude, length_scale):
+def generate_kernel(amplitude, length_scale, kern_type):
     """
     Build a tinygp quasiseperable kernel with the provided amplitude and length_scale
 
@@ -265,15 +278,13 @@ def generate_kernel(amplitude, length_scale):
     -------
 
     """
-    global kern_type
-
     if kern_type == "Matern-5_2":
-        cov_structure = tinygp.kernels.quasisep.Matern52(scale=length_scale)
+        cov_structure = tinygp.kernels.quasisep.Matern52
     elif kern_type == "Matern-3_2":
-        cov_structure = tinygp.kernels.quasisep.Matern32(scale=length_scale)
+        cov_structure = tinygp.kernels.quasisep.Matern32
     else:
         raise Exception
-    return amplitude * cov_structure
+    return amplitude * cov_structure(scale=length_scale)
     # Building the tinyGP model for minimization
 
 
@@ -281,9 +292,10 @@ def build_gp(
         params,
         XX_data,
         YY_variance,
+        kern_type
 ):
     kernel = generate_kernel(
-        amplitude=jnp.exp(params["log_amplitude"]), length_scale=jnp.exp(params["log_scale"])
+        amplitude=jnp.exp(params["log_amplitude"]), length_scale=jnp.exp(params["log_scale"]), kern_type=kern_type
     )
 
     return tinygp.GaussianProcess(
@@ -294,8 +306,8 @@ def build_gp(
     )
 
 
-@jax.jit
-def loss(params, XX_data, YY_data, YY_variance):
+@partial(jax.jit, static_argnames=("kern_type",))
+def loss(params, XX_data, YY_data, YY_variance, kern_type):
     # TODO: understand if we can pass args to this function!
-    gp = build_gp(params, XX_data, YY_variance)
+    gp = build_gp(params, XX_data, YY_variance, kern_type)
     return -gp.log_probability(YY_data)
