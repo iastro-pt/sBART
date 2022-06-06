@@ -62,6 +62,7 @@ class HARPS(Frame):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments=None,
         frameID=None,
+        quiet_user_params: bool = True
     ):
         """
 
@@ -107,6 +108,7 @@ class HARPS(Frame):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             init_log=False,
+            quiet_user_params = quiet_user_params,
         )
 
         if not search_status.is_good_flag:
