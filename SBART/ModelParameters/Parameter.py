@@ -53,7 +53,9 @@ class ModelComponent(BASE):
 
         name
         """
-        super().__init__(user_configs=user_configs)
+        super().__init__(user_configs=user_configs,
+                         quiet_user_params=True # no need to spam the logs
+                         )
 
         if not isinstance(bounds, (list, tuple, np.ndarray)):
             raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must be an iterable")
