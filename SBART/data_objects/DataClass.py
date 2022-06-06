@@ -316,8 +316,8 @@ class DataClass(BASE):
                                                   include_invalid=False,
                                                   as_value=True
                                                   )
-                mean_RV = np.mean(RV)
-                mean_uncert = np.mean(err)
+                mean_RV = np.median(RV)
+                mean_uncert = np.median(err)
 
                 bounds = [mean_RV - self.sigma_clip_RVs * mean_uncert,
                           mean_RV + self.sigma_clip_RVs * mean_uncert
