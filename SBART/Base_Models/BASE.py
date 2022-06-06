@@ -24,14 +24,15 @@ class BASE:
     _default_params = DefaultValues()
 
     def __init__(
-        self,
-        user_configs: Optional[UI_DICT] = None,
-        root_level_path: Optional[UI_PATH] = None,
-        needed_folders: Optional[Dict[str, str]] = None,
-        start_with_valid_status: bool = True,
+            self,
+            user_configs: Optional[UI_DICT] = None,
+            root_level_path: Optional[UI_PATH] = None,
+            needed_folders: Optional[Dict[str, str]] = None,
+            start_with_valid_status: bool = True,
+            quiet_user_params: bool = False
     ):
 
-        self._internal_configs = InternalParameters(self.name, self._default_params)
+        self._internal_configs = InternalParameters(self.name, self._default_params, no_logs=quiet_user_params)
 
         if user_configs is None:
             user_configs = {}

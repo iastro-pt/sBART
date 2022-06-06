@@ -22,6 +22,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     ACTIVITY_LINE,
     TELLURIC,
     Status,
+    SIGMA_CLIP_REJECTION
 )
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second
@@ -55,8 +56,25 @@ class DataClass(BASE):
             instrument_options: dict,
             reject_subInstruments: Optional[Iterable[str]] = None,
             target_name: str = None,
+            sigma_clip_RVs: Optional[float] = None
     ):
+        """
+        Parameters
+        =============
+        path:
+            Either a path to a txt file, or a list of S2d files
+        instrument:
+            Instrument that we will be loading data from. Must be an object of type SBART.Instruments
+        instrument_options
+        reject_subInstruments
+            Iterable with names of subInstruments to automatically reject
+        target_name:
+            Original name of the target. To be deprecated
+        sigma_clip_RVs:
+            If it is a positive integer, reject frames with a sigma clip on the DRS RVs
+        """
         super().__init__()
+        self.sigma_clip_RVs = sigma_clip_RVs
 
         self._inst_type = instrument
         self.input_file = path
@@ -89,6 +107,7 @@ class DataClass(BASE):
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
+                    quiet_user_params=frameID != 0  # Only the first frame will output logs
                 )
             )
 
@@ -283,6 +302,41 @@ class DataClass(BASE):
             else:
                 logger.info("Loaded data from KW : {}", equal_KW, collected_KW)
 
+        if self.sigma_clip_RVs is not None:
+            logger.info(f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV")
+
+            for subInstrument in self.get_subInstruments_with_valid_frames():
+                RV = self.collect_RV_information(KW="DRS_RV",
+                                                 subInst=subInstrument,
+                                                 include_invalid=False,
+                                                 as_value=True
+                                                 )
+                err = self.collect_RV_information(KW="DRS_RV_ERR",
+                                                  subInst=subInstrument,
+                                                  include_invalid=False,
+                                                  as_value=True
+                                                  )
+                mean_RV = np.median(RV)
+                mean_uncert = np.median(err)
+
+                bounds = [mean_RV - self.sigma_clip_RVs * mean_uncert,
+                          mean_RV + self.sigma_clip_RVs * mean_uncert
+                          ]
+
+                bad_indexes = np.where(np.logical_or(RV < bounds[0],
+                                                     RV > bounds[1]
+                                                     )
+                                       )
+                valid_frameIDs = self.get_frameIDs_from_subInst(subInstrument)
+                bad_IDS = np.asarray(valid_frameIDs)[bad_indexes]
+
+                for frameID_to_reject in bad_IDS:
+                    bad_frame = self.get_frame_by_ID(frameID_to_reject)
+                    logger.warning(f"{bad_frame} rejected due to sigma clipping of DRS RVs")
+                    bad_frame.add_to_status(SIGMA_CLIP_REJECTION)
+
+                logger.info(f"Sigma clip rejected {len(bad_IDS)} frames of {subInstrument}")
+
     def _collect_MetaData(self) -> None:
         """Collect information from the individual (valid) observations to store inside the MetaData object"""
 
@@ -381,7 +435,7 @@ class DataClass(BASE):
     def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
             raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
-            
+
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
         self.StellarModel.update_interpol_properties(new_properties)
@@ -652,7 +706,7 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
-        
+
         for frame in self.observations:
             frame.trigger_data_storage()
 
@@ -670,7 +724,6 @@ class DataClass(BASE):
         """
         super().generate_root_path(storage_path)
 
-        logger.info("Generating root path of the frames")
         # The Frames don't store data inside the Iteration folder!
         frame_root_path = storage_path.parent.parent
         for frame in self.observations:
