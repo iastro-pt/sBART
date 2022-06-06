@@ -96,15 +96,13 @@ class Spectral_Modelling(BASE):
         try:
             key = "INTERPOL_MODE"
             self._internal_configs.update_configs_with_values({key: new_properties[key]})
-            logger.debug("Changing the interpolation mode to {}", key)
-            del new_properties[key]
-        except KeyError:
+            logger.debug("Changing the interpolation mode to {}", new_properties[key])
+        except KeyError as e:
             pass
 
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
     def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
-        
         self.initialize_interface()
 
         wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
