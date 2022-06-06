@@ -69,6 +69,9 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         instrument_options=inst_options,
     )
 
+    if "REJECT_OBS" in user_configs:
+        data.reject_observations(user_configs["REJECT_OBS"])
+
     inds = Indicators()
     data.remove_activity_lines(inds)
 
