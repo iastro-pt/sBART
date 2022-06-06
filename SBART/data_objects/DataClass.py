@@ -306,12 +306,16 @@ class DataClass(BASE):
             logger.info(f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV")
 
             for subInstrument in self.get_subInstruments_with_valid_frames():
-                RV, err = self.collect_RV_information(KW="DRS",
-                                                      subInst=subInstrument,
-                                                      include_invalid=False,
-                                                      as_value=True
-                                                      )
-
+                RV = self.collect_RV_information(KW="DRS_RV",
+                                                 subInst=subInstrument,
+                                                 include_invalid=False,
+                                                 as_value=True
+                                                 )
+                err = self.collect_RV_information(KW="DRS_RV_ERR",
+                                                  subInst=subInstrument,
+                                                  include_invalid=False,
+                                                  as_value=True
+                                                  )
                 mean_RV = np.mean(RV)
                 mean_uncert = np.mean(err)
 
