@@ -67,10 +67,14 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         input_fpath,
         instrument=instrument,
         instrument_options=inst_options,
+        sigma_clip_RVs = user_configs.get("SIGMA_CLIP_RV", None)
     )
 
+    if "REJECT_OBS" in user_configs:
+        data.reject_observations(user_configs["REJECT_OBS"])
+
     data.generate_root_path(storage_path)
-    
+
     interpol_properties = user_configs.get("INTERPOL_CONFIG_TEMPLATE", {})
     data.update_interpol_properties_of_all_frames(interpol_properties)
 

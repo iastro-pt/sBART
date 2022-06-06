@@ -1004,7 +1004,7 @@ class RV_cube(BASE):
 
         entries = {
             "DRS_RV": "DRS_RV",
-            "DRS_RV_ERR": "DRS_RV",
+            "DRS_RV_ERR": "DRS_RV_ERR",
             "previous_SBART_RV": "prevSBART_RV",
             "previous_SBART_RV_ERR": "prevSBART_RV_ERR",
             "SA_correction": "SA",
