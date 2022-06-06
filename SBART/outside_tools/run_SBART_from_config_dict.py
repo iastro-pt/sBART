@@ -67,6 +67,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         input_fpath,
         instrument=instrument,
         instrument_options=inst_options,
+        sigma_clip_RVs = user_configs.get("SIGMA_CLIP_RV", None)
     )
 
     if "REJECT_OBS" in user_configs:
