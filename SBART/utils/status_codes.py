@@ -62,7 +62,7 @@ class Flag:
 
     def __hash__(self):
         # Allow the Flag class to be hashable
-        return hash(tuple((self.name, self.code)))
+        return hash(tuple((self.name, self.code, self.extra_info)))
 
     def __call__(self, message: str):
         new_flag = Flag(
