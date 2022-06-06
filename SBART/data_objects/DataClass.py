@@ -22,6 +22,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     ACTIVITY_LINE,
     TELLURIC,
     Status,
+    SIGMA_CLIP_REJECTION
 )
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second
@@ -49,14 +50,31 @@ class DataClass(BASE):
     """
 
     def __init__(
-        self,
-        path: Iterable[UI_PATH],
-        instrument: Type[Frame],
-        instrument_options: dict,
-        reject_subInstruments: Optional[Iterable[str]] = None,
-        target_name: str = None,
+            self,
+            path: Iterable[UI_PATH],
+            instrument: Type[Frame],
+            instrument_options: dict,
+            reject_subInstruments: Optional[Iterable[str]] = None,
+            target_name: str = None,
+            sigma_clip_RVs: Optional[float] = None
     ):
+        """
+        Parameters
+        =============
+        path:
+            Either a path to a txt file, or a list of S2d files
+        instrument:
+            Instrument that we will be loading data from. Must be an object of type SBART.Instruments
+        instrument_options
+        reject_subInstruments
+            Iterable with names of subInstruments to automatically reject
+        target_name:
+            Original name of the target. To be deprecated
+        sigma_clip_RVs:
+            If it is a positive integer, reject frames with a sigma clip on the DRS RVs
+        """
         super().__init__()
+        self.sigma_clip_RVs = sigma_clip_RVs
 
         self._inst_type = instrument
         self.input_file = path
@@ -89,6 +107,7 @@ class DataClass(BASE):
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
+                    quiet_user_params=frameID != 0  # Only the first frame will output logs
                 )
             )
 
@@ -127,7 +146,7 @@ class DataClass(BASE):
     ########################
 
     def load_previous_SBART_results(
-        self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
+            self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
     ):
         """
         Load the results from a previous application of SBART, storing the RV and uncertainty inside the corresponding
@@ -283,6 +302,37 @@ class DataClass(BASE):
             else:
                 logger.info("Loaded data from KW : {}", equal_KW, collected_KW)
 
+        if self.sigma_clip_RVs is not None:
+            logger.info(f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV")
+
+            for subInstrument in self.get_subInstruments_with_valid_frames():
+                RV, err = self.collect_RV_information(KW="DRS",
+                                                      subInst=subInstrument,
+                                                      include_invalid=False,
+                                                      as_value=True
+                                                      )
+
+                mean_RV = np.mean(RV)
+                mean_uncert = np.mean(err)
+
+                bounds = [mean_RV - self.sigma_clip_RVs * mean_uncert,
+                          mean_RV + self.sigma_clip_RVs * mean_uncert
+                          ]
+
+                bad_indexes = np.where(np.logical_or(RV < bounds[0],
+                                                     RV > bounds[1]
+                                                     )
+                                       )
+                valid_frameIDs = self.get_frameIDs_from_subInst(subInstrument)
+                bad_IDS = np.asarray(valid_frameIDs)[bad_indexes]
+
+                for frameID_to_reject in bad_IDS:
+                    bad_frame = self.get_frame_by_ID(frameID_to_reject)
+                    logger.warning(f"{bad_frame} rejected due to sigma clipping of DRS RVs")
+                    bad_frame.add_to_status(SIGMA_CLIP_REJECTION)
+
+                logger.info(f"Sigma clip rejected {len(bad_IDS)} frames of {subInstrument}")
+
     def _collect_MetaData(self) -> None:
         """Collect information from the individual (valid) observations to store inside the MetaData object"""
 
@@ -400,11 +450,11 @@ class DataClass(BASE):
         return frame.status
 
     def collect_KW_observations(
-        self,
-        KW: str,
-        subInstruments: Union[tuple, list],
-        include_invalid: bool = False,
-        conditions: CondModel = None,
+            self,
+            KW: str,
+            subInstruments: Union[tuple, list],
+            include_invalid: bool = False,
+            conditions: CondModel = None,
     ) -> list:
         """
         Parse through the loaded observations and retrieve a specific KW from
@@ -449,13 +499,13 @@ class DataClass(BASE):
         return output
 
     def collect_RV_information(
-        self,
-        KW,
-        subInst: str,
-        frameIDs=None,
-        include_invalid: bool = False,
-        units=None,
-        as_value: bool = True,
+            self,
+            KW,
+            subInst: str,
+            frameIDs=None,
+            include_invalid: bool = False,
+            units=None,
+            as_value: bool = True,
     ) -> list:
         """Return the RV measurements (or BERV) from the observations of a given sub-Instrument
 
@@ -530,7 +580,7 @@ class DataClass(BASE):
         return out
 
     def get_frameIDs_from_subInst(
-        self, subInstrument: str, include_invalid: bool = False
+            self, subInstrument: str, include_invalid: bool = False
     ) -> List[int]:
         """Get all frameIDs associated with a given instrument. By default, only returns the valid ones
 
@@ -697,7 +747,7 @@ class DataClass(BASE):
         If so, then
         """
         info_load_map = {
-                         }
+        }
 
         logger.info("Checking if the instrument has extra data to load")
         for key, load_func in info_load_map.items():
@@ -710,6 +760,6 @@ class DataClass(BASE):
 
     def __repr__(self):
         return (
-            f"Data Class from {self._inst_type.instrument_properties['name']} holding "
-            + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
+                f"Data Class from {self._inst_type.instrument_properties['name']} holding "
+                + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )
