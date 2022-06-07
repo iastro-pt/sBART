@@ -218,15 +218,16 @@ class TelluricTemplate(BaseTemplate):
             self.add_to_status(MISSING_DATA(msg))
             return np.nan
 
+        # Placing upper limit of temperature at 50ºC
+        conditions = KEYWORD_condition("ambient_temperature", [[None, 323.15]])
+
         if self.__class__.method_name.lower() == "telfit":
             # 1 December 2014, because no GDAS profile for telfit
             # ! may blow up if it removes all observations :(
             # add condition so that the reference observation is more than week
             # ago, to guarantee the GDAS profile already exists
             one_week_ago = int(Time.now().jd - 7)
-            conditions = KEYWORD_condition("BJD", [[2453340, one_week_ago]])
-        else:
-            conditions = None
+            conditions += KEYWORD_condition("BJD", [[2453340, one_week_ago]])
 
         logger.debug("Using Relative humidity as the selection criterion for reference observation")
         metric_to_select = dataclass.collect_KW_observations(
