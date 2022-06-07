@@ -126,6 +126,9 @@ class Status:
     def has_flag(self, flag) -> bool:
         return flag in self._stored_flags
 
+    def check_if_warning_exists(self, flag):
+        return flag in self._warnings
+
     def delete_flag(self, flag):
         try:
             self._stored_flags.remove(flag)

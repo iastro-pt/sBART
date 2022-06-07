@@ -1,4 +1,5 @@
-from SBART.utils.status_codes import Flag
+from SBART.utils.status_codes import Flag, Status
+from SBART.utils import status_codes
 
 
 def test_Model_component_init():
@@ -57,3 +58,19 @@ def test_flag_storage():
     flag1_loaded = Flag.create_from_json(flag_1_json)
 
     assert flag_1 == flag1_loaded
+
+
+def test_Status():
+    assert not Status(assume_valid=False).is_valid
+    assert Status(assume_valid=True).is_valid
+
+    stat = Status(assume_valid=True)
+    assert stat.has_flag(status_codes.VALID)
+    assert stat.number_warnings == 0
+
+    warningflag = status_codes.KW_WARNING("KW foo meets the bad value")
+    stat.store_warning(warningflag)
+    assert stat.check_if_warning_exists(warningflag)
+    warningflag = status_codes.KW_WARNING("KW bar meets the bad value")
+    assert not stat.check_if_warning_exists(warningflag)
+    assert stat.is_valid
