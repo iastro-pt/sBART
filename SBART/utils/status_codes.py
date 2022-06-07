@@ -41,7 +41,7 @@ class Flag:
     def __eq__(self, flag_2):
         if not isinstance(flag_2, Flag):
             return False
-        return (self.name == flag_2.name) and (self.code == flag_2.code)
+        return (self.name == flag_2.name) and (self.code == flag_2.code) and (self.extra_info == flag_2.extra_info)
 
     def add_extra_info(self, extra_info: str) -> NoReturn:
         self.extra_info = extra_info
