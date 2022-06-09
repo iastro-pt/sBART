@@ -211,6 +211,8 @@ class RV_routine(BASE):
             raise custom_exceptions.NoDataError
 
         if check_metadata:
+            logger.debug(f"Comparing metadata with the one stored in {dataClass.get_internalPaths().root_storage_path}")
+
             try:
                 previous_metadata = MetaData.load_from_json(
                     dataClass.get_internalPaths().root_storage_path
@@ -218,8 +220,12 @@ class RV_routine(BASE):
             except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
                 raise custom_exceptions.StopComputationError from exc
+            try:
+                self.load_previous_RVoutputs()
+            except custom_exceptions.NoDataError as exc:
+                logger.critical("Couldn't find previous sBART outputs in the provided path")
+                raise custom_exceptions.StopComputationError from exc
 
-            self.load_previous_RVoutputs()
             bad_subInst = []
             for subInst in self._subInsts_to_use:
                 metaData = dataClass.get_metaData()
