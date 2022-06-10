@@ -56,6 +56,14 @@ Rejecting based on the "subInstrument"
 
     bad_subInst_condition = SubInstrument_condition("ESPRESSO21")
 
+Rejecting based on Warning Flags when loading the Frames
+=============================================================
+
+Reject observation if a given warning flag was set when loading the spectra
+
+.. code-block:: python
+
+    bad_subInst_condition = WarningFlag_set("HIERARCH ESO QC SCIRED DRIFT CHECK")
 
 Combining conditions
 ================================
@@ -292,7 +300,7 @@ class Empty_condition(ConditionModel):
         return "No conditions"
 
 
-class WarningFlag_set(ConditionModel):
+class WarningFlag_Notset(ConditionModel):
     """
     Reject the observation if the given warning flag is True
     """
