@@ -317,10 +317,10 @@ class DataClass(BASE):
                                                   as_value=True
                                                   )
                 mean_RV = np.median(RV)
-                mean_uncert = np.median(err)
+                metric = np.std(RV) # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
 
-                bounds = [mean_RV - self.sigma_clip_RVs * mean_uncert,
-                          mean_RV + self.sigma_clip_RVs * mean_uncert
+                bounds = [mean_RV - self.sigma_clip_RVs * metric,
+                          mean_RV + self.sigma_clip_RVs * metric
                           ]
 
                 bad_indexes = np.where(np.logical_or(RV < bounds[0],
