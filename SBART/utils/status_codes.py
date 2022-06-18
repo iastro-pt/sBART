@@ -41,7 +41,7 @@ class Flag:
     def __eq__(self, flag_2):
         if not isinstance(flag_2, Flag):
             return False
-        return (self.name == flag_2.name) and (self.code == flag_2.code)
+        return (self.name == flag_2.name) and (self.code == flag_2.code) and (self.extra_info == flag_2.extra_info)
 
     def add_extra_info(self, extra_info: str) -> NoReturn:
         self.extra_info = extra_info
@@ -62,7 +62,7 @@ class Flag:
 
     def __hash__(self):
         # Allow the Flag class to be hashable
-        return hash(tuple((self.name, self.code)))
+        return hash(tuple((self.name, self.code, self.extra_info)))
 
     def __call__(self, message: str):
         new_flag = Flag(
@@ -125,6 +125,9 @@ class Status:
 
     def has_flag(self, flag) -> bool:
         return flag in self._stored_flags
+
+    def check_if_warning_exists(self, flag):
+        return flag in self._warnings
 
     def delete_flag(self, flag):
         try:
@@ -572,6 +575,8 @@ MANDATORY_KW_FLAG = Flag("Mandatory KW", "MKW")
 ###########################################################
 
 VALID = Flag("VALID", value="V", fatal_flag=False, is_good_flag=True)
+
+SIGMA_CLIP_REJECTION = Flag("SIGMA CLIP", value="SC")
 USER_BLOCKED = Flag("USER_BLOCKED", value="U")
 FATAL_KW = Flag("FATAL_KW", value="F")
 KW_WARNING = Flag("KW_WARNING", value="KW_W", is_warning=True)

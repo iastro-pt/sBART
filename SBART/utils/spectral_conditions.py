@@ -56,6 +56,14 @@ Rejecting based on the "subInstrument"
 
     bad_subInst_condition = SubInstrument_condition("ESPRESSO21")
 
+Rejecting based on Warning Flags when loading the Frames
+=============================================================
+
+Reject observation if a given warning flag was set when loading the spectra
+
+.. code-block:: python
+
+    bad_subInst_condition = WarningFlag_set("HIERARCH ESO QC SCIRED DRIFT CHECK")
 
 Combining conditions
 ================================
@@ -85,7 +93,7 @@ import numpy as np
 from loguru import logger
 
 from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag
+from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
 
 
 class ConditionModel:
@@ -290,6 +298,33 @@ class Empty_condition(ConditionModel):
     @property
     def cond_info(self) -> str:
         return "No conditions"
+
+
+class WarningFlag_Notset(ConditionModel):
+    """
+    Reject the observation if the given warning flag is True
+    """
+    def __init__(self, flag_name: str):
+        self.flag_name = flag_name
+
+        super().__init__()
+
+    def select_spectra(self, frame) -> Flag:
+        msg = f"QC flag {self.flag_name} meets the bad value"
+        KW_flag = KW_WARNING(msg)
+        if frame.status.check_if_warning_exists(KW_flag):
+            message = f"Frame has the KW warning flag {self.flag_name} active"
+            flag = USER_BLOCKED(message)
+        else:
+            flag = VALID
+
+        return flag
+
+    @property
+    def cond_info(self) -> str:
+        return "Warning KW flag {} was raised".format(
+            self.flag_name
+        )
 
 
 class FNAME_condition(ConditionModel):

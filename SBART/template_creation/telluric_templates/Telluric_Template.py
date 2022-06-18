@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 from typing import List, NoReturn, Optional, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
@@ -217,15 +218,16 @@ class TelluricTemplate(BaseTemplate):
             self.add_to_status(MISSING_DATA(msg))
             return np.nan
 
+        # Placing upper limit of temperature at 50ºC
+        conditions = KEYWORD_condition("ambient_temperature", [[None, 323.15]])
+
         if self.__class__.method_name.lower() == "telfit":
             # 1 December 2014, because no GDAS profile for telfit
             # ! may blow up if it removes all observations :(
             # add condition so that the reference observation is more than week
             # ago, to guarantee the GDAS profile already exists
             one_week_ago = int(Time.now().jd - 7)
-            conditions = KEYWORD_condition("BJD", [[2453340, one_week_ago]])
-        else:
-            conditions = None
+            conditions += KEYWORD_condition("BJD", [[2453340, one_week_ago]])
 
         logger.debug("Using Relative humidity as the selection criterion for reference observation")
         metric_to_select = dataclass.collect_KW_observations(
@@ -239,7 +241,7 @@ class TelluricTemplate(BaseTemplate):
         metric_to_select = [-1 if m is None else m for m in metric_to_select]
 
         if not np.isfinite(metric_to_select[0]):
-            warnings.warn(
+            logger.warning(
                 "Relative humidity keyword was not loaded. Using airmass to select the reference observation for {}",
                 self._associated_subInst,
             )
@@ -489,6 +491,15 @@ class TelluricTemplate(BaseTemplate):
         filename = f"{self.storage_name}_{self._associated_subInst}.fits"
         logger.debug("Storing template to {}", self._internalPaths.root_storage_path / filename)
         hdul.writeto(self._internalPaths.root_storage_path / filename, overwrite=True)
+
+        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
+
+        fig, axis = plt.subplots()
+        axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
+        axis.set_xlabel(r"Wavelength [$\AA$]")
+        axis.set_ylabel("Transmittance")
+        fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.png")
+        plt.close(fig)
 
     def load_from_file(self, root_path: Path, loading_path: str) -> None:
         """

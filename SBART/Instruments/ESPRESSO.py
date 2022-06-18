@@ -62,6 +62,7 @@ class ESPRESSO(Frame):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments: Optional[Iterable[str]] = None,
         frameID: Optional[int] = None,
+        quiet_user_params: bool = True
     ):
         """
 
@@ -110,6 +111,7 @@ class ESPRESSO(Frame):
             available_indicators=("CONTRAST", "FWHM", "BIS SPAN"),
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
+            quiet_user_params=quiet_user_params
         )
 
         self.__class__.instrument_properties["wavelength_coverage"] = coverage
@@ -360,7 +362,7 @@ class ESPRESSO(Frame):
 
         for flag, bad_value in fatal_QC_flags.items():
             if header[flag] == bad_value:
-                msg = f"\tQC flag {flag} is not True"
+                msg = f"\tQC flag {flag} has taken the bad value of {bad_value}"
                 logger.critical(msg)
                 self.add_to_status(FATAL_KW(msg.replace("\t", "")))
 

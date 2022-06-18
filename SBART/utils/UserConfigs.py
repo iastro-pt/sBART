@@ -4,7 +4,7 @@ from typing import Any, Dict, NoReturn, Optional
 import numpy as np
 from loguru import logger
 
-from SBART.utils.custom_exceptions import InvalidConfiguration
+from SBART.utils.custom_exceptions import InvalidConfiguration, InternalError
 
 
 class Constraint:
@@ -103,6 +103,34 @@ class ValueFromList(Constraint):
             )
 
 
+class IterableMustHave(Constraint):
+    def __init__(self, available_options, mode: str = "all"):
+        super().__init__(const_text=f"Must have value from list <{available_options}>")
+        self.available_options = available_options
+        self.mode = mode
+
+        if mode not in ["all", "either"]:
+            raise InternalError("Using the wrong mode")
+
+    def evaluate(self, param_name, value) -> NoReturn:
+        if not isinstance(value, (list, tuple)):
+            raise InvalidConfiguration("Constraint needs a list or tuple")
+
+        evaluation = [i in value for i in self.available_options]
+
+        good_value = False
+
+        if self.mode == "all":
+            good_value = all(evaluation)
+        elif self.mode == "either":
+            good_value = any(evaluation)
+
+        if not good_value:
+            raise InvalidConfiguration(
+                f"Config ({param_name}) value {value} does not have {self.mode} of {self.available_options}"
+            )
+
+
 Positive_Value_Constraint = ValueInInterval([0, np.inf], include_edges=True)
 StringValue = ValueFromDtype((str,))
 NumericValue = ValueFromDtype((int, float))
@@ -115,11 +143,11 @@ class UserParam:
     __slots__ = ("_valueConstraint", "_default_value", "_mandatory", "quiet")
 
     def __init__(
-        self,
-        default_value: Optional[Any] = None,
-        constraint: Optional[Constraint] = None,
-        mandatory: bool = False,
-        quiet: bool = False,
+            self,
+            default_value: Optional[Any] = None,
+            constraint: Optional[Constraint] = None,
+            mandatory: bool = False,
+            quiet: bool = False,
     ):
         self._valueConstraint = constraint if constraint is not None else Constraint("")
         self._default_value = default_value
@@ -154,33 +182,40 @@ class UserParam:
 
 
 class InternalParameters:
-    __slots__ = ("_default_params", "_user_configs", "_name_of_parent")
+    __slots__ = ("_default_params", "_user_configs", "_name_of_parent", "no_logs")
 
-    def __init__(self, name_of_parent, default_params: Dict[str, UserParam]):
+    def __init__(self, name_of_parent, default_params: Dict[str, UserParam], no_logs: bool = False):
         self._default_params = default_params
         self._user_configs = {}
         self._name_of_parent = name_of_parent
+        self.no_logs = no_logs
 
     def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
-        logger.debug("Generating internal configs of {}", self._name_of_parent)
+        if not self.no_logs:
+            logger.debug("Generating internal configs of {}", self._name_of_parent)
 
         for key, value in user_configs.items():
             try:
                 parameter_def_information = self._default_params[key]
             except KeyError:
-                logger.warning(
-                    "{} received a configuration flag that is not recognized: {}",
-                    self._name_of_parent,
-                    key,
-                )
+                if not self.no_logs:
+                    # The only object that will have this enabled are the Frames
+                    # And we shall call one of the Frames with the User-Param logs enabled!
+                    logger.warning(
+                        "{} received a configuration flag that is not recognized: {}",
+                        self._name_of_parent,
+                        key,
+                    )
                 continue
 
             parameter_def_information.apply_constraints_to_value(key, value)
             self._user_configs[key] = value
-            if not self._default_params[key].quiet_output:
-                logger.debug("Configuration <{}> taking the value: {}", key, value)
-            else:
-                logger.debug("Configuration <{}> was updated")
+
+            if not self.no_logs:
+                if not self._default_params[key].quiet_output:
+                    logger.debug("Configuration <{}> taking the value: {}", key, value)
+                else:
+                    logger.debug("Configuration <{}> was updated")
 
         for key, default_param in self._default_params.items():
             if key not in self._user_configs:
@@ -188,11 +223,12 @@ class InternalParameters:
                 if default_param.is_mandatory:
                     raise InvalidConfiguration(f"SBART parameter <{key}> is mandatory.")
 
-                logger.debug(
-                    "Configuration <{}> using the default value: {}",
-                    key,
-                    default_param.default_value,
-                )
+                if not self.no_logs:
+                    logger.debug(
+                        "Configuration <{}> using the default value: {}",
+                        key,
+                        default_param.default_value,
+                    )
                 try:
                     self._user_configs[key] = default_param.default_value
                 except Exception as e:

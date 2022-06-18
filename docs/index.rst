@@ -16,6 +16,7 @@ Check out the :doc:`guide` section for further information.
    :caption: Contents
 
          User Guide <guide>
+         Known issues / FAQ <Known_issues>
          Public interface <api/index>
          In-depth tutorials <tutorials/index>
 

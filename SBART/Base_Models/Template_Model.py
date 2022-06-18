@@ -122,12 +122,12 @@ class BaseTemplate(Spectrum):
         logger.info("Storing {} to disk", self.name)
 
         if clobber:
-            logger.warning(
-                "Deleting previous outputs stored in the folder <{}>",
-                self._internalPaths.root_storage_path,
-            )
             filename = f"{self.storage_name}_{self._associated_subInst}.fits"
             template_path = self._internalPaths.root_storage_path / filename
+            logger.warning(
+                "Deleting previous outputs stored in the file <{}>",
+                template_path,
+            )
 
             try:
                 os.remove(template_path)

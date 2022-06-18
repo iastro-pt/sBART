@@ -134,6 +134,7 @@ class Frame(Spectrum, Spectral_Modelling):
         reject_subInstruments: Optional[Iterable[str]] = None,
         need_external_data_load: bool = False,
         init_log: bool = True,
+        quiet_user_params: bool = True
     ):
         """
         The Frame object is initialized with the following set of Keywords:
@@ -161,13 +162,14 @@ class Frame(Spectrum, Spectral_Modelling):
             True if the instrument must load data from a file that is not the one specified on the "file_path" argument
         init_log
             If True create a log entry with the filename
-
+        quiet_user_params
+            If True, there are no logs for the generation of the user parameters of each Frame
         """
         self.array_size = array_size
         self.__class__.instrument_properties["name"] = inst_name
         self.__class__.instrument_properties["array_size"] = array_size
 
-        super().__init__(user_configs=user_configs)
+        super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
 
         self.frameID = frameID
         self._status = Status()  # BY DEFAULT IT IS A VALID ONE!
@@ -473,6 +475,25 @@ class Frame(Spectrum, Spectral_Modelling):
     def check_header_QC(self, header: fits.header.Header):
         """Check if the header keywords are in accordance with their default value. Each instrument
         should do this check on its own
+
+        This function will check for two things:
+        1. Fatal keywords - will mark the Frame as invalid
+        2. Warning Keywords - the frame is still valid, but it has a warning issued in the logs
+
+        If any of those conditions is met, make sure that the flags meet the following naming conditions
+        (so that we can filter by them later on):
+
+        For fatal flags
+        ```
+        msg = f"QC flag {flag} has taken the bad value of {bad_value}"
+        self.add_to_status(FATAL_KW(msg))
+        ```
+
+        For warnings:
+        ```
+        msg = f"QC flag {flag} meets the bad value"
+        self._status.store_warning(KW_WARNING(msg))
+        ```
         """
         logger.debug("Validating header KeyWords")
         pass

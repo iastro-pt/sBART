@@ -19,6 +19,7 @@ from SBART.utils.status_codes import (
     NAN_DATA,
     SATURATION,
     SUCCESS,
+    KW_WARNING
 )
 from SBART.utils.units import kilometer_second, meter_second
 
@@ -62,6 +63,7 @@ class HARPS(Frame):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments=None,
         frameID=None,
+        quiet_user_params: bool = True
     ):
         """
 
@@ -107,6 +109,7 @@ class HARPS(Frame):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             init_log=False,
+            quiet_user_params = quiet_user_params,
         )
 
         if not search_status.is_good_flag:
@@ -245,9 +248,12 @@ class HARPS(Frame):
 
         bad_drift = False
         try:
-            if header["HIERARCH ESO DRS DRIFT QC"].strip() != "PASSED":
+            flag = "HIERARCH ESO DRS DRIFT QC"
+            if header[flag].strip() != "PASSED":
                 bad_drift = True
-                logger.warning("{} has a drift-QC flag different than the expected one.", self.name)
+                msg = f"QC flag {flag} meets the bad value"
+                logger.warning(msg)
+                self._status.store_warning(KW_WARNING(msg))
             else:
                 # self.logger.info("DRIFT QC has passed")
                 drift = header["HIERARCH ESO DRS DRIFT RV USED"] * meter_second
