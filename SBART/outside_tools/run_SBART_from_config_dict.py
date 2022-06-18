@@ -1,7 +1,7 @@
 import math
 import os
 
-from SBART.Instruments import ESPRESSO, HARPS
+from SBART.Instruments import instrument_dict
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.Samplers import chi_squared_sampler, Laplace_approx
 from SBART.data_objects import DataClassManager
@@ -29,9 +29,8 @@ def config_update_with_fallback_to_default(
 
 
 def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs):
-    instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
-    instrument = instrument_name_map[instrument_name]
+    instrument = instrument_dict[instrument_name]
     RVstep = user_configs["RVstep"]
 
     RV_limits = user_configs["RV_limits"]
@@ -42,10 +41,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         inst_options = config_update_with_fallback_to_default(
             inst_options, "minimum_order_SNR", user_configs
         )
-    if instrument_name_map == "KOBE":
+    if instrument_name == "CARMENES":
         inst_options["shaq_output_folder"] = user_configs["KOBE_SHAQ_FOLDER_PATH"]
 
-    if instrument_name_map == "ESPRESSO":
+    if instrument_name == "ESPRESSO":
         inst_options = config_update_with_fallback_to_default(
             inst_options, "apply_FluxCorr", user_configs
         )
