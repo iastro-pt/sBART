@@ -52,6 +52,7 @@ class CARMENES(Frame):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments=None,
         frameID=None,
+        quiet_user_params: bool = True
     ):
         """
 
@@ -91,6 +92,7 @@ class CARMENES(Frame):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             need_external_data_load=True,
+            quiet_user_params=quiet_user_params
         )
 
         self.__class__.instrument_properties["wavelength_coverage"] = coverage
