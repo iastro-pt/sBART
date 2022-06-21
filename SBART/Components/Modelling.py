@@ -11,7 +11,7 @@ from SBART.utils.UserConfigs import (
 )
 
 from SBART.spectral_modelling.modelling_base import ModellingBase
-from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
+from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel, NearestNeighbor
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils import custom_exceptions
 
@@ -27,7 +27,7 @@ class Spectral_Modelling(BASE):
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
     ============================ ================ ================ ======================== ================
-    INTERPOL_MODE                   False           splines              splines / GP           [1]
+    INTERPOL_MODE                   False           splines         splines / GP / NN           [1]
     ============================ ================ ================ ======================== ================
 
     .. note::
@@ -48,7 +48,7 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", "GP")))
+        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", "GP", "NN")))
     )
 
     def __init__(self, **kwargs):
@@ -74,7 +74,8 @@ class Spectral_Modelling(BASE):
                           }
         self._modelling_interfaces: Dict[str, ModellingBase] = {
             "GP": GPSpecModel(**interface_init),
-            "splines": ScipyInterpolSpecModel(**interface_init)
+            "splines": ScipyInterpolSpecModel(**interface_init),
+            "NN": NearestNeighbor(**interface_init)
         }
 
         for comp in self._modelling_interfaces.values():

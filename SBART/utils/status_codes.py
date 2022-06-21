@@ -41,7 +41,7 @@ class Flag:
     def __eq__(self, flag_2):
         if not isinstance(flag_2, Flag):
             return False
-        return (self.name == flag_2.name) and (self.code == flag_2.code)
+        return (self.name == flag_2.name) and (self.code == flag_2.code) and (self.extra_info == flag_2.extra_info)
 
     def add_extra_info(self, extra_info: str) -> NoReturn:
         self.extra_info = extra_info
@@ -125,6 +125,9 @@ class Status:
 
     def has_flag(self, flag) -> bool:
         return flag in self._stored_flags
+
+    def check_if_warning_exists(self, flag):
+        return flag in self._warnings
 
     def delete_flag(self, flag):
         try:
