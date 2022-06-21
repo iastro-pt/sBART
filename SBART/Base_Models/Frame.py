@@ -481,6 +481,25 @@ class Frame(Spectrum, Spectral_Modelling):
     def check_header_QC(self, header: fits.header.Header):
         """Check if the header keywords are in accordance with their default value. Each instrument
         should do this check on its own
+
+        This function will check for two things:
+        1. Fatal keywords - will mark the Frame as invalid
+        2. Warning Keywords - the frame is still valid, but it has a warning issued in the logs
+
+        If any of those conditions is met, make sure that the flags meet the following naming conditions
+        (so that we can filter by them later on):
+
+        For fatal flags
+        ```
+        msg = f"QC flag {flag} has taken the bad value of {bad_value}"
+        self.add_to_status(FATAL_KW(msg))
+        ```
+
+        For warnings:
+        ```
+        msg = f"QC flag {flag} meets the bad value"
+        self._status.store_warning(KW_WARNING(msg))
+        ```
         """
         logger.debug("Validating header KeyWords")
         pass

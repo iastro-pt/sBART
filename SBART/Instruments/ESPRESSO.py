@@ -362,7 +362,7 @@ class ESPRESSO(Frame):
 
         for flag, bad_value in fatal_QC_flags.items():
             if header[flag] == bad_value:
-                msg = f"\tQC flag {flag} is not True"
+                msg = f"\tQC flag {flag} has taken the bad value of {bad_value}"
                 logger.critical(msg)
                 self.add_to_status(FATAL_KW(msg.replace("\t", "")))
 
