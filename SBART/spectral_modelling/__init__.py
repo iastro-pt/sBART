@@ -5,3 +5,4 @@ to a new wavelength grid.
 """
 from .scipy_interpol import ScipyInterpolSpecModel
 from .GPSpectralmodel import GPSpecModel
+from .nearest_neighbor import NearestNeighbor

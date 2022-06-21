@@ -8,6 +8,7 @@ from SBART.Instruments import ESPRESSO
 from SBART.outside_tools.create_logger import setup_SBART_logger
 from SBART.utils.shift_spectra import interpolate_data, apply_RVshift
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 22})
 
 setup_SBART_logger(
     "",
