@@ -185,7 +185,6 @@ class GPSpecModel(ModellingBase):
 
         t1 = time.time()
         self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
-        print("Model eneration took: ", time.time() - t1)
 
         kern_type = self._internal_configs["GP_KERNEL"]
 
@@ -206,12 +205,10 @@ class GPSpecModel(ModellingBase):
 
         t1 = time.time()
         gp_object = build_gp(optimal_combinations, **data_dict)
-        print("GP build: ", time.time() - t1 , new_wavelengths.shape)
         _, cond = gp_object.condition(og_spectra, X_test=new_wavelengths)
 
         mu = cond.loc
         std = np.sqrt(cond.variance)
-        print("Total: ", time.time() - t0)
         return mu, std
 
     def _launch_GP_fit(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
