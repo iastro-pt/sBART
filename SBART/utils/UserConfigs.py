@@ -217,11 +217,13 @@ class InternalParameters:
                     logger.debug("Configuration <{}> was updated")
 
     def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
-        logger.debug("Generating internal configs of {}", self._name_of_parent)
+        if not self.no_logs:
+            logger.debug("Generating internal configs of {}", self._name_of_parent)
 
         self.update_configs_with_values(user_configs)
 
-        logger.info("Checking for any parameter that will take default value")
+        if not self.no_logs:
+            logger.info("Checking for any parameter that will take default value")
         for key, default_param in self._default_params.items():
             if key not in self._user_configs:
 
