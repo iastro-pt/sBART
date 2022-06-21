@@ -3,6 +3,7 @@ import os
 import tarfile
 import urllib.request
 from typing import Optional, Tuple
+import matplotlib.pyplot as plt
 
 import numpy as np
 try:
@@ -11,6 +12,7 @@ try:
 except ModuleNotFoundError:
     MISSING_TELFIT = True
 
+from scipy.optimize import minimize
 from loguru import logger
 
 from SBART import SBART_LOC
@@ -27,6 +29,15 @@ from SBART.utils.UserConfigs import (
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.status_codes import SUCCESS
 from SBART.utils.types import UI_DICT
+from SBART.utils.shift_spectra import (
+    interpolate_data,
+    remove_BERV_correction,
+)
+from SBART.utils.telluric_utilities.compute_order_overlap import (
+    compute_wavelength_order_overlap,
+)
+
+from SBART.utils.units import kilometer_second
 from .Telluric_Template import TelluricTemplate
 
 atmospheric_profiles_coords_dict = {
@@ -104,12 +115,13 @@ class TelfitTelluric(TelluricTemplate):
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
-        PARAMS_TO_FIT=UserParam(
-            ["pressure", "humidity"],
-            constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
-        ),
     )
-
+    _default_params.update("PARAMS_TO_FIT",
+                           UserParam(
+                               ["pressure", "humidity"],
+                               constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
+                           )
+                           )
     method_name = "Telfit"
 
     def __init__(
@@ -159,7 +171,7 @@ class TelfitTelluric(TelluricTemplate):
                 name=name,
                 initial_guess=value,
                 bounds=[0, None],
-                default_enabled=True,
+                default_enabled=True, # FIXME: Why are they enabled?
                 param_type="molecules::extra",
             )
             model_components.append(param)
@@ -419,12 +431,255 @@ class TelfitTelluric(TelluricTemplate):
 
             if self.for_feature_removal:
                 finals = [
-                    comps.get_initial_guess(frameID, True)
+                    comps.get_initial_guess(frameID)
                     for comps in self._fitModel.get_enabled_components()
                 ]
+                # As we won't be fitting the parameters, we can already update its "final value"
                 self._fitModel.store_frameID_results(frameID, finals, result_flag=SUCCESS)
 
-        for param_name in self._fitModel.get_enabled_params():
-            if param_name not in self._internal_configs["PARAMS_TO_FIT"]:
-                logger.info("{} not fitting {}. Fixing it to initial guess", self.name, param_name)
-                self._fitModel.disable_param(param_name)
+    def fit_telluric_model_to_frame(self, frame):
+        super().fit_telluric_model_to_frame(frame)
+        if not frame.is_blaze_corrected:
+            ...
+            # raise custom_exceptions.InvalidConfiguration("When correcting tellurics must have the frames with a BLAZE correction")
+
+        for param in self._fitModel.get_enabled_components():
+            if param.is_parameter_type("molecules::extra"):
+                raise custom_exceptions.InvalidConfiguration(
+                    "We can only fit H20. Please don't enable extra molecules"
+                )
+
+        wavelengths, spectra, uncertainties, mask = frame.get_data_from_full_spectrum()
+        wavelengths /= 10
+
+        self.configure_modeler(frame)
+        rest_frame_wavelengths = remove_BERV_correction(
+            wavelengths, frame.get_KW_value("BERV").to(kilometer_second).value
+        )
+
+        OBS_properties = {
+            **{"airmass": frame.get_KW_value("airmass")},
+            **frame.instrument_properties,
+        }
+
+        # Select wavelength region (to account for the 20 water lines)
+        lines_to_fit = [
+            [7178.38, 7180.30],
+            [7182.55, 7184.47],
+            [7188.42, 7190.34],
+            [7192.51, 7194.43],
+            [7194.78, 7196.70],
+            [7202.22, 7204.14],
+            [7205.32, 7207.24],
+            [7224.65, 7226.58],
+            [7241.66, 7243.59],
+            [7244.74, 7246.67],
+            [7246.70, 7248.64],
+            [7253.41, 7255.34],
+            [7266.62, 7268.56],
+            [7273.99, 7275.93],
+            [7276.44, 7278.38],
+            [7278.42, 7280.36],
+            [7288.42, 7290.36],
+            [7291.42, 7293.37],
+            [7305.23, 7307.18],
+            [7310.55, 7312.50],
+        ]
+
+        lines_to_fit = np.divide(lines_to_fit, 10).tolist()
+        flat_list = [item for sublist in lines_to_fit for item in sublist]
+        region_to_fit = (min(flat_list) - 0.5, max(flat_list) + 0.5)
+
+        step = self._internal_configs["FIT_WAVELENGTH_STEP_SIZE"]
+        model_gen_grid = np.arange(region_to_fit[0], region_to_fit[1] + step, step)
+        logger.info("Using grid with {} points", model_gen_grid.size)
+        overlapping_orders = compute_wavelength_order_overlap(wavelengths, region_to_fit)
+
+        line_information = []
+        logger.info(
+            "Fitting telluric features across {} slices: {}".format(
+                len(overlapping_orders), overlapping_orders
+            )
+        )
+
+        for order in overlapping_orders:
+            wavelengths_order = rest_frame_wavelengths[order]
+            spectra_order = spectra[order]
+
+            order_lines = []
+            order_wavelengths = []
+            order_blaze = []
+            for line in lines_to_fit:
+                inds = np.where(
+                    np.logical_and(wavelengths_order >= line[0], wavelengths_order <= line[1])
+                )
+                if len(inds[0]) == 0:
+                    continue
+                else:
+                    print(len(inds[0]))
+                    # order_blaze.append(BLAZE[order][inds])
+                    order_lines.append(spectra_order[inds])
+                    order_wavelengths.append(wavelengths_order[inds])
+
+            from scipy.ndimage import median_filter
+            inds = slice(0, 10000)
+            for i in range(1):
+
+                n_points_filter = 500
+                continuum_level = median_filter(spectra[order][inds], n_points_filter)
+                continuum_level[0: n_points_filter + 1] = median_filter(
+                    spectra[order][inds][0: n_points_filter + 1], 51
+                )
+                continuum_level[-(n_points_filter + 1):] = median_filter(
+                    spectra[order][inds][-(n_points_filter + 1):], 51
+                )
+
+                inds = np.where(spectra[order][inds] != 10*continuum_level)
+
+            params = np.polyfit(wavelengths_order[inds], spectra[order][inds], 4)
+            p = np.poly1d(params)
+            # line_information.extend(list(zip(order_wavelengths, order_lines, order_blaze)))
+            for waves, spec in zip(order_wavelengths, order_lines):
+                print(waves, spec)
+                plt.scatter(waves, spec, color = "orange", zorder=1000, marker='x')
+
+            plt.title(order)
+            plt.plot(wavelengths_order, spectra[order], color="black")
+            plt.plot(wavelengths_order, p(wavelengths_order), color = 'red', linestyle='--')
+            plt.plot(wavelengths_order, continuum_level, color = 'blue', linestyle='--')
+
+            plt.show()
+        final_vector, bounds = self._fitModel.generate_optimizer_inputs(
+            frameID=frame.frameID, rv_units=None  # everything is floats
+        )
+
+        logger.info(
+            "{} - {} - {}".format(self._fitModel.get_enabled_params(), final_vector, bounds)
+        )
+
+        if self.was_loaded:
+            # TODO: implement the save/load routines
+            final_vector = self._fitModel.get_fit_results_from_frameID(frame.frameID)
+        else:
+
+            initial_guess, bounds = self._fitModel.generate_optimizer_inputs(
+                frameID=frame.frameID, rv_units=None  # everything is floats
+            )
+
+            fit_fixed_params = {}
+            mandatory_params = ["temperature", "pressure", "humidity"]
+
+            free_params = self._fitModel.get_enabled_params()
+            logger.debug(f"Fitting telfit model with <{free_params}> as free-parameters")
+
+            for entry in mandatory_params:
+                if entry not in free_params:
+                    if entry != "temperature":
+                        # We don't really care about having the temperature as a fixed parameter, as
+                        # it has a very small impact on the depth/shape of telluric features
+
+                        logger.warning("Fitting telfit model with {} as a fixed parameter", entry)
+                    fit_fixed_params[entry] = self._fitModel.get_initial_guess_of_component(
+                                 entry, frameID=frame.frameID, allow_disabled=True)
+
+            if len(fit_fixed_params) == 0:
+                fit_fixed_params = None
+
+            min_results = minimize(
+                self._fit_tell_model,
+                x0=initial_guess,
+                args=(model_gen_grid, OBS_properties, line_information, fit_fixed_params),
+            )
+            if not min_results.success:
+                logger.warning("{} fit has failed!", self.name)
+
+            final_vector = min_results.x
+            # TODO: ensure that the BERVs corrections are matching up
+
+            self._fitModel.store_frameID_results(frameID=frame.frameID, result_vector=final_vector)
+
+        # Finished fitting. Generating final model, outside the selected lines
+
+        fixed_params = {
+            comp.param_name: comp.get_initial_guess(frame.frameID, allow_disabled=True)
+            for comp in self._fitModel.get_disabled_components()
+        }
+
+        # TODO: create model for all orders!
+        wavelengths, model = self._generate_telluric_model(
+            grid=None,
+            model_parameters=final_vector,
+            OBS_properties=OBS_properties,
+            fixed_params=fixed_params,
+        )
+        model_uncertainties = model  # for now we assume the model to be noise free -> direct re-scaling of uncertainties
+        plt.figure()
+
+        plt.plot(wavelengths, model)
+        plt.show()
+        return wavelengths, model, model_uncertainties
+
+    def _fit_tell_model(
+        self, tentative_param_vector, new_grid, OBS_properties, enabled_lines, fixed_params
+    ):
+        wavelengths, model = self._generate_telluric_model(
+            grid=new_grid,
+            model_parameters=tentative_param_vector,
+            OBS_properties=OBS_properties,
+            fixed_params=fixed_params,
+        )
+
+        return cost_function(wavelengths, model, line_info=enabled_lines)
+
+
+def cost_function(model_wavelengths, model_transmittance, line_info):
+    """
+    Cost function for the fit!
+
+    Parameters
+    ----------
+    model_wavelengths
+        Telfit model wavelengths
+    model_transmittance
+        Telfit model transmittance
+    line_info
+        Lines that are being tracked
+
+    Returns
+    -------
+
+    """
+    metric = []
+    fig, axis = plt.subplots(3, 1, sharex=True)
+    # plt.plot(model_wavelengths, model_transmittance)
+    axis[0].plot(model_wavelengths, model_transmittance, color="blue", alpha=0.3, linestyle="--")
+    axis[1].plot(model_wavelengths, model_transmittance, color="blue", alpha=0.3, linestyle="--")
+    raw = []
+    BLAZE_CORR = []
+    for line in line_info:
+        waves = line[0]
+        spec = line[1]
+        interpol_model, errors, indexes = interpolate_data(
+            original_lambda=model_wavelengths,
+            original_spectrum=model_transmittance,
+            new_lambda=waves,
+            lower_limit=-np.inf,
+            upper_limit=np.inf,
+            original_errors=[],
+            propagate_interpol_errors="none",
+        )
+        raw.extend(spec)
+        metric.extend(spec / interpol_model)
+
+        axis[0].plot(waves, spec, color="black")
+        axis[1].plot(waves, interpol_model, color="blue")
+
+        axis[0].plot(waves, spec / interpol_model, color="red", linestyle="--")
+        blaze_corr_res = (spec / interpol_model) / line[2]
+        axis[2].plot(waves, blaze_corr_res)
+
+        BLAZE_CORR.extend(blaze_corr_res - np.median(blaze_corr_res))
+    print(np.std(metric), np.std(raw), np.std(BLAZE_CORR))
+    plt.show()
+
+    return np.std(metric)

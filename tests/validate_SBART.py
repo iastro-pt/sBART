@@ -1,8 +1,10 @@
 from SBART.outside_tools import run_SBART_from_yaml
-
-
+from SBART.outside_tools import create_logger
+from SBART.Instruments import ESPRESSO
 from pathlib import Path
 
+
+create_logger.setup_SBART_logger(storage_path="", write_to_file=False, instrument=ESPRESSO,RV_method="")
 path = Path(__file__).parent.absolute()
 
 yaml_path = path / "teste_configs.yaml"
