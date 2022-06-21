@@ -50,7 +50,7 @@ class ModellingBase(BASE):
             logger.info("Forcing model generation. Skipping disk-searches of previous outputs")
 
         if self._modelling_parameters.has_valid_identifier_results(order):
-            logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
+            # logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
             raise custom_exceptions.AlreadyLoaded
 
     def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths):
