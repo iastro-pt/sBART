@@ -115,13 +115,12 @@ class TelfitTelluric(TelluricTemplate):
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
+        PARAMS_TO_FIT=UserParam(
+            ["pressure", "humidity"],
+            constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
+        ),
     )
-    _default_params.update("PARAMS_TO_FIT",
-                           UserParam(
-                               ["pressure", "humidity"],
-                               constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
-                           )
-                           )
+
     method_name = "Telfit"
 
     def __init__(
