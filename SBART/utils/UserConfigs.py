@@ -223,7 +223,8 @@ class InternalParameters:
 
         self.update_configs_with_values(user_configs)
 
-        logger.info("Checking for any parameter that will take default value")
+        if not self.no_logs:
+            logger.info("Checking for any parameter that will take default value")
         for key, default_param in self._default_params.items():
             if key not in self._user_configs:
 
