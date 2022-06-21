@@ -17,7 +17,7 @@ setup_SBART_logger(
     write_to_file=False
 )
 
-in_data = ["/home/amiguel/seminar/data_files/ESPRESSO/proxima/0/r.ESPRE.2019-02-10T08:25:37.895_S2D_A.fits"]
+in_data = ["/data/work/jfaria/TM-nightly/HD40307_DACE_downloads/r.ESPRE.2018-12-24T00:45:21.184_S2D_A.fits"]
 
 frames = []
 
@@ -38,7 +38,7 @@ wave, flux, uncerts, mask = frames[0].get_data_from_spectral_order(order=order)
 #     frame.trigger_data_storage()
 #
 #
-XX = apply_RVshift(wave[4000:4500], stellar_RV=100 / 1000)
+XX = apply_RVshift(wave, stellar_RV=100 / 1000)
 
 #
 # new_spec, new_errors, indexes = interpolate_data(original_lambda=wave,
@@ -50,19 +50,23 @@ XX = apply_RVshift(wave[4000:4500], stellar_RV=100 / 1000)
 #                                                  upper_limit=np.inf
 #                                                  )
 
-fig, axis = plt.subplots(2, 1)
+# fig, axis = plt.subplots(2, 1)
 
-colors = ["red", "green", "yellow"]
+# colors = ["red", "green", "yellow"]
 
-for ind, mode in enumerate(["cubic", "quadratic", "pchip"]):
-    frames[0].set_interpolation_properties({"SPLINE_TYPE": mode})
-    new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0, RV_shift_mode="apply")
-    axis[0].plot(XX, new_spec, color=colors[ind], linestyle="-.")
+# for ind, mode in enumerate(["cubic", "quadratic", "pchip"]):
+#     frames[0].set_interpolation_properties({"SPLINE_TYPE": mode})
+#     new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0, RV_shift_mode="apply")
+#     axis[0].plot(XX, new_spec, color=colors[ind], linestyle="-.")
 
 frames[0].set_interpolation_properties({"INTERPOL_MODE": "GP"})
+
+import time 
+t = time.time()
 new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0,
                                                                   RV_shift_mode="apply"
                                                                   )
+print(time.time() - t)
 axis[0].plot(XX, new_spec, color="orange", linestyle="-.")
 frames[0].trigger_data_storage()
 # for f_index, frame in enumerate(frames):
