@@ -9,7 +9,7 @@ from SBART.utils.json_ready_converter import json_ready_converter
 from SBART.utils.paths_tools import build_filename
 
 
-class Classical_Unit(UnitModel): 
+class Classical_Unit(UnitModel):
     _content_name = "Classical"
     _name = UnitModel._name + _content_name
 
@@ -79,7 +79,13 @@ class Classical_Unit(UnitModel):
         )
 
     def trigger_data_storage(self):
-        data = json_ready_converter(self.chi_squared_profile)
+        data = {}
+        for key, values in self.chi_squared_profile.items():
+            data[key] = {}
+            for key_1, order_values in values.items():
+                data[key][key_1] = {}
+                for key_2, final_values in order_values.items():
+                    data[key][key_1][key_2] = json_ready_converter(final_values)
 
         with open(self.get_storage_filename(), mode="w") as handle:
             json.dump(data, handle, indent=4)
@@ -95,6 +101,8 @@ class Classical_Unit(UnitModel):
         """
         super().load_from_disk(rv_cube_fpath)
         new_unit = Classical_Unit()
+        new_unit.generate_root_path(rv_cube_fpath)
+
         with open(new_unit.get_storage_filename()) as handle:
             new_unit.chi_squared_profile = json.load(handle)
 

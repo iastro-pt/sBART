@@ -184,7 +184,8 @@ class RV_step(RV_routine):
                     error=uncert,
                     status=order_status,
                 )
-                data_unit.store_ChiSquared(frameID=frameID,
+                if order_status.is_good_flag:
+                    data_unit.store_ChiSquared(frameID=frameID,
                                            order=order,
                                            rvs=order_pkg["RV_array"],
                                            chi_squared=order_pkg["metric_evaluations"],

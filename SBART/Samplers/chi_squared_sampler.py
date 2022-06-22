@@ -139,8 +139,8 @@ class chi_squared_sampler(SamplerModel):
 
         if bad_order:
             rv, rv_err = np.nan, np.nan
-            local_rvs = []
-            local_curve = []
+            local_rvs = [0]
+            local_curve = [0]
             a, b = np.nan, np.nan
             order_status = CONVERGENCE_FAIL(msg)
         else:

@@ -132,7 +132,7 @@ class RV_cube(BASE):
         self._saved_to_disk = False
 
     def add_extra_storage_unit(self, new_unit: UnitModel):
-        logger.info("Adding a new storage unit to ")
+        logger.info("Adding a new storage unit")
         new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
         self._extra_storage_units.append(new_unit)
 
