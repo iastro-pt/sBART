@@ -10,7 +10,7 @@ from SBART.utils import custom_exceptions, meter_second
 from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-
+from SBART.DataUnits import Classical_Unit
 from .target_function import target
 
 
@@ -166,6 +166,8 @@ class RV_step(RV_routine):
         self.trigger_data_storage(dataClass)
 
     def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+        data_unit = Classical_Unit()
+
         for pkg in worker_outputs:
             for order_pkg in pkg:
                 frameID = order_pkg["frameID"]
@@ -181,6 +183,13 @@ class RV_step(RV_routine):
                     error=uncert,
                     status=order_status,
                 )
+                if order_status.is_good_flag:
+                    data_unit.store_ChiSquared(frameID=frameID,
+                                           order=order,
+                                           rvs=order_pkg["RV_array"],
+                                           chi_squared=order_pkg["metric_evaluations"],
+                                           fit_coeffs=order_pkg["chi_squared_fit_params"]
+                                           )
 
         empty_cube.update_worker_information(worker_outputs)
 
@@ -192,6 +201,7 @@ class RV_step(RV_routine):
         final_error = [i * meter_second for i in final_error]
 
         empty_cube.update_computed_RVS(final_rv, final_error)
+        empty_cube.add_extra_storage_unit(data_unit)
         return empty_cube
 
     def build_chi2_fit(self, fit_metrics):

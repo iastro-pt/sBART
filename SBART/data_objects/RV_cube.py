@@ -13,7 +13,9 @@ from tabletexifier import Table
 
 from SBART import __version__
 from SBART.Base_Models.BASE import BASE
-from SBART.utils.custom_exceptions import InvalidConfiguration
+from SBART.Base_Models.UnitModel import UnitModel
+from SBART.DataUnits import available_data_units
+from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
@@ -67,6 +69,8 @@ class RV_cube(BASE):
         self._RvErrors_orderwise = np.zeros((N_epochs, N_orders)) + np.nan
 
         self._OrderStatus = OrderStatus(N_orders=N_orders, frameIDs=frameIDs)
+
+        self._extra_storage_units = []
 
         self._drift_corrected = instrument_properties[
             "is_drift_corrected"
@@ -126,6 +130,12 @@ class RV_cube(BASE):
         self._Rv_orderwise, self._RvErrors_orderwise, self._OrderStatus = other.data
         self._loaded_inst_info = True
         self._saved_to_disk = False
+
+    def add_extra_storage_unit(self, new_unit: UnitModel, generate_root=True):
+        logger.info("Adding a new storage unit")
+        if generate_root:
+            new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
+        self._extra_storage_units.append(new_unit)
 
     def set_merged_mode(self, orders_to_skip: List[int]) -> None:
         self._mode = "merged_subInst"
@@ -354,6 +364,12 @@ class RV_cube(BASE):
         self.cached_info["SA_correction"] = secular_correction
 
         return secular_correction
+
+    def get_storage_unit(self, storage_name):
+        for unit in self._extra_storage_units:
+            if unit.is_storage_type(storage_name):
+                return unit
+        raise NoDataError("Storage unit {} does not exist", storage_name)
 
     ##########################
     #
@@ -796,6 +812,9 @@ class RV_cube(BASE):
         self._store_misc_info()
         self._store_work_packages()
 
+        for unit in self._extra_storage_units:
+            unit.trigger_data_storage()
+
         tf = time.time() - t0
         logger.info("Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf))
 
@@ -1044,5 +1063,14 @@ class RV_cube(BASE):
                 Package.create_from_json(elem) for elem in work_packages["work_packages"]
             ]
             new_cube.update_worker_information(converted_work_packages)
+
+        for unit in available_data_units:
+            try:
+                loaded_units = unit.load_from_disk(subInst_path / "RVcube")
+            except NoDataError:
+                logger.debug("Failed to find data from {}", unit._name)
+                continue
+
+            new_cube.add_extra_storage_unit(loaded_units, generate_root=False)
 
         return new_cube
