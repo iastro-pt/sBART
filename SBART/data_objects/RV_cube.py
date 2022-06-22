@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
+from matplotlib.colors import LinearSegmentedColormap
 from tabletexifier import Table
 
 from SBART import __version__
@@ -738,6 +739,30 @@ class RV_cube(BASE):
         final_path = build_filename(diagnostics_path, "RV_orderwise_errors", "png")
         fig_part.tight_layout()
         fig_part.savefig(final_path)
+
+        fig, axis = plt.subplots()
+        figure_list.append(fig)
+        times = self.obs_times
+        sorted_IDs = np.asarray(self.frameIDs)[np.argsort(times)].tolist()
+        empty_array = np.zeros((self.N_orders, len(times)))
+
+        for pkg in self.worker_outputs:
+            for order_pkg in pkg:
+                frameID = order_pkg["frameID"]
+                order = order_pkg["order"]
+                empty_array[order, sorted_IDs.index(frameID)] = order_pkg["Total_Flux_Order"]
+        empty_array /= np.max(empty_array, axis=1)[:, None] #normalize across the orders
+
+        fig, ax = plt.subplots(figsize=(20, 10), constrained_layout=True)
+        figure_list.append(fig)
+        data = ax.imshow(empty_array.T)
+        ax.set_xlabel("Spectral order")
+        ax.set_ylabel("Observation number")
+        ax.set_yticklabels([])
+        ax.set_title(r"$\sum_i Spectra(\lambda_i)$")
+        fig.colorbar(data)
+        final_path = build_filename(diagnostics_path, "OrderwiseFlux", "png")
+        fig.savefig(final_path)
 
         logger.debug("Closing figures from {}", self.name)
         for figure in figure_list:
