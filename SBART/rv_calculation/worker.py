@@ -93,6 +93,7 @@ def worker(
                 ) = dataClassProxy.get_frame_OBS_order(current_epochID, current_order)
             except BadOrderError:
                 order_status = HIGH_CONTAMINATION("Bad order from frame")
+                output_package["Total_Flux_Order"] = 0
 
             if order_status == SUCCESS:
                 # invert the binary masks for the current order!
