@@ -181,6 +181,11 @@ class DataClass(BASE):
             if previous_filename != frame.bare_fname:
                 raise InvalidConfiguration("Loading RVs from cube with different frameID layouts")
 
+    def reject_order_region_from_frame(self, frameID: int, order: int, region):
+        frame = self.get_frame_by_ID(frameID)
+        frame.reject_wavelength_region_from_order(order, region)
+        frame.close_arrays()  # ensure that the arrays are closed and that the next call will load data
+
     def remove_activity_lines(self, lines: Indicators) -> None:
         """Find the wavelength windows in which activity-related lines are expected to appear,
         for all valid observations
@@ -317,7 +322,8 @@ class DataClass(BASE):
                                                   as_value=True
                                                   )
                 mean_RV = np.median(RV)
-                metric = np.std(RV) # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
+                metric = np.std(RV
+                                )  # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
 
                 bounds = [mean_RV - self.sigma_clip_RVs * metric,
                           mean_RV + self.sigma_clip_RVs * metric
