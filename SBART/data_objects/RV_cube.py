@@ -131,9 +131,10 @@ class RV_cube(BASE):
         self._loaded_inst_info = True
         self._saved_to_disk = False
 
-    def add_extra_storage_unit(self, new_unit: UnitModel):
+    def add_extra_storage_unit(self, new_unit: UnitModel, generate_root=True):
         logger.info("Adding a new storage unit")
-        new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
+        if generate_root:
+            new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
         self._extra_storage_units.append(new_unit)
 
     def set_merged_mode(self, orders_to_skip: List[int]) -> None:
@@ -1063,7 +1064,6 @@ class RV_cube(BASE):
             ]
             new_cube.update_worker_information(converted_work_packages)
 
-
         for unit in available_data_units:
             try:
                 loaded_units = unit.load_from_disk(subInst_path / "RVcube")
@@ -1071,6 +1071,6 @@ class RV_cube(BASE):
                 logger.debug("Failed to find data from {}", unit._name)
                 continue
 
-            new_cube.add_extra_storage_unit(loaded_units)
+            new_cube.add_extra_storage_unit(loaded_units, generate_root=False)
 
         return new_cube
