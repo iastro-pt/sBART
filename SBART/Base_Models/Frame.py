@@ -32,6 +32,7 @@ from SBART.utils.status_codes import (
     QUAL_DATA,
     Flag,
     Status,
+    USER_BLOCKED
 )
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import check_if_overlap
 from SBART.utils.types import RV_measurement
@@ -217,6 +218,9 @@ class Frame(Spectrum, Spectral_Modelling):
             "SPEC_TYPE": "",
         }
 
+        # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
+        self._orderwise_wavelength_rejection: Optional[Dict[int, List]] = None
+
         self.load_header_info()
         # list of lists Each entry will be a pair of Reason: list<[<start, end>]> wavelenghts. When the S2D array is
         # opened, these elements will be used to mask spectral regions
@@ -260,6 +264,17 @@ class Frame(Spectrum, Spectral_Modelling):
                 self.fname,
             )
         self.observation_info[KW] = value
+
+    def reject_wavelength_region_from_order(self, order, region):
+        """
+        Flag a wavelength region from  an order to be marked as invalid during the creation of the stellar mask
+        """
+        if not isinstance(region, (Iterable,)):
+            raise custom_exceptions.InvalidConfiguration("The rejection region must be a list of lists")
+
+        if self._orderwise_wavelength_rejection is None:
+            self._orderwise_wavelength_rejection = {}
+        self._orderwise_wavelength_rejection[order] = region
 
     def mark_wavelength_region(self, reason: Flag, wavelength_blocks: List[List[int]]) -> None:
         """Add wavelength regions to be removed whenever the S2D file is opened
@@ -388,6 +403,19 @@ class Frame(Spectrum, Spectral_Modelling):
         logger.debug(
             "Removed {} regions ({})", sum(N_point_removed), " + ".join(map(str, N_point_removed))
         )
+        if self._orderwise_wavelength_rejection is not None:
+            logger.info("Rejecting spectral chunks from individual orders")
+            for order, region in self._orderwise_wavelength_rejection.items():
+                order_wavelengths = self.wavelengths[order]
+                for subregion in region:
+                    indexes = np.where(
+                        np.logical_and(
+                            self.wavelengths[order] >= subregion[0],
+                            self.wavelengths[order] <= subregion[1],
+                        )
+                    )
+                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, USER_BLOCKED)
+
         logger.debug("Ensuring that we have increasing wavelengths")
 
         diffs = np.where(np.diff(self.wavelengths, axis=1) < 0)
