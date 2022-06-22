@@ -32,7 +32,6 @@ from SBART.utils.status_codes import (
     QUAL_DATA,
     Flag,
     Status,
-    USER_BLOCKED
 )
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import check_if_overlap
 from SBART.utils.types import RV_measurement
@@ -420,7 +419,7 @@ class Frame(Spectrum, Spectral_Modelling):
                             self.wavelengths[order] <= subregion[1],
                         )
                     )
-                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, USER_BLOCKED)
+                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, NON_COMMON_WAVELENGTH)
 
         logger.debug("Ensuring that we have increasing wavelengths")
 
