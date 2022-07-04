@@ -67,7 +67,7 @@ class RV_Bayesian(RV_routine):
         UserParam(1, constraint=ValueFromList([1])),
     )
 
-    def __init__(self, processes: int, sub_processes: int, RV_configs: dict, sampler):
+    def __init__(self, processes: int, RV_configs: dict, sampler):
         """
         Parameters
         ----------------
@@ -87,7 +87,6 @@ class RV_Bayesian(RV_routine):
         """
         super().__init__(
             N_jobs=processes,
-            workers_per_job=sub_processes,
             RV_configs=RV_configs,
             sampler=sampler,
             target=SBART_target,

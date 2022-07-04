@@ -22,7 +22,7 @@ from SBART.utils.custom_exceptions import (
     BadTemplateError,
     InvalidConfiguration,
 )
-from SBART.utils.shift_spectra import interpolate_data, remove_RVshift
+from SBART.utils.shift_spectra import remove_RVshift
 from SBART.utils.status_codes import INTERNAL_ERROR
 from SBART.utils.units import kilometer_second
 from .Stellar_Template import StellarTemplate
@@ -83,6 +83,7 @@ class SumStellar(StellarTemplate):
                 logger.critical("SBART RV loading routine failed. Stopping template creation")
                 return
         instrument_information = dataClass.get_instrument_information()
+
         epoch_shape = instrument_information["array_size"]
         # Create arrays of zeros in order to open in shared memory and change their values!
         self.spectra = np.zeros(epoch_shape)
@@ -189,10 +190,6 @@ class SumStellar(StellarTemplate):
             dataClass.get_frame_by_ID(chosen_epochID),
         )
 
-        logger.info(
-            "Propagation spectral uncertainties through: {}",
-            self._internal_configs["INTERPOLATION_ERR_PROP"],
-        )
         logger.info("Using frameIDs: {}", self.frameIDs_to_use)
 
         kwargs = {
@@ -200,23 +197,18 @@ class SumStellar(StellarTemplate):
             "chosen_epochID": chosen_epochID,
             "subInst": self._associated_subInst,
             "N_orders": N_orders,
-            "interpol_cores": self._internal_configs["NUMBER_WORKERS"][1],
-            "interpol_prop_type": self._internal_configs["INTERPOLATION_ERR_PROP"],
             "dataClass": dataClass,
         }
 
-        logger.info("Lauching {} workers!", self._internal_configs["NUMBER_WORKERS"][0])
-        logger.info(
-            "Using {} cores for each interpolation!", self._internal_configs["NUMBER_WORKERS"][1]
-        )
+        logger.info("Launching {} workers!", self._internal_configs["NUMBER_WORKERS"])
 
         # TODO: Avoid error ir we launch this after the template is already in shared memory!
         shr_wave, shr_tmp, shr_uncert, shr_counts = self.convert_to_shared_mem()
         buffers = self.shm
 
-        for _ in range(self._internal_configs["NUMBER_WORKERS"][0]):
+        for _ in range(self._internal_configs["NUMBER_WORKERS"]):
             _ = tqdm.tqdm(
-                total=len(self.frameIDs_to_use) // self._internal_configs["NUMBER_WORKERS"][0],
+                total=len(self.frameIDs_to_use) // self._internal_configs["NUMBER_WORKERS"],
                 leave=False,
             )
             p = Process(
@@ -251,7 +243,7 @@ class SumStellar(StellarTemplate):
                 comm_out = self.output_pool.get()
                 if not isinstance(comm_out, tuple) and not np.isfinite(comm_out):
                     logger.critical("non finite output")
-                    kill_workers([], self.package_pool, self._internal_configs["NUMBER_WORKERS"][0])
+                    kill_workers([], self.package_pool, self._internal_configs["NUMBER_WORKERS"])
                     self._found_error = True
                     raise BadTemplateError("Template creation failed")
 
@@ -304,10 +296,7 @@ class SumStellar(StellarTemplate):
         Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!
         """
 
-        chosen_epoch = kwargs["chosen_epochID"]
         current_subInst = kwargs["subInst"]
-        used_epochs = kwargs["valid_epochIDs"]
-        interpol_cores = kwargs["interpol_cores"]
         DataClassProxy = kwargs["dataClass"]
 
         shared_buffers = []
@@ -359,7 +348,6 @@ class SumStellar(StellarTemplate):
 
                     # until now the mask has ones in the regions to remove
                     blocks = build_blocks(np.where(~s2d_mask))
-                    shifted_wavelengths = remove_RVshift(wavelengths, current_epochRV)
 
                     for block in blocks:
                         start = remove_RVshift(wavelengths[block[0]], current_epochRV)
@@ -373,26 +361,26 @@ class SumStellar(StellarTemplate):
                         wavelengths_to_interpolate[interpolation_indexes] = True
 
                     template_indices = wavelengths_to_interpolate
-                    spectral_mask = ~s2d_mask
 
                     try:
-                        interpolated_order, interpolated_errors, _ = interpolate_data(
-                            original_lambda=shifted_wavelengths[spectral_mask],
-                            original_spectrum=s2d_data[spectral_mask],
-                            original_errors=s2d_uncerts[spectral_mask],
-                            new_lambda=stellar_template_wavelengths[order][template_indices],
-                            lower_limit=0,
-                            upper_limit=np.inf,
-                            propagate_interpol_errors=kwargs["interpol_prop_type"],
-                            interpol_cores=interpol_cores,
-                        )
+                        interp_ord, interp_err = DataClassProxy.interpolate_frame_order(frameID=frameID,
+                                                                                        order=order,
+                                                                                        new_wavelengths=
+                                                                                        stellar_template_wavelengths[
+                                                                                            order][
+                                                                                            template_indices],
+                                                                                        shift_RV_by=current_epochRV,
+                                                                                        RV_shift_mode="remove",
+                                                                                        include_invalid=False
+                                                                                        )
+
                     except Exception as e:
                         logger.critical("Interpolation failed due to: {}", e)
                         raise e
 
-                    stellar_template[order][wavelengths_to_interpolate] += interpolated_order
+                    stellar_template[order][wavelengths_to_interpolate] += interp_ord
                     stellar_template_errors[order][wavelengths_to_interpolate] += (
-                        interpolated_errors ** 2
+                            interp_err ** 2
                     )
                     a = counts[order]
                     a[wavelengths_to_interpolate] = a[wavelengths_to_interpolate] + 1

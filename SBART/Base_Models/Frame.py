@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
 import numpy as np
@@ -92,7 +93,12 @@ class Frame(Spectrum, Spectral_Modelling):
     spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     ================================ ================ ================ ================ ================
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+       This class also uses the User parameters defined by the :class:`~SBART.Components.Modelling.Spectral_Modelling`
+    class
+
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
@@ -126,7 +132,7 @@ class Frame(Spectrum, Spectral_Modelling):
         self,
         inst_name: str,
         array_size: tuple,
-        file_path: str,
+        file_path: Path,
         frameID: int,
         KW_map: Dict[str, str],
         available_indicators: tuple,
@@ -176,7 +182,7 @@ class Frame(Spectrum, Spectral_Modelling):
 
         self.spectral_format = self._internal_configs["spectra_format"]
 
-        self.file_path = file_path.split("\n")[0].strip()
+        self.file_path = file_path
         if init_log:
             logger.info("Creating frame from: {}".format(self.file_path))
         self.inst_name = inst_name
@@ -405,7 +411,6 @@ class Frame(Spectrum, Spectral_Modelling):
         if self._orderwise_wavelength_rejection is not None:
             logger.info("Rejecting spectral chunks from individual orders")
             for order, region in self._orderwise_wavelength_rejection.items():
-                order_wavelengths = self.wavelengths[order]
                 for subregion in region:
                     indexes = np.where(
                         np.logical_and(
@@ -678,6 +683,13 @@ class Frame(Spectrum, Spectral_Modelling):
     @property
     def min_pixel_in_order(self) -> int:
         return self._internal_configs["reject_order_percentage"] * self.pixels_per_order
+
+    @property
+    def spectrum_information(self):
+        return {**{"subInstrument": self.sub_instrument,
+                   "filename": self.bare_fname
+                   },
+                ** super().spectrum_information}
 
     def __repr__(self):
         return self.__str__()

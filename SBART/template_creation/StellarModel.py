@@ -163,6 +163,13 @@ class StellarModel(TemplateFramework):
         if store_templates:
             self.store_templates_to_disk()
 
+    def update_interpol_properties(self, new_properties):
+        for subInst, temp in self.templates.items():
+            temp.set_interpolation_properties(new_properties)
+
+    def get_interpol_modes(self) -> Set[str]:
+        return set((temp.interpol_mode for temp in self.templates.values()))
+
     def _compute_template(self, data, subInstrument: str, user_configs: dict):
 
         chosen_template = self.template_map[self._internal_configs["CREATION_MODE"]]

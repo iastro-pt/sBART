@@ -212,6 +212,10 @@ class Spectrum(BASE):
         self.uncertainties = None
 
     @property
+    def valid_orders(self):
+        return (i for i in range(self.N_orders) if i not in self.bad_orders)
+
+    @property
     def bad_orders(self) -> Set[int]:
         return self._OrderStatus.bad_orders
 
@@ -238,6 +242,13 @@ class Spectrum(BASE):
 
         """
         return self._OrderStatus
+
+    @property
+    def spectrum_information(self):
+        return {"N_orders": self.N_orders,
+                "object_type": self._object_type,
+                "blaze_corrected": self.is_blaze_corrected
+                }
 
     @property
     def N_orders(self) -> int:

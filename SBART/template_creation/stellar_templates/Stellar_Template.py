@@ -18,7 +18,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     IntegerValue,
     UserParam,
-    ValueFromList,
+    Positive_Value_Constraint
 )
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import (
@@ -34,23 +34,25 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     **User parameters:**
 
-    ========================= ================ ================ ============================ ================
-    Parameter name               Mandatory      Default Value               Valid Values        Comment
-    ========================= ================ ================ ============================ ================
-    INTERPOLATION_ERR_PROP         False        interpolation   interpolation / propagation   [1]
-    NUMBER_WORKERS                 False           (1, 1)         Iterable of 2 elements      [2]
-    MEMORY_SAVE_MODE               False           False           boolean                    [3]
-    MINIMUM_NUMBER_OBS             False           3            Integer >= 0                  [4]
-    PROPAGATE_UNCERTAINTIES        False           True           boolean                     [5]
-    ========================= ================ ================ ============================ ================
+    ========================= ================ ================ ================================= ================
+    Parameter name               Mandatory      Default Value               Valid Values            Comment
+    ========================= ================ ================ ================================= ================
+    NUMBER_WORKERS                 False           1            Integer >= 0                       [2]
+    MEMORY_SAVE_MODE               False           False           boolean                         [3]
+    MINIMUM_NUMBER_OBS             False           3            Integer >= 0                       [4]
+    ========================= ================ ================ ================================= ================
 
     [1] - How to propagate the spectral uncertainties
-    [2] - (number of jobs at once; number of cores for each job)
+    [2] - Number of jobs at once
     [3] - Save RAM by clearing the frame's S2D arrays from memory after using them
     [4] - Minimum number of  **valid** observations needed to proceed with template creation
-    [5] - Propagate flux uncertanties to the stellar template
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+       This class also uses the User parameters defined by the :class:`~SBART.Components.Modelling.Spectral_Modelling`
+    class
+
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
@@ -58,19 +60,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     _name = "Stellar"
 
     _default_params = BaseTemplate._default_params + DefaultValues(
-        INTERPOLATION_ERR_PROP=UserParam(
-            "interpolation", constraint=ValueFromList(("interpolation", "propagation"))
-        ),
-        NUMBER_WORKERS=UserParam((1, 1)),  # (number of jobs at once; number of cores for each job)
+        NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
         MEMORY_SAVE_MODE=UserParam(
             False, constraint=BooleanValue
         ),  # if True, close the S2D files after using them!
         MINIMUM_NUMBER_OBS=UserParam(
             3, constraint=IntegerValue
         ),  # minimum number of OBS to create stellar template
-        PROPAGATE_UNCERTAINTIES=UserParam(
-            True, constraint=BooleanValue
-        ),  # if false, the uncertainties will be array of zeros
     )
 
     template_type = "Stellar"
@@ -204,13 +200,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self._base_checks_for_template_creation()
 
         # TODO: ensure that they all observations are consistent!
-        self.was_telluric_corrected = dataClass.get_frame_by_ID(
-            self.frameIDs_to_use[0]
-        ).was_telluric_corrected
-        self.is_BERV_corrected = dataClass.get_frame_by_ID(
-            self.frameIDs_to_use[0]
-        ).is_BERV_corrected
-
+        first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
+        logger.warning(f"blaze: {first_frame.is_blaze_corrected}")
+        self.is_blaze_corrected = first_frame.is_blaze_corrected
+        self.was_telluric_corrected = first_frame.was_telluric_corrected
+        self.is_BERV_corrected =first_frame.is_BERV_corrected
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
@@ -281,6 +275,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         storage_information = {
             "frameIDs_to_use": self.frameIDs_to_use,
             "used_fpaths": self.used_fpaths,
+            "is_BERV_corrected": self.is_BERV_corrected,
+            "is_blaze_corrected": self.is_blaze_corrected,
+            "was_telluric_corrected": self.was_telluric_corrected
         }
 
         with open(miscInfo, mode="w") as file:
@@ -482,7 +479,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     def _close_workers(self) -> None:
         logger.debug("{} closing the workers", self.name)
-        for _ in range(self._internal_configs["NUMBER_WORKERS"][0]):
+        for _ in range(self._internal_configs["NUMBER_WORKERS"]):
             self.package_pool.put(np.nan)
 
     def _close_shared_memory_arrays(self):

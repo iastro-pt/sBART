@@ -132,7 +132,6 @@ class RV_routine(BASE):
     def __init__(
             self,
             N_jobs: int,
-            workers_per_job: int,
             RV_configs: dict,
             sampler,
             target,
@@ -145,7 +144,6 @@ class RV_routine(BASE):
 
         self.N_jobs = N_jobs
         self._live_workers = 0
-        self.workers_per_job = workers_per_job
 
         self.to_skip = {}
         self._output_RVcubes = None
@@ -314,6 +312,12 @@ class RV_routine(BASE):
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
+
+            # Check here if the Stellar template will be interpolated with a GP:
+            logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
+            if "GP" in dataClass.get_stellar_model().get_interpol_modes():
+                raise custom_exceptions.InternalError("Can't interpolate with GPs without having the memory saving mode enabled")
+
             self.sampler.disable_memory_savings()
 
         if self._output_RVcubes is None:
@@ -456,7 +460,6 @@ class RV_routine(BASE):
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
-            "workers_per_job": self.workers_per_job,
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
         }
@@ -647,12 +650,19 @@ class RV_routine(BASE):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
 
+        no_shutdown_counter = 0
         while self._live_workers > 0:
             good, bad = evaluate_shutdown(self.output_pool)
             self._live_workers -= good + bad
-            logger.debug(
-                "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
-            )
+            
+            if good + bad != 0:
+                logger.debug(
+                    "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
+                )
+            else:
+                if no_shutdown_counter == 400:
+                    logger.warning("Workers are refusing to shutdown!")
+                no_shutdown_counter += 1
 
         if self._live_workers < 0:
             logger.critical("Number of live workers is negative ...")

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union
+from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any
 
 import numpy as np
 from loguru import logger
@@ -26,7 +26,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
 )
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second
-
+from SBART.utils import custom_exceptions
 
 class DataClass(BASE):
     """
@@ -51,7 +51,8 @@ class DataClass(BASE):
 
     def __init__(
             self,
-            path: Iterable[UI_PATH],
+            input_files: Iterable[UI_PATH],
+            storage_path: UI_PATH,
             instrument: Type[Frame],
             instrument_options: dict,
             reject_subInstruments: Optional[Iterable[str]] = None,
@@ -61,8 +62,10 @@ class DataClass(BASE):
         """
         Parameters
         =============
-        path:
+        input_files:
             Either a path to a txt file, or a list of S2d files
+        storage_path:
+            Root path of the SBART outputs
         instrument:
             Instrument that we will be loading data from. Must be an object of type SBART.Instruments
         instrument_options
@@ -77,10 +80,10 @@ class DataClass(BASE):
         self.sigma_clip_RVs = sigma_clip_RVs
 
         self._inst_type = instrument
-        self.input_file = path
+        self.input_file = input_files
 
         # Hold all of the frames
-        self.observations = []
+        self.observations: Iterable[Frame] = []
 
         self.metaData = MetaData()
 
@@ -88,28 +91,31 @@ class DataClass(BASE):
             logger.warning("Rejecting subInstruments: {}".format(reject_subInstruments))
 
         OBS_list = []
-        if isinstance(path, (str, Path)):
+        if isinstance(input_files, (str, Path)):
             logger.info("DataClass loading data from {}", self.input_file)
-            with open(path) as input_file:
+            with open(input_files) as input_file:
                 for line in input_file:
-                    OBS_list.append(line)
+                    OBS_list.append(Path(line))
 
-        elif isinstance(path, (list, tuple, np.ndarray)):
-            logger.info("DataClass opening {} files from a list/tuple", len(path))
-            OBS_list = path
+        elif isinstance(input_files, Iterable):
+            logger.info("DataClass opening {} files from a list/tuple", len(input_files))
+
+            OBS_list = [Path(i) if isinstance(i, str) else i for i in input_files]
         else:
             raise TypeError()
 
         for frameID, filepath in enumerate(OBS_list):
             self.observations.append(
                 self._inst_type(
-                    filepath.split("\n")[0],
+                    filepath,
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
                     quiet_user_params=frameID != 0  # Only the first frame will output logs
                 )
             )
+
+        self.generate_root_path(storage_path)
 
         N_files = len(self.observations)
         logger.debug("Selected {} observations from disk", N_files)
@@ -139,6 +145,7 @@ class DataClass(BASE):
         self.load_instrument_extra_information()
 
         for frame in self.observations:
+            frame.initialize_modelling_interface()
             frame.finalize_data_load()
 
     ########################
@@ -237,6 +244,10 @@ class DataClass(BASE):
             )
 
         logger.warning("Currently there is no check for same target in S2D data and template!")
+
+        # Empty update just to ensure initialization of the modelling interfaces
+        Stellar_Model.update_interpol_properties({})
+
         self.StellarModel = Stellar_Model
 
     def select_common_wavelengths(self, wave_analysis_path, subInst):
@@ -430,6 +441,41 @@ class DataClass(BASE):
         """
         frame = self.get_frame_by_ID(frameID)
         return frame.get_data_from_spectral_order(order, include_invalid)
+
+    def update_interpol_properties_of_all_frames(self, new_properties: Dict[str, Any]):
+        if not isinstance(new_properties, dict):
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+
+        for frame in self.observations:
+            frame.set_interpolation_properties(new_properties)
+
+    def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
+        if not isinstance(new_properties, dict):
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+            
+        if self.StellarModel is None:
+            raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
+        self.StellarModel.update_interpol_properties(new_properties)
+
+    def update_frame_interpol_properties(self, frameID, new_properties) -> NoReturn:
+        """
+        Allow to update the interpolation settings from the outside, so that any object can configure
+        the interpolation as it wishes
+        """
+
+        frame = self.get_frame_by_ID(frameID)
+        frame.set_interpolation_properties(new_properties)
+
+    def interpolate_frame_order(self, frameID, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+        """
+        Interpolate a given order to a new wavelength solution
+        """
+        frame = self.get_frame_by_ID(frameID)
+        return frame.interpolate_spectrum_to_wavelength(order=order, new_wavelengths=new_wavelengths,
+                                                        shift_RV_by=shift_RV_by,
+                                                        RV_shift_mode=RV_shift_mode,
+                                                        include_invalid=include_invalid
+                                                        )
 
     def get_frame_arrays_by_ID(self, frameID: int):
         """
@@ -677,6 +723,9 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
+        
+        for frame in self.observations:
+            frame.trigger_data_storage()
 
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         """
@@ -693,7 +742,7 @@ class DataClass(BASE):
         super().generate_root_path(storage_path)
 
         # The Frames don't store data inside the Iteration folder!
-        frame_root_path = storage_path.parent.parent
+        frame_root_path = self._internalPaths.root_storage_path
         for frame in self.observations:
             frame.generate_root_path(frame_root_path)
 
@@ -773,3 +822,4 @@ class DataClass(BASE):
                 f"Data Class from {self._inst_type.instrument_properties['name']} holding "
                 + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )
+
