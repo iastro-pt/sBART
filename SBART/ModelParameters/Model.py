@@ -14,9 +14,6 @@ from SBART.utils.units import convert_data
 
 class Model:
     def __init__(self, params_of_model: List[ModelComponent]):
-        logger.info(
-            "Generating model with following available parameters: {}".format(params_of_model)
-        )
         self.components = params_of_model
         self._results_flags = {}
         self.has_results_stored = False
