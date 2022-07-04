@@ -31,8 +31,7 @@ from SBART.utils.status_codes import (
     NON_COMMON_WAVELENGTH,
     QUAL_DATA,
     Flag,
-    Status,
-    USER_BLOCKED
+    Status,  
 )
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import check_if_overlap
 from SBART.utils.types import RV_measurement
@@ -412,7 +411,6 @@ class Frame(Spectrum, Spectral_Modelling):
         if self._orderwise_wavelength_rejection is not None:
             logger.info("Rejecting spectral chunks from individual orders")
             for order, region in self._orderwise_wavelength_rejection.items():
-                order_wavelengths = self.wavelengths[order]
                 for subregion in region:
                     indexes = np.where(
                         np.logical_and(
@@ -420,7 +418,7 @@ class Frame(Spectrum, Spectral_Modelling):
                             self.wavelengths[order] <= subregion[1],
                         )
                     )
-                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, USER_BLOCKED)
+                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, NON_COMMON_WAVELENGTH)
 
         logger.debug("Ensuring that we have increasing wavelengths")
 
