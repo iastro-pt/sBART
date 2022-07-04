@@ -276,7 +276,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         # Note2: carefull with the datatypes that are stored in here...
         storage_information = {
             "frameIDs_to_use": self.frameIDs_to_use,
-            "used_fpaths": self.used_fpaths,
+            "used_fpaths": [i.as_posix() for i in self.used_fpaths],
             "is_BERV_corrected": self.is_BERV_corrected,
             "is_blaze_corrected": self.is_blaze_corrected,
             "was_telluric_corrected": self.was_telluric_corrected,
@@ -441,6 +441,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         with open(miscInfo) as file:
             json_info = json.load(file)
+
+        json_info["used_fpaths"] = list([Path(i) for i in json_info["used_fpaths"]])
 
         for key, value in json_info.items():
             setattr(self, key, value)
