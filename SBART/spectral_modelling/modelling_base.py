@@ -22,7 +22,10 @@ class ModellingBase(BASE):
     )
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
-        super().__init__(user_configs=user_configs, needed_folders=needed_folders)
+        super().__init__(user_configs=user_configs, 
+                         needed_folders=needed_folders,
+                         quiet_user_params=True
+                        )
 
         # Avoid multiple loads of disk information
         self._loaded_disk_model: bool = False
@@ -35,7 +38,6 @@ class ModellingBase(BASE):
         self._init_model()
 
     def _init_model(self):
-        logger.info(f"Initializing model for {self.name}")
         for order in range(self.object_info["N_orders"]):
             self._modelling_parameters.generate_prior_from_frameID(order)
 

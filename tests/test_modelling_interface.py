@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 
 curr_folder = Path(__file__).absolute().parent
+import sys
+sys.path.insert(0, "/home/amiguel/work/SBART_GP_interpolation/sBART_private")
 
 from SBART.Instruments import ESPRESSO
 from SBART.outside_tools.create_logger import setup_SBART_logger
@@ -51,7 +53,7 @@ XX = apply_RVshift(wave, stellar_RV=100 / 1000)
 #                                                  upper_limit=np.inf
 #                                                  )
 
-# fig, axis = plt.subplots(2, 1)
+fig, axis = plt.subplots(2, 1)
 
 # colors = ["red", "green", "yellow"]
 
@@ -60,7 +62,7 @@ XX = apply_RVshift(wave, stellar_RV=100 / 1000)
 #     new_spec, new_errs = frames[0].interpolate_spectrum_to_wavelength(order=order, new_wavelengths=XX, shift_RV_by=0, RV_shift_mode="apply")
 #     axis[0].plot(XX, new_spec, color=colors[ind], linestyle="-.")
 
-frames[0].set_interpolation_properties({"INTERPOL_MODE": "GP"})
+frames[0].set_interpolation_properties({"INTERPOL_MODE": "NN"})
 
 import time 
 t = time.time()

@@ -42,10 +42,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         inst_options = config_update_with_fallback_to_default(
             inst_options, "minimum_order_SNR", user_configs
         )
-    if instrument_name_map == "KOBE":
+    if instrument_name == "KOBE":
         inst_options["shaq_output_folder"] = user_configs["KOBE_SHAQ_FOLDER_PATH"]
 
-    if instrument_name_map == "ESPRESSO":
+    if instrument_name == "ESPRESSO":
         inst_options = config_update_with_fallback_to_default(
             inst_options, "apply_FluxCorr", user_configs
         )
