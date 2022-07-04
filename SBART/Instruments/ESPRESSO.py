@@ -127,7 +127,7 @@ class ESPRESSO(Frame):
 
         # CHeck for BLAZE correction
         self.is_blaze_corrected = True
-        if "BLAZE" in self.file_path:
+        if "BLAZE" in self.file_path.stem:
             # The S2D_BLAZE_A files do not have the blaze correction!
             self.is_blaze_corrected = False
 

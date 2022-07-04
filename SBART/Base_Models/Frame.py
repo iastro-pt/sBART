@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
 import numpy as np
@@ -132,7 +133,7 @@ class Frame(Spectrum, Spectral_Modelling):
         self,
         inst_name: str,
         array_size: tuple,
-        file_path: str,
+        file_path: Path,
         frameID: int,
         KW_map: Dict[str, str],
         available_indicators: tuple,
@@ -182,7 +183,7 @@ class Frame(Spectrum, Spectral_Modelling):
 
         self.spectral_format = self._internal_configs["spectra_format"]
 
-        self.file_path = file_path.split("\n")[0].strip()
+        self.file_path = file_path
         if init_log:
             logger.info("Creating frame from: {}".format(self.file_path))
         self.inst_name = inst_name

@@ -95,18 +95,19 @@ class DataClass(BASE):
             logger.info("DataClass loading data from {}", self.input_file)
             with open(input_files) as input_file:
                 for line in input_file:
-                    OBS_list.append(line)
+                    OBS_list.append(Path(line))
 
-        elif isinstance(input_files, (list, tuple, np.ndarray)):
+        elif isinstance(input_files, Iterable):
             logger.info("DataClass opening {} files from a list/tuple", len(input_files))
-            OBS_list = input_files
+
+            OBS_list = [Path(i) if isinstance(i, str) else i for i in input_files]
         else:
             raise TypeError()
 
         for frameID, filepath in enumerate(OBS_list):
             self.observations.append(
                 self._inst_type(
-                    filepath.split("\n")[0],
+                    filepath,
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
@@ -741,7 +742,7 @@ class DataClass(BASE):
         super().generate_root_path(storage_path)
 
         # The Frames don't store data inside the Iteration folder!
-        frame_root_path = storage_path.parent.parent
+        frame_root_path = self._internalPaths.root_storage_path
         for frame in self.observations:
             frame.generate_root_path(frame_root_path)
 
