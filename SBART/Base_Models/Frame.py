@@ -181,6 +181,11 @@ class Frame(Spectrum, Spectral_Modelling):
         self._status = Status()  # BY DEFAULT IT IS A VALID ONE!
 
         self.spectral_format = self._internal_configs["spectra_format"]
+        if not isinstance(file_path, (str, Path)):
+            raise custom_exceptions.InvalidConfiguration("Invalid path!")
+
+        if not isinstance(file_path, Path):
+            file_path = Path(file_path)
 
         self.file_path = file_path
         if init_log:
