@@ -387,6 +387,16 @@ class RV_routine(BASE):
         init_time = time.time()
         stellar_model = dataClass.get_stellar_model()
 
+        stellar_template = stellar_model.request_data(subInstrument=subInst)
+        first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
+
+        if stellar_template.is_blaze_corrected != first_frame.is_blaze_corrected:
+            raise custom_exceptions.InvalidConfiguration("Comparing spectra and template with different BLAZE correction states")
+        if stellar_template.flux_balance_corrected != first_frame.flux_balance_corrected:
+            raise custom_exceptions.InvalidConfiguration("Comparing spectra and template with different flux balance corrections")
+        if stellar_template.was_telluric_corrected != first_frame.was_telluric_corrected:
+            logger.warning("Comparing spectra and template with different telluric correction states")
+
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
         except BadTemplateError:

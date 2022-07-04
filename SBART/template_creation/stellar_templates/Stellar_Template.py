@@ -204,7 +204,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         logger.warning(f"blaze: {first_frame.is_blaze_corrected}")
         self.is_blaze_corrected = first_frame.is_blaze_corrected
         self.was_telluric_corrected = first_frame.was_telluric_corrected
-        self.is_BERV_corrected =first_frame.is_BERV_corrected
+        self.is_BERV_corrected = first_frame.is_BERV_corrected
+
+        self.flux_balance_corrected = first_frame.flux_balance_corrected
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
@@ -277,7 +279,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "used_fpaths": self.used_fpaths,
             "is_BERV_corrected": self.is_BERV_corrected,
             "is_blaze_corrected": self.is_blaze_corrected,
-            "was_telluric_corrected": self.was_telluric_corrected
+            "was_telluric_corrected": self.was_telluric_corrected,
+            "flux_balance_corrected": self.flux_balance_corrected
         }
 
         with open(miscInfo, mode="w") as file:

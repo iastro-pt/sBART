@@ -243,8 +243,6 @@ class DataClass(BASE):
                 "Stellar template has already been ingested. Switching old template by the new one"
             )
 
-        logger.warning("Currently there is no check for same target in S2D data and template!")
-
         # Empty update just to ensure initialization of the modelling interfaces
         Stellar_Model.update_interpol_properties({})
 
