@@ -220,7 +220,7 @@ class ESPRESSO(Frame):
                     flux_corr == 1
                 ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
                 self.spectra = self.spectra / corr_model  # correct from chromatic variations
-
+                self.flux_balance_corrected = True
                 # TODO: understand if we want to include the factor in uncertainties or not!
                 # self.uncertainties = self.uncertainties / corr_model # maintain the SNR in the corrected spectrum
 
