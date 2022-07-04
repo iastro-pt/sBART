@@ -39,7 +39,6 @@ class Constraint:
 
     def __call__(self, value):
         for evaluator in self._constraint_list:
-            print(evaluator)
             evaluator(value)
 
 
@@ -191,7 +190,6 @@ class InternalParameters:
 
     def update_configs_with_values(self, user_configs):
         for key, value in user_configs.items():
-            print(key, value)
             try:
                 parameter_def_information = self._default_params[key]
             except KeyError:
