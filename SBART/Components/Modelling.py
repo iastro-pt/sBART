@@ -11,7 +11,7 @@ from SBART.utils.UserConfigs import (
 )
 
 from SBART.spectral_modelling.modelling_base import ModellingBase
-from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel, NearestNeighbor
+from SBART.spectral_modelling import ScipyInterpolSpecModel
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils import custom_exceptions
 
@@ -73,9 +73,7 @@ class Spectral_Modelling(BASE):
                           "user_configs": self._internal_configs.get_user_configs()
                           }
         self._modelling_interfaces: Dict[str, ModellingBase] = {
-            "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init),
-            "NN": NearestNeighbor(**interface_init)
         }
 
         for comp in self._modelling_interfaces.values():
