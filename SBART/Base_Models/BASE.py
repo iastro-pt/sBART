@@ -64,6 +64,12 @@ class BASE:
     def generate_root_path(self, storage_path: Path) -> NoReturn:
         """ """
         logger.debug("Setting root path of {} to {}", self.name, storage_path)
+        if not isinstance(storage_path, (str, Path)):
+            raise custom_exceptions.InvalidConfiguration("The root path must be a string or Path object")
+
+        if not isinstance(storage_path, Path):
+            storage_path = Path(storage_path)
+
         self._internalPaths.add_root_path(storage_path)
 
     def add_relative_path(self, path_name, relative_structure):
