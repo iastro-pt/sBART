@@ -1,7 +1,6 @@
 from copy import copy
 from typing import Any, Dict, List, NoReturn, Tuple, Union
 
-import jax.numpy as jnp
 import numpy as np
 from loguru import logger
 
@@ -399,73 +398,3 @@ class RV_component(ModelComponent):
         logger.critical(msg)
         raise custom_exceptions.InvalidConfiguration(msg)
 
-
-class JaxComponent(ModelComponent):
-    """
-    WARNING: ignoring the bounds
-    """
-
-    def json_ready(self) -> Dict[str, Any]:
-        """
-        NOTE: this will NOT work for Models that have astropy.Quantity inside....
-        Returns
-        -------
-
-        """
-        base_json = super().json_ready()
-
-        updated_info = {}
-        for frameID, info in self.frameID_information.items():
-            updated_info[frameID] = {
-                "initial_guess": np.float64(info["initial_guess"]),
-                "generated_prior": info["generated_prior"],
-                "bounds": [None, None],  # TODO: actually store this..
-            }
-
-        updated_results = {}
-        for frameID, results in self.frameID_results.items():
-            updated_results[frameID] = np.float64(results)
-
-        class_json = {
-            self.param_name: {
-                "name": self.param_name,
-                "_enabled": self._enabled,
-                "_locked": self._locked,
-                "default_guess": np.float64(self._default_init_guess),
-                "default_bounds": self._default_limits,
-                "parameter_type": self.parameter_type,
-                "frameID_information": updated_info,
-                "frameID_results": updated_results,
-            }
-        }
-
-        return {**base_json, **class_json}
-
-    @classmethod
-    def load_from_json(cls, json_info):
-        comp = JaxComponent(
-            name=json_info["name"],
-            initial_guess=jnp.float64(json_info["default_guess"]),
-            bounds=json_info["default_bounds"],
-            user_configs={},
-            default_enabled=True,
-            param_type=json_info["parameter_type"],
-        )
-
-        for frame, info in json_info["frameID_information"].items():
-            info["initial_guess"] = jnp.float64(info["initial_guess"])
-        comp.frameID_information = {
-            int(i): val for i, val in json_info["frameID_information"].items()
-        }
-        comp.frameID_results = {
-            int(frameID): jnp.float64(value)
-            for frameID, value in json_info["frameID_results"].items()
-        }
-
-        if json_info["_locked"]:
-            comp.lock_param()
-
-        if not json_info["_enabled"]:
-            comp.disable_param()
-
-        return comp
