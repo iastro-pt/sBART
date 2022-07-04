@@ -51,7 +51,8 @@ class DataClass(BASE):
 
     def __init__(
             self,
-            path: Iterable[UI_PATH],
+            input_files: Iterable[UI_PATH],
+            storage_path: UI_PATH,
             instrument: Type[Frame],
             instrument_options: dict,
             reject_subInstruments: Optional[Iterable[str]] = None,
@@ -61,8 +62,10 @@ class DataClass(BASE):
         """
         Parameters
         =============
-        path:
+        input_files:
             Either a path to a txt file, or a list of S2d files
+        storage_path:
+            Root path of the SBART outputs
         instrument:
             Instrument that we will be loading data from. Must be an object of type SBART.Instruments
         instrument_options
@@ -77,7 +80,7 @@ class DataClass(BASE):
         self.sigma_clip_RVs = sigma_clip_RVs
 
         self._inst_type = instrument
-        self.input_file = path
+        self.input_file = input_files
 
         # Hold all of the frames
         self.observations: Iterable[Frame] = []
@@ -88,15 +91,15 @@ class DataClass(BASE):
             logger.warning("Rejecting subInstruments: {}".format(reject_subInstruments))
 
         OBS_list = []
-        if isinstance(path, (str, Path)):
+        if isinstance(input_files, (str, Path)):
             logger.info("DataClass loading data from {}", self.input_file)
-            with open(path) as input_file:
+            with open(input_files) as input_file:
                 for line in input_file:
                     OBS_list.append(line)
 
-        elif isinstance(path, (list, tuple, np.ndarray)):
-            logger.info("DataClass opening {} files from a list/tuple", len(path))
-            OBS_list = path
+        elif isinstance(input_files, (list, tuple, np.ndarray)):
+            logger.info("DataClass opening {} files from a list/tuple", len(input_files))
+            OBS_list = input_files
         else:
             raise TypeError()
 
@@ -110,6 +113,8 @@ class DataClass(BASE):
                     quiet_user_params=frameID != 0  # Only the first frame will output logs
                 )
             )
+
+        self.generate_root_path(storage_path)
 
         N_files = len(self.observations)
         logger.debug("Selected {} observations from disk", N_files)
@@ -139,6 +144,7 @@ class DataClass(BASE):
         self.load_instrument_extra_information()
 
         for frame in self.observations:
+            frame.initialize_modelling_interface()
             frame.finalize_data_load()
 
     ########################
@@ -237,6 +243,10 @@ class DataClass(BASE):
             )
 
         logger.warning("Currently there is no check for same target in S2D data and template!")
+
+        # Empty update just to ensure initialization of the modelling interfaces
+        Stellar_Model.update_interpol_properties({})
+
         self.StellarModel = Stellar_Model
 
     def select_common_wavelengths(self, wave_analysis_path, subInst):
@@ -811,3 +821,4 @@ class DataClass(BASE):
                 f"Data Class from {self._inst_type.instrument_properties['name']} holding "
                 + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )
+
