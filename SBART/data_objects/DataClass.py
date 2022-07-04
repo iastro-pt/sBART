@@ -95,7 +95,7 @@ class DataClass(BASE):
             logger.info("DataClass loading data from {}", self.input_file)
             with open(input_files) as input_file:
                 for line in input_file:
-                    OBS_list.append(Path(line))
+                    OBS_list.append(Path(line.split("\n")[0]))
 
         elif isinstance(input_files, Iterable):
             logger.info("DataClass opening {} files from a list/tuple", len(input_files))
