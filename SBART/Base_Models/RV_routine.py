@@ -379,6 +379,30 @@ class RV_routine(BASE):
         if store_data:
             self.trigger_data_storage(dataClass)
 
+    def _validate_template_with_frame(self, stellar_template, first_frame) -> NoReturn:
+        """
+        Checks if the stellar template and the first frame share the same state of Flux Corrections
+        """
+        base_message = "Comparing spectra and template with different"
+        bad_comparison, key_message = False, ""
+        if stellar_template.is_blaze_corrected != first_frame.is_blaze_corrected:
+            bad_comparison = True
+            key_message = "BLAZE correction states"
+
+        if stellar_template.flux_atmos_balance_corrected != first_frame.flux_atmos_balance_corrected:
+            bad_comparison = True
+            key_message = "corrections of the flux balance due to the atmosphere"
+
+        if stellar_template.flux_dispersion_balance_corrected != first_frame.flux_dispersion_balance_corrected:
+            bad_comparison = True
+            key_message = "corrections of the flux dispersion with wavelength"
+
+        if bad_comparison:
+            raise custom_exceptions.InvalidConfiguration(f"{base_message} {key_message}")
+
+        if stellar_template.was_telluric_corrected != first_frame.was_telluric_corrected:
+            logger.warning(f"{base_message} telluric correction states")
+
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
@@ -390,12 +414,9 @@ class RV_routine(BASE):
         stellar_template = stellar_model.request_data(subInstrument=subInst)
         first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
 
-        if stellar_template.is_blaze_corrected != first_frame.is_blaze_corrected:
-            raise custom_exceptions.InvalidConfiguration("Comparing spectra and template with different BLAZE correction states")
-        if stellar_template.flux_atmos_balance_corrected != first_frame.flux_atmos_balance_corrected:
-            raise custom_exceptions.InvalidConfiguration("Comparing spectra and template with different flux balance corrections")
-        if stellar_template.was_telluric_corrected != first_frame.was_telluric_corrected:
-            logger.warning("Comparing spectra and template with different telluric correction states")
+        self._validate_template_with_frame(stellar_template=stellar_template,
+                                           first_frame=first_frame
+                                           )
 
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
@@ -425,7 +446,7 @@ class RV_routine(BASE):
             "Finished the computation of RVs from {}. Took: {} seconds",
             subInst,
             time.time() - init_time,
-        )
+            )
         self.create_extra_plots(updated_cube)
         return updated_cube
 
