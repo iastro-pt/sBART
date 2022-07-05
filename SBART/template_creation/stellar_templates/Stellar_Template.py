@@ -482,7 +482,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     def _close_workers(self) -> None:
         logger.debug("{} closing the workers", self.name)
-        for _ in range(self._internal_configs["NUMBER_WORKERS"][0]):
+        for _ in range(self._internal_configs["NUMBER_WORKERS"]):
             self.package_pool.put(np.nan)
 
     def _close_shared_memory_arrays(self):
