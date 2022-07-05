@@ -206,8 +206,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.was_telluric_corrected = first_frame.was_telluric_corrected
         self.is_BERV_corrected = first_frame.is_BERV_corrected
         self.flux_atmos_balance_corrected = first_frame.flux_atmos_balance_corrected
+        self.flux_dispersion_balance_corrected = first_frame.flux_dispersion_balance_corrected
 
-        self.flux_balance_corrected = first_frame.flux_balance_corrected
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")

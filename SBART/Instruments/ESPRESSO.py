@@ -44,6 +44,7 @@ class ESPRESSO(Frame):
     _default_params = Frame._default_params + DefaultValues(
         apply_FluxCorr=UserParam(False, constraint=BooleanValue),
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
+        apply_FluxBalance_Norm=UserParam(False, constraint=BooleanValue)
     )
 
     _default_params.update("spectra_format",
@@ -230,6 +231,17 @@ class ESPRESSO(Frame):
 
                 logger.warning("Not applying correction to blue-red flux balance!")
                 # / corr_model
+
+            if self._internal_configs["apply_FluxBalance_Norm"]:
+                logger.info("Normalizing the flux balance distribution due to dispersion")
+                # The physical sizes of the pixels (on the CCD) are the same
+                # The flux that reaches eeach pixel is different, due to dispersion
+                # The spectra will have a trend, even after removing the instrumental effect
+                # This normalizes the spectra by dividing by the flux distribution
+
+                balance_corr_model = hdulist["DLLDATA_VAC_BARY"].data
+                self.spectra = self.spectra / balance_corr_model
+                self.flux_dispersion_balance_corrected = True
 
         self.build_mask(bypass_QualCheck=False)
         return 1

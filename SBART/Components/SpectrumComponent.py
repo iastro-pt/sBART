@@ -37,6 +37,7 @@ class Spectrum(BASE):
 
         self.flux_atmos_balance_corrected = False
         self.is_blaze_corrected = False
+        self.flux_dispersion_balance_corrected = False
         self.is_BERV_corrected = False
 
         self._OrderStatus = None
