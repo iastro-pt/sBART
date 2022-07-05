@@ -3,6 +3,7 @@ import json
 import os
 import time
 import warnings
+from pathlib import Path
 from typing import List, NoReturn, Optional, Set, Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -855,9 +856,9 @@ class RV_cube(BASE):
         data_out = {
             "cached_info": {"target": self.cached_info["target"].json_ready},
         }
+        data_out["cached_info"]["ISO-DATE"] = self.cached_info["ISO-DATE"]
+        data_out["cached_info"]["date_folders"] = list([i.as_posix() for i in self.cached_info["date_folders"]])
 
-        for key in ["ISO-DATE", "date_folders"]:
-            data_out["cached_info"][key] = self.cached_info[key]
 
         with open(storage_path, mode="w") as file:
             json.dump(data_out, file, indent=4)
@@ -1020,6 +1021,9 @@ class RV_cube(BASE):
 
         logger.debug("Loading misc Info:")
         for key, values in miscInfo.items():
+            if key == "date_folders":
+                values = list([Path(i) for i in values])
+
             new_cube.cached_info[key] = values
 
         logger.debug("Loading orderwise info")
