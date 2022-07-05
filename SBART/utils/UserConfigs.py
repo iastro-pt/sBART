@@ -39,7 +39,6 @@ class Constraint:
 
     def __call__(self, value):
         for evaluator in self._constraint_list:
-            print(evaluator)
             evaluator(value)
 
 
@@ -79,7 +78,6 @@ class ValueFromDtype(Constraint):
             raise InvalidConfiguration(
                 f"Config ({param_name}) value ({value}) not from the valid dtypes: {type(value)} vs {self.valid_dtypes}"
             )
-
 
 class ValueFromList(Constraint):
     def __init__(self, available_options):
@@ -190,10 +188,7 @@ class InternalParameters:
         self._name_of_parent = name_of_parent
         self.no_logs = no_logs
 
-    def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
-        if not self.no_logs:
-            logger.debug("Generating internal configs of {}", self._name_of_parent)
-
+    def update_configs_with_values(self, user_configs):
         for key, value in user_configs.items():
             try:
                 parameter_def_information = self._default_params[key]
@@ -207,8 +202,11 @@ class InternalParameters:
                         key,
                     )
                 continue
-
-            parameter_def_information.apply_constraints_to_value(key, value)
+            try:
+                parameter_def_information.apply_constraints_to_value(key, value)
+            except InvalidConfiguration as exc:
+                logger.critical("User-given parameter {} does not meet the constraints", key)
+                raise InternalError from exc
             self._user_configs[key] = value
 
             if not self.no_logs:
@@ -217,6 +215,14 @@ class InternalParameters:
                 else:
                     logger.debug("Configuration <{}> was updated")
 
+    def receive_user_inputs(self, user_configs: Optional[Dict[str, Any]] = None):
+        if not self.no_logs:
+            logger.debug("Generating internal configs of {}", self._name_of_parent)
+
+        self.update_configs_with_values(user_configs)
+
+        if not self.no_logs:
+            logger.info("Checking for any parameter that will take default value")
         for key, default_param in self._default_params.items():
             if key not in self._user_configs:
 

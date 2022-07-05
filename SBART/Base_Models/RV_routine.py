@@ -132,7 +132,6 @@ class RV_routine(BASE):
     def __init__(
             self,
             N_jobs: int,
-            workers_per_job: int,
             RV_configs: dict,
             sampler,
             target,
@@ -145,7 +144,6 @@ class RV_routine(BASE):
 
         self.N_jobs = N_jobs
         self._live_workers = 0
-        self.workers_per_job = workers_per_job
 
         self.to_skip = {}
         self._output_RVcubes = None
@@ -314,6 +312,12 @@ class RV_routine(BASE):
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
+
+            # Check here if the Stellar template will be interpolated with a GP:
+            logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
+            if "GP" in dataClass.get_stellar_model().get_interpol_modes():
+                raise custom_exceptions.InternalError("Can't interpolate with GPs without having the memory saving mode enabled")
+
             self.sampler.disable_memory_savings()
 
         if self._output_RVcubes is None:
@@ -375,6 +379,30 @@ class RV_routine(BASE):
         if store_data:
             self.trigger_data_storage(dataClass)
 
+    def _validate_template_with_frame(self, stellar_template, first_frame) -> NoReturn:
+        """
+        Checks if the stellar template and the first frame share the same state of Flux Corrections
+        """
+        base_message = "Comparing spectra and template with different"
+        bad_comparison, key_message = False, ""
+        if stellar_template.is_blaze_corrected != first_frame.is_blaze_corrected:
+            bad_comparison = True
+            key_message = "BLAZE correction states"
+
+        if stellar_template.flux_atmos_balance_corrected != first_frame.flux_atmos_balance_corrected:
+            bad_comparison = True
+            key_message = "corrections of the flux balance due to the atmosphere"
+
+        if stellar_template.flux_dispersion_balance_corrected != first_frame.flux_dispersion_balance_corrected:
+            bad_comparison = True
+            key_message = "corrections of the flux dispersion with wavelength"
+
+        if bad_comparison:
+            raise custom_exceptions.InvalidConfiguration(f"{base_message} {key_message}")
+
+        if stellar_template.was_telluric_corrected != first_frame.was_telluric_corrected:
+            logger.warning(f"{base_message} telluric correction states")
+
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
@@ -382,6 +410,13 @@ class RV_routine(BASE):
         logger.info("Applying the RV routine to {} observations of {}", N_epochs, subInst)
         init_time = time.time()
         stellar_model = dataClass.get_stellar_model()
+
+        stellar_template = stellar_model.request_data(subInstrument=subInst)
+        first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
+
+        self._validate_template_with_frame(stellar_template=stellar_template,
+                                           first_frame=first_frame
+                                           )
 
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
@@ -411,7 +446,7 @@ class RV_routine(BASE):
             "Finished the computation of RVs from {}. Took: {} seconds",
             subInst,
             time.time() - init_time,
-        )
+            )
         self.create_extra_plots(updated_cube)
         return updated_cube
 
@@ -456,7 +491,6 @@ class RV_routine(BASE):
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
-            "workers_per_job": self.workers_per_job,
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
         }
@@ -647,12 +681,19 @@ class RV_routine(BASE):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
 
+        no_shutdown_counter = 0
         while self._live_workers > 0:
             good, bad = evaluate_shutdown(self.output_pool)
             self._live_workers -= good + bad
-            logger.debug(
-                "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
-            )
+            
+            if good + bad != 0:
+                logger.debug(
+                    "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
+                )
+            else:
+                if no_shutdown_counter == 400:
+                    logger.warning("Workers are refusing to shutdown!")
+                no_shutdown_counter += 1
 
         if self._live_workers < 0:
             logger.critical("Number of live workers is negative ...")

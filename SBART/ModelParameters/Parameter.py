@@ -187,12 +187,16 @@ class ModelComponent(BASE):
             bad_param = True
 
         if bad_param:
-            msg = f"Attempting to use parameter ({self.param_name}) that did not generate the prior information"
+            msg = "Attempting to use parameter ({}) that did not generate the prior information".format(
+                self.param_name
+            )
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
 
         if not self.is_enabled and not allow_disabled:
-            msg = f"Attempting to get information from disabled parameter: {self.param_name}"
+            msg = "Attempting to get information from disabled parameter: {}".format(
+                self.param_name
+            )
             logger.critical(msg)
             raise custom_exceptions.InternalError(msg)
 
@@ -393,3 +397,4 @@ class RV_component(ModelComponent):
         msg = "Attempting to disable the RV parameter"
         logger.critical(msg)
         raise custom_exceptions.InvalidConfiguration(msg)
+

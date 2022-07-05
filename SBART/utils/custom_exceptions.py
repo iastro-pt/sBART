@@ -12,6 +12,11 @@ class FrameError(Error):
 
     pass
 
+class AlreadyLoaded(Error):
+    """Raised when we try to load something that was already loaded!"""
+
+    pass
+
 
 class BadOrderError(Error):
     """Raised when we access a bad order"""

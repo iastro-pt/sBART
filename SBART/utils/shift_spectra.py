@@ -111,11 +111,11 @@ def interpolate_data(
 
     Returns
     -------
-    np.ndarray
+    new_values: np.ndarray
         INterpolated values
-    np.ndarray
+    new_errors: np.ndarray
         Interpolated errors
-    np.ndarray
+    valid_indexes: np.ndarray
         Indexes, of new_lambda, in which we interpolated
 
     Raises

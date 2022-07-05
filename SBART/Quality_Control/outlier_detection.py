@@ -5,7 +5,7 @@ from scipy.stats import median_abs_deviation
 
 from SBART.utils.RV_utilities.continuum_fit import fit_continuum_level
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
-from SBART.utils.shift_spectra import apply_RVshift, interpolate_data
+from SBART.utils.shift_spectra import apply_RVshift
 
 
 def compute_outliers(
@@ -14,13 +14,12 @@ def compute_outliers(
     spectra,
     spectra_mask,
     template_wavelengths,
-    template,
+    StellarTemplate,
     template_mask,
     worker_configs,
-    temp_uncert,
     spec_uncert,
+    order,
     epoch=None,
-    order=None,
 ):
     """
     Find outliers for the spectra of one order of one observation!
@@ -58,15 +57,8 @@ def compute_outliers(
     number_iterations = 0
 
     temp_mask = template_mask
-    temp_order = template[temp_mask]
-    temp_uncert_order = temp_uncert[temp_mask]
-    temp_wave = template_wavelengths[temp_mask]
 
-    new_mask = np.ones(spectra_mask.shape, dtype=np.bool)
     full_outlier_mask = np.ones(spectra_mask.shape, dtype=np.bool)
-
-    # SHift template to previousRV of the star. SHould be close enough to flag large outliers
-    shifted_tell_waves = apply_RVshift(temp_wave, obs_rv)
 
     # Find the template blocks and the (shifted) wavelength at the start and end of each!
     template_blocks = build_blocks(np.where(temp_mask == 1))
@@ -103,17 +95,14 @@ def compute_outliers(
                 )
             )
             interpolate_wave_indexes[wavelengths_limits] = True
-        new_template, interpol_errors, indexes = interpolate_data(
-            original_lambda=shifted_tell_waves,
-            original_spectrum=temp_order,
-            original_errors=temp_uncert_order,
-            new_lambda=spectra_wave[interpolate_wave_indexes],
-            lower_limit=0,
-            upper_limit=np.inf,
-            propagate_interpol_errors="interpolation",
-            interpol_cores=0,
-        )
 
+        new_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+                                                           new_wavelengths=spectra_wave[interpolate_wave_indexes],
+                                                           shift_RV_by=obs_rv,
+                                                           RV_shift_mode="apply",
+                                                           order=order,
+                                                           include_invalid=False
+                                                           )
         coefs, _, _, chosen_trend = fit_continuum_level(
             spectra_wave,
             spectra_flux[interpolate_wave_indexes],

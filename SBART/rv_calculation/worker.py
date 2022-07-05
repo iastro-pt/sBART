@@ -11,6 +11,7 @@ from SBART.utils.concurrent_tools.open_buffers import open_buffer
 from SBART.utils.custom_exceptions import (
     BadOrderError,
     InvalidConfiguration,
+    StopComputationError
 )
 from SBART.utils.status_codes import (
     HIGH_CONTAMINATION,
@@ -24,11 +25,11 @@ from SBART.utils.work_packages import WorkerOutput
 
 
 def worker(
-    dataClassProxy,
-    input_queue: Queue,
-    out_queue: Queue,
-    worker_configs: dict,
-    sampler=None,
+        dataClassProxy,
+        input_queue: Queue,
+        out_queue: Queue,
+        worker_configs: dict,
+        sampler=None,
 ):
     if sampler.mode == "epoch-wise":
         # open shared memory array to store the computed mask
@@ -114,13 +115,12 @@ def worker(
                         spectra_wavelengths=spec_wave,
                         spectra=spec_s2d,
                         spectra_mask=current_order_mask,
+                        StellarTemplate=StellarTemplate,
                         template_wavelengths=temp_wave,
-                        template=temp,
                         template_mask=template_order_mask,
                         worker_configs=worker_configs,
-                        temp_uncert=temp_uncerts,
                         spec_uncert=spec_uncert,
-                        # order = current_order,
+                        order=current_order,
                         # epoch = current_epochID
                     )
 
@@ -174,10 +174,10 @@ def worker(
                 else:
                     # Apply the sampler for this spectral order
                     target_kwargs = {
-                        "worker_configs": worker_configs,
                         "template_wave": temp_wave[template_order_mask],
-                        "template": temp[template_order_mask],
-                        "template_uncerts": temp_uncerts[template_order_mask],
+                        # "template": temp[template_order_mask],
+                        # "template_uncerts": temp_uncerts[template_order_mask],
+                        "StellarTemplate": StellarTemplate,
                         "spectra_wave": spec_wave[current_order_mask],
                         "spectra": spec_s2d[current_order_mask],
                         "squared_spectra_uncerts": spec_uncert[current_order_mask] ** 2,
@@ -185,7 +185,6 @@ def worker(
                         "interpol_prop_type": worker_configs[
                             "uncertainty_prop_type"
                         ],  # TODO: change these 2 lines!
-                        "N_cores_propagation": worker_configs["workers_per_job"],
                         "worker_configs": worker_configs,
                         "make_plot": current_order in [35, 41] and 0,
                         "current_order": current_order,
@@ -235,7 +234,12 @@ def worker(
                             print("------> ", current_epochID, current_order)
                             print("spectra", spec_s2d[current_order_mask])
                             print("template: ", temp[template_order_mask])
-                            raise e
+                            logger.critical(f"{full_target_kwargs}")
+                            logger.critical(f"{list(full_target_kwargs.keys())}")
+                            logger.critical(f"{spec_s2d[current_order_mask]}")
+                            logger.critical(f"{temp[template_order_mask]}")
+
+                            raise StopComputationError(f"RV optimization failed on {current_epochID=}, {current_order=}") from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
                             #     spec_wave[current_order_mask],
