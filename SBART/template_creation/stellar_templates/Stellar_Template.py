@@ -205,6 +205,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.is_blaze_corrected = first_frame.is_blaze_corrected
         self.was_telluric_corrected = first_frame.was_telluric_corrected
         self.is_BERV_corrected = first_frame.is_BERV_corrected
+        self.flux_atmos_balance_corrected = first_frame.flux_atmos_balance_corrected
 
         self.flux_balance_corrected = first_frame.flux_balance_corrected
 

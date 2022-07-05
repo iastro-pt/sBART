@@ -35,7 +35,7 @@ class Spectrum(BASE):
         self.spectral_mask = None  # to be determined if I want this here or not .....
         self._blaze_function = None
 
-        self.flux_balance_corrected = False
+        self.flux_atmos_balance_corrected = False
         self.is_blaze_corrected = False
         self.is_BERV_corrected = False
 
