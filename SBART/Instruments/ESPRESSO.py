@@ -241,6 +241,9 @@ class ESPRESSO(Frame):
 
                 balance_corr_model = hdulist["DLLDATA_VAC_BARY"].data
                 self.spectra = self.spectra / balance_corr_model
+
+                # Ensure that we keep the same SNR after the normalization!
+                self.uncertainties = self.uncertainties / balance_corr_model
                 self.flux_dispersion_balance_corrected = True
 
         self.build_mask(bypass_QualCheck=False)
