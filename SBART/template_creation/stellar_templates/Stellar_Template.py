@@ -201,7 +201,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         # TODO: ensure that they all observations are consistent!
         first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
-        logger.warning(f"blaze: {first_frame.is_blaze_corrected}")
         self.is_blaze_corrected = first_frame.is_blaze_corrected
         self.was_telluric_corrected = first_frame.was_telluric_corrected
         self.is_BERV_corrected = first_frame.is_BERV_corrected
