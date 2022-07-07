@@ -281,7 +281,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "is_BERV_corrected": self.is_BERV_corrected,
             "is_blaze_corrected": self.is_blaze_corrected,
             "was_telluric_corrected": self.was_telluric_corrected,
-            "flux_balance_corrected": self.flux_dispersion_balance_corrected,
+            "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
             "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected
         }
 
