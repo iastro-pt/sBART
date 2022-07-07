@@ -385,23 +385,29 @@ class RV_routine(BASE):
         """
         base_message = "Comparing spectra and template with different"
         bad_comparison, key_message = False, ""
-        if stellar_template.is_blaze_corrected != first_frame.is_blaze_corrected:
-            bad_comparison = True
-            key_message = "BLAZE correction states"
 
-        if stellar_template.flux_atmos_balance_corrected != first_frame.flux_atmos_balance_corrected:
-            bad_comparison = True
-            key_message = "corrections of the flux balance due to the atmosphere"
+        comparison_map = (("is_blaze_corrected", "BLAZE correction states"),
+                         ("flux_atmos_balance_corrected", "corrections of the flux balance due to the atmosphere"),
+                         ("flux_dispersion_balance_corrected", "corrections of the flux dispersion with wavelength"),
+                         ("was_telluric_corrected", "telluric correction states")
+                         )
+        messages_to_pass = []
+        bad_comparison = False
+        for kw_name, key_message in comparison_map:
+            template_val = getattr(stellar_template, kw_name)
+            frame_val = getattr(stellar_template, kw_name)
+            if frame_val != template_val:
+                messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
 
-        if stellar_template.flux_dispersion_balance_corrected != first_frame.flux_dispersion_balance_corrected:
-            bad_comparison = True
-            key_message = "corrections of the flux dispersion with wavelength"
+                if kw_name != "was_telluric_corrected":
+                    bad_comparison = True
 
+        for message in messages_to_pass:
+            logger.warning(message)
+        
         if bad_comparison:
-            raise custom_exceptions.InvalidConfiguration(f"{base_message} {key_message}")
-
-        if stellar_template.was_telluric_corrected != first_frame.was_telluric_corrected:
-            logger.warning(f"{base_message} telluric correction states")
+            raise custom_exceptions.InvalidConfiguration("Failed comparison between template and spectra")
+            
 
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
