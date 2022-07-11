@@ -3,7 +3,7 @@ import os
 
 from SBART.Instruments import ESPRESSO, HARPS
 from SBART.Quality_Control.activity_indicators import Indicators
-from SBART.Samplers import chi_squared_sampler, Laplace_approx
+from SBART.Samplers import Sampler_map
 from SBART.data_objects import DataClassManager
 from SBART.data_objects import DataClass
 from SBART.outside_tools.create_logger import setup_SBART_logger
@@ -28,7 +28,7 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False):
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False, sampler_name = None, sampler_configs=None):
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
@@ -177,12 +177,20 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         **user_configs.get("RV_Routine_extra_configs", {}),
     }
 
+    if sampler_configs is None:
+        sampler_configs = {}
+
+    if sampler_name is not None:
+        chosen_sampler = Sampler_map[sampler_name](**sampler_configs)
+    else:
+        sampler = Sampler_map["chi_squared"] if rv_method == "RV_step" else Sampler_map["Laplace"]
+        chosen_sampler = sampler(RVstep, RV_limits, **sampler_configs)
+
     if rv_method == "RV_step":
-        sampler = chi_squared_sampler(RVstep, RV_limits)
         rv_model = RV_step(
             stellar_template_genesis_configs["NUMBER_WORKERS"],
             RV_configs=confsRV,
-            sampler=sampler,
+            sampler=chosen_sampler,
         )
 
         orders = user_configs["ORDER_SKIP"]
@@ -190,11 +198,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         confsRV = config_update_with_fallback_to_default(
             confsRV, "order_removal_mode", user_configs
         )
-        sampler = Laplace_approx(RVstep, RV_limits)
         rv_model = RV_Bayesian(
             math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,
-            sampler=sampler,
+            sampler=chosen_sampler,
         )
         orders = os.path.join(storage_path, "Iteration_0" , "RV_step")
 
