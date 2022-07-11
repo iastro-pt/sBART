@@ -22,3 +22,9 @@ from .chi_squared_sampler import chi_squared_sampler
 from .Laplace_approx import Laplace_approx
 from .MCMC_sampler import MCMC_sampler
 from .WindowSampler import WindowSampler
+
+Sampler_map = {"chi_squared": chi_squared_sampler,
+               "Laplace": Laplace_approx,
+               "MCMC": MCMC_sampler,
+               "Window": WindowSampler
+               }
