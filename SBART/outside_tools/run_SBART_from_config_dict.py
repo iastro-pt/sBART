@@ -49,6 +49,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         inst_options = config_update_with_fallback_to_default(
             inst_options, "apply_FluxCorr", user_configs
         )
+    
+        inst_options = config_update_with_fallback_to_default(
+            inst_options, "apply_FluxBalance_Norm", user_configs
+        )
 
     if "inst_extra_configs" in user_configs:
         inst_options = {**inst_options, **user_configs["inst_extra_configs"]}
@@ -65,6 +69,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     data = manager.DataClass(
         input_fpath,
+        storage_path=storage_path,
         instrument=instrument,
         instrument_options=inst_options,
         sigma_clip_RVs = user_configs.get("SIGMA_CLIP_RV", None)
