@@ -31,19 +31,19 @@ class Classical_Unit(UnitModel):
                                                     "fit_params": fit_coeffs,
                                                     }
 
-    def get_ChiSquared_order_information(self, frameID: int) -> dict:
+    def get_ChiSquared_frameID_information(self, frameID: int) -> dict:
         try:
             return self.chi_squared_profile[frameID]
         except KeyError as exc:
             raise custom_exceptions.NoDataError(f"There is no information from {frameID=}")
 
-    def get_ChiSquared_order_order_information(self, frameID, order):
+    def get_ChiSquared_order_information(self, frameID, order):
         try:
-            return self.get_ChiSquared_order_information(frameID)[order]
+            return self.get_ChiSquared_frameID_information(frameID)[order]
         except KeyError as exc:
             raise custom_exceptions.NoDataError(f"There is no information order {order=}")
 
-    def plot_ChiSquared(self, frameID, order):
+    def plot_ChiSquared(self, frameID, order, show_plot = True):
 
         if frameID == "all":
             frames = list(self.chi_squared_profile.keys())
@@ -55,7 +55,7 @@ class Classical_Unit(UnitModel):
         fig, axis = plt.subplots()
 
         for f_ID in frames:
-            frame_info = self.get_ChiSquared_order_information(f_ID)
+            frame_info = self.get_ChiSquared_frameID_information(f_ID)
 
             if order == 'all':
                 orders = list(frame_info.keys())
@@ -63,10 +63,13 @@ class Classical_Unit(UnitModel):
                 orders = order
 
             for order_to_use in orders:
-                ord_info = self.get_ChiSquared_order_order_information(f_ID, order_to_use)
+                ord_info = self.get_ChiSquared_order_information(f_ID, order_to_use)
                 axis.scatter(ord_info["RVs"], ord_info["profile"])
-
-        plt.show()
+        if show_plot:
+            plt.show()
+            return None, None
+        else:
+            return fig, axis
 
     ###
     # Disk IO operations
@@ -104,6 +107,10 @@ class Classical_Unit(UnitModel):
         new_unit.generate_root_path(rv_cube_fpath)
 
         with open(new_unit.get_storage_filename()) as handle:
-            new_unit.chi_squared_profile = json.load(handle)
+            chi_squared_profile = json.load(handle)
+            profile = {}
+            for str_key, info in chi_squared_profile.items():
+                profile[int(str_key)] = {int(j): k for j,k in info.items()}
+            new_unit.chi_squared_profile = profile
 
         return new_unit
