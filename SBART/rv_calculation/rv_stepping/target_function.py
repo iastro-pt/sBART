@@ -52,6 +52,7 @@ def target(params, **kwargs):
         spectra[indexes],
         interpolated_template,
         indexes,
+        continuum_type=kwargs["worker_configs"]["CONTINUUM_FIT_TYPE"],
         fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
     )
 

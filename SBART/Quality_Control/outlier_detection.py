@@ -108,6 +108,7 @@ def compute_outliers(
             spectra_flux[interpolate_wave_indexes],
             new_template,
             interpolate_wave_indexes,
+            continuum_type=worker_configs["CONTINUUM_FIT_TYPE"],
             fit_degree=worker_configs["CONTINUUM_FIT_POLY_DEGREE"],
         )
         normalizer = chosen_trend(spectra_wave[interpolate_wave_indexes], *coefs)

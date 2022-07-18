@@ -33,7 +33,12 @@ class RV_step(RV_routine):
     Parameter name             Mandatory      Default Value    Valid Values                Comment
     ====================== ================ ================ ======================== ================
     RV_variance_estimator       False           simple       simple/with_correction     What type of variance estimator we use when combining orderwise-RVs
+    CONTINUUM_FIT_TYPE      False           paper               paper / stretch         [1]
     ====================== ================ ================ ======================== ================
+
+    - [1] How to model the continuum level:
+        -   If "paper", then a polynomial is used to model the differences in the continuum.
+        -   If "stretch", then we use the following continuum model: A*Template + B*wave + C
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
     """
@@ -44,6 +49,10 @@ class RV_step(RV_routine):
         RV_variance_estimator=UserParam(
             "simple", constraint=ValueFromList(("simple", "with_correction"))
         )
+    )
+    _default_params.update(
+        "CONTINUUM_FIT_TYPE",
+        UserParam("paper", constraint=ValueFromList(("paper", "stretch"))),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):

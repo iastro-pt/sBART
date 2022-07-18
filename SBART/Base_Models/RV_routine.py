@@ -51,6 +51,7 @@ class RV_routine(BASE):
     output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk [4]
     MEMORY_SAVE_MODE                False           False                  boolean                  Save RAM at the expense of more disk operations
     CONTINUUM_FIT_POLY_DEGREE       False           1                  Integer >= 0                 Degree of the polynomial fit to the continuum.
+    CONTINUUM_FIT_TYPE          False              "paper"              "paper"                     How to model the continuum
     ========================== ================ ==================== ============================== ==================================================================================
 
     - [1] The valid options represent:
@@ -112,9 +113,10 @@ class RV_routine(BASE):
             ],
             constraint=ValueFromList(
                 ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
-                ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
+            ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
+        CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
             1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))
         ),
@@ -384,18 +386,17 @@ class RV_routine(BASE):
         Checks if the stellar template and the first frame share the same state of Flux Corrections
         """
         base_message = "Comparing spectra and template with different"
-        bad_comparison, key_message = False, ""
 
         comparison_map = (("is_blaze_corrected", "BLAZE correction states"),
-                         ("flux_atmos_balance_corrected", "corrections of the flux balance due to the atmosphere"),
-                         ("flux_dispersion_balance_corrected", "corrections of the flux dispersion with wavelength"),
-                         ("was_telluric_corrected", "telluric correction states")
-                         )
+                          ("flux_atmos_balance_corrected", "corrections of the flux balance due to the atmosphere"),
+                          ("flux_dispersion_balance_corrected", "corrections of the flux dispersion with wavelength"),
+                          ("was_telluric_corrected", "telluric correction states")
+                          )
         messages_to_pass = []
         bad_comparison = False
         for kw_name, key_message in comparison_map:
             template_val = getattr(stellar_template, kw_name)
-            frame_val = getattr(stellar_template, kw_name)
+            frame_val = getattr(first_frame, kw_name)
             if frame_val != template_val:
                 messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
 
@@ -404,10 +405,9 @@ class RV_routine(BASE):
 
         for message in messages_to_pass:
             logger.warning(message)
-        
+
         if bad_comparison:
             raise custom_exceptions.InvalidConfiguration("Failed comparison between template and spectra")
-            
 
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
@@ -452,7 +452,7 @@ class RV_routine(BASE):
             "Finished the computation of RVs from {}. Took: {} seconds",
             subInst,
             time.time() - init_time,
-            )
+        )
         self.create_extra_plots(updated_cube)
         return updated_cube
 
@@ -497,6 +497,7 @@ class RV_routine(BASE):
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
+            "CONTINUUM_FIT_TYPE": self._internal_configs["CONTINUUM_FIT_TYPE"],
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
         }
@@ -691,7 +692,7 @@ class RV_routine(BASE):
         while self._live_workers > 0:
             good, bad = evaluate_shutdown(self.output_pool)
             self._live_workers -= good + bad
-            
+
             if good + bad != 0:
                 logger.debug(
                     "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
