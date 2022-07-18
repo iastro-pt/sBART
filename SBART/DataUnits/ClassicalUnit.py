@@ -31,15 +31,15 @@ class Classical_Unit(UnitModel):
                                                     "fit_params": fit_coeffs,
                                                     }
 
-    def get_ChiSquared_order_information(self, frameID: int) -> dict:
+    def get_ChiSquared_frameID_information(self, frameID: int) -> dict:
         try:
             return self.chi_squared_profile[frameID]
         except KeyError as exc:
             raise custom_exceptions.NoDataError(f"There is no information from {frameID=}")
 
-    def get_ChiSquared_order_order_information(self, frameID, order):
+    def get_ChiSquared_order_information(self, frameID, order):
         try:
-            return self.get_ChiSquared_order_information(frameID)[order]
+            return self.get_ChiSquared_frameID_information(frameID)[order]
         except KeyError as exc:
             raise custom_exceptions.NoDataError(f"There is no information order {order=}")
 
