@@ -76,6 +76,10 @@ class Spectral_Modelling(BASE):
             "splines": ScipyInterpolSpecModel(**interface_init),
         }
 
+        if self._internalPaths.root_storage_path is None:
+            logger.critical("{self.name} launching modelling interface without a root path. Fallback to current directory")
+            self.generate_root_path(Path("."))
+
         for comp in self._modelling_interfaces.values():
             comp.generate_root_path(self._internalPaths.root_storage_path)
 
