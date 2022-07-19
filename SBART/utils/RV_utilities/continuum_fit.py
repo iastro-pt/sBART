@@ -6,14 +6,14 @@ from scipy import optimize
 from SBART.utils import custom_exceptions
 
 
-def polynomial_continuum_model(x, model_coeffs):
+def polynomial_continuum_model(x, *model_coeffs):
     try:
         return np.poly1d(model_coeffs)(x)
     except:
         logger.warning("Problem in coeefs: {}".format(model_coeffs))
 
 
-def stretch_continuum_nodel(x, model_coeffs, template):
+def stretch_continuum_nodel(x, template, *model_coeffs):
     """
     Implements the model specified by Xavier Dumusque:
         A*Template + B*lambda + C
@@ -40,23 +40,52 @@ def fit_continuum_level(
 ):
     min_val = np.min(np.abs(template))
     offset = 1e6 if min_val < 1e-3 else 1
-    spectral_ratio = (spectra * offset) / (template * offset)
 
     p0 = fit_degree * [0] + [1]
 
     xx_data = spectra_wave[interpolate_wave_indexes]
-    yy_data = spectral_ratio
 
     if continuum_type == "paper":
+        spectral_ratio = (spectra * offset) / (template * offset)
+        yy_data = spectral_ratio
         coeffs, coefs_cov = optimize.curve_fit(
             polynomial_continuum_model, xx_data, yy_data, p0=p0
         )
-        continuum_model = polynomial_continuum_model
+        continuum_model = lambda x, coeffs: polynomial_continuum_model(x, *coeffs)
     elif continuum_type == "stretch":
-        Matrice1 = np.array([template, spectra_wave, np.ones(len(spectra_wave))]).transpose()
-        res1 = optimize.lsq_linear(Matrice1, xx_data, verbose=1)
+        Matrice1 = np.array([template, xx_data, np.ones(len(xx_data))]).transpose()
+        spectral_ratio = 0
+        res1 = optimize.lsq_linear(Matrice1, spectra, verbose=0)
         coeffs, coefs_cov = res1.x, [0 for _ in res1.x]
-        continuum_model = partial(stretch_continuum_nodel, template=template)
+        continuum_model = lambda x, coeffs: stretch_continuum_nodel(x, template, *coeffs)
     else:
         raise custom_exceptions.InternalError("Passed wrong keyword {} for the continuum type!", continuum_type)
     return coeffs, coefs_cov, spectral_ratio, continuum_model
+
+
+def match_continuum_levels(spectra_wave,
+        spectra,
+        template,
+        interpolate_wave_indexes,
+        fit_degree: int,
+        continuum_type: str):
+    
+    coeffs, cov, spec_ratio, cont_model = fit_continuum_level(spectra_wave,
+        spectra=spectra,
+        template=template,
+        interpolate_wave_indexes=interpolate_wave_indexes,
+        fit_degree=fit_degree,
+        continuum_type=continuum_type
+        )
+    
+    continuum_model = cont_model(spectra_wave[interpolate_wave_indexes],
+                                 coeffs
+                                )
+
+    if continuum_type == "paper":
+        normalized_template = continuum_model * template
+    
+    elif continuum_type == "stretch":
+        normalized_template = continuum_model
+
+    return normalized_template, coeffs, spec_ratio
