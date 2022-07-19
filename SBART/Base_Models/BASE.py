@@ -64,7 +64,7 @@ class BASE:
     def generate_root_path(self, storage_path: Path, no_logs=True) -> NoReturn:
         """ """
         if not isinstance(storage_path, (str, Path)):
-            raise custom_exceptions.InvalidConfiguration("The root path must be a string or Path object")
+            raise custom_exceptions.InvalidConfiguration(f"The root path must be a string or Path object, instead of {storage_path}")
 
         if not isinstance(storage_path, Path):
             storage_path = Path(storage_path)
