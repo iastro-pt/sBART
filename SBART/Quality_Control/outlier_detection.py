@@ -111,7 +111,7 @@ def compute_outliers(
             continuum_type=worker_configs["CONTINUUM_FIT_TYPE"],
             fit_degree=worker_configs["CONTINUUM_FIT_POLY_DEGREE"],
         )
-        normalizer = chosen_trend(spectra_wave[interpolate_wave_indexes], *coefs)
+        normalizer = chosen_trend(x=spectra_wave[interpolate_wave_indexes], model_coeffs=coefs)
 
         new_template = new_template * normalizer
 

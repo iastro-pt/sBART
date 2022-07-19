@@ -56,7 +56,7 @@ def target(params, **kwargs):
         fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
     )
 
-    normalizer = chosen_trend(current_wavelength[indexes], *coefs)
+    normalizer = chosen_trend(x=current_wavelength[indexes], model_coeffs=coefs)
 
     final_uncertainties = 1 / (kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2)
 
