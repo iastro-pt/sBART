@@ -53,8 +53,8 @@ def fit_continuum_level(
         )
         continuum_model = polynomial_continuum_model
     elif continuum_type == "stretch":
-        Matrice1 = np.array([template, spectra_wave, np.ones(len(spectra_wave))]).transpose()
-        res1 = optimize.lsq_linear(Matrice1, xx_data, verbose=1)
+        Matrice1 = np.array([template, xx_data, np.ones(len(xx_data))]).transpose()
+        res1 = optimize.lsq_linear(Matrice1, spectra, verbose=0)
         coeffs, coefs_cov = res1.x, [0 for _ in res1.x]
         continuum_model = partial(stretch_continuum_nodel, template=template)
     else:
