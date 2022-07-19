@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 from scipy.stats import median_abs_deviation
 
-from SBART.utils.RV_utilities.continuum_fit import fit_continuum_level
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 from SBART.utils.shift_spectra import apply_RVshift
 
@@ -103,7 +103,7 @@ def compute_outliers(
                                                            order=order,
                                                            include_invalid=False
                                                            )
-        coefs, _, _, chosen_trend = fit_continuum_level(
+        new_template, _, _ = match_continuum_levels(
             spectra_wave,
             spectra_flux[interpolate_wave_indexes],
             new_template,
@@ -111,9 +111,6 @@ def compute_outliers(
             continuum_type=worker_configs["CONTINUUM_FIT_TYPE"],
             fit_degree=worker_configs["CONTINUUM_FIT_POLY_DEGREE"],
         )
-        normalizer = chosen_trend(x=spectra_wave[interpolate_wave_indexes], model_coeffs=coefs)
-
-        new_template = new_template * normalizer
 
         ### COmputing the outlier metric
         # calculating an offset to avoid division by zero
