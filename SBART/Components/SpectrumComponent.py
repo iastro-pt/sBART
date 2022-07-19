@@ -52,6 +52,30 @@ class Spectrum(BASE):
 
         self.was_telluric_corrected = False
 
+    def check_if_data_correction_enabled(self, property_name) -> bool:
+        """
+        If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
+        get a wrong value (of False), as the corrections are yet to be applied.
+        Thus, we check if the desired property is currently given as a input argument. If it is, return its
+        value, otherwise default to the class property values!
+        """
+        kw_map = {"flux_atmos_balance_corrected": "apply_FluxCorr",
+                  "flux_dispersion_balance_corrected": "apply_FluxBalance_Norm"
+                  }
+        if property_name == "is_BERV_corrected":
+            # Every frame will be blaze corrected (if this is not done by the DRS)
+            return True
+
+        if property_name in ["was_telluric_corrected", "is_blaze_corrected"]:
+            return getattr(self, property_name)
+
+        if property_name not in kw_map:
+            raise custom_exceptions.InternalError("Searching for a data correction that is not available ({})", property_name)
+        try:
+            return self._internal_configs[kw_map[property_name]]
+        except KeyError:
+            return getattr(self, property_name)
+
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(args, kwargs)
         # Store whatever

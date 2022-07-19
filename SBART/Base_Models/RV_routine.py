@@ -396,7 +396,7 @@ class RV_routine(BASE):
         bad_comparison = False
         for kw_name, key_message in comparison_map:
             template_val = getattr(stellar_template, kw_name)
-            frame_val = getattr(first_frame, kw_name)
+            frame_val = first_frame.check_if_data_correction_enabled(kw_name)
             if frame_val != template_val:
                 messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
 

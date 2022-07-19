@@ -201,11 +201,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         # TODO: ensure that they all observations are consistent!
         first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
-        self.is_blaze_corrected = first_frame.is_blaze_corrected
-        self.was_telluric_corrected = first_frame.was_telluric_corrected
-        self.is_BERV_corrected = first_frame.is_BERV_corrected
-        self.flux_atmos_balance_corrected = first_frame.flux_atmos_balance_corrected
-        self.flux_dispersion_balance_corrected = first_frame.flux_dispersion_balance_corrected
+        self.is_blaze_corrected = first_frame.check_if_data_correction_enabled("is_blaze_corrected")
+        self.was_telluric_corrected = first_frame.check_if_data_correction_enabled("was_telluric_corrected")
+        self.is_BERV_corrected = first_frame.check_if_data_correction_enabled("is_BERV_corrected")
+        self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
+        self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
 
 
     def evaluate_bad_orders(self) -> None:
