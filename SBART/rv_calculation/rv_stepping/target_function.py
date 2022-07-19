@@ -1,7 +1,7 @@
 import numpy as np
 
 from SBART.utils.RV_utilities import ensure_valid_RV
-from SBART.utils.RV_utilities.continuum_fit import fit_continuum_level
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.shift_spectra import apply_RVshift
 
 
@@ -46,8 +46,7 @@ def target(params, **kwargs):
                                                                                                 include_invalid=False
                                                                                                 )
 
-    # not entirely sure, but the spectra and the wavelengths go with different formats.....
-    coefs, _, residuals, chosen_trend = fit_continuum_level(
+    normalized_template, coefs, residuals = match_continuum_levels(
         current_wavelength,
         spectra[indexes],
         interpolated_template,
@@ -56,12 +55,11 @@ def target(params, **kwargs):
         fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
     )
 
-    normalizer = chosen_trend(x=current_wavelength[indexes], model_coeffs=coefs)
 
     final_uncertainties = 1 / (kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2)
 
     chi_squared_val = np.sum(
-        final_uncertainties * (spectra[indexes] - normalizer * interpolated_template) ** 2
+        final_uncertainties * (spectra[indexes] - normalized_template) ** 2
     )
 
     if kwargs.get("get_minimum_information", False):
