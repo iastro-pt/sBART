@@ -975,7 +975,7 @@ class RV_cube(BASE):
         )
 
         logger.debug("Loading misc Info:")
-        for key, values in miscInfo.items():
+        for key, values in miscInfo["cached_info"].items():
             new_cube.cached_info[key] = values
 
         logger.debug("Loading orderwise info")
