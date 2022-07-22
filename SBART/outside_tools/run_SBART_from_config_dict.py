@@ -123,7 +123,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
     )
 
-
+    stellar_model_configs = {
+        **stellar_model_configs,
+        **user_configs.get("StellarModel_extra_configs", {}),
+    }
     ModelStell = StellarModel(user_configs=stellar_model_configs,
                             root_folder_path=storage_path if share_stellar is None else share_stellar
                             )
