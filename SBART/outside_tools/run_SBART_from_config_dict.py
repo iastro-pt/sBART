@@ -31,6 +31,10 @@ def config_update_with_fallback_to_default(
 def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
                force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None
                ):
+
+    for path in [share_telluric, share_stellar]:
+        if path is not None and not os.path.exists(path):
+            raise Exception("Trying to use a template that does not exist ({})".format(path))
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
