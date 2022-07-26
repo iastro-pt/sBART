@@ -18,7 +18,7 @@ from SBART.utils.spectral_conditions import (
 
 
 def config_update_with_fallback_to_default(
-    config_dict, SBART_key_name, user_configs, user_key_name=None
+        config_dict, SBART_key_name, user_configs, user_key_name=None
 ):
     try:
         user_key_name = SBART_key_name if user_key_name is None else user_key_name
@@ -28,7 +28,9 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False, sampler_name = None, sampler_configs=None):
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
+               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None
+               ):
     instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
@@ -49,7 +51,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         inst_options = config_update_with_fallback_to_default(
             inst_options, "apply_FluxCorr", user_configs
         )
-    
+
         inst_options = config_update_with_fallback_to_default(
             inst_options, "apply_FluxBalance_Norm", user_configs
         )
@@ -72,7 +74,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         storage_path=storage_path,
         instrument=instrument,
         instrument_options=inst_options,
-        sigma_clip_RVs = user_configs.get("SIGMA_CLIP_RV", None)
+        sigma_clip_RVs=user_configs.get("SIGMA_CLIP_RV", None)
     )
 
     if "REJECT_OBS" in user_configs:
@@ -86,33 +88,8 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     inds = Indicators()
     data.remove_activity_lines(inds)
 
-    telluric_model_configs = {}
-
-    telluric_model_configs = config_update_with_fallback_to_default(
-        telluric_model_configs, "CREATION_MODE", user_configs, "TELLURIC_CREATION_MODE"
-    )
-    telluric_model_configs = config_update_with_fallback_to_default(
-        telluric_model_configs, "EXTENSION_MODE", user_configs, "TELLURIC_EXTENSION_MODE"
-    )
-    telluric_template_genesis_configs = {
-        "atmosphere_profile": "download",
-        "download_tapas": True,
-    }
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs, "user_info", user_configs
-    )
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs, "download_path", user_configs, "TAPAS_download_path"
-    )
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs,
-        "continuum_percentage_drop",
-        user_configs,
-        "TELLURIC_continuum_percentage_drop",
-    )
+    telluric_model_configs = user_configs.get("TELLURIC_MODEL_CONFIGS", {})
+    telluric_template_configs = user_configs.get("TELLURIC_TEMPLATE_CONFIGS", {})
 
     ModelTell = TelluricModel(
         usage_mode="individual",
@@ -122,44 +99,27 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     ModelTell.Generate_Model(
         dataClass=data,
-        telluric_configs=telluric_template_genesis_configs,
+        telluric_configs=telluric_template_configs,
         force_computation=force_telluric_creation,
         store_templates=True,
     )
     data.remove_telluric_features(ModelTell)
 
-    stellar_model_configs = {}
-
-    stellar_model_configs = config_update_with_fallback_to_default(
-        stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
-    )
+    stellar_model_configs = user_configs.get("STELLAR_MODEL_CONFIGS", {})
+    stellar_template_configs = user_configs.get("STELLAR_TEMPLATE_CONFIGS", {})
 
     ModelStell = StellarModel(user_configs=stellar_model_configs,
-                             root_folder_path=storage_path if share_stellar is None else share_stellar
-                            )
+                              root_folder_path=storage_path if share_stellar is None else share_stellar
+                              )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
     except KeyError:
         StellarTemplateConditions = Empty_condition()
 
-    stellar_template_genesis_configs = {
-        "MEMORY_SAVE_MODE": user_configs.get("MEMORY_SAVING_MODE", True),
-        "NUMBER_WORKERS": user_configs.get("NUMBER_WORKERS", 8)
-    }
-
-    stellar_template_genesis_configs = {
-        **stellar_template_genesis_configs,
-        **user_configs.get("StellarTemplate_extra_configs", {}),
-    }
-
-    stellar_template_genesis_configs = config_update_with_fallback_to_default(
-        stellar_template_genesis_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
-    )
-
     try:
         ModelStell.Generate_Model(
             data,
-            stellar_template_genesis_configs,
+            stellar_template_configs,
             StellarTemplateConditions,
             force_computation=force_stellar_creation,
         )
@@ -171,7 +131,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     interpol_properties = user_configs.get("INTERPOL_CONFIG_RV_EXTRACTION", {})
     data.update_interpol_properties_of_stellar_model(interpol_properties)
 
-    confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
+    confsRV = {"MEMORY_SAVE_MODE": stellar_model_configs["MEMORY_SAVE_MODE"]}
 
     confsRV = config_update_with_fallback_to_default(
         confsRV, "sigma_outliers_tolerance", user_configs
@@ -193,7 +153,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     if rv_method == "RV_step":
         rv_model = RV_step(
-            stellar_template_genesis_configs["NUMBER_WORKERS"],
+            stellar_model_configs["NUMBER_WORKERS"],
             RV_configs=confsRV,
             sampler=chosen_sampler,
         )
@@ -204,11 +164,11 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             confsRV, "order_removal_mode", user_configs
         )
         rv_model = RV_Bayesian(
-            math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"] / 2),
+            math.ceil(stellar_model_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,
             sampler=chosen_sampler,
         )
-        orders = os.path.join(storage_path, "Iteration_0" , "RV_step")
+        orders = os.path.join(storage_path, "Iteration_0", "RV_step")
 
     rv_model.run_routine(data, storage_path, orders)
 
