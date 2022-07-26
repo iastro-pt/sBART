@@ -137,7 +137,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     if rv_method == "RV_step":
         rv_model = RV_step(
-            stellar_model_configs["NUMBER_WORKERS"],
+            stellar_template_configs["NUMBER_WORKERS"],
             RV_configs=confsRV,
             sampler=chosen_sampler,
         )
@@ -148,7 +148,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             confsRV, "order_removal_mode", user_configs
         )
         rv_model = RV_Bayesian(
-            math.ceil(stellar_model_configs["NUMBER_WORKERS"] / 2),
+            math.ceil(stellar_template_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,
             sampler=chosen_sampler,
         )
