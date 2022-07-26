@@ -115,7 +115,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     interpol_properties = user_configs.get("INTERPOL_CONFIG_RV_EXTRACTION", {})
     data.update_interpol_properties_of_stellar_model(interpol_properties)
 
-    confsRV = {"MEMORY_SAVE_MODE": stellar_model_configs["MEMORY_SAVE_MODE"]}
+    confsRV = {"MEMORY_SAVE_MODE": stellar_template_configs["MEMORY_SAVE_MODE"]}
 
     confsRV = config_update_with_fallback_to_default(
         confsRV, "sigma_outliers_tolerance", user_configs
