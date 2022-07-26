@@ -38,27 +38,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     RV_limits = user_configs["RV_limits"]
 
-    inst_options = {}
-
-    if "minimum_order_SNR" in user_configs:
-        inst_options = config_update_with_fallback_to_default(
-            inst_options, "minimum_order_SNR", user_configs
-        )
-    if instrument_name == "KOBE":
-        inst_options["shaq_output_folder"] = user_configs["KOBE_SHAQ_FOLDER_PATH"]
-
-    if instrument_name == "ESPRESSO":
-        inst_options = config_update_with_fallback_to_default(
-            inst_options, "apply_FluxCorr", user_configs
-        )
-
-        inst_options = config_update_with_fallback_to_default(
-            inst_options, "apply_FluxBalance_Norm", user_configs
-        )
-
-    if "inst_extra_configs" in user_configs:
-        inst_options = {**inst_options, **user_configs["inst_extra_configs"]}
-
+    instrument_configs = user_configs.get("INSTRUMENT_CONFIGS", {})
     setup_SBART_logger(
         os.path.join(storage_path, "logs"),
         rv_method,
@@ -73,7 +53,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         input_fpath,
         storage_path=storage_path,
         instrument=instrument,
-        instrument_options=inst_options,
+        instrument_options=instrument_configs,
         sigma_clip_RVs=user_configs.get("SIGMA_CLIP_RV", None)
     )
 
