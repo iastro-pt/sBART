@@ -1,7 +1,7 @@
 import math
 import os
 
-from SBART.Instruments import ESPRESSO, HARPS
+from SBART.Instruments import instrument_dict as instrument_name_map
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.Samplers import Sampler_map
 from SBART.data_objects import DataClassManager
@@ -35,7 +35,6 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
             raise Exception("Trying to use a template that does not exist ({})".format(path))
-    instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
 
     instrument = instrument_name_map[instrument_name]
     RVstep = user_configs["RVstep"]
