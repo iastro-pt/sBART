@@ -63,7 +63,7 @@ class Spectrum(BASE):
                   "flux_dispersion_balance_corrected": "apply_FluxBalance_Norm"
                   }
         if property_name == "is_BERV_corrected":
-            # Every frame will be blaze corrected (if this is not done by the DRS)
+            # Every frame will be berv corrected (if this is not done by the DRS)
             return True
 
         if property_name in ["was_telluric_corrected", "is_blaze_corrected"]:
