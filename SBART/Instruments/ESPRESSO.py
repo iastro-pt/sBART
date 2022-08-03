@@ -42,13 +42,16 @@ class ESPRESSO(Frame):
     """
 
     _default_params = Frame._default_params + DefaultValues(
-        apply_FluxCorr=UserParam(False, constraint=BooleanValue),
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
         apply_FluxBalance_Norm=UserParam(False, constraint=BooleanValue)
     )
 
     _default_params.update("spectra_format",
                            UserParam("S2D", constraint=ValueFromList(("S1D", "S2D")))
+                           )
+
+    _default_params.update("apply_FluxCorr",
+                           UserParam(False, constraint=BooleanValue),
                            )
     sub_instruments = {
         "ESPRESSO18": datetime.datetime.strptime("2019-06-27", r"%Y-%m-%d"),

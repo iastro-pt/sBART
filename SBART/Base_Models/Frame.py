@@ -119,7 +119,8 @@ class Frame(Spectrum, Spectral_Modelling):
 
     _default_params = DefaultValues(
         bypass_QualCheck=UserParam(False, constraint=BooleanValue),
-        #
+        apply_FluxCorr=UserParam(False, constraint=ValueFromList((False,))),
+        apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
         reject_order_percentage=UserParam(
             0.25, constraint=ValueInInterval((0, 1), include_edges=True)
         ),
