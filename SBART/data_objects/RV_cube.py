@@ -1028,7 +1028,7 @@ class RV_cube(BASE):
         )
 
         logger.debug("Loading misc Info:")
-        for key, values in miscInfo.items():
+        for key, values in miscInfo["cached_info"].items():
             if key == "date_folders":
                 values = list([Path(i) for i in values])
 
