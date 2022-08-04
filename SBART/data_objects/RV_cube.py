@@ -407,6 +407,8 @@ class RV_cube(BASE):
 
             for key in ["BJD", "MJD"]:
                 time_list = self.cached_info[key]
+                if len(time_list) == 0:
+                    continue
                 if time_list[0] is not None:
                     found_key = True
                     selected_key = key
