@@ -141,6 +141,7 @@ def SBART_target(params, **kwargs):
             interpolated_template,
             indexes,
             fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
+            continuum_type="paper"
         )
 
         normalizer = chosen_trend(current_wavelength[indexes], *coefs)
