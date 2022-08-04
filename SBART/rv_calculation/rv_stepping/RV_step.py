@@ -153,6 +153,7 @@ class RV_step(RV_routine):
                 dataClass,
                 inst,
                 is_merged=True,  # frameIDs=original_cube.frameIDs
+                has_orderwise_rvs=True
             )
 
             cube.load_data_from(original_cube)
