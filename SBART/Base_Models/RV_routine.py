@@ -89,6 +89,7 @@ class RV_routine(BASE):
         uncertainty_prop_type=UserParam(
             "interpolation", constraint=ValueFromList(("interpolation", "propagation"))
         ),
+        RV_extraction=UserParam("order-wise", constraint=ValueFromList(("order-wise",))),
         order_removal_mode=UserParam(
             "per_subInstrument", constraint=ValueFromList(("per_subInstrument", "global"))
         ),
@@ -443,7 +444,11 @@ class RV_routine(BASE):
         )
 
         is_merged = self._internal_configs["order_removal_mode"] == "global"
-        cube = self._output_RVcubes.generate_new_cube(dataClass, subInst, is_merged=is_merged)
+        cube = self._output_RVcubes.generate_new_cube(dataClass,
+                                                      subInst,
+                                                      is_merged=is_merged,
+                                                      has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise"
+                                                      )
 
         cube.update_skip_reason(template_bad_orders, BAD_TEMPLATE)
         cube.load_data_from_DataClass(dataClass)

@@ -54,7 +54,6 @@ class RV_Bayesian(RV_routine):
         include_jitter=UserParam(False, constraint=BooleanValue),
         chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))), # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
-        application=UserParam("epoch-wise", constraint=ValueFromList(("epoch-wise", "order-wise"))),
         # only used if we compute order-wise RVs
         RV_variance_estimator=UserParam(
             "simple", constraint=ValueFromList(("simple", "with_correction"))
@@ -65,6 +64,11 @@ class RV_Bayesian(RV_routine):
     _default_params.update(
         "CONTINUUM_FIT_POLY_DEGREE",
         UserParam(1, constraint=ValueFromList([1])),
+    )
+
+    _default_params.update(
+        "RV_extraction",
+        UserParam("epoch-wise", constraint=ValueFromList(("epoch-wise", "order-wise"))),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
@@ -118,7 +122,7 @@ class RV_Bayesian(RV_routine):
                 self.sampler.enable_param(param_name)
                 raise NotImplementedError("Chromatic trend is currently unavailable")
 
-        self.sampler.set_mode(self._internal_configs["application"])
+        self.sampler.set_mode(self._internal_configs["RV_extraction"])
 
     # TODO: check the arguments
     def run_routine(
@@ -168,9 +172,9 @@ class RV_Bayesian(RV_routine):
         RV_cube
             RV cube filled with all of the information
         """
-        if self._internal_configs["application"] == "order-wise":
+        if self._internal_configs["RV_extraction"] == "order-wise":
             cube = self._orderwise_processment(empty_cube, worker_outputs)
-        elif self._internal_configs["application"] == "epoch-wise":
+        elif self._internal_configs["RV_extraction"] == "epoch-wise":
             cube = self._epochwise_processment(empty_cube, worker_outputs)
 
         return cube
@@ -267,7 +271,7 @@ class RV_Bayesian(RV_routine):
                     logger.warning("FrameID {} did not converge.".format(package["frameID"]))
                     continue
                 # it is a list of numpy arrays! in the epoch-wise mode
-                if self._internal_configs["application"] == "order-wise":
+                if self._internal_configs["RV_extraction"] == "order-wise":
                     full_model_misspec = package["FluxModel_misspecification"]
                 else:
                     full_model_misspec = []
@@ -325,10 +329,10 @@ class RV_Bayesian(RV_routine):
             plt.legend(loc=4, bbox_to_anchor=(0.98, 1), ncol=2)
             plt.tight_layout()
 
-            if self._internal_configs["application"] == "order-wise":
+            if self._internal_configs["RV_extraction"] == "order-wise":
                 # TODO: ensure that this KW actually exists
                 fname = "model_Flux_missspecification_order{}.png".format(package["order"])
-            elif self._internal_configs["application"] == "epoch-wise":
+            elif self._internal_configs["RV_extraction"] == "epoch-wise":
                 fname = "model_Flux_missspecification.png"
 
             plt.savefig(
@@ -355,7 +359,7 @@ class RV_Bayesian(RV_routine):
 
     def _open_shared_memory(self, inst_info: dict) -> None:
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
-        if self._internal_configs["application"] == "epoch-wise":
+        if self._internal_configs["RV_extraction"] == "epoch-wise":
 
             buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=np.bool))
             self._shared_mem_buffers["mask_cache"] = buffer_info
@@ -371,7 +375,7 @@ class RV_Bayesian(RV_routine):
             logger.debug(
                 "{} does not need to place data in shared memory in the {} mode",
                 self.name,
-                self._internal_configs["application"],
+                self._internal_configs["RV_extraction"],
             )
             return
 
@@ -379,7 +383,7 @@ class RV_Bayesian(RV_routine):
     def storage_name(self):
         name = self.__class__._name
         name = name + "/" + self.sampler.storage_name
-        if self._internal_configs["application"] == "order-wise":
+        if self._internal_configs["RV_extraction"] == "order-wise":
             name = name + "_chromatic"
 
         return name
