@@ -5,7 +5,7 @@ import numpy as np
 
 from SBART.utils import second_term
 from SBART.utils.RV_utilities import ensure_valid_RV
-from SBART.utils.RV_utilities.continuum_fit import fit_continuum_level
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.math_tools.build_polynomial import evaluate_polynomial
 from SBART.utils.shift_spectra import apply_RVshift
 
@@ -135,18 +135,16 @@ def SBART_target(params, **kwargs):
         # Flux model miss-specification
         # Use the expected value for the parameters of the polynomial
 
-        coefs, _, _, chosen_trend = fit_continuum_level(
+        normalized_template, coefs, residuals = match_continuum_levels(
             current_wavelength,
             spectra[indexes],
             interpolated_template,
             indexes,
-            fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
-            continuum_type="paper"
+            continuum_type="paper",
+            fit_degree=1,
         )
 
-        normalizer = chosen_trend(current_wavelength[indexes], *coefs)
-
-        misspec_metric = (spectra[indexes] - interpolated_template * normalizer) / np.sqrt(
+        misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
             kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
         )
 
