@@ -136,8 +136,6 @@ class Spectral_Modelling(BASE):
         return np.asarray(new_flux), np.asarray(new_errors)
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
-        logger.debug("MOdelling data storage: {} - {}".format(list(self._modelling_interfaces.keys()), self.initialized_interface))
         super().trigger_data_storage(*args, **kwargs)
         for model_name, comp in self._modelling_interfaces.items():
-            logger.debug("Triggering data storage routines for {}", model_name)
             comp.trigger_data_storage()
