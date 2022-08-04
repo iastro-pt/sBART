@@ -121,13 +121,24 @@ class StellarModel(TemplateFramework):
                 self.name,
                 self._internal_configs["ALIGNEMENT_RV_SOURCE"],
             )
+            pth = Path(self._internal_configs["PREVIOUS_SBART_PATH"])
+            if not pth.exists():
+                raise custom_exceptions.InvalidConfiguration("Previous SBART path does not exist!")
 
             try:
                 try:
-                    self.iteration_number = int(
-                        self._internal_configs["PREVIOUS_SBART_PATH"].split("Iteration_")[1]
-                    )
-                    self.RV_source = self._internal_configs["PREVIOUS_SBART_PATH"].parent.stem
+                    found_iter_number = False
+                    for _ in range(5):
+                        stem = pth.stem
+                        if "Iteration" in stem:
+                            self.iteration_number = int(stem.split("_")[1]) + 1
+                            found_iter_number = True
+                            break
+                        pth = pth.parent
+
+                    if not found_iter_number:
+                        raise IndexError
+                    self.RV_source = Path(self._internal_configs["PREVIOUS_SBART_PATH"]).parent.stem
                 except IndexError:
                     logger.critical(
                         "Provided SBART path does not follow current conventions of having a folder for each "
@@ -139,10 +150,12 @@ class StellarModel(TemplateFramework):
                     use_merged_cube=self._internal_configs["USE_MERGED_RVS"],
                 )
 
-            except custom_exceptions.InvalidConfiguration:
+            except custom_exceptions.InvalidConfiguration as e:
                 self.add_to_status(INTERNAL_ERROR)
                 logger.critical("SBART RV loading routine failed. Stopping template creation")
-                return
+                raise e
+        else:
+            logger.info("Using CCF RVs as the basis for the creation of the stellar models")
 
         self.add_relative_path("Stellar", "Stellar/Iteration_{}".format(self.iteration_number))
 
