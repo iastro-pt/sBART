@@ -191,10 +191,10 @@ class DataClass(BASE):
                                                             apply_drift_corr=False
                                                             )
 
-            previous_filename = cube.cached_info["date_folders"][ID_index]
+            previous_filename = cube.cached_info["date_folders"][cube.frameIDs.index(frameID)]
 
             if previous_filename != frame.file_path:
-                msg = "Loading RVs from cube with different frameID layouts"
+                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument, previous_filename, frame.file_path)
                 logger.critical(msg)
                 raise InvalidConfiguration(msg)
 
