@@ -3,35 +3,44 @@ BASELINE_CONFIGS:
     LOAD_ALL_FROM_FOLDER: "/home/amiguel/phd/tools/sBART_private/tests/resources"
 
     # Computational resources management
-    MEMORY_SAVING_MODE: False
-    NUMBER_WORKERS: 10
 
     # orders to **always** skip
-    ORDER_SKIP: [ 1,4 ]
-    minimum_order_SNR: 5
+    ORDER_SKIP: []
+    ORDER_SKIP_RANGE: [[70, 86]]
 
     # TM configuration stage
-    INSTRUMENT: ESPRESSO
+    INSTRUMENT: "ESPRESSO"
+
+    INSTRUMENT_CONFIGS:
+      minimum_order_SNR: 5
 
     # Handling telluric features
+    TELLURIC_TEMPLATE_CONFIGS:
+      continuum_percentage_drop: 5
 
-    TELLURIC_EXTENSION_MODE: "lines"
-    TELLURIC_CREATION_MODE: "telfit"
-    TELLURIC_continuum_percentage_drop: 1
-    # Handle creation of stellar template
+    TELLURIC_MODEL_CONFIGS:
+      EXTENSION_MODE: "lines"
+      CREATION_MODE: "telfit"
 
-    STELLAR_CREATION_MODE: "Sum"
-    StellarTemplateConditions: KEYWORD_condition("drift", [-15 * meter_second, 15 * meter_second])
+    #    Handle creation of stellar template
+    STELLAR_MODEL_CONFIGS:
+      CREATION_MODE: "Sum"
 
-    StellarTemplate_extra_configs:
-        MINIMUM_NUMBER_OBS: 2
+    STELLAR_TEMPLATE_CONFIGS:
+      MEMORY_SAVE_MODE: True
+      NUMBER_WORKERS: 10
+      MINIMUM_NUMBER_OBS: 1
+
+    StellarTemplateConditions: KEYWORD_condition("DRS_RV_ERR", [0 * meter_second, 50 * meter_second])
+
+
+    ExtraStellarTemplateConditions: Empty_condition()
 
     # Handling RV calculation stage
 
-    RV_methods: [ "RV_step", "Laplace" ]
-    RVstep: "0.3*meter_second"
-    RV_limits: "[250 * meter_second, 250 * meter_second]"
-
+    RV_methods: ["RV_step", "Laplace"]
+    RVstep: "0.1*meter_second"
+    RV_limits: "[100 * meter_second, 100 * meter_second]"
 
 # Full spectrum timeseries
 White_Light:
