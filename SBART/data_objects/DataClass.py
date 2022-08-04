@@ -180,14 +180,29 @@ class DataClass(BASE):
         except FileNotFoundError:
             raise InvalidConfiguration("RV outputs couldn't be found on the provided path")
 
-        for frameID, frame in enumerate(self.observations):
-
+        for ID_index, frameID in enumerate(self.get_valid_frameIDS()):
+            frame = self.get_frame_by_ID(frameID)
             cube = RV_RESULTS.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
+            _, sbart_rv, sbart_uncert = cube.get_RV_from_ID(frameID=frameID,
+                                                            which="SBART",
+                                                            apply_SA_corr=False,
+                                                            as_value=False,
+                                                            units=None,
+                                                            apply_drift_corr=False
+                                                            )
 
-            previous_filename = cube.cached_info["bare_filename"][frameID]
-            if previous_filename != frame.bare_fname:
-                raise InvalidConfiguration("Loading RVs from cube with different frameID layouts")
+            previous_filename = cube.cached_info["date_folders"][ID_index]
 
+            if previous_filename != frame.file_path:
+                msg = "Loading RVs from cube with different frameID layouts"
+                logger.critical(msg)
+                raise InvalidConfiguration(msg)
+
+            cube_ids = cube.frameIDs
+
+            frame.store_previous_SBART_result(RV=sbart_rv,
+                                              RV_err=sbart_uncert
+                                              )
     def reject_order_region_from_frame(self, frameID: int, order: int, region):
         frame = self.get_frame_by_ID(frameID)
         frame.reject_wavelength_region_from_order(order, region)
