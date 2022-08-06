@@ -71,17 +71,6 @@ class SumStellar(StellarTemplate):
         except custom_exceptions.StopComputationError:
             return
 
-        if self._internal_configs["ALIGNEMENT_RV_SOURCE"] == "SBART":
-            try:
-                dataClass.load_previous_SBART_results(
-                    self._internal_configs["PREVIOUS_SBART_PATH"],
-                    use_merged_cube=self._internal_configs["USE_MERGED_RVS"],
-                )
-
-            except custom_exceptions.InvalidConfiguration:
-                self.add_to_status(INTERNAL_ERROR)
-                logger.critical("SBART RV loading routine failed. Stopping template creation")
-                return
         instrument_information = dataClass.get_instrument_information()
 
         epoch_shape = instrument_information["array_size"]
