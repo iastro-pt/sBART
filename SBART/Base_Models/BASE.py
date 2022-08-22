@@ -50,7 +50,7 @@ class BASE:
     ###
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
-        logger.info("{} storing data to disk", self.name)
+        ...
 
     def json_ready(self) -> Dict[str, Any]:
         """
