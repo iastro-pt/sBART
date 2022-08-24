@@ -277,7 +277,7 @@ class MCMC_sampler(SbartBaseSampler):
                 / f"frame_{frameID}__order_{order}.txt"
             )
         else:
-            fname = self._internalPaths.get_path_to("chains") / f"frame_{frameID}.txt"
+            fname = self._internalPaths.get_path_to("chains", as_posix=False) / f"frame_{frameID}.txt"
 
         np.savetxt(
             fname=fname.as_posix(),
