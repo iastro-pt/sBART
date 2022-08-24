@@ -131,7 +131,12 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     if sampler_name is not None:
         chosen_sampler = Sampler_map[sampler_name](**sampler_configs)
     else:
-        sampler = Sampler_map["chi_squared"] if rv_method == "RV_step" else Sampler_map["Laplace"]
+        if rv_method == "RV_step":
+            sampler = Sampler_map["chi_squared"]
+        elif rv_method in ["Laplace", "MCMC"]:
+            sampler = Sampler_map[rv_method]
+        else:
+            raise Exception("Can't recognize method name!")
         chosen_sampler = sampler(RVstep, RV_limits, **sampler_configs)
 
     if rv_method == "RV_step":
