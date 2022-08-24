@@ -575,6 +575,7 @@ MANDATORY_KW_FLAG = Flag("Mandatory KW", "MKW")
 ###########################################################
 
 VALID = Flag("VALID", value="V", fatal_flag=False, is_good_flag=True)
+WARNING = Flag("WARNING", value="W", fatal_flag=False, is_good_flag=False, is_warning=True)
 
 SIGMA_CLIP_REJECTION = Flag("SIGMA CLIP", value="SC")
 USER_BLOCKED = Flag("USER_BLOCKED", value="U")

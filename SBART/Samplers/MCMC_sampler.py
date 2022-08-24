@@ -10,7 +10,7 @@ from loguru import logger
 
 from SBART.utils import custom_exceptions, meter_second, status_codes
 from SBART.utils.math_tools import check_variation_inside_interval
-from SBART.utils.status_codes import SUCCESS, Flag
+from SBART.utils.status_codes import SUCCESS, Flag, WARNING
 from SBART.utils.UserConfigs import DefaultValues, NumericValue, UserParam
 from SBART.utils.work_packages import Package
 
@@ -73,7 +73,7 @@ class MCMC_sampler(SbartBaseSampler):
 
     _default_params = SbartBaseSampler._default_params + DefaultValues(
         MAX_ITERATIONS=UserParam(1000, constraint=NumericValue),
-        ensemble_moves=UserParam(None),
+        ensemble_moves=UserParam(None), # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
         N_walkers=UserParam(4, constraint=NumericValue),
     )
 
@@ -152,6 +152,7 @@ class MCMC_sampler(SbartBaseSampler):
         mean = 0
         std = 0
         autocorr = 0
+        MCMC_status = SUCCESS
 
         header_info = {}
         autocorrelation_evolution = [np.inf]
@@ -233,16 +234,16 @@ class MCMC_sampler(SbartBaseSampler):
                         mean_list=posterior_mean,
                         std_list=posterior_std,
                     )
+                    MCMC_status = WARNING("MCMC did not converge!")
                     # TODO: raise warning in the RV txt output!
-        else:
-            MCMC_status = SUCCESS
-            RV = posterior_mean[-1] * meter_second
-            uncert = posterior_std[-1] * meter_second
 
         if reject_obs:
             MCMC_status = status_codes.CONVERGENCE_FAIL
             RV = np.nan * meter_second
             uncert = np.nan * meter_second
+        else:
+            RV = posterior_mean[-1] * meter_second
+            uncert = posterior_std[-1] * meter_second
 
         header_info["RV_converged"] = RV_converged
         header_info["Burn-In converged"] = BurnIn_converged
