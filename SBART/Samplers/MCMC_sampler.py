@@ -254,6 +254,8 @@ class MCMC_sampler(SbartBaseSampler):
         output_pkg["RV_evolution"] = posterior_mean
         output_pkg["RV_ERR_evolution"] = posterior_std
 
+        output_pkg["status"] = MCMC_status
+
         output_pkg["RV"] = RV
         output_pkg["RV_uncertainty"] = uncert
 

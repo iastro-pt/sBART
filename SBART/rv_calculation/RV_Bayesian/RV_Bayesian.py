@@ -236,7 +236,7 @@ class RV_Bayesian(RV_routine):
 
             for epoch_pkg in pkg:
                 frameID = epoch_pkg["frameID"]
-                order_status = epoch_pkg["status"]
+                order_status = epoch_pkg["status"] # TODO: actually store this!
                 RV = epoch_pkg["RV"]
                 uncert = epoch_pkg["RV_uncertainty"]
 
