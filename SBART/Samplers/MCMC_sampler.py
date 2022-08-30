@@ -142,6 +142,9 @@ class MCMC_sampler(SbartBaseSampler):
         )
 
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
+        # temporary fix!
+        out_pkg["FluxModel_misspecification"] = 0
+        # TODO: add here the computation of the misspecification
 
         return out_pkg, order_status
 
