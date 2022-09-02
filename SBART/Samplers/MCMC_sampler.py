@@ -142,9 +142,22 @@ class MCMC_sampler(SbartBaseSampler):
         )
 
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
-        # temporary fix!
-        out_pkg["FluxModel_misspecification"] = 0
-        # TODO: add here the computation of the misspecification
+
+        if self.mode == "epoch-wise":
+            target_kwargs["run_information"]["target_specific_configs"][
+                "compute_metrics"
+            ] = True
+            target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
+            model_misspec, log_likelihood, orders = internal_func(
+                out_pkg["RV"].value, target, target_kwargs
+            )
+
+        else:
+            target_kwargs["compute_metrics"] = True
+            target_kwargs["weighted"] = True
+            _, model_misspec = internal_func(out_pkg["RV"].value, target, target_kwargs)
+
+        out_pkg["FluxModel_misspecification"] = model_misspec
 
         return out_pkg, order_status
 
