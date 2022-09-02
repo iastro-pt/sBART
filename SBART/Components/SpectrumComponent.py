@@ -305,3 +305,16 @@ class Spectrum(BASE):
             True if it has the arrays loaded on memory
         """
         return self._spectrum_has_data_on_memory
+
+    def normalize(self):
+        """
+        Normalize, each order, of this spectrum.
+
+        TODO:
+            - Decide which algorithms to allow
+            - sanity checks for the data corrections that we might want!
+        Returns
+        -------
+
+        """
+        ...
