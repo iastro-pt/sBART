@@ -221,6 +221,7 @@ class RV_routine(BASE):
             except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
                 raise custom_exceptions.StopComputationError from exc
+
             try:
                 self.load_previous_RVoutputs()
             except custom_exceptions.NoDataError as exc:

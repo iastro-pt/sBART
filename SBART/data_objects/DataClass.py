@@ -28,6 +28,7 @@ from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
 from SBART.utils import custom_exceptions
 
+
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
@@ -203,6 +204,7 @@ class DataClass(BASE):
             frame.store_previous_SBART_result(RV=sbart_rv,
                                               RV_err=sbart_uncert
                                               )
+
     def reject_order_region_from_frame(self, frameID: int, order: int, region):
         frame = self.get_frame_by_ID(frameID)
         frame.reject_wavelength_region_from_order(order, region)
@@ -826,8 +828,7 @@ class DataClass(BASE):
         See if the given instrument is one of the ones that has extra information to load.
         If so, then
         """
-        info_load_map = {"CARMENES": self.load_CARMENES_extra_information()
-        }
+        info_load_map = {"CARMENES": self.load_CARMENES_extra_information}
 
         logger.info("Checking if the instrument has extra data to load")
         for key, load_func in info_load_map.items():
@@ -847,12 +848,10 @@ class DataClass(BASE):
             Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
         """
 
-        shaq_folder = self.get_frame_by_ID(0)._internal_configs["shaq_output_folder"]
         name_to_search = self.Target.true_name
         if "KOBE-" not in name_to_search:
             name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
         shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
-        # TODO: Change to pathlib
         shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
 
         logger.info("Loading extra CARMENES data from {}", shaqfile)
@@ -917,4 +916,3 @@ class DataClass(BASE):
                 f"Data Class from {self._inst_type.instrument_properties['name']} holding "
                 + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )
-
