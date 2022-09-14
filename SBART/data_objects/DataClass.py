@@ -839,7 +839,7 @@ class DataClass(BASE):
 
         logger.info("Current instrument does not need to load anything from the outside")
 
-    def load_CARMENES_extra_information(self, shaq_folder: str) -> None:
+    def load_CARMENES_extra_information(self) -> None:
         """CARMENES pipeline does not give RVs, we have to do an external load of the information
 
         Parameters
