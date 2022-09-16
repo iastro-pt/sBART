@@ -11,7 +11,7 @@ from SBART.utils.UserConfigs import (
 )
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
-from SBART.spectral_modelling import ScipyInterpolSpecModel
+from SBART.spectral_normalization import available_normalization_interfaces
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils import custom_exceptions
 
@@ -51,17 +51,18 @@ class Spectral_Normalization(BASE):
             raise Exception(msg)
 
         self.initialized_normalization_interface = False
-
+        self._already_normalized_data = False
         self._normalization_interfaces: Dict[str, NormalizationBase] = {}
 
-    def initialize_modelling_interface(self):
+    def initialize_normalization_interface(self):
         if self.initialized_normalization_interface:
             return
         interface_init = {"obj_info": self.spectrum_information,
                           "user_configs": self._internal_configs.get_user_configs()
                           }
+
         self._normalization_interfaces: Dict[str,] = {
-            "splines": ScipyInterpolSpecModel(**interface_init),
+            key: value(**interface_init) for key, value in available_normalization_interfaces.items()
         }
 
         if self._internalPaths.root_storage_path is None:
@@ -71,7 +72,7 @@ class Spectral_Normalization(BASE):
         for comp in self._modelling_interfaces.values():
             comp.generate_root_path(self._internalPaths.root_storage_path)
 
-        self.initialized_interface = True
+        self.initialized_normalization_interface = True
 
     def normalize_spectra(self):
         """
@@ -83,7 +84,12 @@ class Spectral_Normalization(BASE):
 
         """
         if not self._internal_configs["NORMALIZE_SPECTRA"]:
+            logger.warning("<NORMALIZE_SPECTRA> option has been disabled by the user")
             return
+        if self._already_normalized_data:
+            logger.warning("{} is already normalized; Doing nothing!", self.name)
+            return
+        self.initialize_normalization_interface()
 
         norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
 
@@ -92,12 +98,13 @@ class Spectral_Normalization(BASE):
                                                                                  include_invalid=True
                                                                                  )
 
-            new_flux, new_uncerts = norm_interface.launch_normalization(wavelengths,
-                                                                        flux,
-                                                                        uncerts
+            new_flux, new_uncerts = norm_interface.launch_normalization(wavelengths=wavelengths,
+                                                                        flux=flux,
+                                                                        uncertainties=uncerts
                                                                         )
-            self.flux[order] = new_flux
+            self.spectra[order] = new_flux
             self.uncertainties[order] = new_uncerts
+        self._already_normalized_data = True
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(*args, **kwargs)

@@ -24,7 +24,8 @@ class NormalizationBase(BASE):
                          needed_folders=needed_folders,
                          quiet_user_params=True
                          )
-
+        print(obj_info)
+        self._spec_info = obj_info
         # Avoid multiple loads of disk information
         self._loaded_disk_model: bool = False
 
@@ -32,13 +33,13 @@ class NormalizationBase(BASE):
         self._attempted_to_load_disk_model: bool = False
 
     def launch_normalization(self, wavelengths, flux, uncertainties):
-        self._normalization_sanity_cheks()
+        self._normalization_sanity_checks()
 
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(args, kwargs)
         self._store_model_to_disk()
 
-    def _normalization_sanity_cheks(self):
-        if self.is_S1D:
+    def _normalization_sanity_checks(self):
+        if self._spec_info["is_S1D"]:
             raise custom_exceptions.InvalidConfiguration("Can't normalize S1D spectra")
