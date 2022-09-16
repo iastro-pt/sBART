@@ -48,7 +48,7 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", "GP", "NN")))
+        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", )))
     )
 
     def __init__(self, **kwargs):
