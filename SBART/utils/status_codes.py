@@ -1,4 +1,4 @@
-import json
+import ujson as json
 from typing import Any, Dict, List, NoReturn, Optional, Set, Tuple, Union
 
 import numpy as np

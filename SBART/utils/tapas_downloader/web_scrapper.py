@@ -1,6 +1,6 @@
 import ftplib
 import gzip
-import json
+import ujson as json
 import os
 import time
 from io import BytesIO
