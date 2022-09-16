@@ -1,3 +1,5 @@
+from loguru import logger
+
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils.UserConfigs import (
     DefaultValues
@@ -23,11 +25,14 @@ class RASSINE_normalization(NormalizationBase):
                          )
 
     def launch_normalization(self, wavelengths, flux, uncertainties):
+        logger.info("here")
         super().launch_normalization(wavelengths, flux, uncertainties)
+        logger.info("Launching Rassine normalization")
         # TODO: implement the interface in here!
+        return flux/10, uncertainties
 
-    def _normalization_sanity_cheks(self):
-        super()._normalization_sanity_cheks()
+    def _normalization_sanity_checks(self):
+        super()._normalization_sanity_checks()
         # TODO: see what kind of data we want to use!
 
 

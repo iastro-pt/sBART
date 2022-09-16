@@ -273,7 +273,10 @@ class Spectrum(BASE):
     def spectrum_information(self):
         return {"N_orders": self.N_orders,
                 "object_type": self._object_type,
-                "blaze_corrected": self.is_blaze_corrected
+                "blaze_corrected": self.is_blaze_corrected,
+                "telluric_corrected": self.was_telluric_corrected,
+                "is_S2D": self.is_S2D,
+                "is_S1D": self.is_S1D,
                 }
 
     @property
@@ -306,15 +309,3 @@ class Spectrum(BASE):
         """
         return self._spectrum_has_data_on_memory
 
-    def normalize(self):
-        """
-        Normalize, each order, of this spectrum.
-
-        TODO:
-            - Decide which algorithms to allow
-            - sanity checks for the data corrections that we might want!
-        Returns
-        -------
-
-        """
-        ...

@@ -4,3 +4,5 @@ to a new wavelength grid.
 
 """
 from .rassine_normalization import RASSINE_normalization
+
+available_normalization_interfaces = {"RASSINE": RASSINE_normalization}

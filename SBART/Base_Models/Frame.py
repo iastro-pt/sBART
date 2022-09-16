@@ -8,7 +8,7 @@ import numpy as np
 from astropy.io import fits
 from loguru import logger
 
-from SBART.Components import Spectral_Modelling, Spectrum
+from SBART.Components import Spectral_Modelling, Spectrum, Spectral_Normalization
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import (
@@ -39,7 +39,7 @@ from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
 
 
-class Frame(Spectrum, Spectral_Modelling):
+class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     """
     Base Class for the different :ref:`Instruments<InstrumentsDescription>`, providing a shared interface to spectral data and
     header information.
