@@ -35,6 +35,8 @@ class NormalizationBase(BASE):
 
     def launch_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         # TODO: implement the interface in here!
+        self._normalization_sanity_checks()
+
         if len(loaded_info) != 0:
             return *self.apply_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
         return self.fit_normalization(wavelengths, flux, uncertainties)
