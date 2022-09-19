@@ -1,3 +1,4 @@
+from SBART.utils import custom_exceptions
 from loguru import logger
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
@@ -16,8 +17,8 @@ class Polynomial_normalization(NormalizationBase):
 
     """
 
-    # TODO: confirm the kernels that we want to allow
     _default_params = NormalizationBase._default_params + DefaultValues()
+    _name = "Poly"
 
     def __init__(self, obj_info, user_configs):
         super().__init__(obj_info=obj_info,
@@ -35,5 +36,5 @@ class Polynomial_normalization(NormalizationBase):
     def _normalization_sanity_checks(self):
         super()._normalization_sanity_checks()
         # TODO: see what kind of data we want to use!
-
-
+        if not self._spec_info["blaze_corrected"]:
+            raise custom_exceptions.InvalidConfiguration(f"{self.name} can't normalize spectra that was not BLAZE corrected")

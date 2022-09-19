@@ -107,7 +107,6 @@ class Spectral_Normalization(BASE):
 
         norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
         # TODO: see if we want to parallelize this!
-
         for order in range(self.N_orders):
             wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(order,
                                                                                  include_invalid=True
@@ -118,7 +117,7 @@ class Spectral_Normalization(BASE):
                                                                                    uncertainties=uncerts,
                                                                                    loaded_info=self._normalization_information.get_norm_info_from_order(
                                                                                        order
-                                                                                       )
+                                                                                   )
                                                                                    )
             self.spectra[order] = new_flux
             self.uncertainties[order] = new_uncerts
