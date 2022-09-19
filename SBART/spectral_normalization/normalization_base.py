@@ -14,6 +14,8 @@ from SBART.utils.UserConfigs import (
 
 
 class NormalizationBase(BASE):
+    _object_type = "Spectral normalizer"
+
     _name = "SpecNormBase"
     _default_params = BASE._default_params + DefaultValues(
         NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue)
@@ -24,7 +26,6 @@ class NormalizationBase(BASE):
                          needed_folders=needed_folders,
                          quiet_user_params=True
                          )
-        print(obj_info)
         self._spec_info = obj_info
         # Avoid multiple loads of disk information
         self._loaded_disk_model: bool = False
@@ -32,9 +33,17 @@ class NormalizationBase(BASE):
         # Avoid multiple calls to disk loading if the file does not exist
         self._attempted_to_load_disk_model: bool = False
 
-    def launch_normalization(self, wavelengths, flux, uncertainties):
-        self._normalization_sanity_checks()
+    def launch_normalization(self, wavelengths, flux, uncertainties, loaded_info):
+        # TODO: implement the interface in here!
+        if len(loaded_info) != 0:
+            return *self.apply_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
+        return self.fit_normalization(wavelengths, flux, uncertainties)
 
+    def fit_normalization(self, wavelengths, flux, uncertainties):
+        ...
+
+    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        ...
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(args, kwargs)
