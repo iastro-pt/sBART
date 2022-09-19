@@ -24,13 +24,14 @@ class Polynomial_normalization(NormalizationBase):
                          user_configs=user_configs,
                          )
 
-    def launch_normalization(self, wavelengths, flux, uncertainties):
-        logger.info("here")
-        super().launch_normalization(wavelengths, flux, uncertainties)
-        logger.info("Launching Rassine normalization")
-        # TODO: implement the interface in here!
-        return flux/10, uncertainties
+    def fit_normalization(self, wavelengths, flux, uncertainties):
+        return *self.apply_normalization(wavelengths, flux, uncertainties), {"ddd":21,
+                                                                             "kasdkhjjkasdha":1
+                                                                             }
 
+    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        super().apply_normalization(wavelengths, flux, uncertainties, **kwargs)
+        return flux/10, uncertainties/10
     def _normalization_sanity_checks(self):
         super()._normalization_sanity_checks()
         # TODO: see what kind of data we want to use!

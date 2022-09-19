@@ -3,6 +3,9 @@ This sub-package implements the different methods that can be used to interpolat
 to a new wavelength grid.
 
 """
-from .rassine_normalization import RASSINE_normalization
+from .alpha_shape_normalization import AlphaShape_normalization
+from .polynomial_normalization import Polynomial_normalization
 
-available_normalization_interfaces = {"RASSINE": RASSINE_normalization}
+available_normalization_interfaces = {"Alpha-Shape": AlphaShape_normalization,
+                                      "Poly-Norm": Polynomial_normalization
+                                      }
