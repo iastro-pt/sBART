@@ -26,14 +26,8 @@ class UnitModel(BASE):
     def find_index_of(self, frameID):
         return self.associated_frameIDs.index(frameID)
 
-    def generate_root_path(self, storage_path: Path) -> NoReturn:
-        if isinstance(storage_path, str):
-            storage_path = Path(storage_path)
-        storage_path = storage_path / self._content_name
-        super().generate_root_path(storage_path)
-
     @classmethod
     def load_from_disk(cls, root_path: Path):
-        storage_path = root_path / cls._content_name
-        if not storage_path.exists():
+        if not root_path.exists():
             raise custom_exceptions.NoDataError
+
