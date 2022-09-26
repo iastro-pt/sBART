@@ -10,11 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
-from matplotlib.colors import LinearSegmentedColormap
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.DataUnits import available_data_units
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError

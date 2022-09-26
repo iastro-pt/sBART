@@ -3,14 +3,13 @@ from loguru import logger
 from typing import NoReturn, Dict
 
 import numpy as np 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
 )
 
-from SBART.spectral_modelling.modelling_base import ModellingBase
 from SBART.spectral_modelling import ScipyInterpolSpecModel
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils import custom_exceptions
@@ -64,7 +63,7 @@ class Spectral_Modelling(BASE):
 
         self.initialized_interface = False
 
-        self._modelling_interfaces: Dict[str, ModellingBase] = {}
+        self._modelling_interfaces: Dict[str, "ModellingBase"] = {}
 
     def initialize_modelling_interface(self):
         if self.initialized_interface:
@@ -72,7 +71,7 @@ class Spectral_Modelling(BASE):
         interface_init = {"obj_info": self.spectrum_information,
                           "user_configs": self._internal_configs.get_user_configs()
                           }
-        self._modelling_interfaces: Dict[str, ModellingBase] = {
+        self._modelling_interfaces: Dict[str, "ModellingBase"] = {
             "splines": ScipyInterpolSpecModel(**interface_init),
         }
 

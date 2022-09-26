@@ -7,7 +7,7 @@ from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.Base_Models.Frame import Frame
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData

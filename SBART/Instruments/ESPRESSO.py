@@ -8,14 +8,14 @@ from iCCF import gaussfit
 from loguru import logger
 from scipy.constants import convert_temperature
 
-from SBART.Base_Models import Frame
+from SBART import Base_Models
 from SBART.utils.RV_utilities.CCF_errors import ccffitRV
 from SBART.utils.status_codes import ERROR_THRESHOLD, FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
 from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam, ValueFromList
 
 
-class ESPRESSO(Frame):
+class ESPRESSO(Base_Models.Frame):
     """
     Interface to handle ESPRESSO observations (S2D and S1D).
 
