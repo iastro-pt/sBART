@@ -3,7 +3,7 @@ from loguru import logger
 from typing import NoReturn, Dict, Optional
 
 import numpy as np
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
@@ -112,15 +112,16 @@ class Spectral_Normalization(BASE):
                                                                                  include_invalid=True
                                                                                  )
 
-            new_flux, new_uncerts, norm_keys = norm_interface.launch_normalization(wavelengths=wavelengths,
-                                                                                   flux=flux,
-                                                                                   uncertainties=uncerts,
+            mask_to_use = ~mask
+            new_flux, new_uncerts, norm_keys = norm_interface.launch_normalization(wavelengths=wavelengths[mask_to_use],
+                                                                                   flux=flux[mask_to_use],
+                                                                                   uncertainties=uncerts[mask_to_use],
                                                                                    loaded_info=self._normalization_information.get_norm_info_from_order(
                                                                                        order
                                                                                    )
                                                                                    )
-            self.spectra[order] = new_flux
-            self.uncertainties[order] = new_uncerts
+            self.spectra[order][mask_to_use] = new_flux
+            self.uncertainties[order][mask_to_use] = new_uncerts
 
             self._normalization_information.store_norm_info(order, norm_keys)
 

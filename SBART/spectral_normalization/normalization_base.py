@@ -2,7 +2,7 @@ from loguru import logger
 from typing import NoReturn, Dict, Any
 
 from SBART.utils import custom_exceptions
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils.UserConfigs import (
     BooleanValue,

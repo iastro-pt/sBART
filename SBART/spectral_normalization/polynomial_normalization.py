@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 from SBART.utils import custom_exceptions
 from loguru import logger
 
@@ -26,15 +29,28 @@ class Polynomial_normalization(NormalizationBase):
                          )
 
     def fit_normalization(self, wavelengths, flux, uncertainties):
-        return *self.apply_normalization(wavelengths, flux, uncertainties), {"ddd":21,
-                                                                             "kasdkhjjkasdha":1
-                                                                             }
+        out = np.polyfit(x=wavelengths,
+                         y=flux,
+                         deg=1,
+                         w=1 / uncertainties ** 2
+                         )
+
+        optim_result = {"param_vector": out}
+        return *self.apply_normalization(wavelengths, flux, uncertainties, param_vector=out), optim_result
 
     def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         super().apply_normalization(wavelengths, flux, uncertainties, **kwargs)
-        return flux/10, uncertainties/10
+        poly = np.poly1d(kwargs["param_vector"])
+        model = poly(wavelengths)
+        return flux / model, uncertainties / model
+
     def _normalization_sanity_checks(self):
         super()._normalization_sanity_checks()
         # TODO: see what kind of data we want to use!
-        if not self._spec_info["blaze_corrected"]:
-            raise custom_exceptions.InvalidConfiguration(f"{self.name} can't normalize spectra that was not BLAZE corrected")
+
+        keys = {"flux_dispersion_balance_corrected": "flux-balanced",
+                "blaze_corrected": "BLAZE corrected"
+                }
+        for key, value in keys.items():
+            if not self._spec_info[key]:
+                raise custom_exceptions.InvalidConfiguration(f"{self.name} can't normalize spectra that was not {value}")
