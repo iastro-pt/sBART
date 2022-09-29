@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Dict, NoReturn, Optional
 
 import numpy as np
@@ -131,6 +132,7 @@ class IterableMustHave(Constraint):
 
 Positive_Value_Constraint = ValueInInterval([0, np.inf], include_edges=True)
 StringValue = ValueFromDtype((str,))
+PathValue = ValueFromDtype((str, Path))
 NumericValue = ValueFromDtype((int, float))
 IntegerValue = ValueFromDtype((int,))
 BooleanValue = ValueFromDtype((bool,))

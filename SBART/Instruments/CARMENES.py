@@ -13,7 +13,7 @@ from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.shift_spectra import apply_BERV_correction
 from SBART.utils.status_codes import MISSING_DATA, Flag, MISSING_SHAQ_RVS
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import DefaultValues, StringValue, UserParam
+from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam
 
 
 class CARMENES(Frame):
@@ -38,7 +38,7 @@ class CARMENES(Frame):
     """
 
     _default_params = Frame._default_params + DefaultValues(
-        shaq_output_folder=UserParam(None, constraint=StringValue, mandatory=True)
+        shaq_output_folder=UserParam(None, constraint=PathValue, mandatory=True)
     )
 
     sub_instruments = {
