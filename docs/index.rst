@@ -19,6 +19,7 @@ Check out the :doc:`guide` section for further information.
          Known issues / FAQ <Known_issues>
          Public interface <api/index>
          In-depth tutorials <tutorials/index>
+         FAQ <user_guides/FAQ>
 
 
 Indices and tables
