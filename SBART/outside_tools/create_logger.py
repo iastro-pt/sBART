@@ -60,30 +60,35 @@ def setup_SBART_logger(storage_path: str, RV_method: str, instrument,
         diagnose=True,
     )
 
-    storage_method_folder = os.path.join(storage_path, RV_method)
-    try:
-        os.mkdir(storage_method_folder)
-    except OSError:
-        pass
+    logger.warning("Currently disabled the multi-folder logger structure")
+    return
 
-    for key in available_blocks:
-        logger.add(
-            os.path.join(storage_method_folder, f"{key}.log"),
-            filter=lambda record: record["extra"].get("name") == key,
-        )
+    # TODO: do a division of the logs between the relevant disk files!
+
+    # storage_method_folder = os.path.join(storage_path, RV_method)
+    # try:
+    #     os.mkdir(storage_method_folder)
+    # except OSError:
+    #     pass
+    #
+    # for key in available_blocks:
+    #     logger.add(
+    #         os.path.join(storage_method_folder, f"{key}.log"),
+    #         filter=lambda record: record["extra"].get("name") == key,
+    #     )
 
     # always preserve the logs from the creation of the templates
     # These two are also propagated in the main logger!
-    logger.add(
-        os.path.join(storage_method_folder, "StellarTemplate.log"),
-        filter=lambda record: record["extra"].get("name") == "StellarTemplate",
-    )
-    logger.add(
-        os.path.join(storage_method_folder, "TelluricTemplate.log"),
-        filter=lambda record: record["extra"].get("name") == "TelluricTemplate",
-    )
+    # logger.add(
+    #     os.path.join(storage_method_folder, "StellarTemplate.log"),
+    #     filter=lambda record: record["extra"].get("name") == "StellarTemplate",
+    # )
+    # logger.add(
+    #     os.path.join(storage_method_folder, "TelluricTemplate.log"),
+    #     filter=lambda record: record["extra"].get("name") == "TelluricTemplate",
+    # )
 
-    logger.info(storage_path)
+    # logger.info(storage_path)
 
 
 if __name__ == "__main__":
