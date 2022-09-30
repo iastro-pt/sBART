@@ -26,7 +26,7 @@ Inside the two folders we can find exactly the same file structure, which contai
 
 
 The output RV file
-======================================================
+-------------------------------
 
 The RV file is a text file with multiple columns. A brief description of them follows here:
 
@@ -38,3 +38,31 @@ The RV file is a text file with multiple columns. A brief description of them fo
 - DRIFT_ERR: Drift uncertainty. If not "nan", then it is added in quadrature to the "raw" sBART RVs
 - filename: Filename of this observation
 - frameIDs: ID of the observation inside sBART, only used for debugging / accessing extra information in sBART outputs
+
+
+Data products from the creation of the templates
+======================================================
+
+Aside from the RV data, SBART also stores the data from both stellar and telluric templates. This is stored inside the *templates* folder and, at a later date, SBART can load the data from disk, allowing one to use the object interface of SBART.
+
+
+The Stellar Template
+-----------------------
+
+The Stellar template stores to disk a large number of files and folders:
+
+- data_products - internal folder to store information, no use-case for the end-user
+- metrics - Store plots with the amount of pixels rejected in each spectral order. Allows to diagnose possible chromatic issues (across multiple observations) or to detect outlier observations
+
+- The *fits* files will store the actual template, which can then be loaded with SBART
+- The text files store an overview of the data included (and rejected) from the stellar template. It also provided a summary of the configs and the data conditions that were applied
+
+
+The Telluric Template
+-----------------------
+
+The telluric template stores to disk:
+
+i) One fits file for each sub-Instrument, with the binary mask and the transmittance spectra
+ii) One "metrics" folder, where there are plots of the transmittance spectra used for the "basis" of the telluric mask
+
