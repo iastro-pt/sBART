@@ -12,6 +12,7 @@ The following pages provide a (for now) quite incomplete documentation of how to
 
         Installation <user_guides/installation>
         QuickStart guide to sBART <user_guides/quickstart>
+        Understanding the outputs <user_guides/SBART_outputs>
         Configuration of the parameters <user_guides/sBART_config>
         Contributing to SBART <user_guides/CONTRIBUTING>
 
