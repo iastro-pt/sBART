@@ -1,19 +1,23 @@
 import copy
-import json
+import ujson as json
 import os
 import time
 import warnings
+from pathlib import Path
 from typing import List, NoReturn, Optional, Set, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
+from matplotlib.colors import LinearSegmentedColormap
 from tabletexifier import Table
 
 from SBART import __version__
 from SBART.Base_Models.BASE import BASE
-from SBART.utils.custom_exceptions import InvalidConfiguration
+from SBART.Base_Models.UnitModel import UnitModel
+from SBART.DataUnits import available_data_units
+from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
@@ -37,7 +41,7 @@ class RV_cube(BASE):
 
     """
 
-    def __init__(self, subInst: str, frameIDs: List[int], instrument_properties: dict):
+    def __init__(self, subInst: str, frameIDs: List[int], instrument_properties: dict, has_orderwise_rvs):
         """
         It contains:
             - the SA correction value (and applies it)
@@ -67,6 +71,9 @@ class RV_cube(BASE):
         self._RvErrors_orderwise = np.zeros((N_epochs, N_orders)) + np.nan
 
         self._OrderStatus = OrderStatus(N_orders=N_orders, frameIDs=frameIDs)
+
+        self._extra_storage_units = []
+        self.has_orderwise_rvs = has_orderwise_rvs
 
         self._drift_corrected = instrument_properties[
             "is_drift_corrected"
@@ -126,6 +133,12 @@ class RV_cube(BASE):
         self._Rv_orderwise, self._RvErrors_orderwise, self._OrderStatus = other.data
         self._loaded_inst_info = True
         self._saved_to_disk = False
+
+    def add_extra_storage_unit(self, new_unit: UnitModel, generate_root=True):
+        logger.info("Adding a new storage unit")
+        if generate_root:
+            new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
+        self._extra_storage_units.append(new_unit)
 
     def set_merged_mode(self, orders_to_skip: List[int]) -> None:
         self._mode = "merged_subInst"
@@ -355,6 +368,12 @@ class RV_cube(BASE):
 
         return secular_correction
 
+    def get_storage_unit(self, storage_name):
+        for unit in self._extra_storage_units:
+            if unit.is_storage_type(storage_name):
+                return unit
+        raise NoDataError("Storage unit {} does not exist", storage_name)
+
     ##########################
     #
     # Access data
@@ -388,6 +407,8 @@ class RV_cube(BASE):
 
             for key in ["BJD", "MJD"]:
                 time_list = self.cached_info[key]
+                if len(time_list) == 0:
+                    continue
                 if time_list[0] is not None:
                     found_key = True
                     selected_key = key
@@ -664,64 +685,90 @@ class RV_cube(BASE):
 
         fig.savefig(final_path, dpi=300)
 
-        fig_full, ax_full = plt.subplots(2, 1, sharex=True)
-        fig_part, ax_part = plt.subplots(2, 1, sharex=True)
+        if self.has_orderwise_rvs:
+            fig_full, ax_full = plt.subplots(2, 1, sharex=True)
+            fig_part, ax_part = plt.subplots(2, 1, sharex=True)
 
-        figure_list.extend([fig_full, fig_part])
+            figure_list.extend([fig_full, fig_part])
 
-        orders = np.asarray(range(self._Rv_orderwise.shape[1]))
-        for epoch, data in enumerate(self._RvErrors_orderwise):
-            full_rvs = self._Rv_orderwise[epoch]
+            orders = np.asarray(range(self._Rv_orderwise.shape[1]))
+            for epoch, data in enumerate(self._RvErrors_orderwise):
+                full_rvs = self._Rv_orderwise[epoch]
 
-            valid_orders = data.copy()
-            valid_RVs = full_rvs.copy()
-            valid_orders[self.problematic_orders] = np.nan
-            valid_RVs[self.problematic_orders] = np.nan
+                valid_orders = data.copy()
+                valid_RVs = full_rvs.copy()
+                valid_orders[self.problematic_orders] = np.nan
+                valid_RVs[self.problematic_orders] = np.nan
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                ax_full[0].errorbar(
-                    orders[self.problematic_orders],
-                    full_rvs[self.problematic_orders] - np.nanmedian(valid_RVs),
-                    data[self.problematic_orders],
-                    marker="o",
-                    linestyle="",
-                    alpha=0.3,
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    ax_full[0].errorbar(
+                        orders[self.problematic_orders],
+                        full_rvs[self.problematic_orders] - np.nanmedian(valid_RVs),
+                        data[self.problematic_orders],
+                        marker="o",
+                        linestyle="",
+                        alpha=0.3,
+                        )
 
-                # TODO: understand why this gives UserWarning: Warning: converting a masked element to nan.
-                ax_full[0].errorbar(
-                    orders,
-                    full_rvs - np.nanmedian(valid_RVs),
-                    data,
-                    marker="o",
-                    linestyle="",
-                )
+                    # TODO: understand why this gives UserWarning: Warning: converting a masked element to nan.
+                    ax_full[0].errorbar(
+                        orders,
+                        full_rvs - np.nanmedian(valid_RVs),
+                        data,
+                        marker="o",
+                        linestyle="",
+                        )
 
-                ax_full[1].plot(data[self.problematic_orders], marker="o", linestyle="", alpha=0.3)
-                ax_full[1].plot(valid_orders, marker="x", linestyle="")
+                    ax_full[1].plot(data[self.problematic_orders], marker="o", linestyle="", alpha=0.3)
+                    ax_full[1].plot(valid_orders, marker="x", linestyle="")
 
-                centered_RVs = valid_RVs - np.nanmedian(valid_RVs)
+                    centered_RVs = valid_RVs - np.nanmedian(valid_RVs)
 
-                ax_part[0].errorbar(orders, centered_RVs, valid_orders, marker="o", linestyle="")
+                    ax_part[0].errorbar(orders, centered_RVs, valid_orders, marker="o", linestyle="")
 
-                ax_part[1].plot(valid_orders, marker="x", linestyle="")
+                    ax_part[1].plot(valid_orders, marker="x", linestyle="")
 
-        for ax in [ax_full, ax_part]:
-            ax[0].set_ylabel("OrderWise RVs")
-            ax[1].set_ylabel(r"$\sigma_{RV}$")
-            ax[1].set_xlabel("Order")
+            for ax in [ax_full, ax_part]:
+                ax[0].set_ylabel("OrderWise RVs")
+                ax[1].set_ylabel(r"$\sigma_{RV}$")
+                ax[1].set_xlabel("Order")
 
-            ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
-            ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
+                ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
+                ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
 
-        final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
-        fig_full.tight_layout()
-        fig_full.savefig(final_path)
+            final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
+            fig_full.tight_layout()
+            fig_full.savefig(final_path)
 
-        final_path = build_filename(diagnostics_path, "RV_orderwise_errors", "png")
-        fig_part.tight_layout()
-        fig_part.savefig(final_path)
+            final_path = build_filename(diagnostics_path, "RV_orderwise_errors", "png")
+            fig_part.tight_layout()
+            fig_part.savefig(final_path)
+
+            fig, axis = plt.subplots()
+            figure_list.append(fig)
+            times = self.obs_times
+            sorted_IDs = np.asarray(self.frameIDs)[np.argsort(times)].tolist()
+            empty_array = np.zeros((self.N_orders, len(times)))
+
+            for pkg in self.worker_outputs:
+                for order_pkg in pkg:
+                    frameID = order_pkg["frameID"]
+                    order = order_pkg["order"]
+                    empty_array[order, sorted_IDs.index(frameID)] = order_pkg["Total_Flux_Order"]
+            empty_array /= np.max(empty_array, axis=1)[:, None] #normalize across the orders
+
+            fig, ax = plt.subplots(figsize=(20, 10), constrained_layout=True)
+            figure_list.append(fig)
+            data = ax.imshow(empty_array.T)
+            ax.set_xlabel("Spectral order")
+            ax.set_ylabel("Observation number")
+            ax.set_yticklabels([])
+            ax.set_title(r"$\sum_i Spectra(\lambda_i)$")
+            fig.colorbar(data)
+            final_path = build_filename(diagnostics_path, "OrderwiseFlux", "png")
+            fig.savefig(final_path)
+
 
         logger.debug("Closing figures from {}", self.name)
         for figure in figure_list:
@@ -796,6 +843,9 @@ class RV_cube(BASE):
         self._store_misc_info()
         self._store_work_packages()
 
+        for unit in self._extra_storage_units:
+            unit.trigger_data_storage()
+
         tf = time.time() - t0
         logger.info("Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf))
 
@@ -811,10 +861,10 @@ class RV_cube(BASE):
         data_out = {
             "cached_info": {"target": self.cached_info["target"].json_ready},
         }
+        data_out["cached_info"]["ISO-DATE"] = self.cached_info["ISO-DATE"]
+        data_out["cached_info"]["date_folders"] = list([i.as_posix() for i in self.cached_info["date_folders"]])
 
-        for key in ["ISO-DATE", "date_folders"]:
-            data_out["cached_info"][key] = self.cached_info[key]
-
+        data_out["has_orderwise_rvs"] = self.has_orderwise_rvs
         with open(storage_path, mode="w") as file:
             json.dump(data_out, file, indent=4)
 
@@ -969,13 +1019,21 @@ class RV_cube(BASE):
             "is_drift_corrected": header_info["HIERARCH drift_corr"],
         }
         frameIDs = timeseries_table["FrameID"].astype(int).tolist()
+        try:
+            has_orderwise_rvs = miscInfo["has_orderwise_rvs"]
+        except KeyError:
+            DeprecationWarning("Old RV cubes will stop being supported shortly")
+            has_orderwise_rvs = True
 
         new_cube = RV_cube(
-            subInst=subInst, frameIDs=frameIDs, instrument_properties=instrument_info
+            subInst=subInst, frameIDs=frameIDs, instrument_properties=instrument_info, has_orderwise_rvs=has_orderwise_rvs
         )
 
         logger.debug("Loading misc Info:")
-        for key, values in miscInfo.items():
+        for key, values in miscInfo["cached_info"].items():
+            if key == "date_folders":
+                values = list([Path(i) for i in values])
+
             new_cube.cached_info[key] = values
 
         logger.debug("Loading orderwise info")
@@ -1044,5 +1102,14 @@ class RV_cube(BASE):
                 Package.create_from_json(elem) for elem in work_packages["work_packages"]
             ]
             new_cube.update_worker_information(converted_work_packages)
+
+        for unit in available_data_units:
+            try:
+                loaded_units = unit.load_from_disk(subInst_path / "RVcube")
+            except NoDataError:
+                logger.debug("Failed to find data from {}", unit._name)
+                continue
+
+            new_cube.add_extra_storage_unit(loaded_units, generate_root=False)
 
         return new_cube

@@ -1,0 +1,1 @@
+Introducing GP interpolation for stellar spectra (Frames and Stellar Templates)

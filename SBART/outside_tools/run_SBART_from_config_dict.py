@@ -1,9 +1,9 @@
 import math
 import os
 
-from SBART.Instruments import ESPRESSO, HARPS
+from SBART.Instruments import instrument_dict as instrument_name_map
 from SBART.Quality_Control.activity_indicators import Indicators
-from SBART.Samplers import chi_squared_sampler, Laplace_approx
+from SBART.Samplers import Sampler_map
 from SBART.data_objects import DataClassManager
 from SBART.data_objects import DataClass
 from SBART.outside_tools.create_logger import setup_SBART_logger
@@ -18,7 +18,7 @@ from SBART.utils.spectral_conditions import (
 
 
 def config_update_with_fallback_to_default(
-    config_dict, SBART_key_name, user_configs, user_key_name=None
+        config_dict, SBART_key_name, user_configs, user_key_name=None
 ):
     try:
         user_key_name = SBART_key_name if user_key_name is None else user_key_name
@@ -28,31 +28,20 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs,  share_telluric = None, share_stellar=None, force_stellar_creation = False, force_telluric_creation=False):
-    instrument_name_map = {"ESPRESSO": ESPRESSO, "HARPS": HARPS}
+def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
+               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None
+               ):
+
+    for path in [share_telluric, share_stellar]:
+        if path is not None and not os.path.exists(path):
+            raise Exception("Trying to use a template that does not exist ({})".format(path))
 
     instrument = instrument_name_map[instrument_name]
     RVstep = user_configs["RVstep"]
 
     RV_limits = user_configs["RV_limits"]
 
-    inst_options = {}
-
-    if "minimum_order_SNR" in user_configs:
-        inst_options = config_update_with_fallback_to_default(
-            inst_options, "minimum_order_SNR", user_configs
-        )
-    if instrument_name_map == "KOBE":
-        inst_options["shaq_output_folder"] = user_configs["KOBE_SHAQ_FOLDER_PATH"]
-
-    if instrument_name_map == "ESPRESSO":
-        inst_options = config_update_with_fallback_to_default(
-            inst_options, "apply_FluxCorr", user_configs
-        )
-
-    if "inst_extra_configs" in user_configs:
-        inst_options = {**inst_options, **user_configs["inst_extra_configs"]}
-
+    instrument_configs = user_configs.get("INSTRUMENT_CONFIGS", {})
     setup_SBART_logger(
         os.path.join(storage_path, "logs"),
         rv_method,
@@ -65,44 +54,25 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     data = manager.DataClass(
         input_fpath,
+        storage_path=storage_path,
         instrument=instrument,
-        instrument_options=inst_options,
-        sigma_clip_RVs = user_configs.get("SIGMA_CLIP_RV", None)
+        instrument_options=instrument_configs,
+        sigma_clip_RVs=user_configs.get("SIGMA_CLIP_RV", None)
     )
 
     if "REJECT_OBS" in user_configs:
         data.reject_observations(user_configs["REJECT_OBS"])
 
+    data.generate_root_path(storage_path)
+
+    interpol_properties = user_configs.get("INTERPOL_CONFIG_TEMPLATE", {})
+    data.update_interpol_properties_of_all_frames(interpol_properties)
+
     inds = Indicators()
     data.remove_activity_lines(inds)
 
-    telluric_model_configs = {}
-
-    telluric_model_configs = config_update_with_fallback_to_default(
-        telluric_model_configs, "CREATION_MODE", user_configs, "TELLURIC_CREATION_MODE"
-    )
-    telluric_model_configs = config_update_with_fallback_to_default(
-        telluric_model_configs, "EXTENSION_MODE", user_configs, "TELLURIC_EXTENSION_MODE"
-    )
-    telluric_template_genesis_configs = {
-        "atmosphere_profile": "download",
-        "download_tapas": True,
-    }
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs, "user_info", user_configs
-    )
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs, "download_path", user_configs, "TAPAS_download_path"
-    )
-
-    telluric_template_genesis_configs = config_update_with_fallback_to_default(
-        telluric_template_genesis_configs,
-        "continuum_percentage_drop",
-        user_configs,
-        "TELLURIC_continuum_percentage_drop",
-    )
+    telluric_model_configs = user_configs.get("TELLURIC_MODEL_CONFIGS", {})
+    telluric_template_configs = user_configs.get("TELLURIC_TEMPLATE_CONFIGS", {})
 
     ModelTell = TelluricModel(
         usage_mode="individual",
@@ -112,45 +82,27 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
 
     ModelTell.Generate_Model(
         dataClass=data,
-        telluric_configs=telluric_template_genesis_configs,
+        telluric_configs=telluric_template_configs,
         force_computation=force_telluric_creation,
         store_templates=True,
     )
     data.remove_telluric_features(ModelTell)
 
-    stellar_model_configs = {}
-
-    stellar_model_configs = config_update_with_fallback_to_default(
-        stellar_model_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
-    )
-
+    stellar_model_configs = user_configs.get("STELLAR_MODEL_CONFIGS", {})
+    stellar_template_configs = user_configs.get("STELLAR_TEMPLATE_CONFIGS", {})
 
     ModelStell = StellarModel(user_configs=stellar_model_configs,
-                            root_folder_path=storage_path if share_stellar is None else share_stellar
-                            )
+                              root_folder_path=storage_path if share_stellar is None else share_stellar
+                              )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
     except KeyError:
         StellarTemplateConditions = Empty_condition()
 
-    stellar_template_genesis_configs = {
-        "MEMORY_SAVE_MODE": user_configs.get("MEMORY_SAVING_MODE", True),
-        "NUMBER_WORKERS": (user_configs.get("NUMBER_WORKERS", 8), 1),
-    }
-
-    stellar_template_genesis_configs = {
-        **stellar_template_genesis_configs,
-        **user_configs.get("StellarTemplate_extra_configs", {}),
-    }
-
-    stellar_template_genesis_configs = config_update_with_fallback_to_default(
-        stellar_template_genesis_configs, "CREATION_MODE", user_configs, "STELLAR_CREATION_MODE"
-    )
-
     try:
         ModelStell.Generate_Model(
             data,
-            stellar_template_genesis_configs,
+            stellar_template_configs,
             StellarTemplateConditions,
             force_computation=force_stellar_creation,
         )
@@ -159,7 +111,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         return
     data.ingest_StellarModel(ModelStell)
 
-    confsRV = {"MEMORY_SAVE_MODE": stellar_template_genesis_configs["MEMORY_SAVE_MODE"]}
+    interpol_properties = user_configs.get("INTERPOL_CONFIG_RV_EXTRACTION", {})
+    data.update_interpol_properties_of_stellar_model(interpol_properties)
+
+    confsRV = {"MEMORY_SAVE_MODE": stellar_template_configs["MEMORY_SAVE_MODE"]}
 
     confsRV = config_update_with_fallback_to_default(
         confsRV, "sigma_outliers_tolerance", user_configs
@@ -170,13 +125,25 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         **user_configs.get("RV_Routine_extra_configs", {}),
     }
 
+    if sampler_configs is None:
+        sampler_configs = {}
+
+    if sampler_name is not None:
+        chosen_sampler = Sampler_map[sampler_name](**sampler_configs)
+    else:
+        if rv_method == "RV_step":
+            sampler = Sampler_map["chi_squared"]
+        elif rv_method in ["Laplace", "MCMC"]:
+            sampler = Sampler_map[rv_method]
+        else:
+            raise Exception("Can't recognize method name!")
+        chosen_sampler = sampler(RVstep, RV_limits, **sampler_configs)
+
     if rv_method == "RV_step":
-        sampler = chi_squared_sampler(RVstep, RV_limits)
         rv_model = RV_step(
-            stellar_template_genesis_configs["NUMBER_WORKERS"][0],
-            1,
+            stellar_template_configs["NUMBER_WORKERS"],
             RV_configs=confsRV,
-            sampler=sampler,
+            sampler=chosen_sampler,
         )
 
         orders = user_configs["ORDER_SKIP"]
@@ -184,14 +151,12 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         confsRV = config_update_with_fallback_to_default(
             confsRV, "order_removal_mode", user_configs
         )
-        sampler = Laplace_approx(RVstep, RV_limits)
         rv_model = RV_Bayesian(
-            math.ceil(stellar_template_genesis_configs["NUMBER_WORKERS"][0] / 2),
-            3,
+            math.ceil(stellar_template_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,
-            sampler=sampler,
+            sampler=chosen_sampler,
         )
-        orders = os.path.join(storage_path, "Iteration_0" , "RV_step")
+        orders = os.path.join(storage_path, "Iteration_0", "RV_step")
 
     rv_model.run_routine(data, storage_path, orders)
 

@@ -10,7 +10,7 @@ from loguru import logger
 
 from SBART.utils import custom_exceptions, meter_second, status_codes
 from SBART.utils.math_tools import check_variation_inside_interval
-from SBART.utils.status_codes import SUCCESS, Flag
+from SBART.utils.status_codes import SUCCESS, Flag, WARNING
 from SBART.utils.UserConfigs import DefaultValues, NumericValue, UserParam
 from SBART.utils.work_packages import Package
 
@@ -73,7 +73,7 @@ class MCMC_sampler(SbartBaseSampler):
 
     _default_params = SbartBaseSampler._default_params + DefaultValues(
         MAX_ITERATIONS=UserParam(1000, constraint=NumericValue),
-        ensemble_moves=UserParam(None),
+        ensemble_moves=UserParam(None), # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
         N_walkers=UserParam(4, constraint=NumericValue),
     )
 
@@ -143,6 +143,22 @@ class MCMC_sampler(SbartBaseSampler):
 
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
 
+        if self.mode == "epoch-wise":
+            target_kwargs["run_information"]["target_specific_configs"][
+                "compute_metrics"
+            ] = True
+            target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
+            model_misspec, log_likelihood, orders = internal_func(
+                out_pkg["RV"].value, target, target_kwargs
+            )
+
+        else:
+            target_kwargs["compute_metrics"] = True
+            target_kwargs["weighted"] = True
+            _, model_misspec = internal_func(out_pkg["RV"].value, target, target_kwargs)
+
+        out_pkg["FluxModel_misspecification"] = model_misspec
+
         return out_pkg, order_status
 
     def apply_MCMC(self, sampler, starting_pos, output_pkg: Package):
@@ -152,6 +168,7 @@ class MCMC_sampler(SbartBaseSampler):
         mean = 0
         std = 0
         autocorr = 0
+        MCMC_status = SUCCESS
 
         header_info = {}
         autocorrelation_evolution = [np.inf]
@@ -233,16 +250,16 @@ class MCMC_sampler(SbartBaseSampler):
                         mean_list=posterior_mean,
                         std_list=posterior_std,
                     )
+                    MCMC_status = WARNING("MCMC did not converge!")
                     # TODO: raise warning in the RV txt output!
-        else:
-            MCMC_status = SUCCESS
-            RV = posterior_mean[-1] * meter_second
-            uncert = posterior_std[-1] * meter_second
 
         if reject_obs:
             MCMC_status = status_codes.CONVERGENCE_FAIL
             RV = np.nan * meter_second
             uncert = np.nan * meter_second
+        else:
+            RV = posterior_mean[-1] * meter_second
+            uncert = posterior_std[-1] * meter_second
 
         header_info["RV_converged"] = RV_converged
         header_info["Burn-In converged"] = BurnIn_converged
@@ -252,6 +269,8 @@ class MCMC_sampler(SbartBaseSampler):
 
         output_pkg["RV_evolution"] = posterior_mean
         output_pkg["RV_ERR_evolution"] = posterior_std
+
+        output_pkg["status"] = MCMC_status
 
         output_pkg["RV"] = RV
         output_pkg["RV_uncertainty"] = uncert
@@ -276,7 +295,7 @@ class MCMC_sampler(SbartBaseSampler):
                 / f"frame_{frameID}__order_{order}.txt"
             )
         else:
-            fname = self._internalPaths.get_path_to("chains") / f"frame_{frameID}.txt"
+            fname = self._internalPaths.get_path_to("chains", as_posix=False) / f"frame_{frameID}.txt"
 
         np.savetxt(
             fname=fname.as_posix(),

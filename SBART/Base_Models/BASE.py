@@ -50,7 +50,7 @@ class BASE:
     ###
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
-        logger.info("{} storing data to disk", self.name)
+        ...
 
     def json_ready(self) -> Dict[str, Any]:
         """
@@ -61,9 +61,14 @@ class BASE:
         """
         return {}
 
-    def generate_root_path(self, storage_path: Path) -> NoReturn:
+    def generate_root_path(self, storage_path: Path, no_logs=True) -> NoReturn:
         """ """
-        logger.debug("Setting root path of {} to {}", self.name, storage_path)
+        if not isinstance(storage_path, (str, Path)):
+            raise custom_exceptions.InvalidConfiguration(f"The root path must be a string or Path object, instead of {storage_path}")
+
+        if not isinstance(storage_path, Path):
+            storage_path = Path(storage_path)
+
         self._internalPaths.add_root_path(storage_path)
 
     def add_relative_path(self, path_name, relative_structure):

@@ -51,6 +51,7 @@ class RV_routine(BASE):
     output_fmt                      False           [2]                    [3]                      Control over the outputs that SBART will write to disk [4]
     MEMORY_SAVE_MODE                False           False                  boolean                  Save RAM at the expense of more disk operations
     CONTINUUM_FIT_POLY_DEGREE       False           1                  Integer >= 0                 Degree of the polynomial fit to the continuum.
+    CONTINUUM_FIT_TYPE          False              "paper"              "paper"                     How to model the continuum
     ========================== ================ ==================== ============================== ==================================================================================
 
     - [1] The valid options represent:
@@ -88,6 +89,7 @@ class RV_routine(BASE):
         uncertainty_prop_type=UserParam(
             "interpolation", constraint=ValueFromList(("interpolation", "propagation"))
         ),
+        RV_extraction=UserParam("order-wise", constraint=ValueFromList(("order-wise",))),
         order_removal_mode=UserParam(
             "per_subInstrument", constraint=ValueFromList(("per_subInstrument", "global"))
         ),
@@ -112,9 +114,10 @@ class RV_routine(BASE):
             ],
             constraint=ValueFromList(
                 ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
-                ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
+            ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
+        CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
             1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))
         ),
@@ -132,7 +135,6 @@ class RV_routine(BASE):
     def __init__(
             self,
             N_jobs: int,
-            workers_per_job: int,
             RV_configs: dict,
             sampler,
             target,
@@ -145,7 +147,6 @@ class RV_routine(BASE):
 
         self.N_jobs = N_jobs
         self._live_workers = 0
-        self.workers_per_job = workers_per_job
 
         self.to_skip = {}
         self._output_RVcubes = None
@@ -314,6 +315,12 @@ class RV_routine(BASE):
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
+
+            # Check here if the Stellar template will be interpolated with a GP:
+            logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
+            if "GP" in dataClass.get_stellar_model().get_interpol_modes():
+                raise custom_exceptions.InternalError("Can't interpolate with GPs without having the memory saving mode enabled")
+
             self.sampler.disable_memory_savings()
 
         if self._output_RVcubes is None:
@@ -375,6 +382,34 @@ class RV_routine(BASE):
         if store_data:
             self.trigger_data_storage(dataClass)
 
+    def _validate_template_with_frame(self, stellar_template, first_frame) -> NoReturn:
+        """
+        Checks if the stellar template and the first frame share the same state of Flux Corrections
+        """
+        base_message = "Comparing spectra and template with different"
+
+        comparison_map = (("is_blaze_corrected", "BLAZE correction states"),
+                          ("flux_atmos_balance_corrected", "corrections of the flux balance due to the atmosphere"),
+                          ("flux_dispersion_balance_corrected", "corrections of the flux dispersion with wavelength"),
+                          ("was_telluric_corrected", "telluric correction states")
+                          )
+        messages_to_pass = []
+        bad_comparison = False
+        for kw_name, key_message in comparison_map:
+            template_val = getattr(stellar_template, kw_name)
+            frame_val = first_frame.check_if_data_correction_enabled(kw_name)
+            if frame_val != template_val:
+                messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
+
+                if kw_name != "was_telluric_corrected":
+                    bad_comparison = True
+
+        for message in messages_to_pass:
+            logger.warning(message)
+
+        if bad_comparison:
+            raise custom_exceptions.InvalidConfiguration("Failed comparison between template and spectra")
+
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
@@ -382,6 +417,13 @@ class RV_routine(BASE):
         logger.info("Applying the RV routine to {} observations of {}", N_epochs, subInst)
         init_time = time.time()
         stellar_model = dataClass.get_stellar_model()
+
+        stellar_template = stellar_model.request_data(subInstrument=subInst)
+        first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
+
+        self._validate_template_with_frame(stellar_template=stellar_template,
+                                           first_frame=first_frame
+                                           )
 
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
@@ -402,7 +444,11 @@ class RV_routine(BASE):
         )
 
         is_merged = self._internal_configs["order_removal_mode"] == "global"
-        cube = self._output_RVcubes.generate_new_cube(dataClass, subInst, is_merged=is_merged)
+        cube = self._output_RVcubes.generate_new_cube(dataClass,
+                                                      subInst,
+                                                      is_merged=is_merged,
+                                                      has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise"
+                                                      )
 
         cube.update_skip_reason(template_bad_orders, BAD_TEMPLATE)
         cube.load_data_from_DataClass(dataClass)
@@ -456,7 +502,7 @@ class RV_routine(BASE):
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
-            "workers_per_job": self.workers_per_job,
+            "CONTINUUM_FIT_TYPE": self._internal_configs["CONTINUUM_FIT_TYPE"],
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
         }
@@ -647,12 +693,19 @@ class RV_routine(BASE):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
 
+        no_shutdown_counter = 0
         while self._live_workers > 0:
             good, bad = evaluate_shutdown(self.output_pool)
             self._live_workers -= good + bad
-            logger.debug(
-                "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
-            )
+
+            if good + bad != 0:
+                logger.debug(
+                    "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
+                )
+            else:
+                if no_shutdown_counter == 400:
+                    logger.warning("Workers are refusing to shutdown!")
+                no_shutdown_counter += 1
 
         if self._live_workers < 0:
             logger.critical("Number of live workers is negative ...")

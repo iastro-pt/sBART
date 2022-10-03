@@ -127,6 +127,7 @@ class chi_squared_sampler(SamplerModel):
                     #    1) We are using a step size too small for the instrument
                     #    2) Something weird going on with the data
                     bad_order = True
+                    logger.critical("Problem with the minimum search")
                 except:
                     logger.opt(exception=True).critical(
                         "Parabolic fit has failed, rejecting spectral order {}",
@@ -139,8 +140,8 @@ class chi_squared_sampler(SamplerModel):
 
         if bad_order:
             rv, rv_err = np.nan, np.nan
-            local_rvs = []
-            local_curve = []
+            local_rvs = [0]
+            local_curve = [0]
             a, b = np.nan, np.nan
             order_status = CONVERGENCE_FAIL(msg)
         else:

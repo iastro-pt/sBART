@@ -347,10 +347,10 @@ class RV_holder(BASE):
             header.append(entry)
         return header
 
-    def generate_new_cube(self, dataClassProxy, subInst, is_merged, frameIDs=None):
+    def generate_new_cube(self, dataClassProxy, subInst, is_merged, has_orderwise_rvs:bool):
         cube_IDS = dataClassProxy.get_frameIDs_from_subInst(subInst)
 
-        cube = RV_cube(subInst, cube_IDS, dataClassProxy.get_instrument_information())
+        cube = RV_cube(subInst, cube_IDS, dataClassProxy.get_instrument_information(), has_orderwise_rvs=has_orderwise_rvs)
         fold_name = "merged_subInst" if is_merged else "individual_subInst"
         cube_root_folder = self._internalPaths.get_path_to(fold_name, as_posix=False)
         cube_root_folder = cube_root_folder / subInst

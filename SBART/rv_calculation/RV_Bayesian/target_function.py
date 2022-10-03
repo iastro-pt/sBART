@@ -5,9 +5,9 @@ import numpy as np
 
 from SBART.utils import second_term
 from SBART.utils.RV_utilities import ensure_valid_RV
-from SBART.utils.RV_utilities.continuum_fit import fit_continuum_level
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.math_tools.build_polynomial import evaluate_polynomial
-from SBART.utils.shift_spectra import apply_RVshift, interpolate_data
+from SBART.utils.shift_spectra import apply_RVshift
 
 
 def SBART_target(params, **kwargs):
@@ -44,24 +44,26 @@ def SBART_target(params, **kwargs):
     else:
         polynomial_contribution = 0
 
-
     trimmed_template = kwargs["template_wave"]
-    template = kwargs["template"]
+    StellarTemplate = kwargs["StellarTemplate"]
+
     wave_spectra_starframe = apply_RVshift(trimmed_template, RV_shift)
 
     current_wavelength = kwargs["spectra_wave"]
     spectra = kwargs["spectra"]
-    interpolated_template, interpol_errors, indexes = interpolate_data(
-        original_lambda=wave_spectra_starframe,
-        original_spectrum=template,
-        original_errors=kwargs["template_uncerts"],
-        new_lambda=current_wavelength,
-        lower_limit=wave_spectra_starframe[0],
-        upper_limit=wave_spectra_starframe[-1],
-        propagate_interpol_errors=kwargs["interpol_prop_type"],
-        interpol_cores=kwargs["N_cores_propagation"],
-    )
+    indexes = np.where(
+            np.logical_and(
+                           current_wavelength >= wave_spectra_starframe[0],
+                           current_wavelength <= wave_spectra_starframe[-1]
+                           )
+                       )
 
+    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(order=kwargs["current_order"],
+                                                                                                RV_shift_mode="apply",
+                                                                                                shift_RV_by=RV_shift,
+                                                                                                new_wavelengths=current_wavelength[indexes],
+                                                                                                include_invalid=False
+                                                                                                )
     if kwargs["current_order"] == 59 and 0:
         # plt.plot(current_wavelength[indexes], interpolated_template)
         # plt.plot(current_wavelength[indexes], spectra[indexes], color = 'black')
@@ -133,17 +135,16 @@ def SBART_target(params, **kwargs):
         # Flux model miss-specification
         # Use the expected value for the parameters of the polynomial
 
-        coefs, _, _, chosen_trend = fit_continuum_level(
+        normalized_template, coefs, residuals = match_continuum_levels(
             current_wavelength,
             spectra[indexes],
             interpolated_template,
             indexes,
-            fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
+            continuum_type="paper",
+            fit_degree=1,
         )
 
-        normalizer = chosen_trend(current_wavelength[indexes], *coefs)
-
-        misspec_metric = (spectra[indexes] - interpolated_template * normalizer) / np.sqrt(
+        misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
             kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
         )
 

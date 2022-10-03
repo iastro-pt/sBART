@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
 import numpy as np
@@ -92,7 +93,12 @@ class Frame(Spectrum, Spectral_Modelling):
     spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     ================================ ================ ================ ================ ================
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. note::
+       This class also uses the User parameters defined by the :class:`~SBART.Components.Modelling.Spectral_Modelling`
+    class
+
+    .. note::
+        Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
 
@@ -113,7 +119,8 @@ class Frame(Spectrum, Spectral_Modelling):
 
     _default_params = DefaultValues(
         bypass_QualCheck=UserParam(False, constraint=BooleanValue),
-        #
+        apply_FluxCorr=UserParam(False, constraint=ValueFromList((False,))),
+        apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
         reject_order_percentage=UserParam(
             0.25, constraint=ValueInInterval((0, 1), include_edges=True)
         ),
@@ -126,7 +133,7 @@ class Frame(Spectrum, Spectral_Modelling):
         self,
         inst_name: str,
         array_size: tuple,
-        file_path: str,
+        file_path: Path,
         frameID: int,
         KW_map: Dict[str, str],
         available_indicators: tuple,
@@ -175,8 +182,13 @@ class Frame(Spectrum, Spectral_Modelling):
         self._status = Status()  # BY DEFAULT IT IS A VALID ONE!
 
         self.spectral_format = self._internal_configs["spectra_format"]
+        if not isinstance(file_path, (str, Path)):
+            raise custom_exceptions.InvalidConfiguration("Invalid path!")
 
-        self.file_path = file_path.split("\n")[0].strip()
+        if not isinstance(file_path, Path):
+            file_path = Path(file_path)
+
+        self.file_path = file_path
         if init_log:
             logger.info("Creating frame from: {}".format(self.file_path))
         self.inst_name = inst_name
@@ -216,6 +228,9 @@ class Frame(Spectrum, Spectral_Modelling):
             "DEC": None,
             "SPEC_TYPE": "",
         }
+
+        # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
+        self._orderwise_wavelength_rejection: Optional[Dict[int, List]] = None
 
         self.load_header_info()
         # list of lists Each entry will be a pair of Reason: list<[<start, end>]> wavelenghts. When the S2D array is
@@ -260,6 +275,17 @@ class Frame(Spectrum, Spectral_Modelling):
                 self.fname,
             )
         self.observation_info[KW] = value
+
+    def reject_wavelength_region_from_order(self, order, region):
+        """
+        Flag a wavelength region from  an order to be marked as invalid during the creation of the stellar mask
+        """
+        if not isinstance(region, (Iterable,)):
+            raise custom_exceptions.InvalidConfiguration("The rejection region must be a list of lists")
+
+        if self._orderwise_wavelength_rejection is None:
+            self._orderwise_wavelength_rejection = {}
+        self._orderwise_wavelength_rejection[order] = region
 
     def mark_wavelength_region(self, reason: Flag, wavelength_blocks: List[List[int]]) -> None:
         """Add wavelength regions to be removed whenever the S2D file is opened
@@ -388,6 +414,18 @@ class Frame(Spectrum, Spectral_Modelling):
         logger.debug(
             "Removed {} regions ({})", sum(N_point_removed), " + ".join(map(str, N_point_removed))
         )
+        if self._orderwise_wavelength_rejection is not None:
+            logger.info("Rejecting spectral chunks from individual orders")
+            for order, region in self._orderwise_wavelength_rejection.items():
+                for subregion in region:
+                    indexes = np.where(
+                        np.logical_and(
+                            self.wavelengths[order] >= subregion[0],
+                            self.wavelengths[order] <= subregion[1],
+                        )
+                    )
+                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, NON_COMMON_WAVELENGTH)
+
         logger.debug("Ensuring that we have increasing wavelengths")
 
         diffs = np.where(np.diff(self.wavelengths, axis=1) < 0)
@@ -651,6 +689,13 @@ class Frame(Spectrum, Spectral_Modelling):
     @property
     def min_pixel_in_order(self) -> int:
         return self._internal_configs["reject_order_percentage"] * self.pixels_per_order
+
+    @property
+    def spectrum_information(self):
+        return {**{"subInstrument": self.sub_instrument,
+                   "filename": self.bare_fname
+                   },
+                ** super().spectrum_information}
 
     def __repr__(self):
         return self.__str__()
