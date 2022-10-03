@@ -3,7 +3,7 @@ from typing import Iterable, NoReturn, Optional, Tuple, Union
 from astropy.units import Quantity
 from loguru import logger
 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.custom_exceptions import (

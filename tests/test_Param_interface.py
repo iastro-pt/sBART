@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 
+from SBART.ModelParameters import ModelComponent
+from SBART.ModelParameters import  RV_component
 from SBART.ModelParameters import Model, RV_Model
-from SBART.ModelParameters import ModelComponent, RV_component
 
 from SBART.utils import custom_exceptions
 from SBART.utils.units import meter_second

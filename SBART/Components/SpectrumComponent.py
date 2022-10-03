@@ -2,7 +2,7 @@ from typing import NoReturn, Set
 
 from loguru import logger
 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.utils import custom_exceptions
 from SBART.utils.shift_spectra import apply_BERV_correction
 from SBART.utils.status_codes import OrderStatus
