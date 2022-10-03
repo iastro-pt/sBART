@@ -51,46 +51,53 @@ class Spectral_Normalization(BASE):
             logger.critical(msg)
             raise Exception(msg)
 
-        self.initialized_normalization_interface = False
         self._already_normalized_data = False
         self._normalization_interfaces: Dict[str, NormalizationBase] = {}
         self._normalization_information: Optional[SpecNorm_Unit] = None
 
-    def initialize_normalization_interface(self):
-        if self.initialized_normalization_interface:
+    def initialize_normalization_interface(self) -> NoReturn:
+        """
+        Initialize the normalization interface for the currently selected mode!
+        Returns
+        -------
+
+        """
+        key = self._internal_configs["NORMALIZATION_MODE"]
+
+        if key in self._normalization_interfaces:
             return
+
         interface_init = {"obj_info": self.spectrum_information,
                           "user_configs": self._internal_configs.get_user_configs()
                           }
 
-        self._normalization_interfaces: Dict[str,] = {
-            key: value(**interface_init) for key, value in available_normalization_interfaces.items()
-        }
+        interface = available_normalization_interfaces[key]
+
+        self._normalization_interfaces[key] = interface(**interface_init)
 
         if self._internalPaths.root_storage_path is None:
             logger.critical("{self.name} launching modelling interface without a root path. Fallback to current directory")
             self.generate_root_path(Path("."))
 
-        for comp in self._modelling_interfaces.values():
-            comp.generate_root_path(self._internalPaths.root_storage_path)
+        self._normalization_interfaces[key].generate_root_path(self._internalPaths.root_storage_path)
 
-        try: # Generate class to store the normalization parameters
+        current_frame_name = self.fname.split(".fits")[0]
+        try:  # Generate class to store the normalization parameters
             self._normalization_information = SpecNorm_Unit.load_from_disk(
                 self._internalPaths.root_storage_path,
-                filename=self.fname.split(".fits")[0],
+                filename=current_frame_name,
                 algo_name=self._internal_configs["NORMALIZATION_MODE"]
             )
         except custom_exceptions.NoDataError:
             logger.warning("Can't find previous normalization parameters on disk!")
-            self._normalization_information = SpecNorm_Unit(frame_name=self.fname.split(".fits")[0],
+            self._normalization_information = SpecNorm_Unit(frame_name=current_frame_name,
                                                             algo_name=self._internal_configs["NORMALIZATION_MODE"]
                                                             )
             self._normalization_information.generate_root_path(self._internalPaths.root_storage_path)
-        self.initialized_normalization_interface = True
 
     def normalize_spectra(self):
         """
-        TODO: See if we need to paralelize this!
+        TODO: See if we need to parallelize this!
 
         Launch the normalization of the spectra, using the selected algorithm
         Returns
