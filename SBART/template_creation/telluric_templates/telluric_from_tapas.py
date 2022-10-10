@@ -14,7 +14,7 @@ from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
     Positive_Value_Constraint,
-    StringValue,
+    PathValue,
     UserParam,
 )
 from SBART.utils.shift_spectra import remove_BERV_correction
@@ -56,7 +56,7 @@ class TapasTelluric(TelluricTemplate):
     _default_params = TelluricTemplate._default_params + DefaultValues(
         user_info=UserParam(["", ""], quiet=True),
         download_tapas=UserParam(True, constraint=BooleanValue),
-        download_path=UserParam(None, constraint=StringValue, mandatory=True),
+        download_path=UserParam(None, constraint=PathValue, mandatory=True),
         timeout=UserParam(
             10, Positive_Value_Constraint
         ),
