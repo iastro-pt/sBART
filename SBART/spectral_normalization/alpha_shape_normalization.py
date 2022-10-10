@@ -26,12 +26,12 @@ class AlphaShape_normalization(NormalizationBase):
                          user_configs=user_configs,
                          )
 
-    def fit_normalization(self, wavelengths, flux, uncertainties):
-        super().launch_normalization(wavelengths, flux, uncertainties)
+    def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
+        super().launch_orderwise_normalization(wavelengths, flux, uncertainties)
         # TODO: implement the interface in here!
         ...
 
-    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+    def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         return flux/10, uncertainties
 
     def _normalization_sanity_checks(self):

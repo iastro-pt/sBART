@@ -113,9 +113,16 @@ class Spectral_Normalization(BASE):
         self.initialize_normalization_interface()
 
         norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
-        if self._internal_configs["NORMALIZATION_MODE"] ==:
+        if norm_interface.orderwise_application:
+            self.trigger_orderwise_method(norm_interface)
+        else:
+            self.trigger_epochwise_method(norm_interface)
+
+    def trigger_epochwise_method(self, norm_interface):
+        ...
 
 
+    def trigger_orderwise_method(self, norm_interface):
         # TODO: see if we want to parallelize this!
         for order in range(self.N_orders):
             wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(order,
@@ -123,12 +130,12 @@ class Spectral_Normalization(BASE):
                                                                                  )
 
             mask_to_use = ~mask
+            loaded_info = self._normalization_information.get_norm_info_from_order(order)
+
             new_flux, new_uncerts, norm_keys = norm_interface.launch_normalization(wavelengths=wavelengths[mask_to_use],
                                                                                    flux=flux[mask_to_use],
                                                                                    uncertainties=uncerts[mask_to_use],
-                                                                                   loaded_info=self._normalization_information.get_norm_info_from_order(
-                                                                                       order
-                                                                                   )
+                                                                                   loaded_info=loaded_info
                                                                                    )
             self.spectra[order][mask_to_use] = new_flux
             self.uncertainties[order][mask_to_use] = new_uncerts

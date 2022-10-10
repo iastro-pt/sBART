@@ -37,19 +37,19 @@ class NormalizationBase(BASE):
         # Avoid multiple calls to disk loading if the file does not exist
         self._attempted_to_load_disk_model: bool = False
 
-    def launch_normalization(self, wavelengths, flux, uncertainties, loaded_info):
-        # TODO: implement the interface in here!
+    def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
+        self._ensure_orderwise_normalizer()
         self._normalization_sanity_checks()
 
         if len(loaded_info) != 0:
-            return *self.apply_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
-        return self.fit_normalization(wavelengths, flux, uncertainties)
+            return *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
+        return self._fit_orderwise_normalization(wavelengths, flux, uncertainties)
 
-    def fit_normalization(self, wavelengths, flux, uncertainties):
-        ...
+    def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
+        self._ensure_orderwise_normalizer()
 
-    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
-        ...
+    def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        self._ensure_orderwise_normalizer()
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(args, kwargs)
@@ -58,3 +58,23 @@ class NormalizationBase(BASE):
     def _normalization_sanity_checks(self):
         if self._spec_info["is_S1D"]:
             raise custom_exceptions.InvalidConfiguration("Can't normalize S1D spectra")
+
+    def _ensure_orderwise_normalizer(self):
+        """
+        For internal usage. To call whenever we call a method to fit/apply normalization
+        Returns
+        -------
+
+        """
+        if not self.orderwise_application:
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for order-wise normalization on {self.name}")
+
+    def _ensure_epochwise_normalizer(self):
+        """
+        For internal usage. To call whenever we call a method to fit/apply normalization
+        Returns
+        -------
+
+        """
+        if self.orderwise_application:
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for epoch-wise normalization on {self.name}")

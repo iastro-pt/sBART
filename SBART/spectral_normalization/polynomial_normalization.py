@@ -28,7 +28,7 @@ class Polynomial_normalization(NormalizationBase):
                          user_configs=user_configs,
                          )
 
-    def fit_normalization(self, wavelengths, flux, uncertainties):
+    def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
         out = np.polyfit(x=wavelengths,
                          y=flux,
                          deg=1,
@@ -36,10 +36,10 @@ class Polynomial_normalization(NormalizationBase):
                          )
 
         optim_result = {"param_vector": out}
-        return *self.apply_normalization(wavelengths, flux, uncertainties, param_vector=out), optim_result
+        return *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, param_vector=out), optim_result
 
-    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
-        super().apply_normalization(wavelengths, flux, uncertainties, **kwargs)
+    def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        super()._apply_orderwise_normalization(wavelengths, flux, uncertainties, **kwargs)
         poly = np.poly1d(kwargs["param_vector"])
         model = poly(wavelengths)
         return flux / model, uncertainties / model
