@@ -21,6 +21,10 @@ class NormalizationBase(BASE):
         NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue)
     )
 
+    # If True, we will optimize the model for each spectral order! Otherwise, the NORMALIZER will receive
+    # the entire S1D spectra as input, and it will be expected to return S2D matrices
+    orderwise_application = True
+
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
         super().__init__(user_configs=user_configs,
                          needed_folders=needed_folders,

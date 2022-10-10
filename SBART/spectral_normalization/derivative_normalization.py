@@ -23,6 +23,7 @@ class Derivative_normalization(NormalizationBase):
 
     _default_params = NormalizationBase._default_params + DefaultValues()
     _name = "derivative"
+    orderwise_application = True
 
     def __init__(self, obj_info, user_configs):
         super().__init__(obj_info=obj_info,

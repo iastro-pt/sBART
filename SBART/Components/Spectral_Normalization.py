@@ -113,6 +113,9 @@ class Spectral_Normalization(BASE):
         self.initialize_normalization_interface()
 
         norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
+        if self._internal_configs["NORMALIZATION_MODE"] ==:
+
+
         # TODO: see if we want to parallelize this!
         for order in range(self.N_orders):
             wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(order,
