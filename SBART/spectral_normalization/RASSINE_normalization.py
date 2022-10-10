@@ -6,7 +6,9 @@ from loguru import logger
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils.UserConfigs import (
-    DefaultValues
+    DefaultValues,
+    PathValue,
+    UserParam,
 )
 
 
@@ -20,7 +22,8 @@ class RASSINE_normalization(NormalizationBase):
 
     """
 
-    _default_params = NormalizationBase._default_params + DefaultValues()
+    _default_params = NormalizationBase._default_params + \
+                      DefaultValues(S1D_folder = UserParam(True, constraint=PathValue))
     _name = "RASSINE"
 
     orderwise_application = False
