@@ -38,6 +38,23 @@ class NormalizationBase(BASE):
         self._attempted_to_load_disk_model: bool = False
 
     def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
+        """
+        Launch a normalizer that will be applied to each spectral order (does not need to know order).
+        This will:
+        i) Directly apply the normalization from the loaded config values
+        ii) Fit the model if it wasn't previously computed!
+
+        Parameters
+        ----------
+        wavelengths
+        flux
+        uncertainties
+        loaded_info
+
+        Returns
+        -------
+
+        """
         self._ensure_orderwise_normalizer()
         self._normalization_sanity_checks()
 
