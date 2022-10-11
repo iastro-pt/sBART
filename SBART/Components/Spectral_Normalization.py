@@ -39,7 +39,8 @@ class Spectral_Normalization(BASE):
     _default_params = BASE._default_params + DefaultValues(
         NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
         NORMALIZATION_MODE=UserParam("RASSINE", constraint=ValueFromList(list(available_normalization_interfaces.keys()))),
-        S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value="")
+        S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
+        RASSINE_path=UserParam(mandatory=False, constraint=PathValue, default_value="")
     )
 
     def __init__(self, **kwargs):
