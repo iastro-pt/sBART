@@ -1,3 +1,4 @@
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 
@@ -86,7 +87,7 @@ cwd = os.getcwd()
 # ==========================================================================
 """ + \
         f'spectrum_name = \'{(self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename).absolute()}\''+\
-        f'\noutput_dir  = \'{self._internalPaths.get_path_to("RASSINE_IN", as_posix=False).absolute()}\'  ' + """
+        f'\noutput_dir  = \'{self._internalPaths.get_path_to("RASSINE_IN", as_posix=False).absolute() / "outputs"}\'  ' + """
 synthetic_spectrum = False   # True if working with a noisy-free synthetic spectra 
 anchor_file = ''             # Put a RASSINE output file that will fix the value of the 7 parameters to the same value than in the anchor file
 
@@ -177,7 +178,7 @@ config = {'spectrum_name':spectrum_name,
         # TODO: check the commands to launch RASSINE
         logger.info("Launching RASSINE")
 
-
+        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"])
 
         logger.info("RASSINE has finished running")
 
