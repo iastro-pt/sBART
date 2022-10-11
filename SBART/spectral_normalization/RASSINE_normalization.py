@@ -1,5 +1,8 @@
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
 import numpy as np
+from astropy.units.format import fits
 
 from SBART.utils import custom_exceptions
 from loguru import logger
@@ -24,7 +27,7 @@ class RASSINE_normalization(NormalizationBase):
     """
 
     _default_params = NormalizationBase._default_params + \
-                      DefaultValues(S1D_folder=UserParam(mandatory=True, constraint=PathValue),
+                      DefaultValues(S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
                                     )
     _name = "RASSINE"
 
@@ -33,23 +36,49 @@ class RASSINE_normalization(NormalizationBase):
     def __init__(self, obj_info, user_configs):
         super().__init__(obj_info=obj_info,
                          user_configs=user_configs,
+                         needed_folders={"RASSINE_IN": "_Storage/RASSINE_inputs"}
                          )
+        if obj_info["is_S2D"] and "S1D_folder" not in user_configs:
+            raise custom_exceptions.InvalidConfiguration("Must provide the S1D folder when using S2D files")
 
-    def run_RASSINE(self):
-        # TODO: check the file format that we must build!
+    def _prepare_Rassine_run(self, wavelengths, flux, uncertainties):
+        logger.info("Preparing text files for RASSINE application")
+        if self._spec_info["is_S2D"]:
+            S1D_path = self._internal_configs["S1D_folder"] / self._spec_info["S1D_name"]
+            temp_configs = deepcopy(self._internal_configs.get_user_configs())
+            temp_configs["spectra_format"] = "S1D"
+            # open a temporary frame to retrieve the S1D data!
+            new_frame = self._spec_info["Frame_instance"](file_path=S1D_path,
+                                                          user_configs=temp_configs,
+                                                          )
+            wavelengths, flux, uncertainties, _ = new_frame.get_data_from_full_spectrum()
+
+        # Concatenate the arrays for RASSINE
+        arr = np.c_[wavelengths[0], flux[0], uncertainties[0]]
+
+        filename = self._spec_info["S1D_name"]
+        filename = filename.replace("fits", "txt")
+        logger.debug(f'Storing RASSINE input data to {self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename}')
+        np.savetxt(self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename,
+                   arr
+                   )
+
+    def run_RASSINE(self, wavelengths, flux, uncertainties):
+        self._prepare_Rassine_run(wavelengths, flux, uncertainties)
         # TODO: check the commands to launch RASSINE
-        ...
 
-    def fit_normalization(self, wavelengths, flux, uncertainties):
+    def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
         # TODO: think about SNR problems that might arise within SBART if this goes through without adding an offset
-
+        # TODO: search for the S1D files
         s1d_sol, s1d_sci, s1d_err = np.zeros(wavelengths.shape), np.zeros(wavelengths.shape), np.zeros(wavelengths.shape)
 
         ## Build txt file inputs
 
-        self.run_RASSINE()
+        self.run_RASSINE(wavelengths, flux, uncertainties)
 
         if self._spec_info["is_S2D"]:
+            # This must be done on the RASSINE outputs!
+            return
             # If the input frame is a S2D file, then we re-arrange the S1D file to fit the expected "shape"
             # of the S2D files!
 
@@ -79,11 +108,10 @@ class RASSINE_normalization(NormalizationBase):
         # TODO: missing the parameters that will be cached!
         return reconstructed_wavelengths, reconstructed_S2D, reconstructed_uncertainties, {}
 
-    def apply_normalization(self, wavelengths, flux, uncertainties, **kwargs):
-        super().apply_normalization(wavelengths, flux, uncertainties, **kwargs)
-        poly = np.poly1d(kwargs["param_vector"])
-        model = poly(wavelengths)
-        return flux / model, uncertainties / model
+    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, extra_info, **kwargs):
+        super()._apply_epoch_normalization(wavelengths, flux, uncertainties, extra_info, **kwargs)
+
+        return flux, uncertainties
 
     def _normalization_sanity_checks(self):
         # TODO: check this, maybe we will be limited to BLAZE-corrected spectra!

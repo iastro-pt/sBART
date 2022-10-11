@@ -7,7 +7,7 @@ from SBART.utils.BASE import BASE
 from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
-    ValueFromList, BooleanValue
+    ValueFromList, BooleanValue, PathValue
 )
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
@@ -38,7 +38,8 @@ class Spectral_Normalization(BASE):
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
         NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
-        NORMALIZATION_MODE=UserParam("Alpha-Shape", constraint=ValueFromList(list(available_normalization_interfaces.keys())))
+        NORMALIZATION_MODE=UserParam("RASSINE", constraint=ValueFromList(list(available_normalization_interfaces.keys()))),
+        S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value="")
     )
 
     def __init__(self, **kwargs):
@@ -71,12 +72,17 @@ class Spectral_Normalization(BASE):
                           "user_configs": self._internal_configs.get_user_configs()
                           }
 
+        extra_info = {}
+        interface_init["obj_info"]["S1D_name"] = self.get_S1D_name()
+        interface_init["obj_info"]["frame_path"] = self.file_path
+        interface_init["obj_info"]["Frame_instance"] = type(self)
+
         interface = available_normalization_interfaces[key]
 
         self._normalization_interfaces[key] = interface(**interface_init)
 
         if self._internalPaths.root_storage_path is None:
-            logger.critical("{self.name} launching modelling interface without a root path. Fallback to current directory")
+            logger.critical(f"{self.name} launching normalization interface without a root path. Fallback to current directory")
             self.generate_root_path(Path("."))
 
         self._normalization_interfaces[key].generate_root_path(self._internalPaths.root_storage_path)
@@ -121,12 +127,14 @@ class Spectral_Normalization(BASE):
     def trigger_epochwise_method(self, norm_interface):
         name = "S1D"
         loaded_info = self._normalization_information.get_norm_info_from_order(name)
+
+
         wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
         new_waves, new_flux, new_uncert = norm_interface.launch_epochwise_normalization(wavelengths=wavelengths,
                                                                                         flux=flux,
                                                                                         uncertainties=uncerts,
-                                                                                        loaded_info=loaded_info
+                                                                                        loaded_info=loaded_info,
                                                                                         )
         self.wavelengths = new_waves
         self.spectra = new_flux
