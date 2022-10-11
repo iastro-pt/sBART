@@ -188,7 +188,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
 
-        self.file_path = file_path
+        self.file_path: Path = file_path
         if init_log:
             logger.info("Creating frame from: {}".format(self.file_path))
         self.inst_name = inst_name
@@ -552,6 +552,22 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     #####################################
     #      Handle data management      #
     ####################################
+    def get_S1D_name(self) -> str:
+        """
+        Build the S1D name that should be associated with this Frame.
+        If it is already a S1D, returns the actual name.
+        If it is not, remove "blaze" from the filename and replaces "S2D" with "S1D"
+
+        Returns
+        -------
+
+        """
+        #TODO: this will not work for non-ESPRESSO files
+
+        if self.is_S1D:
+            return self.fname
+        name = self.fname
+        return name.replace("BLAZE_", "").replace("S2D", "S1D")
 
     def load_data(self) -> None:
         if self.is_S1D:
