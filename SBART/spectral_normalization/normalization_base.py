@@ -26,16 +26,12 @@ class NormalizationBase(BASE):
     orderwise_application = True
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
+
         super().__init__(user_configs=user_configs,
                          needed_folders=needed_folders,
                          quiet_user_params=True
                          )
         self._spec_info = obj_info
-        # Avoid multiple loads of disk information
-        self._loaded_disk_model: bool = False
-
-        # Avoid multiple calls to disk loading if the file does not exist
-        self._attempted_to_load_disk_model: bool = False
 
     def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         self._ensure_epochwise_normalizer()
