@@ -37,6 +37,18 @@ class NormalizationBase(BASE):
         # Avoid multiple calls to disk loading if the file does not exist
         self._attempted_to_load_disk_model: bool = False
 
+    def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
+        self._ensure_epochwise_normalizer()
+        if len(loaded_info) != 0:
+            return *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
+        return self._fit_epochwise_normalization(wavelengths, flux, uncertainties)
+
+    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        ...
+
+    def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
+        ...
+
     def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         """
         Launch a normalizer that will be applied to each spectral order (does not need to know order).

@@ -119,8 +119,24 @@ class Spectral_Normalization(BASE):
             self.trigger_epochwise_method(norm_interface)
 
     def trigger_epochwise_method(self, norm_interface):
-        ...
+        name = "S1D"
+        loaded_info = self._normalization_information.get_norm_info_from_order(name)
+        wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
+        new_waves, new_flux, new_uncert = norm_interface.launch_epochwise_normalization(wavelengths=wavelengths,
+                                                                                        flux=flux,
+                                                                                        uncertainties=uncerts,
+                                                                                        loaded_info=loaded_info
+                                                                                        )
+        self.wavelengths = new_waves
+        self.spectra = new_flux
+        self.uncertainties = new_uncert
+
+        self._normalization_information.store_norm_info(name, {})
+
+        # Trigger a new check of the data integrity, as we have just overloaded the entire
+        # S2D spectrum. However, this ignores any kind of quality check!
+        self.build_mask(bypass_QualCheck=True)
 
     def trigger_orderwise_method(self, norm_interface):
         # TODO: see if we want to parallelize this!
@@ -132,11 +148,11 @@ class Spectral_Normalization(BASE):
             mask_to_use = ~mask
             loaded_info = self._normalization_information.get_norm_info_from_order(order)
 
-            new_flux, new_uncerts, norm_keys = norm_interface.launch_normalization(wavelengths=wavelengths[mask_to_use],
-                                                                                   flux=flux[mask_to_use],
-                                                                                   uncertainties=uncerts[mask_to_use],
-                                                                                   loaded_info=loaded_info
-                                                                                   )
+            new_flux, new_uncerts, norm_keys = norm_interface.launch_orderwise_normalization(wavelengths=wavelengths[mask_to_use],
+                                                                                             flux=flux[mask_to_use],
+                                                                                             uncertainties=uncerts[mask_to_use],
+                                                                                             loaded_info=loaded_info
+                                                                                             )
             self.spectra[order][mask_to_use] = new_flux
             self.uncertainties[order][mask_to_use] = new_uncerts
 
