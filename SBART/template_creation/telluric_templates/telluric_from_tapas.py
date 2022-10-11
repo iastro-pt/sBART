@@ -1,5 +1,6 @@
 import getpass
 import os
+from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -95,6 +96,9 @@ class TapasTelluric(TelluricTemplate):
     def _prepare_TAPAS_download(self, dataClass):
         user, password = self._internal_configs["user_info"]
         tapas_dwnl_path = self._internal_configs["download_path"]
+
+        if isinstance(tapas_dwnl_path, Path):
+            tapas_dwnl_path = tapas_dwnl_path.as_posix()
 
         if os.path.isdir(tapas_dwnl_path):
             logger.info("Using individual Transmittance spectra for each subInstrument")
