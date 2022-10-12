@@ -101,6 +101,11 @@ class TapasTelluric(TelluricTemplate):
         if isinstance(tapas_dwnl_path, Path):
             tapas_dwnl_path = tapas_dwnl_path.as_posix()
 
+        temp_path = Path(tapas_dwnl_path)
+        if not temp_path.exists():
+            logger.warning("Tapas download path does not exist. Creating new folder from scratch")
+            temp_path.mkdir(parents=True, exist_ok=True)
+
         if os.path.isdir(tapas_dwnl_path):
             logger.info("Using individual Transmittance spectra for each subInstrument")
             tapas_dwnl_path = os.path.join(tapas_dwnl_path, f"{self._associated_subInst}.ipac")
