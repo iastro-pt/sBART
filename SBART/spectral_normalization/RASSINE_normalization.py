@@ -192,7 +192,7 @@ config = {'spectrum_name':spectrum_name,
         output_path = self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / f"RASSINE_{filename}.p"
 
         # TODO: missing the parameters that will be cached!
-        params_to_store = {"RASSINE_OUT_FOLDER": output_path
+        params_to_store = {"RASSINE_OUT_FOLDER": output_path.as_posix()
                            }
 
         return *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **params_to_store), params_to_store
