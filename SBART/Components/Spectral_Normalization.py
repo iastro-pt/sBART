@@ -132,7 +132,7 @@ class Spectral_Normalization(BASE):
 
         wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
-        new_waves, new_flux, new_uncert = norm_interface.launch_epochwise_normalization(wavelengths=wavelengths,
+        new_waves, new_flux, new_uncert, norm_keys = norm_interface.launch_epochwise_normalization(wavelengths=wavelengths,
                                                                                         flux=flux,
                                                                                         uncertainties=uncerts,
                                                                                         loaded_info=loaded_info,
@@ -140,7 +140,9 @@ class Spectral_Normalization(BASE):
         self.wavelengths = new_waves
         self.spectra = new_flux
         self.uncertainties = new_uncert
-
+        logger.warning("Epoch wise normalization is overriding the minimum SNR!")
+        self._internal_configs["minimum_order_SNR"] = 0
+        self.regenerate_order_status()
         self._normalization_information.store_norm_info(name, norm_keys)
 
         self._already_normalized_data = True
