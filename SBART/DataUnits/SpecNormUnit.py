@@ -79,7 +79,10 @@ class SpecNorm_Unit(UnitModel):
             norm_info = json.load(handle)
             profile = {}
             for str_key, info in norm_info.items():
-                profile[int(str_key)] = {j: float(k) for j,k in info.items()}
+                try:
+                    profile[int(str_key)] = {j: float(k) for j,k in info.items()}
+                except ValueError:
+                    profile[str_key] = info
             new_unit.stored_info = profile
         logger.info("Loaded previous normalization parameters from disk")
         return new_unit
