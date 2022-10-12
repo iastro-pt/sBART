@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
@@ -432,7 +433,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if diffs[0].size > 0:
             logger.warning("Found non-increasing wavelengths on {}", self.name)
             self.spectral_mask.add_indexes_to_mask(diffs, QUAL_DATA("Non-increasing wavelengths"))
-
         logger.debug("Took {} seconds ({})", sum(time_took), " + ".join(map(str, time_took)))
 
         if assess_bad_orders:
@@ -463,7 +463,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         # True in the points to mask
         logger.debug("Rejecting spectral orders")
         entire_mask = self.spectral_mask.get_custom_mask()
-
         for order, value in enumerate(entire_mask):
             # See if the total amounf of rejected points is larger than
             # 1 - reject_order-percentage of the entire order
