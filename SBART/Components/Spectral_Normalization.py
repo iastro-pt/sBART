@@ -141,8 +141,9 @@ class Spectral_Normalization(BASE):
         self.spectra = new_flux
         self.uncertainties = new_uncert
 
-        self._normalization_information.store_norm_info(name, {})
+        self._normalization_information.store_norm_info(name, norm_keys)
 
+        self._already_normalized_data = True
         # Trigger a new check of the data integrity, as we have just overloaded the entire
         # S2D spectrum. However, this ignores any kind of quality check!
         self.build_mask(bypass_QualCheck=True)
