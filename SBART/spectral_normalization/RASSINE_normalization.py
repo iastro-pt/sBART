@@ -219,8 +219,8 @@ config = {'spectrum_name':spectrum_name,
         # Ensure that we are not interpolating outside the grid!
         # In principle, this should not be a problem, as the grid **should** be large enough to
         # contain the entire wavelength solution
-        cont_solution[np.logical_or(wavelengths < rass_products["wave"],
-                                    wavelengths > rass_products["wave"]
+        cont_solution[np.logical_or(wavelengths < rass_products["wave"][0],
+                                    wavelengths > rass_products["wave"][-1]
                                     )] = np.nan
         self.plot_rassine_products(wavelengths, flux, uncertainties, rass_products, cont_solution)
 
@@ -275,13 +275,14 @@ config = {'spectrum_name':spectrum_name,
         -------
 
         """
+        logger.debug("Plotting rassine products")
         fig, axis = plt.subplots(nrows=2, figsize=(8,6), sharex=True)
         figs_to_close = [fig]
 
         axis[0].plot(wavelength, flux, color="black")
         axis[0].plot(wavelength, interpolated_cont, color="blue")
-        axis[0].plot(wavelength, rass_products["output"]["continuum_cubic"], color="red")
-        axis[1].plot(rass_products["wave"], flux / rass_products["output"]["continuum_cubic"], color="black")
+        axis[1].plot(wavelength, flux/interpolated_cont, color="black")
+        axis[0].plot(rass_products["wave"], rass_products["output"]["continuum_cubic"], color="red")
         axis[1].set_xlabel(r"$\lambda [\AA]$")
         axis[0].set_ylabel("Flux")
         axis[1].set_ylabel("Normalized flux")
