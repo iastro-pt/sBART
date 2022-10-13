@@ -3,6 +3,7 @@ import subprocess
 from copy import deepcopy
 from pathlib import Path
 from typing import NoReturn
+from scipy.interpolate import CubicSpline
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -211,7 +212,18 @@ config = {'spectrum_name':spectrum_name,
             rass_products = pickle.load(file)
 
         cont_solution = rass_products["output"]["continuum_cubic"]
-        self.plot_rassine_products(wavelengths, flux, uncertainties, rass_products)
+
+        CSplineInterpolator = CubicSpline(rass_products["wave"], cont_solution)
+        cont_solution = CSplineInterpolator(wavelengths)
+
+        # Ensure that we are not interpolating outside the grid!
+        # In principle, this should not be a problem, as the grid **should** be large enough to
+        # contain the entire wavelength solution
+        cont_solution[np.logical_or(wavelengths < rass_products["wave"],
+                                    wavelengths > rass_products["wave"]
+                                    )] = np.nan
+        self.plot_rassine_products(wavelengths, flux, uncertainties, rass_products, cont_solution)
+
         flux /= cont_solution
         uncertainties /= cont_solution
 
@@ -248,7 +260,7 @@ config = {'spectrum_name':spectrum_name,
             return reconstructed_wavelengths, reconstructed_S2D, reconstructed_uncertainties
         return wavelengths, flux, uncertainties
 
-    def plot_rassine_products(self, wavelength, flux, uncert, rass_products) -> NoReturn:
+    def plot_rassine_products(self, wavelength, flux, uncert, rass_products, interpolated_cont) -> NoReturn:
         """
         Plot the end result of the continuum normalization
 
@@ -267,8 +279,9 @@ config = {'spectrum_name':spectrum_name,
         figs_to_close = [fig]
 
         axis[0].plot(wavelength, flux, color="black")
+        axis[0].plot(wavelength, interpolated_cont, color="blue")
         axis[0].plot(wavelength, rass_products["output"]["continuum_cubic"], color="red")
-        axis[1].plot(wavelength, flux / rass_products["output"]["continuum_cubic"], color="black")
+        axis[1].plot(rass_products["wave"], flux / rass_products["output"]["continuum_cubic"], color="black")
         axis[1].set_xlabel(r"$\lambda [\AA]$")
         axis[0].set_ylabel("Flux")
         axis[1].set_ylabel("Normalized flux")
