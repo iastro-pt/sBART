@@ -14,6 +14,21 @@ from SBART.utils.UserConfigs import (
 
 
 class NormalizationBase(BASE):
+    """
+    **Description:**
+
+    Extend a Spectrum object to allow to normalize the fluxes of S1D and S2D spectra.
+    This functionality is extended  by allowing to fit & normalize the continuum levels and can be:
+
+    1) applied to each order, independently;
+    2) Applied to the combined S1D spectrum;
+
+    In the second case, we can apply this process to the S2D spectra, even though the fit is made on the S1D products.
+    To do this, the general approach is to first normalize the S1D spectra and, afterwards, divide it into
+    order-sized chunks. This has the intended effect of re-generating the spectral mask and removing all
+    previous rejections of spectral orders.
+
+    """
     _object_type = "Spectral normalizer"
 
     _name = "SpecNormBase"

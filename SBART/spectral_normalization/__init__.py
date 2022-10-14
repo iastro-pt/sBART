@@ -1,6 +1,5 @@
 """
-This sub-package implements the different methods that can be used to interpolate stellar spectra
-to a new wavelength grid.
+This sub-package implements the different methods that can be used to normalize stellar spectra
 
 """
 from .alpha_shape_normalization import AlphaShape_normalization

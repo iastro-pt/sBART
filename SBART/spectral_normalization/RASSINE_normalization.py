@@ -23,11 +23,62 @@ from SBART.utils.UserConfigs import (
 
 class RASSINE_normalization(NormalizationBase):
     """
+    Uses RASSINE to normalize the stellar spectra.
+
+    **Description:**
+
+    Works with either S1D or S2D spectra, with a different behaviour on both cases:
+
+    1) With S1D data:
+        - Simple division of the stellar spectra with the continuum model. The continuum is interpolated
+        (cubic spline)
+    2) With S2D data:
+        - Loads the S1D file from disk, applying the process from 1). Then, it divides the S1D spectra
+        in chunks of "N_{order}" pixels to recreate a S2D spectra. This will re-trigger all the order
+        masking procedures and remove all previous rejections
+
 
     **User parameters:**
 
+    ====================== ================ ================ ======================== ================
+    Parameter name             Mandatory      Default Value    Valid Values                Comment
+    ====================== ================ ================ ======================== ================
+        S1D_folder          False               ---             str, Path               [1]
+        RASSINE_path        True                ---             str, Path               [2]
+
+
+    Notes:
+        [1] Folder in which the S1D files will be stored (if the input is a S2D spectra)
+
+        [2] Path to a local clone of the modified RASSINE (git@github.com:Kamuish/Rassine_modified.git)
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+
+
+    **Disk products:**
+
+        This method will create the output folder _Storage/RASSINE, where we can find:
+
+        1) inputs/*.csv - RASSINE inputs
+        2) outputs/*.png - Plot with the result of the continuum and normalization
+        3) outputs/*.p - Rassine outputs
+        4) *.json - Storage of params to use on next application
+
+
+    **Example:**
+
+    .. code-block:: python
+
+        f = ESPRESSO(main_path / file_start,
+                     user_configs={"NORMALIZE_SPECTRA": True,
+                                   "S1D_folder": "/home/foo/S1D_folder/target/",
+                                   "RASSINE_path": "/home/foo/tools/Rassine_modified"
+                                   }
+             )
+
+        f.normalize_spectra()
+        f.trigger_data_storage()
+
 
     """
 
