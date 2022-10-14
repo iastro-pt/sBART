@@ -28,8 +28,12 @@ class Spectral_Normalization(BASE):
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
     ============================ ================ ================ ======================== ================
-    NORMALIZATION_MODE               False           Alpha-Shape                                   [1]
+    NORMALIZATION_MODE               False          RASSINE                                    [1]
     ============================ ================ ================ ======================== ================
+
+    Notes:
+
+        [1] Name of the spectral normalizers (Currently, RASSINE and Poly-Norm)
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
