@@ -30,12 +30,9 @@ class RASSINE_normalization(NormalizationBase):
     Works with either S1D or S2D spectra, with a different behaviour on both cases:
 
     1) With S1D data:
-        - Simple division of the stellar spectra with the continuum model. The continuum is interpolated
-        (cubic spline)
+        - Simple division of the stellar spectra with the continuum model. The continuum is interpolated (cubic spline)
     2) With S2D data:
-        - Loads the S1D file from disk, applying the process from 1). Then, it divides the S1D spectra
-        in chunks of "N_{order}" pixels to recreate a S2D spectra. This will re-trigger all the order
-        masking procedures and remove all previous rejections
+        - Loads the S1D file from disk, applying the process from 1). Then, it divides the S1D spectra in chunks of "N_{order}" pixels to recreate a S2D spectra. This will re-trigger all the order masking procedures and remove all previous rejections
 
 
     **User parameters:**
@@ -45,6 +42,7 @@ class RASSINE_normalization(NormalizationBase):
     ====================== ================ ================ ======================== ================
         S1D_folder          False               ---             str, Path               [1]
         RASSINE_path        True                ---             str, Path               [2]
+    ====================== ================ ================ ======================== ================
 
 
     Notes:
@@ -52,10 +50,10 @@ class RASSINE_normalization(NormalizationBase):
 
         [2] Path to a local clone of the modified RASSINE (git@github.com:Kamuish/Rassine_modified.git)
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+        [3] Also check the **User parameters** of the parent classes for further customization options of SBART
 
 
-    **Disk products:**
+    Disk products:
 
         This method will create the output folder _Storage/RASSINE, where we can find:
 
