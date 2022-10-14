@@ -34,6 +34,7 @@ class RASSINE_normalization(NormalizationBase):
     2) With S2D data:
         - Loads the S1D file from disk, applying the process from 1). Then, it divides the S1D spectra in chunks of "N_{order}" pixels to recreate a S2D spectra. This will re-trigger all the order masking procedures and remove all previous rejections
 
+    Name of the normalizer: RASSINE
 
     **User parameters:**
 
@@ -69,6 +70,7 @@ class RASSINE_normalization(NormalizationBase):
 
         f = ESPRESSO(main_path / file_start,
                      user_configs={"NORMALIZE_SPECTRA": True,
+                                   "NORMALIZATION_MODE": "RASSINE"
                                    "S1D_folder": "/home/foo/S1D_folder/target/",
                                    "RASSINE_path": "/home/foo/tools/Rassine_modified"
                                    }
@@ -76,7 +78,6 @@ class RASSINE_normalization(NormalizationBase):
 
         f.normalize_spectra()
         f.trigger_data_storage()
-
 
     """
 

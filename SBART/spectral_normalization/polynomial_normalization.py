@@ -12,16 +12,29 @@ from SBART.utils.UserConfigs import (
 
 class Polynomial_normalization(NormalizationBase):
     """
+    Order by order fit (inverse variance weights) of the blaze-corrected S2D spectra using a first degree polynomial. This does
+    not iterate multiple times to remove outliers, leading to a **very** sub-optimal continuum model!
 
-    **User parameters:**
+    Name of the normalizer: Poly-Norm
 
+    **Example:**
 
-    *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
+    .. code-block:: python
+
+        f = ESPRESSO(main_path / file_start,
+                     user_configs={"NORMALIZE_SPECTRA": True,
+                                   "NORMALIZATION_MODE": "Poly-Norm"
+                                   }
+             )
+
+        f.normalize_spectra()
+        f.trigger_data_storage()
 
     """
 
     _default_params = NormalizationBase._default_params + DefaultValues()
     _name = "Poly"
+    orderwise_application = True
 
     def __init__(self, obj_info, user_configs):
         super().__init__(obj_info=obj_info,
