@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 import ujson as json
 from pathlib import Path
 
@@ -114,3 +116,9 @@ class Classical_Unit(UnitModel):
             new_unit.chi_squared_profile = profile
 
         return new_unit
+
+    def generate_root_path(self, storage_path: Path) -> NoReturn:
+        if isinstance(storage_path, str):
+            storage_path = Path(storage_path)
+        storage_path /= self._content_name
+        super().generate_root_path(storage_path)

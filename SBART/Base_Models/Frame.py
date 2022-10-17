@@ -4,11 +4,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
 
-from SBART.Components import Spectral_Modelling, Spectrum
+from SBART.Components import Spectral_Modelling, Spectrum, Spectral_Normalization
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import (
@@ -39,7 +40,7 @@ from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
 
 
-class Frame(Spectrum, Spectral_Modelling):
+class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     """
     Base Class for the different :ref:`Instruments<InstrumentsDescription>`, providing a shared interface to spectral data and
     header information.
@@ -188,7 +189,7 @@ class Frame(Spectrum, Spectral_Modelling):
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
 
-        self.file_path = file_path
+        self.file_path: Path = file_path
         if init_log:
             logger.info("Creating frame from: {}".format(self.file_path))
         self.inst_name = inst_name
@@ -432,7 +433,6 @@ class Frame(Spectrum, Spectral_Modelling):
         if diffs[0].size > 0:
             logger.warning("Found non-increasing wavelengths on {}", self.name)
             self.spectral_mask.add_indexes_to_mask(diffs, QUAL_DATA("Non-increasing wavelengths"))
-
         logger.debug("Took {} seconds ({})", sum(time_took), " + ".join(map(str, time_took)))
 
         if assess_bad_orders:
@@ -463,7 +463,6 @@ class Frame(Spectrum, Spectral_Modelling):
         # True in the points to mask
         logger.debug("Rejecting spectral orders")
         entire_mask = self.spectral_mask.get_custom_mask()
-
         for order, value in enumerate(entire_mask):
             # See if the total amounf of rejected points is larger than
             # 1 - reject_order-percentage of the entire order
@@ -552,6 +551,22 @@ class Frame(Spectrum, Spectral_Modelling):
     #####################################
     #      Handle data management      #
     ####################################
+    def get_S1D_name(self) -> str:
+        """
+        Build the S1D name that should be associated with this Frame.
+        If it is already a S1D, returns the actual name.
+        If it is not, remove "blaze" from the filename and replaces "S2D" with "S1D"
+
+        Returns
+        -------
+
+        """
+        #TODO: this will not work for non-ESPRESSO files
+
+        if self.is_S1D:
+            return self.fname
+        name = self.fname
+        return name.replace("BLAZE_", "").replace("S2D", "S1D")
 
     def load_data(self) -> None:
         if self.is_S1D:

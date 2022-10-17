@@ -41,17 +41,20 @@ class Spectrum(BASE):
         self.is_BERV_corrected = False
 
         self._OrderStatus = None
-        try:
-            if self.array_size is not None:
-                self._OrderStatus = OrderStatus(self.N_orders)
-        except AttributeError:
-            pass
+        self.regenerate_order_status()
 
         # If True, then the data was loaded from disk. Otherwise, it still needs to be loaded in!
         self._spectrum_has_data_on_memory = False
 
         self.was_telluric_corrected = False
 
+    def regenerate_order_status(self):
+        logger.warning(f"Resetting order status of {self.name}")
+        try:
+            if self.array_size is not None:
+                self._OrderStatus = OrderStatus(self.N_orders)
+        except AttributeError:
+            pass
     def check_if_data_correction_enabled(self, property_name) -> bool:
         """
         If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
@@ -273,7 +276,12 @@ class Spectrum(BASE):
     def spectrum_information(self):
         return {"N_orders": self.N_orders,
                 "object_type": self._object_type,
-                "blaze_corrected": self.is_blaze_corrected
+                "blaze_corrected": self.is_blaze_corrected,
+                "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
+                "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
+                "telluric_corrected": self.was_telluric_corrected,
+                "is_S2D": self.is_S2D,
+                "is_S1D": self.is_S1D,
                 }
 
     @property
@@ -305,3 +313,4 @@ class Spectrum(BASE):
             True if it has the arrays loaded on memory
         """
         return self._spectrum_has_data_on_memory
+

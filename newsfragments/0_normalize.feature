@@ -1,0 +1,1 @@
+Provide framework to normalize the stellar spectra (currently RASSINE)
