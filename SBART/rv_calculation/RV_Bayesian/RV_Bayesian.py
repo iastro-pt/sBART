@@ -357,28 +357,6 @@ class RV_Bayesian(RV_routine):
             for key in ["jitter", "jitter_uncertainty", "opt_status", "opt_message"]:
                 self._execution_metrics[epoch][key] = data[key]
 
-    def _open_shared_memory(self, inst_info: dict) -> None:
-        """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
-        if self._internal_configs["RV_extraction"] == "epoch-wise":
-
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=np.bool))
-            self._shared_mem_buffers["mask_cache"] = buffer_info
-
-            buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"][0], dtype=np.bool)
-            )
-            self._shared_mem_buffers["cached_orders"] = buffer_info
-
-            self.sampler.store_shared_buffer(self._shared_mem_buffers)
-
-        else:
-            logger.debug(
-                "{} does not need to place data in shared memory in the {} mode",
-                self.name,
-                self._internal_configs["RV_extraction"],
-            )
-            return
-
     @property
     def storage_name(self):
         name = self.__class__._name
