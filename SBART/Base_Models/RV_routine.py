@@ -19,7 +19,6 @@ from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     InvalidConfiguration,
 )
-from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
@@ -661,28 +660,7 @@ class RV_routine(BASE):
     #########################
     # Shared memory handles #
     #########################
-    def _open_shared_memory(self, inst_info: dict) -> None:
-        """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
-        logger.info(f"{self.name} opening shared memory interfaces")
-        if self._internal_configs["RV_extraction"] == "epoch-wise":
 
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=np.bool))
-            self._shared_mem_buffers["mask_cache"] = buffer_info
-
-            buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"][0], dtype=np.bool)
-            )
-            self._shared_mem_buffers["cached_orders"] = buffer_info
-
-            self.sampler.store_shared_buffer(self._shared_mem_buffers)
-
-        else:
-            logger.warning(
-                "{} does not need to place data in shared memory in the {} mode",
-                self.name,
-                self._internal_configs["RV_extraction"],
-            )
-            return
     def close_multiprocessing(self) -> None:
         logger.debug("Shutting down the multiprocessing interfaces")
         self.kill_workers()
