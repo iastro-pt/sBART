@@ -736,6 +736,10 @@ class RV_routine(BASE):
         else:
             logger.info("All workers are closed")
 
+    def _open_shared_memory(self, inst_info: dict) -> None:
+        logger.debug("{} does not need to place data in shared memory", self.name)
+        return
+
     def open_queues(self) -> None:
         logger.debug("{} opening multiprocessing interfaces", self.name)
 
