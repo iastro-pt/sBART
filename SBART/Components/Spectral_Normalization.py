@@ -178,4 +178,5 @@ class Spectral_Normalization(BASE):
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         super().trigger_data_storage(*args, **kwargs)
-        self._normalization_information.trigger_data_storage()
+        if self._normalization_information is not None:
+            self._normalization_information.trigger_data_storage()
