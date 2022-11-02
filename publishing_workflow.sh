@@ -1,5 +1,5 @@
 current_version="0.1.6"
-bump_type="patch" # major / minor / patch
+bump_type="minor" # major / minor / patch
 
 
 tag_name=v$current_version
@@ -17,7 +17,7 @@ git commit -m "Building changelog"
 ####
 
 bump2version --current-version $current_version $bump_type SBART/__init__.py pyproject.toml --allow-dirty
-git add pyproject.tom
+git add pyproject.toml
 git add SBART/__init__.py
 git commit -m "new sBART version"
 
