@@ -69,5 +69,6 @@ template = "towncrier_template.rst"
 	name = "Breaking changes"
 	showcontent = true
 
-[tool.towncrier.fragment.misc]
+[tool.towncrier.fragment.others]
+	name =  "Others"
 	showcontent = true
