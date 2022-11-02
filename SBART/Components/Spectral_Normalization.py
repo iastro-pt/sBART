@@ -38,14 +38,7 @@ class Spectral_Normalization(BASE):
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
-
-    # TODO: confirm the kernels that we want to allow
-    _default_params = BASE._default_params + DefaultValues(
-        NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
-        NORMALIZATION_MODE=UserParam("RASSINE", constraint=ValueFromList(list(available_normalization_interfaces.keys()))),
-        S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
-        RASSINE_path=UserParam(mandatory=False, constraint=PathValue, default_value="")
-    )
+    _default_params = BASE._default_params
 
     def __init__(self, **kwargs):
         self._default_params = self._default_params + Spectral_Normalization._default_params
