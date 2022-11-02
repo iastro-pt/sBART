@@ -2,13 +2,14 @@ from pathlib import Path
 from typing import Any, Dict, NoReturn, Optional
 
 from loguru import logger
+from matplotlib import pyplot as plt
 
 from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
 from SBART.utils.types import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, InternalParameters
-
+plt.switch_backend('agg')
 
 class BASE:
     """
