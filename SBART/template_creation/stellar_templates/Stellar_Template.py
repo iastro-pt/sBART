@@ -206,8 +206,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.is_BERV_corrected = first_frame.check_if_data_correction_enabled("is_BERV_corrected")
         self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
         self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
-        self.is_S2D = first_frame.is_S2D
-        self.is_S1D = first_frame.is_S1D
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
@@ -283,8 +281,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "was_telluric_corrected": self.was_telluric_corrected,
             "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
             "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
-            "is_S2D":self.is_S2D,
-            "is_S1D":self.is_S1D,
         }
 
         with open(miscInfo, mode="w") as file:
