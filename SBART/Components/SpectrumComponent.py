@@ -280,8 +280,6 @@ class Spectrum(BASE):
                 "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
                 "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
                 "telluric_corrected": self.was_telluric_corrected,
-                "is_S2D": self.is_S2D,
-                "is_S1D": self.is_S1D,
                 }
 
     @property
