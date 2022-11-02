@@ -4,6 +4,49 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-1-6 (2022-11-02)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Break
+~~~~~
+
+- Fine control of interpolation now made with API calls to a DataClass object 
+- NUMBER_WORKERS of Stellar Template and RV routines now only control the number of workers; 
+
+
+Bugfix
+~~~~~~
+
+- Fixing bug with CCF RV uncertainty load from disk 
+- Fixing circular import on the Parameters sub-package 
+- Fix SA correction if the BJD was not loaded by the instruments 
+- Removed bug on Telluric Template creation without water-related keywords  (`#25 <https://github.com/iastro-pt/sBART/issues/25>`_)
+- Ensuring that the template and the spectra have the same corrections  (`#27 <https://github.com/iastro-pt/sBART/issues/27>`_)
+
+
+Feature
+~~~~~~~
+
+- Fallback of BJD missing key to MJD 
+- Sigma-clipping RVs based on the DRS estimate 
+- Plotting transmittance spectrum 
+- Allow to reject Frames based on warning KW flags that might exist 
+- Provide framework to normalize the stellar spectra (currently RASSINE) 
+- Introducing GP interpolation for stellar spectra (Frames and Stellar Templates) 
+- Introducing NearestNeighbor interpolation option 
+
+
+Misc
+~~~~
+
+- Adding sanity tests to (RV) model parameters 
+- Added detail to worker log from RV_routine 
+- Improving logs to avoid repeating multiple times the same information about the Frames user-configs 
+- Improving the interface for interpolating stellar spectra 
+- Added bump2version to automatically bump version numbers  (`#4 <https://github.com/iastro-pt/sBART/issues/4>`_)
+- Adding docs for the disk outputs of the pipeline  (`#29 <https://github.com/iastro-pt/sBART/issues/29>`_)
+
+
 SBART 0-1-6 (2022-05-19)
 ------------------------
 
