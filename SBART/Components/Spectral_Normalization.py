@@ -33,7 +33,7 @@ class Spectral_Normalization(BASE):
 
     Notes:
 
-        [1] Name of the spectral normalizers (Currently, RASSINE and Poly-Norm)
+        [1] Name of the spectral normalizers, that are described in :module:`SBART.spectral_normalization`
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
