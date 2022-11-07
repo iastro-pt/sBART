@@ -1,5 +1,7 @@
-from typing import Iterable, NoReturn, Optional, Tuple, Union
+import time
+from typing import Iterable, NoReturn, Optional, Tuple, Union, List
 
+import numpy as np
 from astropy.units import Quantity
 from loguru import logger
 
@@ -11,7 +13,7 @@ from SBART.utils.custom_exceptions import (
     FrameError,
     InvalidConfiguration,
 )
-from SBART.utils.status_codes import INTERNAL_ERROR, Flag
+from SBART.utils.status_codes import INTERNAL_ERROR, Flag, SUCCESS
 from SBART.utils.types import UI_DICT
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package, WorkerInput
@@ -219,27 +221,45 @@ class SamplerModel(BASE):
             raise InvalidConfiguration
         raise NotImplementedError(f"{self.name} does not support orderwise application")
 
-    def apply_epochwise(
-        self, dataClassProxy, optimizer_estimate: Union[float, list], target, target_kwargs: dict
-    ):
+    def apply_epochwise(self, model_parameters, config_dict):
         """
         Application of the model's parameters to all spectral orders at the same time. The children classes
         must implement this on their own, as the application stratagies will end up being different for each
 
         Parameters
         ----------
-        dataClassProxy
-        optimizer_estimate
-        target
-        target_kwargs
+        config_dict:
+            Dictionary that will be passed to the target function
+        model_parameters
+            List with the model parameters in the correct order
 
         Returns
         -------
 
         """
-        if self.mode == "order-wise":
-            raise InvalidConfiguration
-        raise NotImplementedError(f"{self.name} does not support epochwise application")
+        if self.mode != "epoch-wise":
+            raise InvalidConfiguration(f"Sampler is not in the epoch-wise mode")
+
+        run_info = config_dict["run_information"]
+        package_queue = config_dict["pkg_queue"]
+        output_pool = config_dict["output_pool"]
+
+        for order in run_info["valid_orders"]:
+            worker_IN_pkg = self._generate_WorkerIn_Package(
+                frameID=run_info["frameID"],
+                order=order,
+                run_info=run_info,
+                subInst=run_info["subInst"],
+                model_parameters=model_parameters
+            )
+            package_queue.put(worker_IN_pkg)
+
+        outputs = self._receive_data_workers(len(run_info["valid_orders"]), output_pool, quiet=True)
+
+        if run_info["target_specific_configs"]["compute_metrics"]:
+            return self.process_epochwise_metrics(outputs)
+        else:
+            return self.compute_epochwise_combination(outputs)
 
     ######################################
     #  Comms interface with the workers  #
@@ -360,13 +380,54 @@ class SamplerModel(BASE):
         return worker_prods
 
     def _epochwise_manager(
-        self, dataClass, subInst: str, run_info: dict, package_queue, output_pool
-    ) -> list:
-        """Handle communication with the workers, when computing global RVs"""
+            self, dataClass, subInst: str, run_info, package_queue, output_pool
+    ) -> List[List[Package]]:
 
-        logger.debug("Starting epochwise manager")
-        raise NotImplementedError("The children classes must implement their own epochwise manager")
-        return []
+        valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
+
+        worker_prods = []
+
+        for frameID in valid_IDS:
+            try:
+                _ = dataClass.load_frame_by_ID(frameID)
+            except FrameError:
+                logger.warning("RunTimeRejection of frameID = {}", frameID)
+                continue
+            logger.info(
+                "Starting RV extraction of {}",
+                dataClass.get_filename_from_frameID(frameID),
+            )
+            starting_time = time.time()
+
+            # Make sure that we have these two options disabled!
+            run_info["target_specific_configs"]["compute_metrics"] = False
+            run_info["target_specific_configs"]["weighted"] = False
+
+            run_info["frameID"] = frameID
+            run_info["subInst"] = subInst
+
+            target_kwargs = {
+                "run_information": run_info,
+                "pkg_queue": package_queue,
+                "output_pool": output_pool,
+            }
+
+            # for the epoch-wise application, the target is resolved inside the self.optimize function
+            out_pkg, status = self.optimize_epochwise(target=None, target_kwargs=target_kwargs)
+
+            if status != SUCCESS:
+                logger.warning(
+                    "Frame {} did not converge",
+                    dataClass.get_filename_from_frameID(frameID),
+                )
+            # to mimic the outputs from the order-wise approach -> guarantee that the analysis of Flux misspec works
+            worker_prods.append([out_pkg])
+
+            logger.info("RV extraction took {} seconds", time.time() - starting_time)
+            if self.mem_save_enabled:
+                dataClass.close_frame_by_ID(frameID)
+
+        return worker_prods
 
     def _receive_data_workers(self, N_packages: int, output_pool, quiet: bool = False) -> list:
         """
@@ -437,7 +498,7 @@ class SamplerModel(BASE):
         logger.info("{} disabling memory saving mode", self.name)
         self.mem_save_enabled = False
 
-    def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst) -> WorkerInput:
+    def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
 
         worker_IN_pkg = WorkerInput()
         worker_IN_pkg["frameID"] = frameID
@@ -447,6 +508,10 @@ class SamplerModel(BASE):
         worker_IN_pkg["target_specific_configs"] = run_info["target_specific_configs"]
         worker_IN_pkg["force_RVbounds"] = False
         worker_IN_pkg["RVprior"] = self.model_params.get_RV_bounds(frameID)
+
+        for key, value in kwargs.items():
+            worker_IN_pkg[key] = value
+
         return worker_IN_pkg
 
     @property
@@ -457,6 +522,12 @@ class SamplerModel(BASE):
             RV_KW_start = "DRS_RV"
 
         return RV_KW_start
+
+    def process_epochwise_metrics(self, outputs):
+        return [], []
+
+    def compute_epochwise_combination(self, outputs):
+        pass
 
 
 if __name__ == "__main__":
