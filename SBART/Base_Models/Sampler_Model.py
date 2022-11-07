@@ -537,10 +537,33 @@ class SamplerModel(BASE):
         return RV_KW_start
 
     def process_epochwise_metrics(self, outputs):
+        """
+        Each children class must implement this, as it will be used to parse the outputs when
+        the optimal RV is provided to the target!
+
+        Parameters
+        ----------
+        outputs
+
+        Returns
+        -------
+
+        """
         return [], []
 
     def compute_epochwise_combination(self, outputs):
-        pass
+        """
+        Each children class must implement this to combine the order-wise metrics into a "global" value for the
+        optimization process
+        Parameters
+        ----------
+        outputs
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError("The children classes must override the epoch-wise combination")
 
 
 if __name__ == "__main__":
