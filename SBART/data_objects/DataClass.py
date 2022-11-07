@@ -28,6 +28,7 @@ from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second
 from SBART.utils import custom_exceptions
 
+
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
@@ -400,6 +401,33 @@ class DataClass(BASE):
         frame.load_data()
         return 1
 
+    def normalize_all(self) -> NoReturn:
+        """
+        Launch the normalization for all (valid) frames
+        Returns
+        -------
+
+        """
+        logger.info("Normalizing all frames")
+        for subInst in self.get_subInstruments_with_valid_frames():
+            self.normalize_all_from_subInst(subInst)
+
+    def normalize_all_from_subInst(self, subInst: str) -> NoReturn:
+        """
+        Normalizing all (valid) frames from a given subInstrument
+        Parameters
+        ----------
+        subInst
+
+        Returns
+        -------
+
+        """
+        logger.debug(f"Normalizing all frames from {subInst}")
+        for fId in self.get_frameIDs_from_subInst(subInst):
+            frame = self.get_frame_by_ID(fId)
+            frame.normalize_spectra()
+
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
 
@@ -465,7 +493,7 @@ class DataClass(BASE):
     def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
             raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
-            
+
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
         self.StellarModel.update_interpol_properties(new_properties)
@@ -835,4 +863,3 @@ class DataClass(BASE):
                 f"Data Class from {self._inst_type.instrument_properties['name']} holding "
                 + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )
-
