@@ -70,25 +70,27 @@ class Laplace_approx(SbartBaseSampler):
 
         if self.mode == "order-wise":
             internal_func = self.apply_orderwise
+            args = (target, target_kwargs)
         elif self.mode == "epoch-wise":
             logger.debug("Initial guesses: {}", initial_guesses)
             logger.debug("Param bounds: {}", bounds)
             internal_func = self.apply_epochwise
             out_pkg["frameID"] = target_kwargs["run_information"]["frameID"]
+            args = (target_kwargs,)
 
         if len(params_to_use) == 1:  # Brentt method for 1D optimization
             optimization_output = minimize_scalar(
                 fun=internal_func,
                 bounds=bounds[0],
                 method="bounded",
-                args=(target, target_kwargs),
+                args=args,
             )
         else:
             optimization_output = minimize(
                 fun=internal_func,
                 x0=initial_guesses,  # uses the l-bfgs-b method for the minimization
                 bounds=bounds,
-                args=(target, target_kwargs),
+                args=args,
             )
 
         out_pkg, order_status = self.process_posterior(
@@ -159,14 +161,14 @@ class Laplace_approx(SbartBaseSampler):
             target_interface = (
                 self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
             )
-
+            args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
-                free_RV_target = lambda RV: target_interface(RV, target, target_kwargs)
+                free_RV_target = lambda RV: target_interface(RV, *args)
             else:
                 # Fix all parameters to MAP estimate and compute the 2nd derivative on RV
                 free_RV_target = lambda RV: target_interface(
-                    [RV, *optimization_output.x[1:]], target, target_kwargs
+                    [RV, *optimization_output.x[1:]], *args
                 )
 
             RV_variance = 1 / derivative(
