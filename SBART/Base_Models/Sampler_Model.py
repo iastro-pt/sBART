@@ -349,8 +349,6 @@ class SamplerModel(BASE):
         """
         Handle communication with the workers, when computing order-wise RVs.
         If the memory saving mode is enabled, the S2D arrays of the frames are closed afterwards
-
-        TODO: add here the optimal sampling strategy of "everything goes", implemented in the chi_squared
         """
 
         logger.debug("Starting orderWise manager")
