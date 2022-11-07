@@ -221,7 +221,7 @@ class SamplerModel(BASE):
             raise InvalidConfiguration
         raise NotImplementedError(f"{self.name} does not support orderwise application")
 
-    def apply_epochwise(self, model_parameters, config_dict):
+    def apply_epochwise(self, optimizer_estimate, config_dict):
         """
         Application of the model's parameters to all spectral orders at the same time. The children classes
         must implement this on their own, as the application stratagies will end up being different for each
@@ -250,7 +250,7 @@ class SamplerModel(BASE):
                 order=order,
                 run_info=run_info,
                 subInst=run_info["subInst"],
-                model_parameters=model_parameters
+                model_parameters=optimizer_estimate
             )
             package_queue.put(worker_IN_pkg)
 
