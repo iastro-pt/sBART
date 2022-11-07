@@ -121,15 +121,15 @@ class ESPRESSO(Frame):
             quiet_user_params=quiet_user_params
         )
 
-        self.__class__.instrument_properties["wavelength_coverage"] = coverage
-        self.__class__.instrument_properties["resolution"] = 140_000
-        self.__class__.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+        self.instrument_properties["wavelength_coverage"] = coverage
+        self.instrument_properties["resolution"] = 140_000
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
             "Cerro Paranal"
         )
-        self.__class__.instrument_properties["is_drift_corrected"] = True
+        self.instrument_properties["is_drift_corrected"] = True
 
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
-        self.__class__.instrument_properties["site_pressure"] = 750
+        self.instrument_properties["site_pressure"] = 750
         self.is_BERV_corrected = True
 
         # CHeck for BLAZE correction

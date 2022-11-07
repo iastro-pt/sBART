@@ -115,17 +115,17 @@ class HARPS(Frame):
         if not search_status.is_good_flag:
             self.add_to_status(search_status)
 
-        self.__class__.instrument_properties["wavelength_coverage"] = coverage
-        self.__class__.instrument_properties["is_drift_corrected"] = False
+        self.instrument_properties["wavelength_coverage"] = coverage
+        self.instrument_properties["is_drift_corrected"] = False
 
-        self.__class__.instrument_properties["resolution"] = 115_000
-        self.__class__.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+        self.instrument_properties["resolution"] = 115_000
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
             "La Silla Observatory"
         )
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
-        self.__class__.instrument_properties["site_pressure"] = 750
+        self.instrument_properties["site_pressure"] = 750
 
         self.is_BERV_corrected = False
 

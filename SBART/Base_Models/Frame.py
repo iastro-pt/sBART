@@ -106,15 +106,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     _object_type = "Frame"
     _name = ""
 
-    instrument_properties = {
-        "name": "",
-        "array_size": (),
-        "wavelength_coverage": (),
-        "resolution": None,
-        "EarthLocation": None,
-        "site_pressure": None,  # pressure in hPa
-        "is_drift_corrected": None,  # True if the S2D files are already corrected from the drift
-    }
     sub_instruments = {}
     # Dict of options and default values for them. Specific for each instrument
 
@@ -174,9 +165,15 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             If True, there are no logs for the generation of the user parameters of each Frame
         """
         self.array_size = array_size
-        self.__class__.instrument_properties["name"] = inst_name
-        self.__class__.instrument_properties["array_size"] = array_size
-
+        self.instrument_properties = {
+            "name": inst_name,
+            "array_size": array_size,
+            "wavelength_coverage": (),
+            "resolution": None,
+            "EarthLocation": None,
+            "site_pressure": None,  # pressure in hPa
+            "is_drift_corrected": None,  # True if the S2D files are already corrected from the drift
+        }
         super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
 
         self.frameID = frameID
@@ -251,7 +248,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         if need_external_data_load:
             self.add_to_status(LOADING_EXTERNAL_DATA)
-    
+
     def import_KW_from_outside(self, KW, value, optional: bool):
         """
         Allow to manually override frame parameters from the outside

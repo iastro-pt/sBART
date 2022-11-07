@@ -741,7 +741,7 @@ class DataClass(BASE):
         return self.frameID_map.keys()
 
     def get_instrument_information(self) -> dict:
-        return self._inst_type.instrument_properties
+        return self.observations[0].instrument_properties
 
     def get_stellar_template(self, subInst: str):
         return self.StellarModel.request_data(subInst)
