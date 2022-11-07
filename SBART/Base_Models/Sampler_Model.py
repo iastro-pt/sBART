@@ -355,28 +355,43 @@ class SamplerModel(BASE):
 
         logger.debug("Starting orderWise manager")
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
+        logger.debug("Running frameIDs : {}", valid_IDS)
         worker_prods = []
-        for frameID in valid_IDS:
-            # open before multiple cores attempt to open it!
-            try:
-                _ = dataClass.load_frame_by_ID(frameID)
-            except FrameError:
-                logger.warning("RunTimeRejection of frameID = {}", frameID)
-                continue
-            logger.debug("Using RV window of: {}".format(self.model_params.get_RV_bounds(frameID)))
+        if self.mem_save_enabled:
+            logger.info("Memory saving mode is enabled. Using optimal RAM-saving strategy")
+            for frameID in valid_IDS:
+                # open before multiple cores attempt to open it!
+                try:
+                    _ = dataClass.load_frame_by_ID(frameID)
+                except FrameError:
+                    logger.warning("RunTimeRejection of frameID = {}", frameID)
+                    continue
+                logger.debug("Using RV window of: {}".format(self.model_params.get_RV_bounds(frameID)))
+                N_packages = 0
+
+                for order in run_info["valid_orders"]:
+                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+
+                    package_queue.put(worker_IN_pkg)
+                    N_packages += 1
+
+                worker_prods.append(
+                    self._receive_data_workers(N_packages=N_packages, output_pool=output_pool)
+                )
+                if self.mem_save_enabled:
+                    dataClass.close_frame_by_ID(frameID)
+        else:
+            logger.info("Memory saving mode is disabled. Using optimal sampling strategy")
+            _ = dataClass.load_all_from_subInst(subInst)
             N_packages = 0
-
-            for order in run_info["valid_orders"]:
-                worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
-
-                package_queue.put(worker_IN_pkg)
-                N_packages += 1
-
+            for frameID in valid_IDS:
+                for order in run_info["valid_orders"]:
+                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+                    package_queue.put(worker_IN_pkg)
+                    N_packages += 1
             worker_prods.append(
                 self._receive_data_workers(N_packages=N_packages, output_pool=output_pool)
             )
-            if self.mem_save_enabled:
-                dataClass.close_frame_by_ID(frameID)
         return worker_prods
 
     def _epochwise_manager(
