@@ -236,6 +236,7 @@ config = {'spectrum_name':spectrum_name,
         logger.info("RASSINE has finished running")
 
     def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
+        super()._fit_epochwise_normalization(wavelengths, flux, uncertainties)
 
         self.run_RASSINE(wavelengths, flux, uncertainties)
         filename = self._spec_info['S1D_name'].replace(".fits", "")
@@ -325,6 +326,8 @@ config = {'spectrum_name':spectrum_name,
         -------
 
         """
+        if not self._ran_normalization_fit:
+            return
         logger.debug("Plotting rassine products")
         fig, axis = plt.subplots(nrows=2, figsize=(8,6), sharex=True)
         figs_to_close = [fig]
