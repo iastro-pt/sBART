@@ -187,7 +187,7 @@ class Laplace_approx(SbartBaseSampler):
                 ] = True
                 target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
                 model_misspec, log_likelihood, orders = target_interface(
-                    optimization_output.x, target, target_kwargs
+                    optimization_output.x, target_kwargs
                 )
 
             else:
