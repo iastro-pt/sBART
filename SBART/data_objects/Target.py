@@ -146,7 +146,7 @@ class Target:
         -------
 
         """
-        return self._overriden_name
+        return self._original_name
 
     @property
     def json_ready(self) -> Dict[str, Any]:
