@@ -123,13 +123,6 @@ class Target:
         return star if star not in alias_list else alias_list[star]
 
     @property
-    def printable_name(self):
-        # TODO: understand what name to return in there
-        targ_name = self.true_name
-        targ_name.replace(" ", "_")
-        return targ_name
-
-    @property
     def true_name(self):
         return self._name
 
