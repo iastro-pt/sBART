@@ -810,7 +810,7 @@ class RV_cube(BASE):
         table.write_to_file(final_path, mode=mode, write_LaTeX=False)
 
     def export_rdb(self, append=False):
-        star_name = self.cached_info["target"].original_name
+        star_name = self.cached_info["target"].true_name
 
         final_path = build_filename(
             self._internalPaths.root_storage_path,

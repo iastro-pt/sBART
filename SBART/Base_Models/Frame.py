@@ -708,7 +708,9 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     @property
     def spectrum_information(self):
         return {**{"subInstrument": self.sub_instrument,
-                   "filename": self.bare_fname
+                   "filename": self.bare_fname,
+                   "is_S2D": self.is_S2D,
+                   "is_S1D": self.is_S1D
                    },
                 ** super().spectrum_information}
 

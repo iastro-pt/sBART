@@ -86,12 +86,13 @@ For a :py:class:`~SBART.data_objects.DataClass.DataClass` object, we can use its
     data.reject_observations(full_conditions)
 
 """
-
+from pathlib import Path
 from typing import Any, List, Tuple
 
 import numpy as np
 from loguru import logger
 
+from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
 
@@ -304,6 +305,7 @@ class WarningFlag_Notset(ConditionModel):
     """
     Reject the observation if the given warning flag is True
     """
+
     def __init__(self, flag_name: str):
         self.flag_name = flag_name
 
@@ -333,9 +335,31 @@ class FNAME_condition(ConditionModel):
 
     Parameters
     ============
+    filename_list: list
+        List of files to either be outright used or list of paths to .txt files from which we can select
+        observations
+    only_keep_filenames: bool
+        Only keep the **filenames** that were selected. Default: False
+    load_from_file: bool
+        If True (default False), use the filename_list parameter to provide a list of files that will be
+        selected
     """
 
-    def __init__(self, filename_list: list, only_keep_filenames=False):
+    def __init__(self, filename_list: list, only_keep_filenames=False, load_from_file: bool = False):
+        self._load_from_file = load_from_file
+        if self._load_from_file:
+            logger.info(f"Loading files to 'condition' from a disk file: {filename_list}")
+            files_to_reject = []
+            for entry in filename_list:
+                if not isinstance(entry, Path):
+                    entry = Path(entry)
+                if not entry.name.endswith("txt"):
+                    raise custom_exceptions.InvalidConfiguration("File to load must be txt")
+                with open(entry) as file:
+                    files_to_reject.extend(file.readlines())
+
+            filename_list = list(map(lambda x: x.replace("\n", ""), files_to_reject))
+
         self._filename_list = filename_list
         self._only_keep_filenames = only_keep_filenames
         super().__init__()

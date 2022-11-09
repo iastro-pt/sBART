@@ -47,6 +47,7 @@ class NormalizationBase(BASE):
                          quiet_user_params=True
                          )
         self._spec_info = obj_info
+        self._ran_normalization_fit: bool = False
 
     def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         self._ensure_epochwise_normalizer()
@@ -58,7 +59,7 @@ class NormalizationBase(BASE):
         ...
 
     def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
-        ...
+        self._ran_normalization_fit = True
 
     def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         """

@@ -48,18 +48,21 @@ class Target:
         target_list = self.clean_targ_list(target_list)
         self.validate_target_list(target_list)
 
-        self._name = target_list[0].strip()
-        if original_name is None:
-            self._original_name = self._name
-        else:
-            self._original_name = original_name
+        # Name from the header!
+        self._original_name: str = target_list[0].strip()
 
-        if self._name != self._original_name:
-            msg = f"Original target name '{self._original_name}' "
-            msg += f"validated to '{self._name}'"
+        # original_nam
+        if original_name is None:
+            self._overriden_name = self._original_name
+        else:
+            self._overriden_name = original_name
+
+        if self._original_name != self._overriden_name:
+            msg = f"Original target name '{self._overriden_name}' "
+            msg += f"validated to '{self._original_name}'"
             logger.info(msg)
         else:
-            logger.info(f"Validated target to be {self._name}")
+            logger.info(f"Validated target to be {self._original_name}")
         self._simbad_error = False
         self._SA = np.nan
 
@@ -123,18 +126,26 @@ class Target:
         return star if star not in alias_list else alias_list[star]
 
     @property
-    def printable_name(self):
-        # TODO: understand what name to return in there
-        targ_name = self.true_name
-        targ_name.replace(" ", "_")
-        return targ_name
-
-    @property
     def true_name(self):
-        return self._name
+        """
+        Return the name of a target that is extracted from the header of the .fits files. This name
+        can be overriden if the user provides a new name when instantiating this object
+
+        Returns
+        -------
+
+        """
+        return self._overriden_name
 
     @property
     def original_name(self):
+        """
+        This is the name that was present in the header of the files (i.e. disregard any kind of
+        user-provided name)
+        Returns
+        -------
+
+        """
         return self._original_name
 
     @property
