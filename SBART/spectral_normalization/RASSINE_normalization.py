@@ -34,7 +34,7 @@ class RASSINE_normalization(NormalizationBase):
     2) With S2D data:
         - Loads the S1D file from disk, applying the process from 1). Then, it divides the S1D spectra in chunks of "N_{order}" pixels to recreate a S2D spectra. This will re-trigger all the order masking procedures and remove all previous rejections
 
-    Name of the normalizer: RASSINE
+    **Name of the normalizer**: RASSINE
 
     **User parameters:**
 
