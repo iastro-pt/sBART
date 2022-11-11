@@ -316,7 +316,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         if self._status.has_flag(LOADING_EXTERNAL_DATA):
-            logger.critical("Frame {} did not load the external data that it needed!", self.name)
+            logger.critical(f"Frame {self.name} did not load the external data that it needed!")
 
             self._status.delete_flag(LOADING_EXTERNAL_DATA)
             if bad_flag is None:
