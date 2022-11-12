@@ -17,8 +17,11 @@ tests/*outputs/*
 
 .idea/
 
-
-
+*logs*
+*outputs*
+*inputs*
+*_Storage*
+*templates
 
 # Distribution / packaging
 .Python
