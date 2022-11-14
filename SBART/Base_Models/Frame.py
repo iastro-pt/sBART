@@ -118,13 +118,12 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
-        spectra_format=UserParam("S2D", constraint=ValueFromList(("S2D",))),
     )
 
     def __init__(
         self,
         inst_name: str,
-        array_size: tuple,
+        array_size: Dict[str, tuple],
         file_path: Path,
         frameID: int,
         KW_map: Dict[str, str],
@@ -167,7 +166,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.array_size = array_size
         self.instrument_properties = {
             "name": inst_name,
-            "array_size": array_size,
+            "array_sizes": array_size,
+            "array_size": None,
             "wavelength_coverage": (),
             "resolution": None,
             "EarthLocation": None,
@@ -179,7 +179,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.frameID = frameID
         self._status = Status()  # BY DEFAULT IT IS A VALID ONE!
 
-        self.spectral_format = self._internal_configs["spectra_format"]
         if not isinstance(file_path, (str, Path)):
             raise custom_exceptions.InvalidConfiguration("Invalid path!")
 
@@ -196,6 +195,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.available_indicators = available_indicators
 
         self._KW_map = KW_map
+        self.spectral_format = self.get_spectral_type()
+        self.instrument_properties["array_size"] = self.instrument_properties["array_size"][self.spectral_format]
 
         # stores the information loaded from the header of the S2D files. THis dict will be the default values in case
         # the instrument does not support them!
@@ -248,6 +249,21 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         if need_external_data_load:
             self.add_to_status(LOADING_EXTERNAL_DATA)
+
+    def get_spectral_type(self) -> str:
+        """
+        Check the filename to see if we are using an S1D or S2D file
+        Returns
+        -------
+
+        """
+        name_lowercase = self.file_path.stem.lower()
+        if "s2d" in name_lowercase:
+            return "S2D"
+        elif "s1d" in name_lowercase:
+            return "S1D"
+        else:
+            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
     def import_KW_from_outside(self, KW, value, optional: bool):
         """

@@ -45,10 +45,6 @@ class ESPRESSO(Frame):
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
             )
 
-    _default_params.update("spectra_format",
-                           UserParam("S2D", constraint=ValueFromList(("S1D", "S2D")))
-                           )
-
     _default_params.update("apply_FluxCorr",
                            UserParam(False, constraint=BooleanValue),
                            )
@@ -85,16 +81,8 @@ class ESPRESSO(Frame):
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
         """
         # Wavelength coverage
-        try:
-            spec_fmt = user_configs["spectra_format"]
-        except (KeyError, TypeError):
-            spec_fmt = self.__class__._default_params["spectra_format"].default_value
 
         coverage = (350, 900)
-        if spec_fmt == "S2D":
-            mat_size = (170, 9111)
-        else:
-            mat_size = (1, 443262)
 
         self.UT_number = None
         KW_map = {
@@ -111,7 +99,9 @@ class ESPRESSO(Frame):
 
         super().__init__(
             inst_name="ESPRESSO",
-            array_size=mat_size,
+            array_size={"S2D": (170, 9111),
+                        "S1D": (1, 443262)
+                        },
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
