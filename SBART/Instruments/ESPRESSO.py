@@ -280,7 +280,7 @@ class ESPRESSO(Frame):
     def build_mask(self, bypass_QualCheck: bool = False) -> None:
         super().build_mask(bypass_QualCheck=bypass_QualCheck, assess_bad_orders=False)
 
-        if self._internal_configs["spectra_format"] == "S2D":
+        if self.spectral_format == "S2D":
             # the first two orders of the RED CCD have a large amount of noise in the beginning so we remove a
             # portion from the start of those two orders Now, what is going on: we want to find the indexes,
             # from order 90 and 91 that are below the 5230 \AA
