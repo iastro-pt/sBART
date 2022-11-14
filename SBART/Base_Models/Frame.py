@@ -430,7 +430,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     def _data_access_checks(self) -> NoReturn:
         super()._data_access_checks()
-        logger.critical(f"I am currently: {self.is_open}")
         if not self.is_open:
             self.load_data()
 
