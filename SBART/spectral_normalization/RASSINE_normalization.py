@@ -278,37 +278,6 @@ config = {'spectrum_name':spectrum_name,
         flux /= cont_solution
         uncertainties /= cont_solution
 
-        if self._spec_info["is_S2D"]:
-
-            # If the input frame is a S2D file, then we re-arrange the S1D file to fit the expected "shape"
-            # of the S2D files!
-
-            reconstructed_S2D = np.zeros(og_shape)
-            reconstructed_wavelengths = np.zeros(og_shape)
-            reconstructed_uncertainties = np.zeros(og_shape)
-
-            order_number = 0
-            order_size = reconstructed_wavelengths[0].size
-            to_break = False
-
-            while not to_break:
-                start_order = order_size * order_number
-                end_order = start_order + order_size
-                if end_order >= wavelengths.size:
-                    to_break = True
-                    end_order = wavelengths.size
-
-                slice_size = end_order - start_order
-                reconstructed_wavelengths[order_number] = np.pad(wavelengths[start_order:end_order], (0, order_size - slice_size))
-                reconstructed_S2D[order_number] = np.pad(flux[start_order:end_order], (0, order_size - slice_size))
-                reconstructed_uncertainties[order_number] = np.pad(uncertainties[start_order:end_order],
-                                                                   (0, order_size - slice_size)
-                                                                   )
-                order_number += 1
-
-            # The "new" orders that don't have any information will have a flux of zero. Thus, they will be deemed to
-            # be invalid during the mask creation process (that is re-launched after this routine is done)
-            return reconstructed_wavelengths, reconstructed_S2D, reconstructed_uncertainties
         return wavelengths, flux, uncertainties
 
     def plot_rassine_products(self, wavelength, flux, uncert, rass_products, interpolated_cont) -> NoReturn:
@@ -348,3 +317,5 @@ config = {'spectrum_name':spectrum_name,
     def _normalization_sanity_checks(self):
         # TODO: check this, maybe we will be limited to BLAZE-corrected spectra!
         logger.debug("{} does not apply any sanity check on the data!")
+        if self._spec_info["is_S2D"]:
+            raise custom_exceptions.InvalidConfiguration("Can't normalize S2D spectra")
