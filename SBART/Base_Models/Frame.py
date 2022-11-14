@@ -297,15 +297,20 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                 end_order = wavelengths.size
 
             slice_size = end_order - start_order
-            reconstructed_wavelengths[order_number] = np.pad(wavelengths[start_order:end_order], (0, order_size - slice_size))
-            reconstructed_S2D[order_number] = np.pad(flux[start_order:end_order], (0, order_size - slice_size))
+            reconstructed_wavelengths[order_number] = np.pad(wavelengths[start_order:end_order], (0, order_size - slice_size), constant_values=0)
+            reconstructed_S2D[order_number] = np.pad(flux[start_order:end_order], (0, order_size - slice_size), constant_values=0)
             reconstructed_uncertainties[order_number] = np.pad(uncertainties[start_order:end_order],
-                                                               (0, order_size - slice_size)
+                                                               (0, order_size - slice_size), constant_values=0
                                                                )
             order_number += 1
 
         # The "new" orders that don't have any information will have a flux of zero. Thus, they will be deemed to
         # be invalid during the mask creation process (that is re-launched after this routine is done)
+
+        # Ensure that we don't lose information due to the SNR cut
+        user_configs = self._internal_configs._user_configs
+        user_configs["minimum_order_SNR"] = 0
+
         new_frame = Frame(inst_name=self.inst_name,
                           array_size=self.instrument_properties["array_sizes"],
                           file_path=self.file_path,
@@ -324,6 +329,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame._never_close = True # ensure that we don't lose the transformation
         new_frame.spectral_format = "S2D"
         new_frame.instrument_properties["array_size"] = self.instrument_properties["array_sizes"]["S2D"]
+        new_frame.array_size = self.instrument_properties["array_sizes"]["S2D"]
+        new_frame.regenerate_order_status()
         return new_frame
 
     def import_KW_from_outside(self, KW, value, optional: bool):
@@ -423,6 +430,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     def _data_access_checks(self) -> NoReturn:
         super()._data_access_checks()
+        logger.critical(f"I am currently: {self.is_open}")
         if not self.is_open:
             self.load_data()
 
@@ -450,7 +458,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             Do not check the QUAL_DATA array for non-zero values, by default False
         """
         logger.debug("Creating spectral mask")
-        print(self.instrument_properties["array_size"])
         self.spectral_mask = Mask(initial_mask=np.zeros(self.instrument_properties["array_size"], dtype=np.uint16))
         if not bypass_QualCheck:
             zero_indexes = np.where(self.qual_data != 0)
@@ -488,6 +495,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                         )
                         self.spectral_mask.add_indexes_to_mask_order(order, indexes, removal_reason)
             time_took.append(time.time() - start_time)
+
         logger.debug(
             "Removed {} regions ({})", sum(N_point_removed), " + ".join(map(str, N_point_removed))
         )
