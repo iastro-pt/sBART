@@ -261,6 +261,7 @@ class DataClass(BASE):
         logger.warning("Transforming the frames to have a S2D-compatible shape")
         for index, frame in enumerate(self.observations):
             s2d_frame = frame.copy_into_S2D()
+            s2d_frame.build_mask()
             self.observations[index] = s2d_frame
             del frame 
             
@@ -421,6 +422,10 @@ class DataClass(BASE):
 
         """
         logger.info("Normalizing all frames")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame._never_close = True
+
         for subInst in self.get_subInstruments_with_valid_frames():
             self.normalize_all_from_subInst(subInst)
 
