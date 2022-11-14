@@ -161,7 +161,7 @@ class ESPRESSO(Frame):
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
-        for order in range(self.N_orders):
+        for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
             self.observation_info["orderwise_SNRs"].append(
                 header[f"HIERARCH ESO QC ORDER{order + 1} SNR"]
             )
@@ -193,7 +193,6 @@ class ESPRESSO(Frame):
             # Fixing dtype to avoid problems with the cython interface
             self.spectra = hdulist[SCIDATA_KEY].data.astype(np.float64)
             self.uncertainties = hdulist[ERRDATA_KEY].data.astype(np.float64)
-
             if self._internal_configs["apply_FluxCorr"]:
                 logger.debug("Starting chromatic flux correction")
                 keyword = "HIERARCH ESO QC ORDER%d FLUX CORR"
@@ -224,7 +223,6 @@ class ESPRESSO(Frame):
             else:
                 # Disabled the flux correction as we are artifically increasing the SNR of the spectra...
                 # Shouldn't we also increase the flux uncertainty?? The DRS does not do it....
-
                 logger.warning("Not applying correction to blue-red flux balance!")
                 # / corr_model
 
@@ -237,7 +235,6 @@ class ESPRESSO(Frame):
 
                 balance_corr_model = hdulist["DLLDATA_VAC_BARY"].data
                 self.spectra = self.spectra / balance_corr_model
-
                 # Ensure that we keep the same SNR after the normalization!
                 self.uncertainties = self.uncertainties / balance_corr_model
                 self.flux_dispersion_balance_corrected = True
@@ -246,6 +243,10 @@ class ESPRESSO(Frame):
         return 1
 
     def load_S1D_data(self):
+        if self.is_open:
+            logger.debug("{} has already been opened", self.__str__())
+            return
+
         with fits.open(self.file_path) as hdulist:
             full_data = hdulist[1].data
 
