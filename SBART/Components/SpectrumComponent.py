@@ -23,6 +23,9 @@ class Spectrum(BASE):
     """
 
     def __init__(self, **kwargs):
+        # If True, the object will never close its data to save resources
+        self._never_close = False
+
         self._default_params = self._default_params
         self.has_spectrum_component = True
 
@@ -233,6 +236,9 @@ class Spectrum(BASE):
         Saves RAM at the cost of more I/O operations
 
         """
+        if self._never_close:
+            logger.warning("Frame has been set to never close its arrays!")
+            return 
         self._spectrum_has_data_on_memory = False
 
         self.qual_data = None
