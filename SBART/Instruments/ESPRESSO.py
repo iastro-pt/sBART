@@ -246,7 +246,7 @@ class ESPRESSO(Frame):
         if self.is_open:
             logger.debug("{} has already been opened", self.__str__())
             return
-
+        super().load_S1D_data()
         with fits.open(self.file_path) as hdulist:
             full_data = hdulist[1].data
 
