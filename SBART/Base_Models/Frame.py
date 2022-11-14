@@ -121,18 +121,18 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     )
 
     def __init__(
-        self,
-        inst_name: str,
-        array_size: Dict[str, tuple],
-        file_path: Path,
-        frameID: int,
-        KW_map: Dict[str, str],
-        available_indicators: tuple,
-        user_configs: Optional[Dict[str, Any]] = None,
-        reject_subInstruments: Optional[Iterable[str]] = None,
-        need_external_data_load: bool = False,
-        init_log: bool = True,
-        quiet_user_params: bool = True
+            self,
+            inst_name: str,
+            array_size: Dict[str, tuple],
+            file_path: Path,
+            frameID: int,
+            KW_map: Dict[str, str],
+            available_indicators: tuple,
+            user_configs: Optional[Dict[str, Any]] = None,
+            reject_subInstruments: Optional[Iterable[str]] = None,
+            need_external_data_load: bool = False,
+            init_log: bool = True,
+            quiet_user_params: bool = True
     ):
         """
         The Frame object is initialized with the following set of Keywords:
@@ -163,7 +163,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         quiet_user_params
             If True, there are no logs for the generation of the user parameters of each Frame
         """
-        self.array_size = array_size
         self.instrument_properties = {
             "name": inst_name,
             "array_sizes": array_size,
@@ -174,7 +173,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "site_pressure": None,  # pressure in hPa
             "is_drift_corrected": None,  # True if the S2D files are already corrected from the drift
         }
-        super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
 
         self.frameID = frameID
         self._status = Status()  # BY DEFAULT IT IS A VALID ONE!
@@ -196,7 +194,9 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         self._KW_map = KW_map
         self.spectral_format = self.get_spectral_type()
-        self.instrument_properties["array_size"] = self.instrument_properties["array_size"][self.spectral_format]
+        self.instrument_properties["array_size"] = self.instrument_properties["array_sizes"][self.spectral_format]
+        self.array_size = self.instrument_properties["array_size"]
+        super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
 
         # stores the information loaded from the header of the S2D files. THis dict will be the default values in case
         # the instrument does not support them!
@@ -264,6 +264,67 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             return "S1D"
         else:
             raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
+
+    def copy_into_S2D(self):
+        """
+        Return a new object which contains the S1D that that has been converted into a S2D
+        Returns
+        -------
+
+        """
+        if self.is_S2D:
+            raise custom_exceptions.InvalidConfiguration("Can't transform S2D file into S2D file")
+        logger.warning("Creating a copy of a S1D Frame for transformation into S2D")
+
+        og_shape = self.instrument_properties["array_sizes"]["S2D"]
+        reconstructed_S2D = np.zeros(og_shape)
+        reconstructed_wavelengths = np.zeros(og_shape)
+        reconstructed_uncertainties = np.zeros(og_shape)
+
+        order_number = 0
+        order_size = reconstructed_wavelengths[0].size
+        to_break = False
+        wavelengths, flux, uncertainties, _ = self.get_data_from_full_spectrum()
+        wavelengths = wavelengths[0]
+        flux = flux[0]
+        uncertainties = uncertainties[0]
+
+        while not to_break:
+            start_order = order_size * order_number
+            end_order = start_order + order_size
+            if end_order >= wavelengths.size:
+                to_break = True
+                end_order = wavelengths.size
+
+            slice_size = end_order - start_order
+            reconstructed_wavelengths[order_number] = np.pad(wavelengths[start_order:end_order], (0, order_size - slice_size))
+            reconstructed_S2D[order_number] = np.pad(flux[start_order:end_order], (0, order_size - slice_size))
+            reconstructed_uncertainties[order_number] = np.pad(uncertainties[start_order:end_order],
+                                                               (0, order_size - slice_size)
+                                                               )
+            order_number += 1
+
+        # The "new" orders that don't have any information will have a flux of zero. Thus, they will be deemed to
+        # be invalid during the mask creation process (that is re-launched after this routine is done)
+        new_frame = Frame(inst_name=self.inst_name,
+                          array_size=self.instrument_properties["array_sizes"],
+                          file_path=self.file_path,
+                          frameID=None,
+                          KW_map=self._KW_map,
+                          available_indicators=self.available_indicators,
+                          user_configs=self._internal_configs._user_configs
+                          )
+        new_frame.wavelengths = reconstructed_wavelengths
+        new_frame.spectra = reconstructed_S2D
+        new_frame.uncertainties = reconstructed_wavelengths
+        for key in ["observation_info", "instrument_properties"]:
+            setattr(new_frame, key, getattr(self, key))
+
+        new_frame._spectrum_has_data_on_memory = True # to avoid new data loads!
+        new_frame._never_close = True # ensure that we don't lose the transformation
+        new_frame.spectral_format = "S2D"
+        new_frame.instrument_properties["array_size"] = self.instrument_properties["array_sizes"]["S2D"]
+        return new_frame
 
     def import_KW_from_outside(self, KW, value, optional: bool):
         """
@@ -365,6 +426,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if not self.is_open:
             self.load_data()
 
+
     @property
     def status(self) -> Status:
         """
@@ -388,7 +450,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             Do not check the QUAL_DATA array for non-zero values, by default False
         """
         logger.debug("Creating spectral mask")
-        self.spectral_mask = Mask(initial_mask=np.zeros(self.array_size, dtype=np.uint16))
+        print(self.instrument_properties["array_size"])
+        self.spectral_mask = Mask(initial_mask=np.zeros(self.instrument_properties["array_size"], dtype=np.uint16))
         if not bypass_QualCheck:
             zero_indexes = np.where(self.qual_data != 0)
             self.spectral_mask.add_indexes_to_mask(zero_indexes, QUAL_DATA)
@@ -574,7 +637,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         -------
 
         """
-        #TODO: this will not work for non-ESPRESSO files
+        # TODO: this will not work for non-ESPRESSO files
 
         if self.is_S1D:
             return self.fname
@@ -725,7 +788,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                    "is_S2D": self.is_S2D,
                    "is_S1D": self.is_S1D
                    },
-                ** super().spectrum_information}
+                **super().spectrum_information
+                }
 
     def __repr__(self):
         return self.__str__()
