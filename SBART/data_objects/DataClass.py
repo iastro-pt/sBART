@@ -251,7 +251,19 @@ class DataClass(BASE):
                     )
 
         self._applied_telluric_removal = True
+    def replace_frames_with_S2D_version(self):
+        """
+        In-place substitution of all frames with their S2D-compatible shapes!
+        Returns
+        -------
 
+        """
+        logger.warning("Transforming the frames to have a S2D-compatible shape")
+        for index, frame in enumerate(self.observations):
+            s2d_frame = frame.copy_into_S2D()
+            self.observations[index] = s2d_frame
+            del frame 
+            
     def ingest_StellarModel(self, Stellar_Model: StellarModel) -> None:
         logger.debug("Ingesting StellarModel into the DataClass")
         if self.StellarModel is not None:

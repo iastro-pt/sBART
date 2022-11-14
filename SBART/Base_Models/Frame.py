@@ -309,7 +309,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame = Frame(inst_name=self.inst_name,
                           array_size=self.instrument_properties["array_sizes"],
                           file_path=self.file_path,
-                          frameID=None,
+                          frameID=self.frameID,
                           KW_map=self._KW_map,
                           available_indicators=self.available_indicators,
                           user_configs=self._internal_configs._user_configs
