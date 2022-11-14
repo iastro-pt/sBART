@@ -58,6 +58,7 @@ class Spectrum(BASE):
                 self._OrderStatus = OrderStatus(self.N_orders)
         except AttributeError:
             pass
+
     def check_if_data_correction_enabled(self, property_name) -> bool:
         """
         If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
@@ -186,7 +187,7 @@ class Spectrum(BASE):
 
         self._data_access_checks()
         if order in self.bad_orders and not include_invalid:
-            raise custom_exceptions.BadOrderError()
+            raise custom_exceptions.BadOrderError(f"{order=} is invalid!")
 
         return (
             self.wavelengths[order],
@@ -238,7 +239,7 @@ class Spectrum(BASE):
         """
         if self._never_close:
             logger.warning("Frame has been set to never close its arrays!")
-            return 
+            return
         self._spectrum_has_data_on_memory = False
 
         self.qual_data = None
