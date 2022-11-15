@@ -330,6 +330,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame.spectral_format = "S2D"
         new_frame.instrument_properties["array_size"] = self.instrument_properties["array_sizes"]["S2D"]
         new_frame.array_size = self.instrument_properties["array_sizes"]["S2D"]
+        new_frame.sub_instrument = self.sub_instrument
         new_frame.regenerate_order_status()
         return new_frame
 
