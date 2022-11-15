@@ -177,7 +177,7 @@ class TelfitTelluric(TelluricTemplate):
             or self._internal_configs["force_download"]
         ):
             raise custom_exceptions.InvalidConfiguration(
-                "We can't automate download from GDAS archive"
+                "We can't automate download from GDAS archive for CARMENES"
             )
 
         resources_folder = os.path.join(SBART_LOC, "resources/atmosphere_profiles")
