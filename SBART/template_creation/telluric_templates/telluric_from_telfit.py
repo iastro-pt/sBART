@@ -231,11 +231,11 @@ class TelfitTelluric(TelluricTemplate):
                 logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
 
         if self._internal_configs["atmosphere_profile"] == "default" or failed_download:
-            logger.info("Using the default atmosphere profile")
             atmos_profile_file = os.path.join(
                 resources_folder,
                 f"{selected_frame.inst_name}_gdas_profiles_C-70.4-24.6.tar.gz",
             )
+            logger.info(f"Using the default atmosphere profile ({atmos_profile_file})")
             data = np.loadtxt(atmos_profile_file, usecols=(0, 1, 2, 3), skiprows=4)
 
         elif os.path.exists(self._internal_configs["atmosphere_profile"]) and not len(
