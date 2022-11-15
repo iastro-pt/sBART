@@ -1,6 +1,6 @@
 import ujson as json
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any
+from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
 
 import numpy as np
 from loguru import logger
@@ -569,7 +569,8 @@ class DataClass(BASE):
             subInstruments: Union[tuple, list],
             include_invalid: bool = False,
             conditions: CondModel = None,
-    ) -> list:
+            return_frameIDs: bool = False
+    ) -> Union[list, Tuple[List[float], List[int]]]:
         """
         Parse through the loaded observations and retrieve a specific KW from
         all of them. There is no sort of the files. The output will follow the
@@ -577,6 +578,7 @@ class DataClass(BASE):
 
         Parameters
         ----------
+        return_frameIDs
         KW : str
             KW from the Frame.observation_info dictionary
         subInstruments : Union[tuple, list]
@@ -593,6 +595,7 @@ class DataClass(BASE):
             List of the KW
         """
         output = []
+        all_frameIDs = []
 
         for subInst in subInstruments:
             try:
@@ -609,6 +612,10 @@ class DataClass(BASE):
                         output.append(None)
                         continue
                 output.append(self.get_frame_by_ID(frameID).get_KW_value(KW))
+                all_frameIDs.append(frameID)
+
+        if return_frameIDs:
+            return output, available_frameIDs
 
         return output
 
