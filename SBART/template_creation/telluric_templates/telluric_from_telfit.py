@@ -36,7 +36,6 @@ atmospheric_profiles_coords_dict = {
 
 
 def download_gdas_archive(archive_name, storage_path):
-
     url = "https://ftp.eso.org/pub/dfs/pipelines/skytools/molecfit/gdas/"
     url += archive_name
     urllib.request.urlretrieve(url, storage_path)
@@ -47,7 +46,9 @@ def get_atmospheric_profile(instrument, datetime, storage_folder):
     try:
         coords = atmospheric_profiles_coords_dict[instrument]
     except KeyError as exc:
-        raise custom_exceptions.InvalidConfiguration(f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}") from exc
+        raise custom_exceptions.InvalidConfiguration(
+            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}"
+        ) from exc
 
     archive_name = f"gdas_profiles_C{coords}.tar.gz"
     profile_archive = os.path.join(storage_folder, f"gdas_profiles_C{coords}.tar.gz")
@@ -113,12 +114,12 @@ class TelfitTelluric(TelluricTemplate):
     method_name = "Telfit"
 
     def __init__(
-        self,
-        subInst: str,
-        user_configs: Optional[UI_DICT] = None,
-        extension_mode: str = "lines",
-        application_mode: str = "removal",
-        loaded: bool = False,
+            self,
+            subInst: str,
+            user_configs: Optional[UI_DICT] = None,
+            extension_mode: str = "lines",
+            application_mode: str = "removal",
+            loaded: bool = False,
     ):
         if MISSING_TELFIT:
             raise custom_exceptions.InvalidConfiguration("Telfit is not currently installed")
@@ -169,12 +170,12 @@ class TelfitTelluric(TelluricTemplate):
 
         self.modeler = telfit.Modeler(print_lblrtm_output=False)
 
-    def _prepare_GDAS_data(self, selected_frame):
+    def _prepare_GDAS_data(self, dataClass, selected_frame):
 
         logger.info("Preparing GDAS data load!")
         if selected_frame.is_Instrument("CARMENES") and (
-            self._internal_configs["atmosphere_profile"] == "download"
-            or self._internal_configs["force_download"]
+                self._internal_configs["atmosphere_profile"] == "download"
+                or self._internal_configs["force_download"]
         ):
             raise custom_exceptions.InvalidConfiguration(
                 "We can't automate download from GDAS archive for CARMENES"
@@ -182,41 +183,78 @@ class TelfitTelluric(TelluricTemplate):
 
         resources_folder = os.path.join(SBART_LOC, "resources/atmosphere_profiles")
 
+        failed_download = True
         if self._internal_configs["atmosphere_profile"] == "download":
             # logger.debug("GDAS data load mode set to download")
             logger.info("Launching GDAS profile downloader")
             instrument, date = selected_frame.inst_name, selected_frame.get_KW_value("ISO-DATE")
-            with get_atmospheric_profile(instrument, date, resources_folder) as gdas:
-                data = np.loadtxt(gdas).copy()
-            return data
 
-        elif self._internal_configs["atmosphere_profile"] == "default":
+            logger.warning("Iterating over other possible frames to search for a working reference")
+            failed_tests = [self._reference_frameID]
+            for kw in ["relative_humidity", "airmass"]:
+                metric_to_select, frameIDs = dataClass.collect_KW_observations(
+                    KW=kw,
+                    subInstruments=[self._associated_subInst],
+                    include_invalid=False,
+                    conditions=self._metric_selection_conditions,
+                    return_frameIDs=True
+                )
+
+                if not any(np.isfinite(metric_to_select)):
+                    logger.warning(f"Metric {kw} is not finite. Can't use it to select observatioons")
+                    continue
+            sort_inds = np.argsort(metric_to_select)
+            frames_to_search = np.asarray(frameIDs)[sort_inds][::-1]
+
+            max_search_iterations = min(10, len(frameIDs))
+            for attempt_nb in range(max_search_iterations):  # todo: add here the search for a new reference!
+                selected_ID = frames_to_search[0]
+
+                date = dataClass.get_KW_from_frameID(frameID=selected_ID,
+                                                     KW="ISO-DATE"
+                                                     )
+                try:
+                    with get_atmospheric_profile(instrument, date, resources_folder) as gdas:
+                        data = np.loadtxt(gdas).copy()
+                    failed_download = False
+                    self._reference_frameID = selected_ID
+                    self._associated_BERV = dataClass.get_KW_from_frameID(KW="BERV",
+                                                                          frameID=selected_ID
+                                                                          )
+                    break # If we found it, no need to continue
+                except KeyError:
+                    logger.info(f"{date=} failed to find GDAS profile (Iter: {attempt_nb + 1} / {max_search_iterations})")
+                    failed_tests.append(selected_ID)
+                    frames_to_search = frames_to_search[1:]
+
+            if failed_download:
+                logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
+
+        if self._internal_configs["atmosphere_profile"] == "default" or failed_download:
             logger.info("Using the default atmosphere profile")
             atmos_profile_file = os.path.join(
                 resources_folder,
-                f"{selected_frame.inst_name}_atmosphere_profile.txt",
+                f"{selected_frame.inst_name}_gdas_profiles_C-70.4-24.6.tar.gz",
             )
             data = np.loadtxt(atmos_profile_file, usecols=(0, 1, 2, 3), skiprows=4)
-            return data
 
         elif os.path.exists(self._internal_configs["atmosphere_profile"]) and not len(
-            self._internal_configs["atmosphere_profile"] == 0
+                self._internal_configs["atmosphere_profile"] == 0
         ):
+            # what does this do???
             atmos_profile_file = self._internal_configs["atmosphere_profile"]
-        else:
-            raise custom_exceptions.InvalidConfiguration()
+            data = np.loadtxt(atmos_profile_file)
 
-        logger.info("Loading atmosphere profile from local file: {}", atmos_profile_file)
-        data = np.loadtxt(atmos_profile_file)
         logger.info("Finished setup of GDAS profile")
         return data
 
-    def configure_modeler(self, selected_frame) -> None:
+    def configure_modeler(self, dataclass) -> None:
         """
         see https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas
         """
+        selected_frame = dataclass.get_frame_by_ID(self._reference_frameID)
         logger.info("Configuring the Telfit modeler for {}", selected_frame)
-        data = self._prepare_GDAS_data(selected_frame)
+        data = self._prepare_GDAS_data(dataClass=dataclass, selected_frame=selected_frame)
 
         # hPa       m     K       %
         Pres, height, Temp, _ = data.T
@@ -273,7 +311,7 @@ class TelfitTelluric(TelluricTemplate):
         logger.info("Finished configurating the modeler")
 
     def _generate_telluric_model(
-        self, model_parameters, OBS_properties, fixed_params=None, grid=None
+            self, model_parameters, OBS_properties, fixed_params=None, grid=None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """COmpute the transmittance spectra using tellfit
 
@@ -347,7 +385,7 @@ class TelfitTelluric(TelluricTemplate):
         except custom_exceptions.StopComputationError:
             return
 
-        self.configure_modeler(dataClass.get_frame_by_ID(self._reference_frameID))
+        self.configure_modeler(dataClass)
 
         OBS_properties = {
             **{"airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID)},
@@ -392,7 +430,7 @@ class TelfitTelluric(TelluricTemplate):
         super()._generate_model_parameters(dataClass)
 
         for frameID in dataClass.get_frameIDs_from_subInst(
-            self._associated_subInst, include_invalid=False
+                self._associated_subInst, include_invalid=False
         ):
             frame = dataClass.get_frame_by_ID(frameID)
             initial_guess = {
