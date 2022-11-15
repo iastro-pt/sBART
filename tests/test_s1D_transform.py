@@ -8,6 +8,7 @@ def test_data_transform():
 
     new_frame.close_arrays()
 
+    assert frame.sub_instrument == new_frame.sub_instrument
     assert new_frame.wavelengths is not None
     assert new_frame.spectra is not None
     assert new_frame.uncertainties is not None
