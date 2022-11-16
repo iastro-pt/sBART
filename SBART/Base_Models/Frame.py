@@ -321,7 +321,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                           )
         new_frame.wavelengths = reconstructed_wavelengths
         new_frame.spectra = reconstructed_S2D
-        new_frame.uncertainties = reconstructed_wavelengths
+        new_frame.uncertainties = reconstructed_uncertainties
         for key in ["observation_info", "instrument_properties"]:
             setattr(new_frame, key, getattr(self, key))
 
