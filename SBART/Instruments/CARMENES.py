@@ -7,7 +7,7 @@ from astropy.io import fits
 from loguru import logger
 from scipy.constants import convert_temperature
 
-from SBART.Base_Models import Frame
+from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import FrameError
