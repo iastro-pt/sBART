@@ -1,11 +1,10 @@
-import glob
 import os
 from typing import List, Optional, Type
 
 from astropy.io import fits
 from loguru import logger
 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.utils import custom_exceptions
 from SBART.utils.types import UI_DICT, UI_PATH

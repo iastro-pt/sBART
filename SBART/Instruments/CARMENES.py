@@ -9,6 +9,7 @@ from scipy.constants import convert_temperature
 
 from SBART.Base_Models import Frame
 from SBART.Masks import Mask
+from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.shift_spectra import apply_BERV_correction
 from SBART.utils.status_codes import MISSING_DATA, Flag, MISSING_SHAQ_RVS
@@ -69,7 +70,6 @@ class CARMENES(Frame):
         """
 
         coverage = [500, 1750]
-        mat_size = [61, 4096]
         self._blaze_corrected = True
 
         KW_map = {
@@ -84,7 +84,8 @@ class CARMENES(Frame):
 
         super().__init__(
             inst_name="CARMENES",
-            array_size=mat_size,
+            array_size={"S2D": [61, 4096]
+                        },
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
@@ -95,24 +96,31 @@ class CARMENES(Frame):
             quiet_user_params=quiet_user_params
         )
 
-        self.__class__.instrument_properties["wavelength_coverage"] = coverage
-        self.__class__.instrument_properties["is_drift_corrected"] = False
+        self.instrument_properties["wavelength_coverage"] = coverage
+        self.instrument_properties["is_drift_corrected"] = False
 
         # TODO: ensure that there are no problem when using the NIR arm of CARMENES!!!!!
-        self.__class__.instrument_properties["resolution"] = 94600
+        self.instrument_properties["resolution"] = 94600
 
         # lat/lon from: https://geohack.toolforge.org/geohack.php?pagename=Calar_Alto_Observatory&params=37_13_25_N_2_32_46_W_type:landmark_region:ES
         # height from: https://en.wikipedia.org/wiki/Calar_Alto_Observatory
         lat, lon = 37.223611, -2.546111
-        self.__class__.instrument_properties["EarthLocation"] = EarthLocation.from_geodetic(
+        self.instrument_properties["EarthLocation"] = EarthLocation.from_geodetic(
             lat=lat, lon=lon, height=2168
         )
 
         # from https://www.mide.com/air-pressure-at-altitude-calculator
         # and convert to Pa to mbar
-        self.__class__.instrument_properties["site_pressure"] = 778.5095
+        self.instrument_properties["site_pressure"] = 778.5095
 
         self.is_BERV_corrected = False
+
+    def get_spectral_type(self):
+        name_lowercase = self.file_path.stem.lower()
+        if "sci-kobe-vis_A.fits" in name_lowercase or "sci-gtoc-vis_A.fits" in name_lowercase:
+            return "S2D"
+        else:
+            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
     def load_instrument_specific_KWs(self, header):
 

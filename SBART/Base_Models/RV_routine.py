@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 import numpy as np
 from loguru import logger
 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.data_objects import DataClass
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_cube import RV_cube

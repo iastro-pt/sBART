@@ -4,7 +4,7 @@ from typing import Any, Dict, List, NoReturn, Tuple, Union
 import numpy as np
 from loguru import logger
 
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
 from SBART.utils.types import RV_measurement

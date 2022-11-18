@@ -35,12 +35,12 @@ class SbartBaseSampler(SamplerModel):
     _name = SamplerModel._name + " SBART"
 
     def __init__(
-        self,
-        mode: str,
-        RV_step: RV_measurement,
-        RV_window: Tuple[RV_measurement, RV_measurement],
-        user_configs,
-        sampler_folders: Optional[Dict[str, str]] = None,
+            self,
+            mode: str,
+            RV_step: RV_measurement,
+            RV_window: Tuple[RV_measurement, RV_measurement],
+            user_configs,
+            sampler_folders: Optional[Dict[str, str]] = None,
     ):
         """
         Approximate the posterior distribution with a LaPlace approximation;
@@ -86,106 +86,17 @@ class SbartBaseSampler(SamplerModel):
         """
         pass
 
-    def _epochwise_manager(
-        self, dataClass, subInst: str, run_info, package_queue, output_pool
-    ) -> List[List[Package]]:
+    def process_epochwise_metrics(self, outputs):
+        flux_misspec, log_like, orders = [], [], []
+        for pkg in outputs:
+            if pkg["status"] == SUCCESS:
+                flux_misspec.append(pkg["FluxModel_misspec_from_order"].tolist())
+                log_like.append(pkg["log_likelihood_from_order"].tolist())
+                orders.append(pkg["order"])
+        return flux_misspec, log_like, orders
 
-        valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
-
-        worker_prods = []
-
-        for frameID in valid_IDS:
-            try:
-                _ = dataClass.load_frame_by_ID(frameID)
-            except FrameError:
-                logger.warning("RunTimeRejection of frameID = {}", frameID)
-                continue
-            logger.info(
-                "Starting RV extraction of {}",
-                dataClass.get_filename_from_frameID(frameID),
-            )
-            starting_time = time.time()
-
-            # Make sure that we have these two options disabled!
-            run_info["target_specific_configs"]["compute_metrics"] = False
-            run_info["target_specific_configs"]["weighted"] = False
-
-            run_info["frameID"] = frameID
-            run_info["subInst"] = subInst
-
-            target_kwargs = {
-                "run_information": run_info,
-                "pkg_queue": package_queue,
-                "output_pool": output_pool,
-            }
-
-            # for the epoch-wise application, the target is resolved inside the self.optimize function
-            out_pkg, status = self.optimize_epochwise(target=None, target_kwargs=target_kwargs)
-
-            if status != SUCCESS:
-                logger.warning(
-                    "Frame {} did not converge",
-                    dataClass.get_filename_from_frameID(frameID),
-                )
-            # to mimic the outputs from the order-wise approach -> guarantee that the analysis of Flux misspec works
-            worker_prods.append([out_pkg])
-
-            logger.info("RV extraction took {} seconds", time.time() - starting_time)
-            if self.mem_save_enabled:
-                dataClass.close_frame_by_ID(frameID)
-
-        return worker_prods
-
-    def apply_epochwise(self, model_parameters, _, config_dict):
-        """Computes the "global" logLikelihood
-
-        Parameters
-        ----------
-        model_parameters : [type]
-            [description]
-        _ : [type]
-            Empty argument to be consistent with the apply_orderwise arguments
-        config_dict : [type]
-            [description]
-
-        Returns
-        -------
-        [type]
-            [description]
-        """
-        run_info = config_dict["run_information"]
-        package_queue = config_dict["pkg_queue"]
-        output_pool = config_dict["output_pool"]
-
-        for order in run_info["valid_orders"]:
-            worker_IN_pkg = self._generate_WorkerIn_Package(
-                frameID=run_info["frameID"],
-                order=order,
-                run_info=run_info,
-                subInst=run_info["subInst"],
-            )
-
-            worker_IN_pkg["model_parameters"] = model_parameters
-
-            package_queue.put(worker_IN_pkg)
-        outputs = self._receive_data_workers(len(run_info["valid_orders"]), output_pool, quiet=True)
-
-        if run_info["target_specific_configs"]["compute_metrics"]:
-            flux_misspec, log_like, orders = [], [], []
-            for pkg in outputs:
-                if pkg["status"] == SUCCESS:
-                    flux_misspec.append(pkg["FluxModel_misspec_from_order"].tolist())
-                    log_like.append(pkg["log_likelihood_from_order"].tolist())
-                    orders.append(pkg["order"])
-
-            return flux_misspec, log_like, orders
-
-        else:
-            global_likeliood = np.sum(
-                [pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS]
-            )
-
-        return global_likeliood
+    def compute_epochwise_combination(self, outputs):
+        return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
 
     def show_posterior(self, mean_value, variance, RVs):
         """
@@ -193,7 +104,7 @@ class SbartBaseSampler(SamplerModel):
         """
         std = np.sqrt(variance)
         gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (
-            std * np.sqrt(2 * np.pi)
+                std * np.sqrt(2 * np.pi)
         )
 
         plt.scatter(RVs, gaussian(RVs, mean_value, std))

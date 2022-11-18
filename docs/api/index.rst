@@ -32,4 +32,4 @@ Low-level packages
     SBART.Components
     SBART.Masks
     SBART.outside_tools
-
+    SBART.spectral_normalization

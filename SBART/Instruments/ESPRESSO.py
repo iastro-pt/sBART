@@ -8,7 +8,7 @@ from iCCF import gaussfit
 from loguru import logger
 from scipy.constants import convert_temperature
 
-from SBART.Base_Models import Frame
+from SBART.Base_Models.Frame import Frame
 from SBART.utils.RV_utilities.CCF_errors import ccffitRV
 from SBART.utils.status_codes import ERROR_THRESHOLD, FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
@@ -44,10 +44,6 @@ class ESPRESSO(Frame):
     _default_params = Frame._default_params + DefaultValues(
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
             )
-
-    _default_params.update("spectra_format",
-                           UserParam("S2D", constraint=ValueFromList(("S1D", "S2D")))
-                           )
 
     _default_params.update("apply_FluxCorr",
                            UserParam(False, constraint=BooleanValue),
@@ -85,16 +81,8 @@ class ESPRESSO(Frame):
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
         """
         # Wavelength coverage
-        try:
-            spec_fmt = user_configs["spectra_format"]
-        except (KeyError, TypeError):
-            spec_fmt = self.__class__._default_params["spectra_format"].default_value
 
         coverage = (350, 900)
-        if spec_fmt == "S2D":
-            mat_size = (170, 9111)
-        else:
-            mat_size = (1, 443262)
 
         self.UT_number = None
         KW_map = {
@@ -111,7 +99,9 @@ class ESPRESSO(Frame):
 
         super().__init__(
             inst_name="ESPRESSO",
-            array_size=mat_size,
+            array_size={"S2D": (170, 9111),
+                        "S1D": (1, 443262)
+                        },
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
@@ -121,15 +111,15 @@ class ESPRESSO(Frame):
             quiet_user_params=quiet_user_params
         )
 
-        self.__class__.instrument_properties["wavelength_coverage"] = coverage
-        self.__class__.instrument_properties["resolution"] = 140_000
-        self.__class__.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+        self.instrument_properties["wavelength_coverage"] = coverage
+        self.instrument_properties["resolution"] = 140_000
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
             "Cerro Paranal"
         )
-        self.__class__.instrument_properties["is_drift_corrected"] = True
+        self.instrument_properties["is_drift_corrected"] = True
 
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
-        self.__class__.instrument_properties["site_pressure"] = 750
+        self.instrument_properties["site_pressure"] = 750
         self.is_BERV_corrected = True
 
         # CHeck for BLAZE correction
@@ -171,7 +161,7 @@ class ESPRESSO(Frame):
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
-        for order in range(self.N_orders):
+        for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
             self.observation_info["orderwise_SNRs"].append(
                 header[f"HIERARCH ESO QC ORDER{order + 1} SNR"]
             )
@@ -203,7 +193,6 @@ class ESPRESSO(Frame):
             # Fixing dtype to avoid problems with the cython interface
             self.spectra = hdulist[SCIDATA_KEY].data.astype(np.float64)
             self.uncertainties = hdulist[ERRDATA_KEY].data.astype(np.float64)
-
             if self._internal_configs["apply_FluxCorr"]:
                 logger.debug("Starting chromatic flux correction")
                 keyword = "HIERARCH ESO QC ORDER%d FLUX CORR"
@@ -234,7 +223,6 @@ class ESPRESSO(Frame):
             else:
                 # Disabled the flux correction as we are artifically increasing the SNR of the spectra...
                 # Shouldn't we also increase the flux uncertainty?? The DRS does not do it....
-
                 logger.warning("Not applying correction to blue-red flux balance!")
                 # / corr_model
 
@@ -247,7 +235,6 @@ class ESPRESSO(Frame):
 
                 balance_corr_model = hdulist["DLLDATA_VAC_BARY"].data
                 self.spectra = self.spectra / balance_corr_model
-
                 # Ensure that we keep the same SNR after the normalization!
                 self.uncertainties = self.uncertainties / balance_corr_model
                 self.flux_dispersion_balance_corrected = True
@@ -256,6 +243,10 @@ class ESPRESSO(Frame):
         return 1
 
     def load_S1D_data(self):
+        if self.is_open:
+            logger.debug("{} has already been opened", self.__str__())
+            return
+        super().load_S1D_data()
         with fits.open(self.file_path) as hdulist:
             full_data = hdulist[1].data
 
@@ -290,7 +281,7 @@ class ESPRESSO(Frame):
     def build_mask(self, bypass_QualCheck: bool = False) -> None:
         super().build_mask(bypass_QualCheck=bypass_QualCheck, assess_bad_orders=False)
 
-        if self._internal_configs["spectra_format"] == "S2D":
+        if self.spectral_format == "S2D":
             # the first two orders of the RED CCD have a large amount of noise in the beginning so we remove a
             # portion from the start of those two orders Now, what is going on: we want to find the indexes,
             # from order 90 and 91 that are below the 5230 \AA

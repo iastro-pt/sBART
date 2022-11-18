@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "SBART"
-version = "0.1.6"
+version = "0.3.0"
 description = "semi-Bayesian Radial Velocities"
 authors = ["Kamuish <andremiguel952@gmail.com>"]
 build = "build.py"
@@ -31,7 +31,7 @@ ujson = "^5.4.0"
 pre-commit = "^2.18.1"
 isort = "^5.10.1"
 black = "^22.3.0"
-Sphinx = "^4.5.0"
+Sphinx = "4.5.0"
 sphinx-autodoc-typehints = "^1.18.1"
 nbsphinx = "^0.8.8"
 ipython = "^8.2.0"
@@ -59,15 +59,12 @@ package = "SBART"
 directory = "newsfragments/"
 filename = "docs/NEWS.rst"
 issue_format = "`#{issue} <https://github.com/iastro-pt/sBART/issues/{issue}>`_"
-underlines = "-~~"
+underlines = "~~~"
 template = "towncrier_template.rst"
 
 [tool.towncrier.fragment.feature]
+[tool.towncrier.fragment.break]
 [tool.towncrier.fragment.bugfix]
 
-[tool.towncrier.fragment.break]
-	name = "Breaking changes"
-	showcontent = true
-
 [tool.towncrier.fragment.misc]
-	showcontent = true
+showcontent = true

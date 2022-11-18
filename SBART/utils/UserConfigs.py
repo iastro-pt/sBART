@@ -252,6 +252,26 @@ class InternalParameters:
             to_write += f"\n{file_offset}\t{key} -> {value}"
         return to_write
 
+    def __setitem__(self, key, value):
+        logger.warning(f"Internal configs are being updated in real time ({key=})")
+        try:
+            parameter_def_information = self._default_params[key]
+        except KeyError:
+            if not self.no_logs:
+                # The only object that will have this enabled are the Frames
+                # And we shall call one of the Frames with the User-Param logs enabled!
+                logger.warning(
+                    "{} received a configuration flag that is not recognized: {}",
+                    self._name_of_parent,
+                    key,
+                )
+        try:
+            parameter_def_information.apply_constraints_to_value(key, value)
+        except InvalidConfiguration as exc:
+            logger.critical("User-given parameter {} does not meet the constraints", key)
+            raise InternalError from exc
+        self._user_configs[key] = value
+
     def __getitem__(self, item):
         try:
             return self._user_configs[item]

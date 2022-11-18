@@ -44,7 +44,7 @@ class Paths:
             )
 
         if folder_tag == "ROOT":
-            out_path = self._root_path
+            out_path = self._root_path.absolute()
         else:
             out_path = self._folder_mappings[folder_tag]
 

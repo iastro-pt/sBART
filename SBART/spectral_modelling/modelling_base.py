@@ -2,7 +2,7 @@ from loguru import logger
 from typing import NoReturn, Dict, Any
 
 from SBART.utils import custom_exceptions
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils.UserConfigs import (
     BooleanValue,
@@ -22,10 +22,10 @@ class ModellingBase(BASE):
     )
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
-        super().__init__(user_configs=user_configs, 
+        super().__init__(user_configs=user_configs,
                          needed_folders=needed_folders,
                          quiet_user_params=True
-                        )
+                         )
 
         # Avoid multiple loads of disk information
         self._loaded_disk_model: bool = False

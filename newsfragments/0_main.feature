@@ -1,1 +1,1 @@
-Plotting transmittance spectrum
+Allow to select observations from disk files (update to SpectralConditions)

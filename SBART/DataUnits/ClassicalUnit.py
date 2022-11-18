@@ -1,6 +1,9 @@
+from typing import NoReturn
+
 import ujson as json
 from pathlib import Path
 
+from loguru import logger
 from matplotlib import pyplot as plt
 
 from SBART.Base_Models.UnitModel import UnitModel
@@ -105,12 +108,20 @@ class Classical_Unit(UnitModel):
         super().load_from_disk(rv_cube_fpath)
         new_unit = Classical_Unit()
         new_unit.generate_root_path(rv_cube_fpath)
-
-        with open(new_unit.get_storage_filename()) as handle:
-            chi_squared_profile = json.load(handle)
-            profile = {}
-            for str_key, info in chi_squared_profile.items():
-                profile[int(str_key)] = {int(j): k for j,k in info.items()}
-            new_unit.chi_squared_profile = profile
+        try:
+            with open(new_unit.get_storage_filename()) as handle:
+                chi_squared_profile = json.load(handle)
+                profile = {}
+                for str_key, info in chi_squared_profile.items():
+                    profile[int(str_key)] = {int(j): k for j,k in info.items()}
+                new_unit.chi_squared_profile = profile
+        except FileNotFoundError:
+            logger.critical(f"Couldn't find the .json file on {new_unit.get_storage_filename()}")
 
         return new_unit
+
+    def generate_root_path(self, storage_path: Path) -> NoReturn:
+        if isinstance(storage_path, str):
+            storage_path = Path(storage_path)
+        storage_path /= self._content_name
+        super().generate_root_path(storage_path)
