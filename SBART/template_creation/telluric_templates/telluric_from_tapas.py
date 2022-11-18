@@ -17,6 +17,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     PathValue,
     UserParam,
+    PathValue,
 )
 from SBART.utils.shift_spectra import remove_BERV_correction
 from .Telluric_Template import TelluricTemplate

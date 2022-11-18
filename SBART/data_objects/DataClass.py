@@ -1,13 +1,13 @@
 import ujson as json
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any
+from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
 
 import numpy as np
 from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.Base_Models.BASE import BASE
+from SBART.utils.BASE import BASE
 from SBART.Base_Models.Frame import Frame
 from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
@@ -252,7 +252,20 @@ class DataClass(BASE):
                     )
 
         self._applied_telluric_removal = True
+    def replace_frames_with_S2D_version(self):
+        """
+        In-place substitution of all frames with their S2D-compatible shapes!
+        Returns
+        -------
 
+        """
+        logger.warning("Transforming the frames to have a S2D-compatible shape")
+        for index, frame in enumerate(self.observations):
+            s2d_frame = frame.copy_into_S2D()
+            s2d_frame.build_mask()
+            self.observations[index] = s2d_frame
+            del frame 
+            
     def ingest_StellarModel(self, Stellar_Model: StellarModel) -> None:
         logger.debug("Ingesting StellarModel into the DataClass")
         if self.StellarModel is not None:
@@ -402,6 +415,37 @@ class DataClass(BASE):
         frame.load_data()
         return 1
 
+    def normalize_all(self) -> NoReturn:
+        """
+        Launch the normalization for all (valid) frames
+        Returns
+        -------
+
+        """
+        logger.info("Normalizing all frames")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame._never_close = True
+
+        for subInst in self.get_subInstruments_with_valid_frames():
+            self.normalize_all_from_subInst(subInst)
+
+    def normalize_all_from_subInst(self, subInst: str) -> NoReturn:
+        """
+        Normalizing all (valid) frames from a given subInstrument
+        Parameters
+        ----------
+        subInst
+
+        Returns
+        -------
+
+        """
+        logger.debug(f"Normalizing all frames from {subInst}")
+        for fId in self.get_frameIDs_from_subInst(subInst):
+            frame = self.get_frame_by_ID(fId)
+            frame.normalize_spectra()
+
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
 
@@ -526,7 +570,8 @@ class DataClass(BASE):
             subInstruments: Union[tuple, list],
             include_invalid: bool = False,
             conditions: CondModel = None,
-    ) -> list:
+            return_frameIDs: bool = False
+    ) -> Union[list, Tuple[List[float], List[int]]]:
         """
         Parse through the loaded observations and retrieve a specific KW from
         all of them. There is no sort of the files. The output will follow the
@@ -534,6 +579,7 @@ class DataClass(BASE):
 
         Parameters
         ----------
+        return_frameIDs
         KW : str
             KW from the Frame.observation_info dictionary
         subInstruments : Union[tuple, list]
@@ -550,6 +596,7 @@ class DataClass(BASE):
             List of the KW
         """
         output = []
+        all_frameIDs = []
 
         for subInst in subInstruments:
             try:
@@ -566,6 +613,10 @@ class DataClass(BASE):
                         output.append(None)
                         continue
                 output.append(self.get_frame_by_ID(frameID).get_KW_value(KW))
+                all_frameIDs.append(frameID)
+
+        if return_frameIDs:
+            return output, available_frameIDs
 
         return output
 
@@ -715,7 +766,7 @@ class DataClass(BASE):
         return self.frameID_map.keys()
 
     def get_instrument_information(self) -> dict:
-        return self._inst_type.instrument_properties
+        return self.observations[0].instrument_properties
 
     def get_stellar_template(self, subInst: str):
         return self.StellarModel.request_data(subInst)

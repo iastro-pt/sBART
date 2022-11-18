@@ -9,7 +9,7 @@ from astropy.io import fits
 from loguru import logger
 from scipy.constants import convert_temperature
 
-from SBART.Base_Models import Frame
+from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.RV_utilities import airtovac
@@ -58,12 +58,12 @@ class HARPS(Frame):
     _name = "HARPS"
 
     def __init__(
-        self,
-        file_path,
-        user_configs: Optional[Dict[str, Any]] = None,
-        reject_subInstruments=None,
-        frameID=None,
-        quiet_user_params: bool = True
+            self,
+            file_path,
+            user_configs: Optional[Dict[str, Any]] = None,
+            reject_subInstruments=None,
+            frameID=None,
+            quiet_user_params: bool = True
     ):
         """
 
@@ -81,7 +81,7 @@ class HARPS(Frame):
 
         logger.info("Creating frame from: {}".format(file_path))
 
-        mat_size = [72, 4096]
+        mat_size = (72, 4096)
         # Note: 46 blue orders and 26 red orders. From Table 2.2 of:
         # https://www.eso.org/sci/facilities/lasilla/instruments/harps/doc/manual/HARPS-UserManual2.4.pdf
 
@@ -101,7 +101,7 @@ class HARPS(Frame):
 
         super().__init__(
             inst_name="HARPS",
-            array_size=mat_size,
+            array_size={"S2D": mat_size},
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
@@ -109,25 +109,38 @@ class HARPS(Frame):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             init_log=False,
-            quiet_user_params = quiet_user_params,
+            quiet_user_params=quiet_user_params,
         )
 
         if not search_status.is_good_flag:
             self.add_to_status(search_status)
 
-        self.__class__.instrument_properties["wavelength_coverage"] = coverage
-        self.__class__.instrument_properties["is_drift_corrected"] = False
+        self.instrument_properties["wavelength_coverage"] = coverage
+        self.instrument_properties["is_drift_corrected"] = False
 
-        self.__class__.instrument_properties["resolution"] = 115_000
-        self.__class__.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+        self.instrument_properties["resolution"] = 115_000
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
             "La Silla Observatory"
         )
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
-        self.__class__.instrument_properties["site_pressure"] = 750
+        self.instrument_properties["site_pressure"] = 750
 
         self.is_BERV_corrected = False
+
+    def get_spectral_type(self) -> str:
+        """
+        Custom adaptation for HARPS, as the S2D files are marked as "e2ds"
+        Raises an error for all other files, as we are missing a S1D implementation!
+        Returns
+        -------
+
+        """
+        if "e2ds" in self.file_path.stem.lower():
+            return "S2D"
+        else:
+            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
     def find_files(self, file_name):
         """
@@ -310,7 +323,6 @@ class HARPS(Frame):
         self.is_blaze_corrected = False
 
         with fits.open(self.file_path) as hdulist:
-
             # Compute the wavelength solution + BERV correction
             wave_from_file = self.build_HARPS_wavelengths(hdulist[0].header)
 

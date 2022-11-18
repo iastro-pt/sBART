@@ -5,7 +5,6 @@ from typing import Dict, List, NoReturn, Tuple, Union
 
 from loguru import logger
 
-from SBART.ModelParameters.Parameter import ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.status_codes import Flag
 from SBART.utils.types import RV_measurement
@@ -13,7 +12,7 @@ from SBART.utils.units import convert_data
 
 
 class Model:
-    def __init__(self, params_of_model: List[ModelComponent]):
+    def __init__(self, params_of_model):
         self.components = params_of_model
         self._results_flags = {}
         self.has_results_stored = False
@@ -226,7 +225,7 @@ class Model:
     def load_from_json(
         cls,
         storage_path: Union[Path, str],
-        component_to_use: ModelComponent = ModelComponent,
+        component_to_use,
     ):
         with open(storage_path) as handle:
             data = json.load(handle)
@@ -244,7 +243,7 @@ class Model:
 
 
 class RV_Model(Model):
-    def __init__(self, params_of_model: List[ModelComponent]):
+    def __init__(self, params_of_model):
         super().__init__(params_of_model)
 
         if params_of_model[0].param_name != "RV":
@@ -255,12 +254,3 @@ class RV_Model(Model):
     def get_RV_bounds(self, frameID):
         return self.get_component_by_name("RV").get_bounds(frameID=frameID)
 
-
-if __name__ == "__main__":
-    from SBART.ModelParameters import ModelComponent
-
-    components = [
-        ModelComponent(name="a", bounds=[0, 1], initial_guess=2),
-        ModelComponent(name="B", bounds=[0, 1], initial_guess=2),
-    ]
-    model = Model(components)

@@ -63,6 +63,8 @@ def target(params, **kwargs):
     )
 
     if kwargs.get("get_minimum_information", False):
+        # This will be triggered when the sampler sends a request to get more information
+        # of the different metrics for the optimal RV solution
         data_out = {
             "poly_params": coefs,
             "flux_division_residuals": residuals,

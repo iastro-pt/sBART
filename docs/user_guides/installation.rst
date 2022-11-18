@@ -15,6 +15,8 @@ To use `Telfit <https://github.com/kgullikson88/Telluric-Fitter>`_. it must be i
 
     pip install Telfit
 
+To normalize spectra with RASSINE, it must be cloned through a custom fork of the official repository:
 
+.. code-block::
 
-
+    git clone git@github.com:Kamuish/Rassine_modified.git
