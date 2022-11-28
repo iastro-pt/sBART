@@ -122,7 +122,7 @@ test = ["astroid (<=2.5.3)", "pytest"]
 name = "attrs"
 version = "22.1.0"
 description = "Classes Without Boilerplate"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.5"
 
@@ -426,21 +426,6 @@ extras = ["h5py", "scipy"]
 tests = ["pytest", "pytest-cov", "coverage"]
 
 [[package]]
-name = "eniric"
-version = "0.5.1"
-description = "Extended NIR Information Content"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-pytest = "*"
-
-[package.extras]
-dev = ["check-manifest"]
-test = ["coverage", "pytest", "pytest-cov", "python-coveralls", "hypothesis"]
-
-[[package]]
 name = "entrypoints"
 version = "0.4"
 description = "Discover and load entry points from installed packages."
@@ -598,7 +583,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1272,7 +1257,7 @@ test = ["appdirs (==1.4.4)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)", "pytes
 name = "pluggy"
 version = "1.0.0"
 description = "plugin and hook calling mechanisms for python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -1352,7 +1337,7 @@ tests = ["pytest"]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
@@ -1471,7 +1456,7 @@ python-versions = ">=3.7"
 name = "pytest"
 version = "7.1.3"
 description = "pytest: simple powerful testing with Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -2053,7 +2038,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f8240225ab76113dbd682849cfcd1a64b163dc83c700849edb6d5e824ec0f351"
+content-hash = "0584ee250de464a75f916a0b8634f51c7281fc6a37444587570da9f5ba2c6a7c"
 
 [metadata.files]
 alabaster = [
@@ -2160,10 +2145,6 @@ docutils = [
 emcee = [
     {file = "emcee-3.1.2-py2.py3-none-any.whl", hash = "sha256:88a816b09932048c58d3ff8a8ce8d8171ef0926314a887ebb45748979a8aa518"},
     {file = "emcee-3.1.2.tar.gz", hash = "sha256:7f668b1a0db8f591b5cff26e8671c98c943417e1508dae8c752170883f4c0981"},
-]
-eniric = [
-    {file = "eniric-0.5.1-py3-none-any.whl", hash = "sha256:ff26b98224634286ad34a70b917f1f08627fd6bb90a87fc0e2de8dcc8562b729"},
-    {file = "eniric-0.5.1.tar.gz", hash = "sha256:885e202eb08e2e9998c36c163bc21aef0bb292489bf18086fcafcff1de55a65c"},
 ]
 entrypoints = [
     {file = "entrypoints-0.4-py3-none-any.whl", hash = "sha256:f174b5ff827504fd3cd97cc3f8649f3693f51538c7e4bdf3ef002c8429d42f9f"},
