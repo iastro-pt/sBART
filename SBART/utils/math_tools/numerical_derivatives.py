@@ -48,7 +48,8 @@ def first_numerical_derivative(wavelengths, flux, uncertainties):
                        + ((H_front ** 2 - H_back ** 2) * (uncertainties[index])) ** 2 \
                        + (H_front ** 2 * uncertainties[index - 1]) ** 2
 
-            prop_err /= norm_const
+            # squared so that we can get the correct value after the sqrt at the end!
+            prop_err /= norm_const**2
 
         values.append(val)
         output_errors.append(np.sqrt(prop_err))
