@@ -64,28 +64,51 @@ def fit_continuum_level(
 
 
 def match_continuum_levels(spectra_wave,
-        spectra,
-        template,
-        interpolate_wave_indexes,
-        fit_degree: int,
-        continuum_type: str):
-    
+                           spectra,
+                           template,
+                           interpolate_wave_indexes,
+                           fit_degree: int,
+                           continuum_type: str,
+                           template_uncertainties=None
+                           ):
+    """
+    Match the continuum level of the template to that of the provided observation.
+    If the template uncertainties are passed, it will also update them, accounting for the
+    normalization step!
+
+    Parameters
+    ----------
+    spectra_wave
+    spectra
+    template
+    interpolate_wave_indexes
+    fit_degree
+    continuum_type
+    template_uncertainties
+
+    Returns
+    -------
+
+    """
     coeffs, cov, spec_ratio, cont_model = fit_continuum_level(spectra_wave,
-        spectra=spectra,
-        template=template,
-        interpolate_wave_indexes=interpolate_wave_indexes,
-        fit_degree=fit_degree,
-        continuum_type=continuum_type
-        )
-    
+                                                              spectra=spectra,
+                                                              template=template,
+                                                              interpolate_wave_indexes=interpolate_wave_indexes,
+                                                              fit_degree=fit_degree,
+                                                              continuum_type=continuum_type
+                                                              )
+
     continuum_model = cont_model(spectra_wave[interpolate_wave_indexes],
                                  coeffs
-                                )
+                                 )
 
     if continuum_type == "paper":
         normalized_template = continuum_model * template
-    
+
     elif continuum_type == "stretch":
         normalized_template = continuum_model
 
+    if template_uncertainties is not None and continuum_type == "paper":
+        normalized_uncertainties = continuum_model * template_uncertainties
+        return normalized_template, normalized_uncertainties, coeffs, spec_ratio
     return normalized_template, coeffs, spec_ratio
