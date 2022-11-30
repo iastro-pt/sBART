@@ -170,6 +170,8 @@ class ESPRESSO(Frame):
         for key in self.available_indicators:
             full_key = "HIERARCH ESO QC CCF " + key
             self.observation_info[key] = header[full_key]
+        self.observation_info["DET_BINX"] = header["HIERARCH ESO DET BINX"]
+        self.observation_info["DET_BINY"] = header["HIERARCH ESO DET BINY"]
 
     def load_S2D_data(self):
         if self.is_open:
