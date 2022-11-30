@@ -226,6 +226,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "RA": None,
             "DEC": None,
             "SPEC_TYPE": "",
+            "DET_BINX": None,
+            "DET_BINY": None,
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
