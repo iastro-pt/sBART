@@ -273,7 +273,7 @@ class RV_cube(BASE):
             final_RVs = self.cached_info["previous_SBART_RV"]
             final_RVs_ERR = self.cached_info["previous_SBART_RV_ERR"]
         else:
-            logger.critical("which = {} is not supported by get_RV_timeseries", which)
+            logger.critical(f"which = {which} is not supported by get_RV_timeseries")
             raise InvalidConfiguration
 
         if apply_drift_corr is None:

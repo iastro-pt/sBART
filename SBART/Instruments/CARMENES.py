@@ -116,11 +116,11 @@ class CARMENES(Frame):
         self.is_BERV_corrected = False
 
     def get_spectral_type(self):
-        name_lowercase = self.file_path.stem.lower()
-        if "sci-kobe-vis_A.fits" in name_lowercase or "sci-gtoc-vis_A.fits" in name_lowercase:
+        name_lowercase = self.file_path.stem
+        if "vis_A" in name_lowercase:
             return "S2D"
         else:
-            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
+            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received ( - {self.file_path.stem})!")
 
     def load_instrument_specific_KWs(self, header):
 

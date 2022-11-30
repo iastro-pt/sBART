@@ -934,7 +934,7 @@ class DataClass(BASE):
                     "DRS_RV", float(ll[5]) * kilometer_second, optional=False
                 )
                 self.observations[index].import_KW_from_outside(
-                    "DRS_RV_ERR", float(ll[4]) * kilometer_second, optional=False
+                    "DRS_RV_ERR", float(ll[6]) * kilometer_second, optional=False
                 )
                 self.observations[index].import_KW_from_outside(
                     "BERV", float(ll[10]) * kilometer_second, optional=False
