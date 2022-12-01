@@ -193,10 +193,14 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.available_indicators = available_indicators
 
         self._KW_map = KW_map
-        self.spectral_format = self.get_spectral_type()
+        if "UseMolecfit" in user_configs:
+            self.spectral_format = "S1D"
+        else:
+            self.spectral_format = self.get_spectral_type()
         self.instrument_properties["array_size"] = self.instrument_properties["array_sizes"][self.spectral_format]
         self.array_size = self.instrument_properties["array_size"]
         super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
+
 
         # stores the information loaded from the header of the S2D files. THis dict will be the default values in case
         # the instrument does not support them!

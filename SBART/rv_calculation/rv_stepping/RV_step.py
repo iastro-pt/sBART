@@ -1,16 +1,15 @@
-from copy import copy
-from typing import List, Union
+from typing import List
 
 import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
+from SBART.DataUnits import Classical_Unit
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils import custom_exceptions, meter_second
-from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.DataUnits import Classical_Unit
+from SBART.utils.custom_exceptions import BadTemplateError
 from .target_function import target
 
 
@@ -86,7 +85,6 @@ class RV_step(RV_routine):
             target=target,
             valid_samplers=["chi_squared", "Window"],
         )
-
     def run_routine(
         self,
         dataClass,
