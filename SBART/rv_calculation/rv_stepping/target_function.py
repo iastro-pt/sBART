@@ -68,8 +68,11 @@ def target(params, **kwargs):
         # of the different metrics for the optimal RV solution
         data_out = {
             "poly_params": coefs,
-            "flux_division_residuals": residuals,
         }
+
+        if not kwargs["SAVE_DISK_SPACE"]:
+            data_out["flux_division_residuals"] = residuals
+
         return data_out
 
     return chi_squared_val
