@@ -417,10 +417,6 @@ class ESPRESSO(Frame):
     def bare_fname(self) -> str:
         return self.fname.split("_S")[0]
 
-    def get_spectral_type(self) -> str:
-        if self._internal_configs["UseMolecfit"]:
-            return "S1D"
-        return super().get_spectral_type()
 
 def gauss(x, p):
     """A Gaussian function with parameters p = [A, x0, σ, offset]."""
