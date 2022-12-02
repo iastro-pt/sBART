@@ -264,7 +264,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         name_lowercase = self.file_path.stem.lower()
-        if "s2d" in name_lowercase:
+        if "s2d" in name_lowercase or "e2ds" in name_lowercase:
             return "S2D"
         elif "s1d" in name_lowercase:
             return "S1D"
