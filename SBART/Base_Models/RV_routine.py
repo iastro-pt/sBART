@@ -313,6 +313,12 @@ class RV_routine(BASE):
             check_metadata=check_metadata,
         )
 
+        if self._internal_configs["SAVE_DISK_SPACE"]:
+            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
+            self.sampler.enable_disk_savings()
+        else:
+            self.sampler.disable_disk_savings()
+
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
