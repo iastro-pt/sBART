@@ -149,7 +149,7 @@ def SBART_target(params, **kwargs):
             kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
             )
         else:
-            misspec_metric = [0]
+            misspec_metric = np.asarray([0])
 
         return -1 * order_value / weight, misspec_metric
     return -1 * order_value / weight
