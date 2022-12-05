@@ -185,6 +185,9 @@ class Laplace_approx(SbartBaseSampler):
                 target_kwargs["run_information"]["target_specific_configs"][
                     "compute_metrics"
                 ] = True
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "SAVE_DISK_SPACE"
+                ] = self.disk_save_enabled
                 target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
                 model_misspec, log_likelihood, orders = target_interface(
                     optimization_output.x, target_kwargs
