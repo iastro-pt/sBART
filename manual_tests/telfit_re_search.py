@@ -25,6 +25,6 @@ ModelTell = TelluricModel(
 ModelTell.Generate_Model(
     dataClass=data,
     telluric_configs={},
-    force_computation=False,
+    force_computation=True,
     store_templates=True,
 )

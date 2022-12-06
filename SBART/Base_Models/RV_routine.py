@@ -117,6 +117,7 @@ class RV_routine(BASE):
             ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
+        SAVE_DISK_SPACE=UserParam(False, constraint=BooleanValue),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
             1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))
@@ -312,6 +313,12 @@ class RV_routine(BASE):
             check_metadata=check_metadata,
         )
 
+        if self._internal_configs["SAVE_DISK_SPACE"]:
+            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
+            self.sampler.enable_disk_savings()
+        else:
+            self.sampler.disable_disk_savings()
+
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
@@ -505,6 +512,7 @@ class RV_routine(BASE):
             "CONTINUUM_FIT_TYPE": self._internal_configs["CONTINUUM_FIT_TYPE"],
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
+            "SAVE_DISK_SPACE": self._internal_configs["SAVE_DISK_SPACE"],
         }
         return worker_configs
 

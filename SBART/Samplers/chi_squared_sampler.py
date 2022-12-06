@@ -117,7 +117,10 @@ class chi_squared_sampler(SamplerModel):
             a, b = np.nan, np.nan
             order_status = CONVERGENCE_FAIL(msg)
         else:
-            new_target_kwargs = {**target_kwargs, **{"get_minimum_information": True}}
+            new_target_kwargs = {**target_kwargs, **{"get_minimum_information": True,
+                                                     "SAVE_DISK_SPACE": self.disk_save_enabled
+                                                     }
+                                 }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
                 out_pkg[key] = val

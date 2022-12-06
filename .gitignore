@@ -16,7 +16,7 @@ tests/*outputs/*
 
 
 .idea/
-
+SBART/resources/atmosphere_profiles/*
 *logs*
 *outputs*
 *inputs*

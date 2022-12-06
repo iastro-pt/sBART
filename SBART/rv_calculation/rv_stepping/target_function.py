@@ -33,30 +33,31 @@ def target(params, **kwargs):
     spectra = kwargs["spectra"]
 
     indexes = np.where(
-            np.logical_and(
-                           current_wavelength >= wave_spectra_starframe[0],
-                           current_wavelength <= wave_spectra_starframe[-1]
-                           )
-                       )
+        np.logical_and(
+            current_wavelength >= wave_spectra_starframe[0],
+            current_wavelength <= wave_spectra_starframe[-1]
+        )
+    )
 
     interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(order=kwargs["current_order"],
                                                                                                 RV_shift_mode="apply",
                                                                                                 shift_RV_by=tentative_RV_shift,
-                                                                                                new_wavelengths=current_wavelength[indexes],
+                                                                                                new_wavelengths=
+                                                                                                current_wavelength[indexes],
                                                                                                 include_invalid=False
                                                                                                 )
 
-    normalized_template, coefs, residuals = match_continuum_levels(
+    normalized_template, normalized_uncerts, coefs, residuals = match_continuum_levels(
         current_wavelength,
         spectra[indexes],
         interpolated_template,
         indexes,
         continuum_type=kwargs["worker_configs"]["CONTINUUM_FIT_TYPE"],
         fit_degree=kwargs["worker_configs"]["CONTINUUM_FIT_POLY_DEGREE"],
+        template_uncertainties=interpol_errors
     )
 
-
-    final_uncertainties = 1 / (kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2)
+    final_uncertainties = 1 / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts ** 2)
 
     chi_squared_val = np.sum(
         final_uncertainties * (spectra[indexes] - normalized_template) ** 2
@@ -67,8 +68,11 @@ def target(params, **kwargs):
         # of the different metrics for the optimal RV solution
         data_out = {
             "poly_params": coefs,
-            "flux_division_residuals": residuals,
         }
+
+        if not kwargs["SAVE_DISK_SPACE"]:
+            data_out["flux_division_residuals"] = residuals
+
         return data_out
 
     return chi_squared_val

@@ -232,6 +232,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "RA": None,
             "DEC": None,
             "SPEC_TYPE": "",
+            "DET_BINX": None,
+            "DET_BINY": None,
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
@@ -264,7 +266,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         name_lowercase = self.file_path.stem.lower()
-        if "s2d" in name_lowercase:
+        if "s2d" in name_lowercase or "e2ds" in name_lowercase:
             return "S2D"
         elif "s1d" in name_lowercase:
             return "S1D"
@@ -327,7 +329,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                           )
         new_frame.wavelengths = reconstructed_wavelengths
         new_frame.spectra = reconstructed_S2D
-        new_frame.uncertainties = reconstructed_wavelengths
+        new_frame.uncertainties = reconstructed_uncertainties
         for key in ["observation_info", "instrument_properties"]:
             setattr(new_frame, key, getattr(self, key))
 

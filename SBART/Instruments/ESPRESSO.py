@@ -171,6 +171,8 @@ class ESPRESSO(Frame):
         for key in self.available_indicators:
             full_key = "HIERARCH ESO QC CCF " + key
             self.observation_info[key] = header[full_key]
+        self.observation_info["DET_BINX"] = header["HIERARCH ESO DET BINX"]
+        self.observation_info["DET_BINY"] = header["HIERARCH ESO DET BINY"]
 
     def load_S2D_data(self):
         if self.is_open:
@@ -419,11 +421,6 @@ class ESPRESSO(Frame):
     @property
     def bare_fname(self) -> str:
         return self.fname.split("_S")[0]
-
-    def get_spectral_type(self) -> str:
-        if self._internal_configs["UseMolecfit"]:
-            return "S1D"
-        return super().get_spectral_type()
 
 def gauss(x, p):
     """A Gaussian function with parameters p = [A, x0, σ, offset]."""
