@@ -120,7 +120,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
-        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList(None, "S2D", "S1D"))
+        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList((None, "S2D", "S1D")))
     )
 
     def __init__(
@@ -198,8 +198,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self._KW_map = KW_map
         if "UseMolecfit" in user_configs:
             self.spectral_format = "S1D"
-        elif self._internal_configs["bypass_ST_designation"] is not None:
-            self.spectral_format = self._internal_configs["bypass_ST_designation"]
+        elif "bypass_ST_designation" in user_configs:
+            self.spectral_format = user_configs["bypass_ST_designation"]
         else:
             self.spectral_format = self.get_spectral_type()
         self.instrument_properties["array_size"] = self.instrument_properties["array_sizes"][self.spectral_format]
