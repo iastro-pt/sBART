@@ -120,7 +120,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
-        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList(None, "S2D", "S1D"))
+        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList((None, "S2D", "S1D")))
     )
 
     def __init__(
