@@ -253,7 +253,12 @@ class ESPRESSO(Frame):
         with fits.open(self.file_path) as hdulist:
             full_data = hdulist[1].data
 
-        self.wavelengths = full_data["wavelength"].reshape((1, self.array_size[1]))
+        wave_kw = "wavelength"
+        if self._internal_configs["use_air_wavelengths"]:
+            wave_kw = "wavelength_air"
+            logger.warning("SBART using air wavelengths!")
+
+        self.wavelengths = full_data[wave_kw].reshape((1, self.array_size[1]))
         self.spectra = full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
         self.uncertainties = full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
         self.qual_data = full_data["quality"].reshape((1, self.array_size[1]))
