@@ -162,13 +162,10 @@ class ESPRESSO(Frame):
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
-        if self.is_S1D:
-            logger.warning("Bypassing load of order-wise SNR")
-        else:
-            for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
-                self.observation_info["orderwise_SNRs"].append(
-                    header[f"HIERARCH ESO QC ORDER{order + 1} SNR"]
-                )
+        for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
+            self.observation_info["orderwise_SNRs"].append(
+                header[f"HIERARCH ESO QC ORDER{order + 1} SNR"]
+            )
 
         # Chosen activity indicators
         for key in self.available_indicators:
