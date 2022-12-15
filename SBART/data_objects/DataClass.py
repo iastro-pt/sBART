@@ -414,6 +414,12 @@ class DataClass(BASE):
         frame.load_data()
         return 1
 
+    def set_all_as_Zscore_frames(self) -> NoReturn:
+        logger.warning("Setting all frames as a zero-mean unit variance")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame.set_frame_as_Zscore()
+
     def normalize_all(self) -> NoReturn:
         """
         Launch the normalization for all (valid) frames
