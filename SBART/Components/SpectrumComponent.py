@@ -240,7 +240,7 @@ class Spectrum(BASE):
 
         """
         logger.info("Setting up frame as a Zscore!")
-        for order in self.N_orders:
+        for order in range(self.N_orders):
             _, flux, _, mask = self.get_data_from_spectral_order(order=order, include_invalid=True)
             valid_mask = ~mask
             mean, std = np.mean(flux[valid_mask]), np.std(flux[valid_mask])
