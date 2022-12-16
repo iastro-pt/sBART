@@ -52,9 +52,22 @@ class Spectrum(BASE):
 
         self.was_telluric_corrected = False
 
-    def update_uncertainties(self):
+    def update_uncertainties(self, new_values) -> NoReturn:
+        """
+        Allow to update the uncertainty values, which allows for manual SNR changes
+
+        Parameters
+        ----------
+        new_values
+            Numpy array with the new uncertainties
+        Returns
+        -------
+
+        """
         # self.uncertainties = full(self.spectra.shape, 200)
-        self.uncertainties = self.uncertainties / 2
+        if self.spectra.shape != new_values.shape:
+            raise custom_exceptions.InvalidConfiguration("The new uncertainties don't have the same size as the spectra")
+        self.uncertainties = new_values
 
     def regenerate_order_status(self):
         logger.warning(f"Resetting order status of {self.name}")
