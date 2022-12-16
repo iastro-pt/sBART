@@ -61,7 +61,7 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
             # THis does not extend the last detection to match the previous one!!!
             marked_regions.extend(range(blocks[-1][0], blocks[-1][-1] + 1))
 
-        is_line[marked_regions] = 1
+        is_line[order][marked_regions] = 1
         if make_plot:
             axis[0].scatter(wave[marked_regions], flux[marked_regions], color="red", ls="--", marker='d')
             axis[0].plot(wave, flux)
