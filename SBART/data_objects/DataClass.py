@@ -430,6 +430,15 @@ class DataClass(BASE):
         for subInst in self.get_subInstruments_with_valid_frames():
             self.normalize_all_from_subInst(subInst)
 
+    def set_uncertainties_all(self) -> NoReturn:
+        """
+        """
+        logger.info("Setting uncertainties all frames")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame.update_uncertainties()
+            frame._never_close = True
+
     def normalize_all_from_subInst(self, subInst: str) -> NoReturn:
         """
         Normalizing all (valid) frames from a given subInstrument

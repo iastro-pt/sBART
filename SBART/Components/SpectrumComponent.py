@@ -9,6 +9,7 @@ from SBART.utils.status_codes import OrderStatus
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
 
+from numpy import full
 
 class Spectrum(BASE):
     """
@@ -50,6 +51,10 @@ class Spectrum(BASE):
         self._spectrum_has_data_on_memory = False
 
         self.was_telluric_corrected = False
+
+    def update_uncertainties(self):
+        # self.uncertainties = full(self.spectra.shape, 200)
+        self.uncertainties = self.uncertainties / 2
 
     def regenerate_order_status(self):
         logger.warning(f"Resetting order status of {self.name}")
