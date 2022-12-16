@@ -8,8 +8,6 @@ from SBART.Base_Models import Frame
 from SBART.utils import build_blocks
 from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
 
-plt.switch_backend("TkAgg")
-
 def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False):
     """
     Find regions where the spectrum is in a line
