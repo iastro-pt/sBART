@@ -20,7 +20,7 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
 
     """
     is_line = np.zeros(frame.array_size, dtype=bool)
-    make_plot = True
+    make_plot = False
     if make_plot:
         plt.switch_backend("TkAgg")
 
@@ -59,7 +59,7 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
                     continue
                 marked_regions.extend(range(start, end + 1))
         if marked_regions[-1] != blocks[-1][-1]:
-            print("here", blocks[-1], range(blocks[-1][0], blocks[-1][-1] + 1))
+            # print("here", blocks[-1], range(blocks[-1][0], blocks[-1][-1] + 1))
             # THis does not extend the last detection to match the previous one!!!
             marked_regions.extend(range(blocks[-1][0], blocks[-1][-1] + 1))
 
