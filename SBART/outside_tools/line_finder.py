@@ -20,7 +20,9 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
 
     """
     is_line = np.zeros(frame.array_size, dtype=bool)
-    make_plot = False
+    make_plot = True
+    if make_plot:
+        plt.switch_backend("TkAgg")
 
     for order in range(frame.N_orders):
         if skip_orders is not None and order in skip_orders:
@@ -48,12 +50,12 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
                 start = blocks[jump_index][0]
                 end = blocks[jump_index][-1]
 
-            if jump < 10 and jump_index < len(pixel_jumps) - 1:
+            if jump < 10 and jump_index < len(pixel_jumps) - 1 and (end+1-start)>=2:
                 end = blocks[jump_index + 1][-1]
                 new_block = False
             else:
                 new_block = True
-                if (end+1 - start) < 5:
+                if (end+1 - start) < 10:
                     continue
                 marked_regions.extend(range(start, end + 1))
         if marked_regions[-1] != blocks[-1][-1]:
