@@ -5,7 +5,7 @@ from SBART.utils.paths_tools import find_latest_version
 
 
 def find_RVoutputs(
-    path, load_full_flags=False, load_work_pkgs=False, enable_logs: bool = True, SBART_version=None
+    path, load_full_flags=False, load_work_pkgs=False, enable_logs: bool = True, SBART_version=None, only_load_type=None
 ):
     """Search, inside a given path, for the RV cube that comes from the latest version of S-BART
 
@@ -41,5 +41,6 @@ def find_RVoutputs(
         load_work_pkgs=load_work_pkgs,
         load_full_flags=load_full_flags,
         SBART_version=SBART_version if SBART_version is not None else most_recent_version,
+        only_load_type=only_load_type
     )
     return outs
