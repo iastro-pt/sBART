@@ -1,5 +1,6 @@
 from typing import NoReturn, Set
 
+import numpy as np
 from loguru import logger
 
 from SBART.utils.BASE import BASE
@@ -9,7 +10,6 @@ from SBART.utils.status_codes import OrderStatus
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
 
-from numpy import full
 
 class Spectrum(BASE):
     """
@@ -249,6 +249,26 @@ class Spectrum(BASE):
                 self.spectral_mask.get_custom_mask(),
             )
 
+    def scale_spectra(self, factor: float) -> NoReturn:
+        self._data_access_checks()
+        logger.info("Scaling up frame!")
+        self.spectra *= factor
+        self.uncertainties *= factor
+
+    def set_frame_as_Zscore(self) -> NoReturn:
+        """
+        Re-defining the frame as one with zero mean and unit-variance (z-score)
+        Returns
+        -------
+
+        """
+        logger.info("Setting up frame as a Zscore!")
+        for order in range(self.N_orders):
+            _, flux, _, mask = self.get_data_from_spectral_order(order=order, include_invalid=True)
+            valid_mask = ~mask
+            mean, std = np.mean(flux[valid_mask]), np.std(flux[valid_mask])
+            self.spectra = (self.spectra - mean) / std
+
     def close_arrays(self) -> NoReturn:
         """
         Close the arrays that are currently open in memory. Next time we try to access them, the disk file will be re-opened.
@@ -336,4 +356,3 @@ class Spectrum(BASE):
             True if it has the arrays loaded on memory
         """
         return self._spectrum_has_data_on_memory
-
