@@ -195,7 +195,10 @@ class DataClass(BASE):
             previous_filename = cube.cached_info["date_folders"][cube.frameIDs.index(frameID)]
 
             if previous_filename != frame.file_path:
-                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument, previous_filename, frame.file_path)
+                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument,
+                                                                                                     previous_filename,
+                                                                                                     frame.file_path
+                                                                                                     )
                 logger.critical(msg)
                 raise InvalidConfiguration(msg)
 
@@ -204,6 +207,7 @@ class DataClass(BASE):
             frame.store_previous_SBART_result(RV=sbart_rv,
                                               RV_err=sbart_uncert
                                               )
+
     def reject_order_region_from_frame(self, frameID: int, order: int, region):
         frame = self.get_frame_by_ID(frameID)
         frame.reject_wavelength_region_from_order(order, region)
@@ -251,6 +255,7 @@ class DataClass(BASE):
                     )
 
         self._applied_telluric_removal = True
+
     def replace_frames_with_S2D_version(self):
         """
         In-place substitution of all frames with their S2D-compatible shapes!
@@ -263,8 +268,8 @@ class DataClass(BASE):
             s2d_frame = frame.copy_into_S2D()
             s2d_frame.build_mask()
             self.observations[index] = s2d_frame
-            del frame 
-            
+            del frame
+
     def ingest_StellarModel(self, Stellar_Model: StellarModel) -> None:
         logger.debug("Ingesting StellarModel into the DataClass")
         if self.StellarModel is not None:
@@ -450,6 +455,23 @@ class DataClass(BASE):
         for fId in self.get_frameIDs_from_subInst(subInst):
             frame = self.get_frame_by_ID(fId)
             frame.normalize_spectra()
+
+    def scale_up_all_observations(self, factor: float) -> NoReturn:
+        """
+        Multiply the flux and uncertainties by a given flux level (avoid possible SNR issues)
+        Parameters
+        ----------
+        factor
+
+        Returns
+        -------
+
+        """
+
+        logger.warning(f"Scaling up all spectra by a factor of {factor}")
+        for fId in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(fId)
+            frame.scale_spectra(factor)
 
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
@@ -794,7 +816,7 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
-        
+
         for frame in self.observations:
             frame.trigger_data_storage()
 

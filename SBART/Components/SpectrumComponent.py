@@ -232,6 +232,12 @@ class Spectrum(BASE):
                 self.spectral_mask.get_custom_mask(),
             )
 
+    def scale_spectra(self, factor: float) -> NoReturn:
+        self._data_access_checks()
+        logger.info("Scaling up frame!")
+        self.spectra *= factor
+        self.uncertainties *= factor
+
     def set_frame_as_Zscore(self) -> NoReturn:
         """
         Re-defining the frame as one with zero mean and unit-variance (z-score)
