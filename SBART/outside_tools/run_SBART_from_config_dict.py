@@ -29,7 +29,7 @@ def config_update_with_fallback_to_default(
 
 
 def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
-               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None
+               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None, log_to_terminal=False
                ):
 
     for path in [share_telluric, share_stellar]:
@@ -46,7 +46,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         os.path.join(storage_path, "logs"),
         rv_method,
         instrument=instrument,
-        log_to_terminal=True,
+        log_to_terminal=log_to_terminal,
     )
 
     manager = DataClassManager()
