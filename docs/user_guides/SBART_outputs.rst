@@ -38,7 +38,7 @@ The RV file is a text file with multiple columns. A brief description of them fo
 - DRIFT_ERR: Drift uncertainty. If not "nan", then it is added in quadrature to the "raw" sBART RVs
 - filename: Filename of this observation
 - frameIDs: ID of the observation inside sBART, only used for debugging / accessing extra information in sBART outputs
-
+- DLW and DLW_ERR: Implementation of the DLW algorithm, still under testing to understand if it is working as expected
 
 Data products from the creation of the templates
 ======================================================
