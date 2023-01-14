@@ -109,11 +109,13 @@ class RV_routine(BASE):
                 "SA",
                 "DRIFT",
                 "DRIFT_ERR",
+                "DLW",
+                "DLW_ERR",
                 "filename",
                 "frameIDs",
             ],
             constraint=ValueFromList(
-                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
+                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs", "DLW", "DLW_ERR"]
             ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
@@ -358,7 +360,6 @@ class RV_routine(BASE):
                     dataClass=dataClass,
                     subInst=subInst,
                 )
-                output_cube.update_skip_reason(original_to_skip[subInst], ORDER_SKIP)
 
                 if self.loaded_from_previous_run:
                     # if we are loading from the orders to skip from a previous run,
@@ -456,6 +457,7 @@ class RV_routine(BASE):
                                                       is_merged=is_merged,
                                                       has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise"
                                                       )
+        cube.update_skip_reason(self.to_skip[subInst], ORDER_SKIP)
 
         cube.update_skip_reason(template_bad_orders, BAD_TEMPLATE)
         cube.load_data_from_DataClass(dataClass)
