@@ -44,6 +44,8 @@ class RV_holder(BASE):
         "full_path",
         "filename",
         "frameIDs",
+        "DLW",
+        "DLW_ERR"
     ]
 
     def __init__(self, subInsts: List[str], output_keys: List[str], storage_path: Path):
@@ -311,7 +313,7 @@ class RV_holder(BASE):
             # TODO: do we want to search for the "optimal" one?
             self.output_keys.insert(0, time_keys[0])
 
-        for key_index, key in enumerate(["RVc", "RVc_ERR"]):
+        for key_index, key in enumerate(["RVc", "RVc_ERR", "DLW", "DLW_ERR"]):
             if key not in self.output_keys:
                 logger.warning(
                     "Mandatory key <{}> not present in the selected outputs. Adding it",

@@ -1,6 +1,6 @@
 import numpy as np
 
-from SBART.utils.RV_utilities import ensure_valid_RV
+from SBART.utils.RV_utilities import ensure_valid_RV, compute_DLW
 from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.shift_spectra import apply_RVshift
 
@@ -66,8 +66,17 @@ def target(params, **kwargs):
     if kwargs.get("get_minimum_information", False):
         # This will be triggered when the sampler sends a request to get more information
         # of the different metrics for the optimal RV solution
+        dlw, dlw_err = compute_DLW(spec_wave=current_wavelength[indexes],
+                                   spec_flux=spectra[indexes],
+                                   spec_variance=kwargs["squared_spectra_uncerts"][indexes],
+                                   temp_flux=interpolated_template,
+                                   temp_variance=normalized_uncerts**2
+                                   )
+
         data_out = {
             "poly_params": coefs,
+            "DLW": dlw,
+            "DLW_ERR": dlw_err
         }
 
         if not kwargs["SAVE_DISK_SPACE"]:

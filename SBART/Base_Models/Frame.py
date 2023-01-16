@@ -18,7 +18,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
     ValueFromList,
-    ValueInInterval,
+    ValueInInterval, StringValue,
 )
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.ranges import ranges
@@ -92,6 +92,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     reject_order_percentage             False               0.25         range [0 ,1]    Smallest percentage of "valid" pixels in a "valid" order
     minimum_order_SNR                   False               20           int/float >= 0  If the order's SNR is below this value, reject the order
     spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
+    use_air_wavelengths                 False             False         boolean         Use air wavelengths, instead of vacuum. Only used in S1D files!
     ================================ ================ ================ ================ ================
 
     .. note::
@@ -112,12 +113,14 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     _default_params = DefaultValues(
         bypass_QualCheck=UserParam(False, constraint=BooleanValue),
         apply_FluxCorr=UserParam(False, constraint=ValueFromList((False,))),
+        use_air_wavelengths=UserParam(False, constraint=BooleanValue),
         apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
         reject_order_percentage=UserParam(
             0.25, constraint=ValueInInterval((0, 1), include_edges=True)
         ),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
+        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList((None, "S2D", "S1D")))
     )
 
     def __init__(
@@ -195,6 +198,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self._KW_map = KW_map
         if "UseMolecfit" in user_configs:
             self.spectral_format = "S1D"
+        elif "bypass_ST_designation" in user_configs:
+            self.spectral_format = user_configs["bypass_ST_designation"]
         else:
             self.spectral_format = self.get_spectral_type()
         self.instrument_properties["array_size"] = self.instrument_properties["array_sizes"][self.spectral_format]
