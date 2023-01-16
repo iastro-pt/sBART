@@ -170,7 +170,7 @@ class RV_step(RV_routine):
                                                number_OBS=len(cube.frameIDs), list_of_fIDS=cube.frameIDs
                                                )
 
-            ind, errs = original_cube.get_all_orderwise_indicator("DLW")
+            ind, errs = data_unit_act.get_all_orderwise_indicator("DLW")
             problematic_orders = cube.problematic_orders
 
             ind[:, problematic_orders] = np.nan
