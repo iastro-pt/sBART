@@ -150,7 +150,7 @@ class MCMC_sampler(SbartBaseSampler):
             ] = True
             target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
             model_misspec, log_likelihood, orders = internal_func(
-                out_pkg["RV"].value, target, target_kwargs
+                out_pkg["RV"].value, target_kwargs
             )
 
         else:
