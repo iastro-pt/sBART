@@ -35,13 +35,13 @@ def log_prior(theta, param_limits):
     return 0.0
 
 
-def log_probability(theta, RV_limits, internal_function, target, target_kwargs):
+def log_probability(theta, RV_limits, internal_function, target_args):
     lp = log_prior(theta, RV_limits)
     if not np.isfinite(lp):
         return -np.inf
 
     # tge likelihood returns the negative
-    return lp + -1 * internal_function(theta, target, target_kwargs)
+    return lp + -1 * internal_function(theta, *target_args)
 
 
 def estimate_RV_from_chains(sampler, burn_in: int, mean_list: List[float], std_list: List[float]):
@@ -128,13 +128,14 @@ class MCMC_sampler(SbartBaseSampler):
             raise custom_exceptions.InvalidConfiguration(
                 "Sampler mode <> does not exist", self.mode
             )
+        args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
 
         sampler = emcee.EnsembleSampler(
             self._internal_configs["N_walkers"],
             ndim,
             log_probability,
             moves=self._internal_configs["ensemble_moves"],
-            args=([bounds, internal_func, target, target_kwargs]),
+            args=([bounds, internal_func, args]),
         )
 
         sampler, order_status, out_pkg, header_info = self.apply_MCMC(
