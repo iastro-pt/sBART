@@ -29,9 +29,9 @@ def config_update_with_fallback_to_default(
 
 
 def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
-               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None, log_to_terminal=False
+               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None,
+               log_to_terminal=False
                ):
-
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
             raise Exception("Trying to use a template that does not exist ({})".format(path))
@@ -129,7 +129,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         sampler_configs = {}
 
     if sampler_name is not None:
-        chosen_sampler = Sampler_map[sampler_name](**sampler_configs)
+        chosen_sampler = Sampler_map[sampler_name](user_configs=sampler_configs)
     else:
         if rv_method == "RV_step":
             sampler = Sampler_map["chi_squared"]
@@ -137,7 +137,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
             sampler = Sampler_map[rv_method]
         else:
             raise Exception("Can't recognize method name!")
-        chosen_sampler = sampler(RVstep, RV_limits, **sampler_configs)
+        chosen_sampler = sampler(RVstep, RV_limits, user_configs=sampler_configs)
 
     if rv_method == "RV_step":
         rv_model = RV_step(
