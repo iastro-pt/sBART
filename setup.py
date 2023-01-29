@@ -11,7 +11,7 @@ from Cython.Build import cythonize
 import Cython.Compiler.Options
 from Cython.Build import cythonize
 from setuptools import Extension, setup
-
+from SBART import version
 
 USE_CYTHON = False   # command line option, try-import, ...
 
@@ -53,7 +53,7 @@ from distutils.core import setup
 all_packages = setuptools.find_packages(where="SBART", include=["**"])
 
 setup(name='SBART',
-      version='1.0',
+      version=version,
       package_dir={"": "SBART"},
       description='Python Distribution Utilities',
       packages=all_packages,
