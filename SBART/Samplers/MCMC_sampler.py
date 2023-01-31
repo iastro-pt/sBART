@@ -284,19 +284,17 @@ class MCMC_sampler(SbartBaseSampler):
         #   Build header
         ###
         frameID = target_KWARGS["run_information"]["frameID"]
-
+        rel_path = "individual_subInst" if not self.is_merged_subInst else "merged_subInst"
+        base_path = self._internalPaths.root_storage_path / rel_path / target_KWARGS["run_information"]["subInst"]
         header = ["General information:"]
         for header_KW, KW_val in header_info.items():
             header.append(f"\n\t{header_KW} : {KW_val}")
         header.append("\nChains:\n")
         if self.mode == "order-wise":
             order = target_KWARGS["current_order"]
-            fname = (
-                self._internalPaths.get_path_to("chains", as_posix=False)
-                / f"frame_{frameID}__order_{order}.txt"
-            )
+            fname = base_path / f"frame_{frameID}__order_{order}.txt"
         else:
-            fname = self._internalPaths.get_path_to("chains", as_posix=False) / f"frame_{frameID}.txt"
+            fname = base_path / f"frame_{frameID}.txt"
 
         np.savetxt(
             fname=fname.as_posix(),

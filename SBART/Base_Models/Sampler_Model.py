@@ -76,6 +76,7 @@ class SamplerModel(BASE):
         self.RV_step = RV_step
         self.mem_save_enabled = False
         self.disk_save_enabled = False
+        self.is_merged_subInst = False
 
         RV_param = RV_component(
             RVwindow=RV_window,

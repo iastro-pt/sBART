@@ -442,6 +442,10 @@ class RV_routine(BASE):
             )
             return RV_cube(subInst, valid_IDS, dataClass.get_instrument_information())
 
+        is_merged = self._internal_configs["order_removal_mode"] == "global"
+        # UGLYYYY!
+        self.sampler.is_merged_subInst = is_merged
+
         worker_outputs = self.sampler.manage_RV_calculation(
             dataClass,
             subInst,
@@ -452,7 +456,6 @@ class RV_routine(BASE):
             output_pool=self.output_pool,
         )
 
-        is_merged = self._internal_configs["order_removal_mode"] == "global"
         cube = self._output_RVcubes.generate_new_cube(dataClass,
                                                       subInst,
                                                       is_merged=is_merged,
