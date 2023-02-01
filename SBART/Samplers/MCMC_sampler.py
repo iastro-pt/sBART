@@ -134,7 +134,7 @@ class MCMC_sampler(SbartBaseSampler):
             self._internal_configs["N_walkers"],
             ndim,
             log_probability,
-            moves=self._internal_configs["ensemble_moves"],
+            moves=[(self._internal_configs["ensemble_moves"], 1)],
             args=([bounds, internal_func, args]),
         )
 
