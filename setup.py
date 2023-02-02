@@ -50,15 +50,13 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_packages(where="SBART", include=["**"])
-
+all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
 setup(name='SBART',
       version=version,
-      package_dir={"": "SBART"},
       description='Python Distribution Utilities',
       packages=all_packages,
       include_package_data=True,
       ext_modules=ext_modules,
       include_dirs=[np.get_include()],
-
+      install_requires=["numpy"]
       )
