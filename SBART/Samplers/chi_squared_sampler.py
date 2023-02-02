@@ -26,7 +26,7 @@ class chi_squared_sampler(SamplerModel):
 
     _name = "chi_squared"
 
-    def __init__(self, rv_step, rv_prior):
+    def __init__(self, rv_step, rv_prior, user_configs):
         """
 
         Parameters
