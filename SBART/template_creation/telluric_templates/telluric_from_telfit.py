@@ -200,7 +200,7 @@ class TelfitTelluric(TelluricTemplate):
                     conditions=self._metric_selection_conditions,
                     return_frameIDs=True
                 )
-
+                metric_to_select = np.asarray(metric_to_select, dtype=float)
                 if not any(np.isfinite(metric_to_select)):
                     logger.warning(f"Metric {kw} is not finite. Can't use it to select observatioons")
                     continue
