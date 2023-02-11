@@ -112,7 +112,7 @@ class TelfitTelluric(TelluricTemplate):
             "download", constraint=StringValue
         ),  # download / default / path
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
-        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue()),
+        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
         PARAMS_TO_FIT=UserParam(
