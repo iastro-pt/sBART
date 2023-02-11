@@ -22,7 +22,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     StringValue,
     UserParam,
-    ValueFromList,
+    ValueFromList, NumericValue
 )
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.status_codes import SUCCESS
@@ -91,12 +91,12 @@ class TelfitTelluric(TelluricTemplate):
     ================================ ================ ================ ================ ================
     Parameter name                      Mandatory      Default Value    Valid Values    Comment
     ================================ ================ ================ ================ ================
-    TELFIT_HUMIDITY_THRESHOLD            False          None            None/float > 0    [1]
+    TELFIT_HUMIDITY_THRESHOLD            False          None            Numerical        [1]
     ================================ ================ ================ ================ ================
 
 
     .. note::
-        [1] - Value used to enforce a maximum value for the humidity. If this is set to None, use the
+        [1] - Value used to enforce a maximum value for the humidity. If this is set any negative value, use the
         maximum humidity from the loaded observations
 
 
@@ -112,7 +112,7 @@ class TelfitTelluric(TelluricTemplate):
             "download", constraint=StringValue
         ),  # download / default / path
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
-        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=None, constraint=Positive_Value_Constraint + ValueFromList([None])),
+        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue()),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
         PARAMS_TO_FIT=UserParam(
@@ -454,7 +454,7 @@ class TelfitTelluric(TelluricTemplate):
                     "Relative humidity is not finite. Using default value of {}%", initial_guess["humidity"]
                 )
 
-            if self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] is not None and initial_guess["humidity"] > self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]:
+            if self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] >= 0 and initial_guess["humidity"] > self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]:
                 initial_guess["humidity"] = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
                 logger.warning("Relative humidity is above the user-provided threshold. Falling back to it")
 
