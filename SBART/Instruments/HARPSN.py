@@ -185,6 +185,10 @@ class HARPSN(Frame):
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
 
+        if self.observation_info["relative_humidity"] == 255:
+            logger.warning(f"{self.name} has an invalid value in the humidity sensor...")
+            self.observation_info["relative_humidity"] = np.nan
+
         for order in range(self.N_orders):
             self.observation_info["orderwise_SNRs"].append(
                 header[f"HIERARCH TNG DRS SPE EXT SN{order}"]
