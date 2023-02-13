@@ -213,6 +213,10 @@ class TelfitTelluric(TelluricTemplate):
                 if not any(np.isfinite(metric_to_select)):
                     logger.warning(f"Metric {kw} is not finite. Can't use it to select observatioons")
                     continue
+                else:
+                    # Stop if we have finite values!
+                    break
+
             sort_inds = np.argsort(metric_to_select)
             frames_to_search = np.asarray(frameIDs)[sort_inds][::-1]
 
