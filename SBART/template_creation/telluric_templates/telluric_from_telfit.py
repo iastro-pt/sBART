@@ -408,8 +408,8 @@ class TelfitTelluric(TelluricTemplate):
             frameID=self._reference_frameID, allow_disabled=True
         )
         names = self._fitModel.get_component_names(include_disabled=True)
+        logger.debug(f"Parameters in use: {names}")
         logger.info(f"Using params: {parameter_values}")
-
         wavelengths, tell_spectra = self._generate_telluric_model(
             model_parameters={},
             OBS_properties=OBS_properties,
@@ -454,9 +454,11 @@ class TelfitTelluric(TelluricTemplate):
                     "Relative humidity is not finite. Using default value of {}%", initial_guess["humidity"]
                 )
 
-            if self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] >= 0 and initial_guess["humidity"] > self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]:
+            if 0 <= self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] < initial_guess["humidity"]:
                 initial_guess["humidity"] = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
-                logger.warning("Relative humidity is above the user-provided threshold. Falling back to it")
+                user_cap = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
+                curr_val = initial_guess["humidity"]
+                logger.warning(f"Relative humidity ({curr_val}) is above the user-provided threshold ({user_cap}). Falling back to it")
 
             if not np.isfinite(initial_guess["temperature"]):
                 initial_guess["temperature"] = 290.5
@@ -479,3 +481,15 @@ class TelfitTelluric(TelluricTemplate):
             if param_name not in self._internal_configs["PARAMS_TO_FIT"]:
                 logger.info("{} not fitting {}. Fixing it to initial guess", self.name, param_name)
                 self._fitModel.disable_param(param_name)
+
+    def store_metrics(self):
+        super().store_metrics()
+        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
+        parameter_values = self._fitModel.get_fit_results_from_frameID(
+            frameID=self._reference_frameID, allow_disabled=True
+        )
+        names = self._fitModel.get_component_names(include_disabled=True)
+
+        with open(metrics_path / f"telfit_info_{self._associated_subInst}.txt", mode="w") as to_write:
+            for nam, val in zip(names, parameter_values):
+                to_write.write(f"{nam}:  {val}\n")

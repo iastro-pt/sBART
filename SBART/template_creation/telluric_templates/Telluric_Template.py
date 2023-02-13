@@ -425,9 +425,13 @@ class TelluricTemplate(BaseTemplate):
     def for_feature_correction(self) -> bool:
         return self._application_mode == "correction"
 
+    def store_metrics(self):
+        ...
+
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         try:
-            return super().trigger_data_storage(*args, **kwargs)
+            super().trigger_data_storage(*args, **kwargs)
+            self.store_metrics()
         except custom_exceptions.FailedStorage:
             return
 
