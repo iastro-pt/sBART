@@ -4,7 +4,6 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from loguru import logger
@@ -18,8 +17,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
     ValueFromList,
-    ValueInInterval, StringValue,
-)
+    ValueInInterval, )
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.ranges import ranges
 from SBART.utils.status_codes import (
