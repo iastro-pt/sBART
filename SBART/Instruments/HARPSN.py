@@ -30,8 +30,10 @@ from SBART.utils.status_codes import (
     KW_WARNING
 )
 
+from .ESO_PIPELINE import ESO_PIPELINE
 
-class HARPSN(Frame):
+
+class HARPSN(ESO_PIPELINE):
     """
     Interface to handle HARPSN data; S1D **not** supported!
 
@@ -63,11 +65,7 @@ class HARPSN(Frame):
     }
 
     _name = "HARPSN"
-    _default_params = Frame._default_params + DefaultValues(
-        apply_FluxCorr=UserParam(False, constraint=BooleanValue),
-        apply_FluxBalance_Norm=UserParam(False, constraint=BooleanValue),
-        use_old_pipeline=UserParam(default_value=False, constraint=BooleanValue)
-    )
+    _default_params = ESO_PIPELINE._default_params
 
     def __init__(
             self,
@@ -97,7 +95,7 @@ class HARPSN(Frame):
         coverage = [390, 700]
         search_status = SUCCESS
         if user_configs.get("use_old_pipeline", False): # For the old pipeline!
-            KW_map = {
+            override_KW_map = {
                 "OBJECT": "HIERARCH TNG OBS TARG NAME",  # "OBJECT",
                 "BJD": "HIERARCH TNG DRS BJD",
                 "MJD": "MJD-OBS",
@@ -111,30 +109,17 @@ class HARPSN(Frame):
             available_act = ("CONTRAST", "FWHM")
             self.is_BERV_corrected = False
         else:
-            KW_map = {
-                "OBJECT": "HIERARCH TNG OBS TARG NAME",  # "OBJECT",
-                "BJD": "HIERARCH TNG QC BJD",
-                "MJD": "MJD-OBS",
-                "ISO-DATE": "DATE-OBS",
-                "DRS-VERSION": "HIERARCH ESO PRO REC1 PIPE ID",
-                "MD5-CHECK": "DATAMD5",
-                "RA": "RA",
-                "DEC": "DEC",
-                "SPEC_TYPE": "HIERARCH TNG QC CCF MASK",
-            }
-            available_act = ("CONTRAST", "FWHM", "BIS SPAN")
-            self.is_BERV_corrected = True
+            override_KW_map = None
 
         super().__init__(
             inst_name="HARPSN",
             array_size={"S2D": (69, 4096)},
             file_path=file_path,
+            KW_identifier="TNG",
             frameID=frameID,
-            KW_map=KW_map,
-            available_indicators=available_act,
+            override_KW_map=override_KW_map,
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
-            init_log=False,
             quiet_user_params=quiet_user_params
         )
 
@@ -142,7 +127,6 @@ class HARPSN(Frame):
             self.add_to_status(search_status)
 
         self.instrument_properties["wavelength_coverage"] = coverage
-        self.instrument_properties["is_drift_corrected"] = True
 
         self.instrument_properties["resolution"] = 115_000
         self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
@@ -152,17 +136,6 @@ class HARPSN(Frame):
         # https://tngweb.tng.iac.es/weather/current
         self.instrument_properties["site_pressure"] = 770
 
-        # CHeck for BLAZE correction
-        self.is_blaze_corrected = True
-        if "BLAZE" in self.file_path.stem:
-            # The S2D_BLAZE_A files do not have the blaze correction!
-            self.is_blaze_corrected = False
-
-    def load_instrument_specific_KWs(self, header):
-        if self._internal_configs["use_old_pipeline"]:
-            self._load_old_DRS_KWs(header)
-        else:
-            self._load_new_DRS_KWs(header)
 
     def _load_old_DRS_KWs(self, header):
         if not self._internal_configs["use_old_pipeline"]:
@@ -249,38 +222,6 @@ class HARPSN(Frame):
 
         self.observation_info["DRS_RV_ERR"] = RV_err * meter_second
 
-    def _load_new_DRS_KWs(self, header):
-        if self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from new pipeline with the config for the old one")
-
-        self.observation_info["MAX_BERV"] = header["HIERARCH TNG QC BERVMAX"] * kilometer_second
-        self.observation_info["BERV"] = header["HIERARCH TNG QC BERV"] * kilometer_second
-
-        self.observation_info["DRS_RV"] = header["HIERARCH TNG QC CCF RV"] * kilometer_second
-        self.observation_info["DRS_RV_ERR"] = (
-                header["HIERARCH TNG QC CCF RV ERROR"] * kilometer_second
-        )
-
-        # Environmental KWs for telfit (also needs airmassm previously loaded)
-        ambi_KWs = {
-            "relative_humidity": "HUMIDITY",
-            "ambient_temperature": "TEMP10M",
-        }
-
-        for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = header[f"HIERARCH TNG METEO {endKW}"]
-            if "temperature" in name:  # store temperature in KELVIN for TELFIT
-                self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
-                )
-
-        for order in range(self.N_orders):
-            self.observation_info["orderwise_SNRs"].append(
-                header[f"HIERARCH TNG QC ORDER{order + 1} SNR"]
-            )
-
-        self.observation_info["airmass"] = header["AIRMASS"]  # "HIERARCH ESO TEL AIRM START"]
-
     def build_HARPS_wavelengths(self, hdr):
         """
         Compute the wavelength solution to this given spectra (EQ 4.1 of DRS manual)
@@ -323,7 +264,7 @@ class HARPSN(Frame):
         vacuum_wavelengths = airtovac(wavelengths)
         return vacuum_wavelengths
 
-    def load_old_pipeline_version(self):
+    def load_old_DRS_S2D(self):
         """
         load the data from the old HARPS-N pipeline. This will be mainly used for the comparison with the
         HARPS-TERRA pipeline
@@ -356,127 +297,6 @@ class HARPSN(Frame):
 
         self.build_mask(bypass_QualCheck=False)
         self.apply_BERV_correction(self.get_KW_value("BERV"))
-
-    def load_S2D_data(self):
-        if self.is_open:
-            logger.debug("{} has already been opened", self.__str__())
-            return
-        super().load_S2D_data()
-
-        if self._internal_configs["use_old_pipeline"]:
-            # The return is to ensure that we don't do anything after this point!
-            return self.load_old_pipeline_version()
-
-        with fits.open(self.file_path) as hdulist:
-
-            self.wavelengths = hdulist["WAVEDATA_VAC_BARY"].data
-            self.qual_data = hdulist["QUALDATA"].data
-
-            SCIDATA_KEY = "SCIDATA"
-            ERRDATA_KEY = "ERRDATA"
-
-            # Fixing dtype to avoid problems with the cython interface
-            self.spectra = hdulist[SCIDATA_KEY].data.astype(np.float64)
-            self.uncertainties = hdulist[ERRDATA_KEY].data.astype(np.float64)
-
-            if self._internal_configs["apply_FluxCorr"]:
-                logger.debug("Starting chromatic flux correction")
-                keyword = "HIERARCH TNG QC ORDER%d FLUX CORR"
-                flux_corr = np.array(
-                    [hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)]
-                )
-                fit_nb = (flux_corr != 1.0).sum()
-
-                ignore = self.N_orders - fit_nb
-                logger.debug(f"Chromatic correction ignoring {ignore} orders")
-
-                # ? see espdr_scince:espdr_correct_flux
-                poly_deg = round(8 * fit_nb / self.N_orders)
-                logger.debug("Fitting polynomial (n={})".format(poly_deg))
-                llc = hdulist[5].data[:, self.array_size[1] // 2]
-                coeff = np.polyfit(llc[ignore:], flux_corr[ignore:], poly_deg - 1)
-                # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
-                corr_model = np.polyval(coeff, hdulist[5].data)
-
-                corr_model[
-                    flux_corr == 1
-                    ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
-                self.spectra = self.spectra / corr_model  # correct from chromatic variations
-                self.flux_atmos_balance_corrected = True
-                # TODO: understand if we want to include the factor in uncertainties or not!
-                # self.uncertainties = self.uncertainties / corr_model # maintain the SNR in the corrected spectrum
-
-            else:
-                # Disabled the flux correction as we are artifically increasing the SNR of the spectra...
-                # Shouldn't we also increase the flux uncertainty?? The DRS does not do it....
-
-                logger.warning("Not applying correction to blue-red flux balance!")
-                # / corr_model
-
-            if self._internal_configs["apply_FluxBalance_Norm"]:
-                logger.info("Normalizing the flux balance distribution due to dispersion")
-                # The physical sizes of the pixels (on the CCD) are the same
-                # The flux that reaches eeach pixel is different, due to dispersion
-                # The spectra will have a trend, even after removing the instrumental effect
-                # This normalizes the spectra by dividing by the flux distribution
-
-                balance_corr_model = hdulist["DLLDATA_VAC_BARY"].data
-                self.spectra = self.spectra / balance_corr_model
-
-                # Ensure that we keep the same SNR after the normalization!
-                self.uncertainties = self.uncertainties / balance_corr_model
-                self.flux_dispersion_balance_corrected = True
-
-        self.build_mask(bypass_QualCheck=False)
-        return 1
-
-    def load_S1D_data(self):
-        with fits.open(self.file_path) as hdulist:
-            full_data = hdulist[1].data
-
-        self.wavelengths = full_data["wavelength"].reshape((1, self.array_size[1]))
-        self.spectra = full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
-        self.uncertainties = full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
-        self.qual_data = full_data["quality"].reshape((1, self.array_size[1]))
-        self.build_mask(bypass_QualCheck=False)
-
-    def check_header_QC(self, header):
-        super().check_header_QC(header)
-        if self._internal_configs["use_old_pipeline"]:
-            logger.warning("No QC checks for data from the old pipeline!")
-            return
-        fatal_QC_flags = {"HIERARCH TNG QC SCIRED CHECK": 0}
-
-        nonfatal_QC_flags = {
-            "HIERARCH TNG QC SCIRED FLUX CORR CHECK": 0,
-            "HIERARCH TNG QC SCIRED DRIFT CHECK": 0,
-            "HIERARCH TNG QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
-            "HIERARCH TNG QC SCIRED DRIFT CHI2 CHECK": 0,
-        }
-
-        for flag, bad_value in fatal_QC_flags.items():
-            if header[flag] == bad_value:
-                msg = f"\tQC flag {flag} is not True"
-                logger.critical(msg)
-                self.add_to_status(FATAL_KW(msg.replace("\t", "")))
-
-        for flag, bad_value in nonfatal_QC_flags.items():
-            try:
-                if header[flag] == bad_value:
-                    msg = f"QC flag {flag} meets the bad value"
-                    logger.warning(msg)
-                    self._status.store_warning(KW_WARNING(msg))
-            except KeyError:
-                msg = f"QC flag {flag} does not exist"
-                logger.warning(msg)
-                self._status.store_warning(KW_WARNING(msg))
-
-        if self._status.number_warnings > 0:
-            logger.warning("Found {} warning flags in the header KWs", self._status.number_warnings)
-
-    @property
-    def bare_fname(self) -> str:
-        return self.fname.split("_S")[0]
 
     def close_arrays(self):
         """
