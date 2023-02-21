@@ -147,8 +147,8 @@ class SumStellar(StellarTemplate):
         inst_info = dataClass.get_instrument_information()
         N_orders = inst_info["array_size"][0]
 
-        epoch_errors = dataClass.collect_RV_information(
-            KW=self.RV_keyword + "_ERR",
+        epoch_BERVs = dataClass.collect_RV_information(
+            KW="BERV",
             subInst=self._associated_subInst,
             frameIDs=self.frameIDs_to_use,
             units=kilometer_second,
@@ -165,13 +165,13 @@ class SumStellar(StellarTemplate):
             include_invalid=False,
         )
 
-        chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_errors)]
+        chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_BERVs)]
 
         wave_reference, _, _, _ = dataClass.get_frame_arrays_by_ID(chosen_epochID)
 
         self.wavelengths = remove_RVshift(
             wave_reference,
-            stellar_RV=epochsRVs[np.argmin(epoch_errors)],
+            stellar_RV=epochsRVs[np.argmin(epoch_BERVs)],
         )
 
         logger.info(
