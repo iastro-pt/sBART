@@ -119,6 +119,7 @@ class ESO_PIPELINE(Frame):
             self._load_old_DRS_KWs(header)
         else:
             self._load_ESO_DRS_KWs(header)
+        self.load_telemetry_info(header)
 
     def load_S2D_data(self):
         if self.is_open:
