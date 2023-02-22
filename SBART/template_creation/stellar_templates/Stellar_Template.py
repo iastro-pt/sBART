@@ -86,6 +86,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.output_pool = None
         self.target_name = None
         self._reference_frameID = None
+        self._reference_filepath = None
         self.used_fpaths = []
         self._conditions = None
 
@@ -281,8 +282,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "is_blaze_corrected": self.is_blaze_corrected,
             "was_telluric_corrected": self.was_telluric_corrected,
             "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
-            "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected
-            "_reference_frameID": self._reference_frameID
+            "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
+            "_reference_frameID": self._reference_frameID,
+            "_reference_filepath": self._reference_filepath,
         }
 
         with open(miscInfo, mode="w") as file:

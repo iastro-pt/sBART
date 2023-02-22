@@ -167,6 +167,8 @@ class SumStellar(StellarTemplate):
 
         chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_BERVs)]
         self._reference_frameID = chosen_epochID
+        self._reference_filepath = dataClass.get_filename_from_frameID(self._reference_frameID)
+
         wave_reference, _, _, _ = dataClass.get_frame_arrays_by_ID(chosen_epochID)
 
         self.wavelengths = remove_RVshift(
