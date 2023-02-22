@@ -108,8 +108,8 @@ class HARPSN(ESO_PIPELINE):
             file_path, self.ccf_path, search_status = self.find_files(file_path)
             available_act = ("CONTRAST", "FWHM")
             self.is_BERV_corrected = False
-        else:
-            override_KW_map = None
+        else: # For the new pipeline
+            override_KW_map = {"OBJECT": "HIERARCH TNG OBS TARG NAME"}
 
         super().__init__(
             inst_name="HARPSN",

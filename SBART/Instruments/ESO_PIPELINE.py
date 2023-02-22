@@ -77,20 +77,21 @@ class ESO_PIPELINE(Frame):
 
         self.UT_number = None
         self.KW_identifier = KW_identifier
-        if override_KW_map is None:
-            KW_map = {
-                "OBJECT": "OBJECT",
-                "BJD": f"HIERARCH {KW_identifier} QC BJD",
-                "MJD": "MJD-OBS",
-                "ISO-DATE": "DATE-OBS",
-                "DRS-VERSION": f"HIERARCH ESO PRO REC1 PIPE ID",
-                "MD5-CHECK": "DATAMD5",
-                "RA": "RA",
-                "DEC": "DEC",
-                "SPEC_TYPE": f"HIERARCH {KW_identifier} QC CCF MASK",
-            }
-        else:
-            KW_map = override_KW_map
+
+        KW_map = {
+            "OBJECT": "OBJECT",
+            "BJD": f"HIERARCH {KW_identifier} QC BJD",
+            "MJD": "MJD-OBS",
+            "ISO-DATE": "DATE-OBS",
+            "DRS-VERSION": f"HIERARCH ESO PRO REC1 PIPE ID",
+            "MD5-CHECK": "DATAMD5",
+            "RA": "RA",
+            "DEC": "DEC",
+            "SPEC_TYPE": f"HIERARCH {KW_identifier} QC CCF MASK",
+        }
+        if override_KW_map is not None:
+            for key, value in override_KW_map.items():
+                KW_map[key] = value
 
         super().__init__(
             inst_name=inst_name,
