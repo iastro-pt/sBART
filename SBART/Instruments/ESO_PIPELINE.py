@@ -231,7 +231,7 @@ class ESO_PIPELINE(Frame):
             self.uncertainties = hdulist[ERRDATA_KEY].data.astype(np.float64)
             if self._internal_configs["apply_FluxCorr"]:
                 logger.debug("Starting chromatic flux correction")
-                keyword = "HIERARCH ESO QC ORDER%d FLUX CORR"
+                keyword = f"HIERARCH {self.KW_identifier} QC ORDER%d FLUX CORR"
                 flux_corr = np.array(
                     [hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)]
                 )
