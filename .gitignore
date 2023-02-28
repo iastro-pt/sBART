@@ -12,7 +12,7 @@ tests/*outputs/*
 *.so
 *.o
 *.html
-*.c
+
 
 
 .idea/
