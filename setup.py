@@ -1,24 +1,17 @@
-import numpy
 from pathlib import Path
 
-import numpy as np
 import setuptools
 
 curr_file = Path(__file__).parent.absolute()
-from setuptools import Extension
-from Cython.Build import cythonize
 
-import Cython.Compiler.Options
-from Cython.Build import cythonize
-from setuptools import Extension, setup
-from SBART import version
+from setuptools import Extension
+
+version = "0.3.0"
+
 
 USE_CYTHON = False   # command line option, try-import, ...
 
 ext = '.pyx' if USE_CYTHON else '.c'
-
-
-Cython.Compiler.Options.annotate = True
 
 targ_path = curr_file / "SBART" / "utils" / "cython_codes"
 
@@ -44,6 +37,11 @@ ext_modules = [
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 if USE_CYTHON:
+    from Cython.Build import cythonize
+    import Cython.Compiler.Options
+    Cython.Compiler.Options.annotate = True
+    from Cython.Build import cythonize
+
     ext_modules = cythonize(ext_modules,
                         compiler_directives=compiler_directives,
                         )
@@ -51,12 +49,14 @@ if USE_CYTHON:
 from distutils.core import setup
 
 all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
       packages=all_packages,
       include_package_data=True,
       ext_modules=ext_modules,
-      include_dirs=[np.get_include()],
-      install_requires=["numpy"]
+      install_requires=required
       )
