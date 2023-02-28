@@ -16,7 +16,7 @@ git commit -m "Building changelog"
 # Bumping version number
 ####
 
-bump2version --current-version $current_version $bump_type SBART/__init__.py pyproject.toml --allow-dirty
+bump2version --current-version $current_version $bump_type SBART/__init__.py setup.py --allow-dirty
 git add pyproject.tom
 git add SBART/__init__.py
 git commit -m "new sBART version"
