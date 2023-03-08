@@ -1,4 +1,4 @@
 include SBART/resources/*
 include SBART/resources/atmosphere_profiles/*
-include SBART.utils/tapas_downloader/*
+include SBART/utils/tapas_downloader/*
 include SBART/utils/cython_codes/cubic_interpolation/__init__.py
