@@ -55,3 +55,27 @@ def first_numerical_derivative(wavelengths, flux, uncertainties):
         output_errors.append(np.sqrt(prop_err))
 
     return values, output_errors
+
+def compute_non_uni_step_first_derivative(wavelengths, flux, uncertainties):
+    """
+    Compute the numerical first derivative for a grid of non-constant step sizes
+
+    Derivative and uncertainty are computed with the framework of
+    https://www.tandfonline.com/doi/pdf/10.3402/tellusa.v22i1.10155?needAccess=true
+    """
+    deriva = []
+    error_deriva = []
+    steps = np.diff(wavelengths)
+
+    for index in range(1, len(flux) - 1):
+        step_ratio = steps[index] / steps[index - 1]
+        deriva.append((flux[index + 1] - flux[index - 1] * step_ratio ** 2 - (1 - step_ratio ** 2) * flux[index]) / (
+                    steps[index] * (1 + step_ratio))
+                      )
+        error_deriva.append(np.sqrt(uncertainties[index + 1] ** 2 + (uncertainties[index - 1] * step_ratio ** 2) ** 2 + (
+                    uncertainties[index] - uncertainties[index] * step_ratio ** 2) ** 2
+                                    ) / (steps[index] * (1 + step_ratio))
+                            )
+
+    deriva = np.asarray(deriva)
+    return deriva, error_deriva

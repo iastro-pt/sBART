@@ -2,15 +2,15 @@ import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 
-from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
+from SBART.utils.math_tools.numerical_derivatives import compute_non_uni_step_first_derivative
 import scipy.optimize as sc
 
 
 def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
     # Compute second derivation of the template
 
-    derivative, errors = first_numerical_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
-    derivative, errors = first_numerical_derivative(spec_wave, derivative, errors)
+    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
+    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
     derivative = np.asarray(derivative)
     errors = np.asarray(errors)
     weights = np.divide(1, errors ** 2 + spec_variance)
