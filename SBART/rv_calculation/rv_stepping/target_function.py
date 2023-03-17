@@ -66,12 +66,15 @@ def target(params, **kwargs):
     if kwargs.get("get_minimum_information", False):
         # This will be triggered when the sampler sends a request to get more information
         # of the different metrics for the optimal RV solution
-        dlw, dlw_err = compute_DLW(spec_wave=current_wavelength[indexes],
-                                   spec_flux=spectra[indexes],
-                                   spec_variance=kwargs["squared_spectra_uncerts"][indexes],
-                                   temp_flux=interpolated_template,
-                                   temp_variance=normalized_uncerts**2
-                                   )
+        try:
+            dlw, dlw_err = compute_DLW(spec_wave=current_wavelength[indexes],
+                                       spec_flux=spectra[indexes],
+                                       spec_variance=kwargs["squared_spectra_uncerts"][indexes],
+                                       temp_flux=interpolated_template,
+                                       temp_variance=normalized_uncerts**2
+                                       )
+        except:
+            dlw, dlw_err = np.nan, np.nan
 
         data_out = {
             "poly_params": coefs,
