@@ -47,7 +47,11 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", )))
+        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", ))),
+        # We have to add this here, so that the parameters are not rejected by the config validation
+        SPLINE_TYPE=UserParam("cubic"),
+        INTERPOLATION_ERR_PROP=UserParam("interpolation"),
+        NUMBER_WORKERS=UserParam(1)
     )
 
     def __init__(self, **kwargs):
