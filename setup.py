@@ -50,6 +50,7 @@ from distutils.core import setup
 all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
 with open('requirements.txt') as f:
     required = f.read().splitlines()
+import numpy
 
 setup(name='SBART',
       version=version,
@@ -57,5 +58,6 @@ setup(name='SBART',
       packages=all_packages,
       include_package_data=True,
       ext_modules=ext_modules,
-      install_requires=required
+      install_requires=required,
+      include_dirs=[numpy.get_include()]
       )
