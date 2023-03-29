@@ -1,8 +1,6 @@
 from pathlib import Path
 
 import setuptools
-from setuptools import dist
-dist.Distribution().fetch_build_eggs(['numpy~= 1.22'])
 
 curr_file = Path(__file__).parent.absolute()
 
@@ -54,10 +52,6 @@ all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-
-import numpy
-
-
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
@@ -65,5 +59,4 @@ setup(name='SBART',
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
-      include_dirs=[numpy.get_include()],
       )

@@ -7,7 +7,7 @@ version: 2
 
 # Set the version of Python and other tools you might need
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
   tools:
     python: "3.8"
 
@@ -15,11 +15,10 @@ build:
     post_create_environment:
       - echo "Pre-installation of numpy"
       - pip install --upgrade pip setuptools wheel
-      - python -m pip install numpy
+      - python -m pip install -r dev_requirements.txt
 
 python:
   install:
-    - requirements: dev_requirements.txt
     - method: pip
       path: .
 
