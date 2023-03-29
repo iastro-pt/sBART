@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import setuptools
+from setuptools import dist
+dist.Distribution().fetch_build_eggs(['numpy~= 1.22'])
 
 curr_file = Path(__file__).parent.absolute()
 
@@ -22,22 +24,9 @@ for entry in pyx_files:
 
     targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
 
-class MyExt(setuptools.Extension):
-    def __init__(self, *args, **kwargs):
-        self.__include_dirs = []
-        super().__init__(*args, **kwargs)
-
-    @property
-    def include_dirs(self):
-        import numpy
-        return self.__include_dirs + [numpy.get_include()]
-
-    @include_dirs.setter
-    def include_dirs(self, dirs):
-        self.__include_dirs = dirs
 
 ext_modules = [
-    MyExt(
+    Extension(
         key,
         [value],
         extra_compile_args=["-fopenmp"],
@@ -66,11 +55,7 @@ with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 
-class get_numpy_include(object):
-
-    def __str__(self):
-        import numpy
-        return numpy.get_include()
+import numpy
 
 
 setup(name='SBART',
@@ -80,5 +65,5 @@ setup(name='SBART',
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
-      setup_requires=['numpy'],
+      include_dirs=[numpy.get_include()],
       )
