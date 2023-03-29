@@ -16,7 +16,7 @@ ext = '.pyx' if USE_CYTHON else '.c'
 targ_path = curr_file / "SBART" / "utils" / "cython_codes"
 
 pyx_files = targ_path.glob(f"**/*{ext}")
-
+print(pyx_files)
 targets = {}
 for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
