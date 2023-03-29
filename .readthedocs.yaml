@@ -13,8 +13,8 @@ build:
 
   jobs:
     post_create_environment:
-      - echo "Exporting project dependencies to requirements.txt"
-      - pip install numpy
+      - echo "Pre-installation of numpy"
+      - python -m pip install numpy
 
 python:
   install:
