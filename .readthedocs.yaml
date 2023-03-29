@@ -12,7 +12,7 @@ build:
     python: "3.8"
 
   jobs:
-    pre_install:
+    post_create_environment:
       - echo "Exporting project dependencies to requirements.txt"
       - pip install numpy
 
