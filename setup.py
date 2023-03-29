@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import setuptools
-
 curr_file = Path(__file__).parent.absolute()
 
 from setuptools import Extension
@@ -52,7 +51,12 @@ all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-import numpy as np
+try:
+    import numpy as np
+    include_d = [np.get_include()]
+except ImportError:
+    include_d = []
+
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
@@ -60,5 +64,5 @@ setup(name='SBART',
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
-      include_dirs=[np.get_include()]
+      include_dirs=include_d
       )
