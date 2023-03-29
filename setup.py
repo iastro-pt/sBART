@@ -22,8 +22,22 @@ for entry in pyx_files:
 
     targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
 
+class MyExt(setuptools.Extension):
+    def __init__(self, *args, **kwargs):
+        self.__include_dirs = []
+        super().__init__(*args, **kwargs)
+
+    @property
+    def include_dirs(self):
+        import numpy
+        return self.__include_dirs + [numpy.get_include()]
+
+    @include_dirs.setter
+    def include_dirs(self, dirs):
+        self.__include_dirs = dirs
+
 ext_modules = [
-    Extension(
+    MyExt(
         key,
         [value],
         extra_compile_args=["-fopenmp"],
