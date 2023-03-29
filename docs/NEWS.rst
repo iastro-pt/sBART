@@ -4,6 +4,28 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-3-0 (2023-03-29)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Bugfix
+~~~~~~
+
+- Properly propagate the user-provided target name  (`#31 <https://github.com/iastro-pt/sBART/issues/31>`_)
+
+
+Feature
+~~~~~~~
+
+- Adding easier way of bulk-normalizing stellar spectra 
+- Allow to select observations from disk files (update to SpectralConditions) 
+
+
+Misc
+~~~~
+
+- Standardizing the API interface for the samplers
+
+
 SBART 0-1-6 (2022-11-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
