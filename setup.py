@@ -81,5 +81,4 @@ setup(name='SBART',
       ext_modules=ext_modules,
       install_requires=required,
       setup_requires=['numpy'],
-      include_dirs=[get_numpy_include()]
       )
