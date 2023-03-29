@@ -8,8 +8,7 @@ from setuptools import Extension
 
 version = "0.3.0"
 
-
-USE_CYTHON = False   # command line option, try-import, ...
+USE_CYTHON = False  # command line option, try-import, ...
 
 ext = '.pyx' if USE_CYTHON else '.c'
 
@@ -21,7 +20,7 @@ for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
     parts = parts[:-1] + (parts[-1].split(".")[0],)
 
-    targets[".".join(parts)] = (entry.relative_to(curr_file )).as_posix()
+    targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
 
 ext_modules = [
     Extension(
@@ -38,12 +37,13 @@ compiler_directives = {"language_level": 3, "embedsignature": True}
 if USE_CYTHON:
     from Cython.Build import cythonize
     import Cython.Compiler.Options
+
     Cython.Compiler.Options.annotate = True
     from Cython.Build import cythonize
 
     ext_modules = cythonize(ext_modules,
-                        compiler_directives=compiler_directives,
-                        )
+                            compiler_directives=compiler_directives,
+                            )
 
 from distutils.core import setup
 
@@ -51,11 +51,13 @@ all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
+
 class get_numpy_include(object):
 
     def __str__(self):
         import numpy
         return numpy.get_include()
+
 
 setup(name='SBART',
       version=version,
@@ -64,5 +66,6 @@ setup(name='SBART',
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
+      setup_requires=['numpy'],
       include_dirs=[get_numpy_include()]
       )
