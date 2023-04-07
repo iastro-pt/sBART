@@ -344,8 +344,8 @@ class TelfitTelluric(TelluricTemplate):
 
         if grid is None:
             # ask for a model slightly larger than the wavelength coverage of the instrument
-            lowfreq = 1e7 / (OBS_properties["wavelength_coverage"][1] - 50)
-            highfreq = 1e7 / (OBS_properties["wavelength_coverage"][0] + 50)
+            lowfreq = 1e7 / (OBS_properties["wavelength_coverage"][1] + 50)
+            highfreq = 1e7 / (OBS_properties["wavelength_coverage"][0] - 50)
         else:
             lowfreq = 1e7 / grid.max()
             highfreq = 1e7 / grid.min()
