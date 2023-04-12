@@ -13,6 +13,13 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
     derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
     derivative = np.asarray(derivative)
     errors = np.asarray(errors)
+
+    spec_wave = spec_wave[2:-2]
+    spec_flux = spec_flux[2:-2]
+    temp_flux = temp_flux[2:-2]
+    spec_variance = spec_variance[2:-2]
+    temp_variance = temp_variance[2:-2]
+
     weights = np.divide(1, errors ** 2 + spec_variance)
 
     squared_derivative = derivative ** 2
