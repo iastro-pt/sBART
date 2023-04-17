@@ -209,7 +209,7 @@ class ESO_PIPELINE(Frame):
             full_key = f"HIERARCH {self.KW_identifier} QC CCF {key}"
             self.observation_info[key] = header[full_key]
 
-    def load_ESO_DRS_S2D_data(self):
+    def load_ESO_DRS_S2D_data(self, overload_SCIDATA_key=None):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration("Can't load data from new pipeline with the config for the old one")
 
@@ -218,7 +218,7 @@ class ESO_PIPELINE(Frame):
             self.wavelengths = hdulist["WAVEDATA_VAC_BARY"].data
             self.qual_data = hdulist["QUALDATA"].data
 
-            SCIDATA_KEY = "SCIDATA"
+            SCIDATA_KEY = "SCIDATA" if overload_SCIDATA_key is None else overload_SCIDATA_key
             ERRDATA_KEY = "ERRDATA"
 
             if self._internal_configs["Telluric_Corrected"]:
