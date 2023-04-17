@@ -32,6 +32,25 @@ from SBART.utils.status_codes import (
 
 from .ESO_PIPELINE import ESO_PIPELINE
 
+def val_cheby(coeffs, xvector, domain):
+    """
+    Using the output of fit_cheby calculate the fit to x  (i.e. y(x))
+    where y(x) = T0(x) + T1(x) + ... Tn(x)
+
+    :param coeffs: output from fit_cheby
+    :param xvector: x value for the y values with fit
+    :param domain: domain to be transformed to -1 -- 1. This is important to
+    keep the components orthogonal. For SPIRou orders, the default is 0--4088.
+    You *must* use the same domain when getting values with fit_cheby
+    :return: corresponding y values to the x inputs
+    """
+    # transform to a -1 to 1 domain
+    domain_cheby = 2 * (xvector - domain[0]) / (domain[1] - domain[0]) - 1
+    # fit values using the domain and coefficients
+    yvector = np.polynomial.chebyshev.chebval(domain_cheby, coeffs)
+    # return y vector
+    return yvector
+
 
 class NIRPS(ESO_PIPELINE):
     """
@@ -119,6 +138,55 @@ class NIRPS(ESO_PIPELINE):
         #
         # # https://tngweb.tng.iac.es/weather/current
         # self.instrument_properties["site_pressure"] = 770
+
+    def is_APERO_data(self) -> bool:
+        """
+        Check if the frame was reduced with the APERO pipeline
+        Returns
+        -------
+
+        """
+        return "dsff_tcorr" in self.file_path.name
+
+    def load_ESO_DRS_S2D_data(self):
+        if self.is_APERO_data():
+            self.load_Apero_data()
+        else:
+            super().load_ESO_DRS_S2D_data("EXT_E2DS")
+
+    def load_Apero_data(self, spectra, header):
+        # size of the image
+        image = fits.getdata(self.file_path)
+        hdr = fits.getheader(self.file_path)
+
+        nbypix, nbxpix = image.shape
+        # get the keys with the wavelength polynomials
+        wave_hdr = hdr['WAVE0*']
+        # concatenate into a numpy array
+        wave_poly = np.array([wave_hdr[i] for i in range(len(wave_hdr))])
+        # get the number of orders
+        nord = hdr['WAVEORDN']
+        # get the per-order wavelength solution
+        wave_poly = wave_poly.reshape(nord, len(wave_poly) // nord)
+        # project polynomial coefficiels
+        wavesol = np.zeros_like(image)
+        # xpixel grid
+        xpix = np.arange(nbxpix)
+        # loop around orders
+        for _order_num in range(nord):
+            # calculate wave solution for this order
+            owave = val_cheby(wave_poly[_order_num], xpix, domain=[0, nbxpix])
+            # push into wave map
+            wavesol[_order_num] = owave
+
+        self.wavelengths = wavesol
+        self.spectra = image
+        self.uncertainties = np.sqrt(image)
+
+        self.build_mask(bypass_QualCheck=False)
+
+
+
 
 
 
