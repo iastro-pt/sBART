@@ -17,6 +17,9 @@ try:
     MISSING_TINYGP = False
 except ImportError:
     MISSING_TINYGP = True
+    # To avoid issues with possible needs of jax
+    import numpy as jnp
+
 from SBART.ModelParameters import Model
 
 from SBART.utils.UserConfigs import (
