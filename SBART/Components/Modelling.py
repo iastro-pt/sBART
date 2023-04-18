@@ -10,7 +10,7 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 
-from SBART.spectral_modelling import ScipyInterpolSpecModel
+from SBART.spectral_modelling import ScipyInterpolSpecModel, GPSpecModel
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils import custom_exceptions
 
@@ -76,6 +76,7 @@ class Spectral_Modelling(BASE):
                           "user_configs": self._internal_configs.get_user_configs()
                           }
         self._modelling_interfaces: Dict[str, "ModellingBase"] = {
+            "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init),
         }
 

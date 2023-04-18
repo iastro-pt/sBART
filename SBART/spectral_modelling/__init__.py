@@ -4,3 +4,4 @@ to a new wavelength grid.
 
 """
 from .scipy_interpol import ScipyInterpolSpecModel
+from .GPmodel import GPSpecModel
