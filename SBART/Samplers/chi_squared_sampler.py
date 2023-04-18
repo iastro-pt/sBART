@@ -108,6 +108,7 @@ class chi_squared_sampler(SamplerModel):
                     bad_order = True
                     msg = "Parabolic fit has failed"
         else:
+            logger.warning(f"Convergence failed due to {optimization_output.message}")
             bad_order = True
 
         if bad_order:
