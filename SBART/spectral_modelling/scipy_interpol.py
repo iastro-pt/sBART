@@ -9,7 +9,7 @@ from SBART.utils.UserConfigs import (
     IntegerValue,
     Positive_Value_Constraint
 )
-from scipy.interpolate import CubicSpline, PchipInterpolator, interp1d
+from scipy.interpolate import CubicSpline, PchipInterpolator, interp1d, RBFInterpolator
 
 from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
 from SBART.utils import custom_exceptions
@@ -90,6 +90,7 @@ class ScipyInterpolSpecModel(ModellingBase):
                             "pchip": PchipInterpolator,
                             "quadratic": lambda x, y: interp1d(x, y, kind="quadratic"),
                             "nearest": lambda x, y: interp1d(x, y, kind="nearest")
+                            "RBF": lambda x, y: RBFInterpolator(x, y, kind="nearest")
                             }
 
         if propagate_interpol_errors == "propagation":
