@@ -39,7 +39,7 @@ class ScipyInterpolSpecModel(ModellingBase):
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam("cubic",
-                              constraint=ValueFromList(["cubic", "quadratic", "pchip"])
+                              constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"])
                               ),
         INTERPOLATION_ERR_PROP=UserParam("interpolation",
                                          constraint=ValueFromList(["none", "interpolation", "propagation"])
@@ -88,8 +88,10 @@ class ScipyInterpolSpecModel(ModellingBase):
 
         interpolator_map = {"cubic": CubicSpline,
                             "pchip": PchipInterpolator,
-                            "quadratic": lambda x, y: interp1d(x,y, kind="quadratic")
+                            "quadratic": lambda x, y: interp1d(x, y, kind="quadratic"),
+                            "nearest": lambda x, y: interp1d(x, y, kind="nearest")
                             }
+
         if propagate_interpol_errors == "propagation":
             # Custom Cubic spline routine!
             if self._internal_configs["SPLINE_TYPE"] != "cubic":
