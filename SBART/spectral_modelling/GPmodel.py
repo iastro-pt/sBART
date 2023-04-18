@@ -73,9 +73,6 @@ class GPSpecModel(ModellingBase):
 
         # Going to treat the orders as frameIDs to use the Model class!
 
-        if MISSING_TINYGP:
-            raise custom_exceptions.InternalError("Missing the custom tinygp installation for GP")
-
         params_of_model = [
             JaxComponent(
                 "log_scale",
@@ -98,6 +95,10 @@ class GPSpecModel(ModellingBase):
 
         # Ensuring that we initialize the model again, as we added new parameters!
         self._init_model()
+
+    def _check_dependencies(self):
+        if MISSING_TINYGP:
+            raise custom_exceptions.InternalError("Missing the custom tinygp installation for GP")
 
     def _get_model_storage_filename(self) -> str:
         """
@@ -132,6 +133,7 @@ class GPSpecModel(ModellingBase):
         -------
 
         """
+        self._check_dependencies()
         if not self.object_info["blaze_corrected"]:
             msg = "Currently the GP mean function can't handle the blaze spectrum"
             logger.critical(msg)

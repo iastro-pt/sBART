@@ -2,7 +2,14 @@ from copy import copy
 from typing import Any, Dict, List, NoReturn, Tuple, Union
 
 import numpy as np
-import jax.numpy as jnp
+
+try:
+    import jax.numpy as jnp
+
+    MISSING_JAX_DEPENDENCY = False
+except ImportError:
+    MISSING_JAX_DEPENDENCY = True
+
 from loguru import logger
 
 from SBART.utils.BASE import BASE
@@ -28,13 +35,13 @@ class ModelComponent(BASE):
     )
 
     def __init__(
-        self,
-        name,
-        initial_guess=None,
-        bounds=(None, None),
-        user_configs=None,
-        default_enabled=False,
-        param_type="general",
+            self,
+            name,
+            initial_guess=None,
+            bounds=(None, None),
+            user_configs=None,
+            default_enabled=False,
+            param_type="general",
     ):
         """
         Define a parameter in our RV model. Contains information regarding the initial guess and the bounds that the
@@ -55,7 +62,7 @@ class ModelComponent(BASE):
         name
         """
         super().__init__(user_configs=user_configs,
-                         quiet_user_params=True # no need to spam the logs
+                         quiet_user_params=True  # no need to spam the logs
                          )
 
         if not isinstance(bounds, (list, tuple, np.ndarray)):
@@ -390,8 +397,8 @@ class RV_component(ModelComponent):
     def string_representation(self, indent_level) -> str:
         string_offset = indent_level * "\t"
         return (
-            super().string_representation(indent_level)
-            + f"\n{string_offset}\tRV window:{self.RVwindow}"
+                super().string_representation(indent_level)
+                + f"\n{string_offset}\tRV window:{self.RVwindow}"
         )
 
     def disable_param(self) -> NoReturn:
@@ -399,10 +406,15 @@ class RV_component(ModelComponent):
         logger.critical(msg)
         raise custom_exceptions.InvalidConfiguration(msg)
 
+
 class JaxComponent(ModelComponent):
     """
     WARNING: ignoring the bounds
     """
+
+    def _check_dependency(self):
+        if MISSING_JAX_DEPENDENCY:
+            raise custom_exceptions.InternalError("Missing jax dependency")
 
     def json_ready(self) -> Dict[str, Any]:
         """
@@ -411,6 +423,7 @@ class JaxComponent(ModelComponent):
         -------
 
         """
+        self._check_dependency()
         base_json = super().json_ready()
 
         updated_info = {}
@@ -442,6 +455,7 @@ class JaxComponent(ModelComponent):
 
     @classmethod
     def load_from_json(cls, json_info):
+        cls._check_dependency()
         comp = JaxComponent(
             name=json_info["name"],
             initial_guess=jnp.float64(json_info["default_guess"]),
