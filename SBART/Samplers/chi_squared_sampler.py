@@ -80,6 +80,9 @@ class chi_squared_sampler(SamplerModel):
         rv_step = self.RV_step.to(meter_second).value
         RV_estimation_mode = self._internal_configs["RV_ESTIMATION_MODE"]
 
+        bad_order = False
+        msg = ""
+
         if RV_estimation_mode == "NORMAL":
             optimization_output = minimize_scalar(
                 self.apply_orderwise,
@@ -87,8 +90,6 @@ class chi_squared_sampler(SamplerModel):
                 args=(target, target_kwargs),
                 method="bounded",
             )
-            bad_order = False
-            msg = ""
 
             if optimization_output.success:
                 minimum_value = optimization_output.x
