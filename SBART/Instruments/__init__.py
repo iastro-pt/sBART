@@ -25,4 +25,5 @@ instrument_dict = {"ESPRESSO": ESPRESSO,
                    "HARPS": HARPS,
                    "CARMENES": CARMENES,
                    "HARPSN": HARPSN,
+                   "NIRPS": NIRPS,
                    }
