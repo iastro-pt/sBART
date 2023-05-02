@@ -115,6 +115,8 @@ class chi_squared_sampler(SamplerModel):
                                    )
                                )
             apply_parabolic_fit = True
+            order_status = SUCCESS
+
         else:
             raise NotImplementedError(f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}")
 
