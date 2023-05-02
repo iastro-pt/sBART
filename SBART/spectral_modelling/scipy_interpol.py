@@ -89,7 +89,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         interpolator_map = {"cubic": CubicSpline,
                             "pchip": PchipInterpolator,
                             "quadratic": lambda x, y: interp1d(x, y, kind="quadratic"),
-                            "nearest": lambda x, y: interp1d(x, y, kind="nearest")
+                            "nearest": lambda x, y: interp1d(x, y, kind="nearest"),
                             "RBF": lambda x, y: RBFInterpolator(x, y, kind="nearest")
                             }
 
