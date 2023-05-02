@@ -29,7 +29,7 @@ class chi_squared_sampler(SamplerModel):
     _default_params = SamplerModel._default_params + \
                       DefaultValues(
                           RV_ESTIMATION_MODE=UserParam("NORMAL",
-                                                       constraint=ValueFromList("NORMAL", "DRS-LIKE"),
+                                                       constraint=ValueFromList(("NORMAL", "DRS-LIKE")),
                                                        mandatory=False
                                                        )
                       )
