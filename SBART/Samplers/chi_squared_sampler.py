@@ -49,6 +49,7 @@ class chi_squared_sampler(SamplerModel):
             mode="order-wise",
             RV_step=rv_step,
             RV_window=rv_prior,
+            user_configs=user_configs
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
