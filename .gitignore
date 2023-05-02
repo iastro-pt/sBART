@@ -1,5 +1,6 @@
 *egg-info
-
+SPLEAF/*
+manual_tests/*
 *summary*
 docs/_build/*
 docs/low_level_interface/SBART
