@@ -108,7 +108,11 @@ class chi_squared_sampler(SamplerModel):
 
         elif RV_estimation_mode == "DRS-LIKE":
             local_rvs = np.arange(rv_bounds[0][0], rv_bounds[0][1], rv_step)
-            local_curve = list(map(self.apply_orderwise, local_rvs))
+
+            local_curve = list(map(lambda x: self.apply_orderwise(x, target, target_kwargs),
+                                   local_rvs
+                                   )
+                               )
             apply_parabolic_fit = True
         else:
             raise NotImplementedError(f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}")
