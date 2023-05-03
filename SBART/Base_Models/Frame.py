@@ -91,6 +91,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     minimum_order_SNR                   False               20           int/float >= 0  If the order's SNR is below this value, reject the order
     spectra_format                      False               S2D          "S2D"            Indicates where we are using S2D or S1D data. Not all instruments support S1D
     use_air_wavelengths                 False             False         boolean         Use air wavelengths, instead of vacuum. Only used in S1D files!
+    open_without_BervCorr               False           False           boolean             If True, remove any BERV correction
     ================================ ================ ================ ================ ================
 
     .. note::
