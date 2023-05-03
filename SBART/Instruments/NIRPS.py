@@ -202,8 +202,17 @@ class NIRPS(ESO_PIPELINE):
         else:
             super()._load_ESO_DRS_KWs(header)
 
+    def load_telemetry_info(self, header):
+        ambi_KWs = {
+            "relative_humidity": "AMBI RHUM",
+            "ambient_temperature": "AMBI TEMP",
+        }
 
+        for name, endKW in ambi_KWs.items():
+            self.observation_info[name] = float(header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"])
+            if "temperature" in name:  # store temperature in KELVIN for TELFIT
+                self.observation_info[name] = convert_temperature(
+                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                )
 
-
-
-
+        self.observation_info["airmass"] = header["HIERARCH ESO TEL AIRM START"]

@@ -167,6 +167,22 @@ class ESO_PIPELINE(Frame):
 
     # Load common information to the ESO DRS version across different spectrographs
     def load_telemetry_info(self, header):
+        """
+        Loads (at least) the following keywords:
+
+        - relative humidity
+        - ambient temperature, in Celsius
+        - airmass
+        - Detector
+
+        Parameters
+        ----------
+        header
+
+        Returns
+        -------
+
+        """
 
         ambi_KWs = {
             "relative_humidity": "HUMIDITY",
