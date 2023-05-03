@@ -117,7 +117,7 @@ class NIRPS(ESO_PIPELINE):
             inst_name="NIRPS",
             array_size={"S2D": (69, 4096)}, # TODO: find about this
             file_path=file_path,
-            KW_identifier="TNG",
+            KW_identifier="ESO",
             frameID=frameID,
             override_KW_map=None,
             user_configs=user_configs,
@@ -183,6 +183,24 @@ class NIRPS(ESO_PIPELINE):
         self.uncertainties = np.sqrt(image)
 
         self.build_mask(bypass_QualCheck=False)
+
+    def _load_ESO_DRS_KWs(self, header):
+        if self.is_APERO_data():
+            self.observation_info["MAX_BERV"] = header[f"BERVMAX"] * kilometer_second
+            self.observation_info["BERV"] = header[f"BERV"] * kilometer_second
+
+            self.observation_info["DRS_RV"] = header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
+            self.observation_info["DRS_RV_ERR"] = (
+                    header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
+            )
+
+            for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
+                self.observation_info["orderwise_SNRs"].append(
+                    header[f"HIERARCH {self.KW_identifier} QC ORDER{order + 1} SNR"]
+                )
+
+        else:
+            super()._load_ESO_DRS_KWs(header)
 
 
 
