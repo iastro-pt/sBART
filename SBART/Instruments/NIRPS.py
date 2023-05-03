@@ -108,7 +108,6 @@ class NIRPS(ESO_PIPELINE):
         frameID
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
         """
-        raise NotImplementedError
         logger.info("Creating frame from: {}".format(file_path))
 
         # TODO: find about this
