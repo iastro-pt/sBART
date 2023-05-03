@@ -5,7 +5,7 @@ from loguru import logger
 
 from SBART.utils.BASE import BASE
 from SBART.utils import custom_exceptions
-from SBART.utils.shift_spectra import apply_BERV_correction
+from SBART.utils.shift_spectra import apply_BERV_correction, remove_BERV_correction
 from SBART.utils.status_codes import OrderStatus
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
@@ -123,6 +123,24 @@ class Spectrum(BASE):
         berv = BERV_value.to(kilometer_second).value
         self.wavelengths = apply_BERV_correction(self.wavelengths, berv)
         self.is_BERV_corrected = True
+
+    def remove_BERV_correction(self, BERV_value: RV_measurement):
+        """
+        Remove the BERV correction from a given observation
+
+        Parameters
+        ----------
+        BERV_value
+
+        Returns
+        -------
+
+        """
+        if not self.is_BERV_corrected:
+            return
+        berv = BERV_value.to(kilometer_second).value
+        self.wavelengths = remove_BERV_correction(self.wavelengths, berv)
+        self.is_BERV_corrected = False
 
     def apply_telluric_correction(self, wavelengths, model, model_uncertainty):
         """

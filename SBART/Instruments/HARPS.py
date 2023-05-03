@@ -346,8 +346,6 @@ class HARPS(Frame):
         self.uncertainties = flux_errors.astype(np.float64)
 
         self.build_mask(bypass_QualCheck=False)
-        self.apply_BERV_correction(self.get_KW_value("BERV"))
-
         return 1
 
     def close_arrays(self):

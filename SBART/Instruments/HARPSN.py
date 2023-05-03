@@ -296,7 +296,6 @@ class HARPSN(ESO_PIPELINE):
         self.uncertainties = flux_errors.astype(np.float64)
 
         self.build_mask(bypass_QualCheck=False)
-        self.apply_BERV_correction(self.get_KW_value("BERV"))
 
     def close_arrays(self):
         """

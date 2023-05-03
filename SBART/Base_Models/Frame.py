@@ -110,6 +110,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     _default_params = DefaultValues(
         bypass_QualCheck=UserParam(False, constraint=BooleanValue),
+        open_without_BervCorr=UserParam(False, constraint=BooleanValue),
         apply_FluxCorr=UserParam(False, constraint=ValueFromList((False,))),
         use_air_wavelengths=UserParam(False, constraint=BooleanValue),
         apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
@@ -684,6 +685,13 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         if not self.is_valid:
             raise FrameError("Frame is no longer valid")
+
+        BERV_value = self.get_KW_value("BERV")
+        if not self._internal_configs["open_without_BervCorr"]:
+            self.apply_BERV_correction(BERV_value)
+        else:
+            logger.warning(f"Opening {self.name} without the BERV correction")
+            self.remove_BERV_correction(BERV_value)
 
     def load_S1D_data(self):
         """To be overriden by the children classes"""

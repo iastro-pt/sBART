@@ -163,7 +163,6 @@ class CARMENES(Frame):
         self.uncertainties = err_data
 
         self.build_mask(bypass_QualCheck=True)
-        self.apply_BERV_correction(self.get_KW_value("BERV"))
         return 1
 
     def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> NoReturn:
