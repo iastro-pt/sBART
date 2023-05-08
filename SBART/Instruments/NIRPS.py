@@ -110,8 +110,7 @@ class NIRPS(ESO_PIPELINE):
         """
         logger.info("Creating frame from: {}".format(file_path))
 
-        # TODO: find about this
-        coverage = [390, 700]
+        coverage = [940, 1850]
 
         super().__init__(
             inst_name="NIRPS",
@@ -129,14 +128,15 @@ class NIRPS(ESO_PIPELINE):
 
         # TODO: setup info for telfit. Do we need to do anything for the tellurics or is everything handled by the DRS?
 
-        #
-        # self.instrument_properties["resolution"] = 115_000
-        # self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-        #     "Roque de los Muchachos"
-        # )
-        #
-        # # https://tngweb.tng.iac.es/weather/current
-        # self.instrument_properties["site_pressure"] = 770
+        self.instrument_properties["resolution"] = 100000
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+            "La Silla Observatory"
+        )
+
+        # ? same as for Paranal?
+        # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
+        self.instrument_properties["site_pressure"] = 750
+
 
     def is_APERO_data(self) -> bool:
         """
