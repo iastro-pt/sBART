@@ -209,7 +209,7 @@ class NIRPS(ESO_PIPELINE):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = float(header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"])
+            self.observation_info[name] = float(header[f"HIERARCH ESO TEL {endKW}"])
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
