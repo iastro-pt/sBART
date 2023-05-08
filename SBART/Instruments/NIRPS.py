@@ -114,7 +114,7 @@ class NIRPS(ESO_PIPELINE):
 
         super().__init__(
             inst_name="NIRPS",
-            array_size={"S2D": (69, 4096)}, # TODO: find about this
+            array_size={"S2D": (71, 4084)}, # TODO: find about this
             file_path=file_path,
             KW_identifier="ESO",
             frameID=frameID,
