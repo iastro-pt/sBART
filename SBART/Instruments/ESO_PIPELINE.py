@@ -58,7 +58,8 @@ class ESO_PIPELINE(Frame):
             reject_subInstruments: Optional[Iterable[str]] = None,
             frameID: Optional[int] = None,
             quiet_user_params: bool = True,
-            override_KW_map=None
+            override_KW_map=None,
+            override_indicators=None,
     ):
         """
 
@@ -99,7 +100,7 @@ class ESO_PIPELINE(Frame):
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
-            available_indicators=("CONTRAST", "FWHM", "BIS SPAN"),
+            available_indicators=("CONTRAST", "FWHM", "BIS SPAN") if override_indicators is None else override_indicators,
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params
