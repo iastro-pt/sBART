@@ -104,6 +104,7 @@ class HARPSN(ESO_PIPELINE):
                 "RA": "RA",
                 "DEC": "DEC",
                 "SPEC_TYPE": "HIERARCH TNG TEL TARG SPTYPE",
+                "MD5-CHECK": "HIERARCH TNG DRS BJD", # Missing the MD5 on the old pipe, so this is a stopgap
             }
             file_path, self.ccf_path, search_status = self.find_files(file_path)
             available_act = ("CONTRAST", "FWHM")
