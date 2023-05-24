@@ -119,7 +119,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             0.25, constraint=ValueInInterval((0, 1), include_edges=True)
         ),
         # If the SNR is smaller, discard the order:
-        minimum_order_SNR=UserParam(20, constraint=Positive_Value_Constraint),
+        minimum_order_SNR=UserParam(5, constraint=Positive_Value_Constraint),
         bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList((None, "S2D", "S1D")))
     )
 
