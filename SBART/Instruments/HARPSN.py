@@ -108,12 +108,10 @@ class HARPSN(ESO_PIPELINE):
             }
             file_path, self.ccf_path, search_status = self.find_files(file_path)
             available_act = ("CONTRAST", "FWHM")
-            self.is_BERV_corrected = False
             override_indicators = ("CONTRAST", "FWHM")
         else: # For the new pipeline
             override_KW_map = {"OBJECT": "HIERARCH TNG OBS TARG NAME"}
             override_indicators = None
-
 
         super().__init__(
             inst_name="HARPSN",
@@ -127,6 +125,8 @@ class HARPSN(ESO_PIPELINE):
             quiet_user_params=quiet_user_params,
             override_indicators=override_indicators
         )
+        if user_configs.get("use_old_pipeline", False):
+            self.is_BERV_corrected = False
 
         if user_configs["use_old_pipeline"] and not search_status.is_good_flag:
             self.add_to_status(search_status)
@@ -278,6 +278,9 @@ class HARPSN(ESO_PIPELINE):
         """
         if not self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
+
+        if self._internal_configs["use_old_pipeline"]:
+            self.is_BERV_corrected = False
 
         with fits.open(self.file_path) as hdulist:
             # Compute the wavelength solution + BERV correction
