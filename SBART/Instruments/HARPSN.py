@@ -107,8 +107,10 @@ class HARPSN(ESO_PIPELINE):
                 "MD5-CHECK": "HIERARCH TNG DRS BJD", # Missing the MD5 on the old pipe, so this is a stopgap
             }
             file_path, self.ccf_path, search_status = self.find_files(file_path)
-            available_act = ("CONTRAST", "FWHM")
             override_indicators = ("CONTRAST", "FWHM")
+
+            # The flag for the BERV correction is set at the time of loading the S2D arrays!
+
         else: # For the new pipeline
             override_KW_map = {"OBJECT": "HIERARCH TNG OBS TARG NAME"}
             override_indicators = None
@@ -125,8 +127,6 @@ class HARPSN(ESO_PIPELINE):
             quiet_user_params=quiet_user_params,
             override_indicators=override_indicators
         )
-        if user_configs.get("use_old_pipeline", False):
-            self.is_BERV_corrected = False
 
         if user_configs["use_old_pipeline"] and not search_status.is_good_flag:
             self.add_to_status(search_status)
