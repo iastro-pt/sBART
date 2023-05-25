@@ -85,6 +85,7 @@ class ESO_PIPELINE(Frame):
             "RA": "RA",
             "DEC": "DEC",
             "SPEC_TYPE": f"HIERARCH {KW_identifier} QC CCF MASK",
+            "EXPTIME": "EXPTIME"
         }
         if override_KW_map is not None:
             for key, value in override_KW_map.items():

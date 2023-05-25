@@ -232,6 +232,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "CONTRAST": 0,
             "FWHM": 0,
             "BIS SPAN": 0,
+            "EXPTIME": 0,
             "RA": None,
             "DEC": None,
             "SPEC_TYPE": "",
