@@ -2,7 +2,11 @@ from typing import Tuple
 
 import numpy as np
 from astropy.units import Quantity
-from iCCF import gaussfit
+try:
+    from iCCF import gaussfit
+    MISSING_iCCF = False
+except ImportError:
+    MISSING_iCCF = True
 from loguru import logger
 
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
@@ -28,6 +32,10 @@ def fit_CCF_gaussian(
     float : fitted RV
     float : fitted RV uncertainty
     """
+
+    if MISSING_iCCF:
+        raise Exception("iCCF optional dependency is not installed")
+
     fit_status = SUCCESS
 
     rv_array = np.asarray(RV_array)
