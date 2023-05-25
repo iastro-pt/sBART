@@ -2,7 +2,6 @@ numpy ~= 1.22
 corner ~= 2.2.1
 tabletexifier ~= 0.1.9
 astropy ~= 5.0.4
-iCCF ~= 0.3.10
 astroquery ~= 0.4.6
 tqdm ~= 4.64.0
 matplotlib ~= 3.5.1
