@@ -141,6 +141,8 @@ class HARPSN(ESO_PIPELINE):
         # https://tngweb.tng.iac.es/weather/current
         self.instrument_properties["site_pressure"] = 770
 
+    def check_header_QC_old_DRS(self, header):
+        logger.info("Currently missing QC checks for the old DRS")
 
     def _load_old_DRS_KWs(self, header):
         if not self._internal_configs["use_old_pipeline"]:
