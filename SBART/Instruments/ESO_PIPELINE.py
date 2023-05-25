@@ -1,19 +1,15 @@
-import datetime
 from typing import Any, Dict, Iterable, Optional
 
 import numpy as np
-from astropy.coordinates import EarthLocation
 from astropy.io import fits
-from iCCF import gaussfit
 from loguru import logger
 from scipy.constants import convert_temperature
 
 from SBART.Base_Models.Frame import Frame
 from SBART.utils import custom_exceptions
-from SBART.utils.RV_utilities.CCF_errors import ccffitRV
-from SBART.utils.status_codes import ERROR_THRESHOLD, FATAL_KW, KW_WARNING
+from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
+from SBART.utils.status_codes import FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam, ValueFromList
 
 
 class ESO_PIPELINE(Frame):
