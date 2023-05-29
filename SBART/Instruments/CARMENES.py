@@ -41,6 +41,7 @@ class CARMENES(Frame):
     _default_params = Frame._default_params + DefaultValues(
         shaq_output_folder=UserParam(None, constraint=PathValue, mandatory=True),
         override_BERV=UserParam(True, constraint=BooleanValue, mandatory=False),
+        is_KOBE_data=UserParam(True, constraint=BooleanValue, mandatory=False),
     )
 
     sub_instruments = {
