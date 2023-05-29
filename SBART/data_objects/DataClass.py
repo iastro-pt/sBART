@@ -1,3 +1,4 @@
+
 import ujson as json
 from pathlib import Path
 from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
@@ -943,7 +944,9 @@ class DataClass(BASE):
         name_to_search = self.Target.true_name
         if "KOBE-" not in name_to_search:
             name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+
         shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
+        override_BERV = self.observations[0]._internal_configs["override_BERV"]
         shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
 
         logger.info("Loading extra CARMENES data from {}", shaqfile)
@@ -977,9 +980,11 @@ class DataClass(BASE):
                 self.observations[index].import_KW_from_outside(
                     "DRS_RV_ERR", float(ll[3]) * kilometer_second, optional=False
                 )
-                self.observations[index].import_KW_from_outside(
-                    "BERV", float(ll[10]) * kilometer_second, optional=False
-                )
+                if override_BERV:
+                    self.observations[index].import_KW_from_outside(
+                        "BERV", float(ll[10]) * kilometer_second, optional=False
+                    )
+
                 self.observations[index].import_KW_from_outside(
                     "FWHM", float(ll[11]), optional=True
                 )
