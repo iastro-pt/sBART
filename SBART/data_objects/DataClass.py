@@ -1,4 +1,3 @@
-
 import ujson as json
 from pathlib import Path
 from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
@@ -951,7 +950,13 @@ class DataClass(BASE):
 
         shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
         override_BERV = self.observations[0]._internal_configs["override_BERV"]
-        shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
+
+        if shaq_folder.name.endswith("dat"):
+            logger.info("Received the previous RV file, not searching for outputs")
+            shaqfile = shaq_folder
+        else:
+            logger.info("Searching for outputs of previous RV extraction")
+            shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
 
         if shaqfile.exists():
             logger.info("Loading extra CARMENES data from {}", shaqfile)

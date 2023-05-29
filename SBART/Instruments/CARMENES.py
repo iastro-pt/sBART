@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 from typing import Any, Dict, NoReturn, Optional
 
 import numpy as np
@@ -14,7 +15,7 @@ from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.shift_spectra import apply_BERV_correction
 from SBART.utils.status_codes import MISSING_DATA, Flag, MISSING_SHAQ_RVS
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam, BooleanValue
+from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam, BooleanValue, ValueFromDtype
 
 
 class CARMENES(Frame):
