@@ -942,14 +942,22 @@ class DataClass(BASE):
         """
 
         name_to_search = self.Target.true_name
-        if "KOBE-" not in name_to_search:
-            name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+
+        if self.observations[0]._internal_configs["is_KOBE_data"]:
+            if "KOBE-" not in name_to_search:
+                name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+        else:
+            logger.info(f"Not loading KOBE data, searching for {name_to_search} dat file with Rvs")
 
         shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
         override_BERV = self.observations[0]._internal_configs["override_BERV"]
         shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
 
-        logger.info("Loading extra CARMENES data from {}", shaqfile)
+        if shaqfile.exists():
+            logger.info("Loading extra CARMENES data from {}", shaqfile)
+        else:
+            logger.critical(f"RV file does not exist on {shaqfile}")
+            raise custom_exceptions.InvalidConfiguration("Missing RV file for data")
 
         number_loads = 0
         locs = []
