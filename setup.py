@@ -1,9 +1,5 @@
 from pathlib import Path
 
-try:
-    import numpy as np
-except ImportError:
-    raise Exception("s-BART needs a working numpy installation for compilation purposes")
 
 import setuptools
 
@@ -13,8 +9,7 @@ from setuptools import Extension
 
 version = "0.4.0"
 
-
-USE_CYTHON = False   # command line option, try-import, ...
+USE_CYTHON = False  # command line option, try-import, ...
 
 ext = '.pyx' if USE_CYTHON else '.c'
 
@@ -25,7 +20,7 @@ targets = {}
 for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
     parts = parts[:-1] + (parts[-1].split(".")[0],)
-    targets[".".join(parts)] = (entry.relative_to(curr_file )).as_posix()
+    targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
 
 ext_modules = [
     Extension(
@@ -37,35 +32,41 @@ ext_modules = [
     for key, value in targets.items()
 ]
 
-
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 if USE_CYTHON:
     from Cython.Build import cythonize
     import Cython.Compiler.Options
+
     Cython.Compiler.Options.annotate = True
     from Cython.Build import cythonize
 
     ext_modules = cythonize(ext_modules,
-                        compiler_directives=compiler_directives,
-                        )
+                            compiler_directives=compiler_directives,
+                            )
 
 from distutils.core import setup
-
 
 all_packages = setuptools.find_packages(where=".",
                                         include=["SBART", "SBART.*"]
                                         )
-
+print(all_packages)
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
-      packages=all_packages,
+      packages=setuptools.find_namespace_packages("", include="SBART"),
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
-      include_dirs=[np.get_include()]
+      include_dirs=[],
+      # package_data={"SBART": ["utils/tapas_downloader",
+      #                         "resources/*",
+      #                         "outside_tools/*",
+      #                         "utils/cython_codes/cubic_interpolation/__init__.py"
+      #                         ]
+      #               }
+
       )
