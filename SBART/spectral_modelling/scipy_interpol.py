@@ -39,7 +39,11 @@ class ScipyInterpolSpecModel(ModellingBase):
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam("cubic",
-                              constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"])
+                              constraint=ValueFromList(["cubic",
+                                                        "quadratic",
+                                                        "pchip",
+                                                        "nearest"
+                                                        ])
                               ),
         INTERPOLATION_ERR_PROP=UserParam("interpolation",
                                          constraint=ValueFromList(["none", "interpolation", "propagation"])
