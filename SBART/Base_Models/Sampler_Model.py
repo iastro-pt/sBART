@@ -75,6 +75,8 @@ class SamplerModel(BASE):
         self.mode = mode
         self.RV_step = RV_step
         self.mem_save_enabled = False
+        self.disk_save_enabled = False
+        self.is_merged_subInst = False
 
         RV_param = RV_component(
             RVwindow=RV_window,
@@ -510,6 +512,19 @@ class SamplerModel(BASE):
     def disable_memory_savings(self):
         logger.info("{} disabling memory saving mode", self.name)
         self.mem_save_enabled = False
+
+    def enable_disk_savings(self) -> NoReturn:
+        """
+        Save, as much as possible, disk space when saving the worker outputs. Each target function will
+        decide on the details of such "savings"
+        Returns
+        -------
+
+        """
+        self.disk_save_enabled = True
+
+    def disable_disk_savings(self) -> NoReturn:
+        self.disk_save_enabled = False
 
     def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
 

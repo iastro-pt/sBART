@@ -1,6 +1,6 @@
 import ujson as json
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any
+from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
 
 import numpy as np
 from loguru import logger
@@ -25,15 +25,15 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     SIGMA_CLIP_REJECTION
 )
 from SBART.utils.types import UI_PATH
-from SBART.utils.units import kilometer_second
+from SBART.utils.units import kilometer_second, meter_second
 from SBART.utils import custom_exceptions
 
 
 class DataClass(BASE):
     """
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
-
-    .. note::
+    Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
+    and optimize the speed of the code.
 
          To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
           it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
@@ -195,7 +195,10 @@ class DataClass(BASE):
             previous_filename = cube.cached_info["date_folders"][cube.frameIDs.index(frameID)]
 
             if previous_filename != frame.file_path:
-                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument, previous_filename, frame.file_path)
+                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument,
+                                                                                                     previous_filename,
+                                                                                                     frame.file_path
+                                                                                                     )
                 logger.critical(msg)
                 raise InvalidConfiguration(msg)
 
@@ -204,6 +207,7 @@ class DataClass(BASE):
             frame.store_previous_SBART_result(RV=sbart_rv,
                                               RV_err=sbart_uncert
                                               )
+
     def reject_order_region_from_frame(self, frameID: int, order: int, region):
         frame = self.get_frame_by_ID(frameID)
         frame.reject_wavelength_region_from_order(order, region)
@@ -251,6 +255,20 @@ class DataClass(BASE):
                     )
 
         self._applied_telluric_removal = True
+
+    def replace_frames_with_S2D_version(self):
+        """
+        In-place substitution of all frames with their S2D-compatible shapes!
+        Returns
+        -------
+
+        """
+        logger.warning("Transforming the frames to have a S2D-compatible shape")
+        for index, frame in enumerate(self.observations):
+            s2d_frame = frame.copy_into_S2D()
+            s2d_frame.build_mask()
+            self.observations[index] = s2d_frame
+            del frame
 
     def ingest_StellarModel(self, Stellar_Model: StellarModel) -> None:
         logger.debug("Ingesting StellarModel into the DataClass")
@@ -401,6 +419,12 @@ class DataClass(BASE):
         frame.load_data()
         return 1
 
+    def set_all_as_Zscore_frames(self) -> NoReturn:
+        logger.warning("Setting all frames as a zero-mean unit variance")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame.set_frame_as_Zscore()
+
     def normalize_all(self) -> NoReturn:
         """
         Launch the normalization for all (valid) frames
@@ -409,8 +433,26 @@ class DataClass(BASE):
 
         """
         logger.info("Normalizing all frames")
+        for frameID in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(frameID)
+            frame._never_close = True
+
         for subInst in self.get_subInstruments_with_valid_frames():
             self.normalize_all_from_subInst(subInst)
+
+    def update_uncertainties_of_frame(self, frameID: int, new_uncerts) -> NoReturn:
+        """
+        Update the flux uncertainties of a given frame
+
+        .. warning::
+            This will change your measured data, be careful with this!!!
+        """
+        logger.info(f"Setting uncertainties of frame (ID = {frameID}")
+
+        frame = self.get_frame_by_ID(frameID)
+        frame.update_uncertainties(new_uncerts)
+        frame._never_close = True
+        logger.warning("This frame will never close until SBART finished!")
 
     def normalize_all_from_subInst(self, subInst: str) -> NoReturn:
         """
@@ -427,6 +469,23 @@ class DataClass(BASE):
         for fId in self.get_frameIDs_from_subInst(subInst):
             frame = self.get_frame_by_ID(fId)
             frame.normalize_spectra()
+
+    def scale_up_all_observations(self, factor: float) -> NoReturn:
+        """
+        Multiply the flux and uncertainties by a given flux level (avoid possible SNR issues)
+        Parameters
+        ----------
+        factor
+
+        Returns
+        -------
+
+        """
+
+        logger.warning(f"Scaling up all spectra by a factor of {factor}")
+        for fId in self.get_valid_frameIDS():
+            frame = self.get_frame_by_ID(fId)
+            frame.scale_spectra(factor)
 
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
@@ -552,7 +611,8 @@ class DataClass(BASE):
             subInstruments: Union[tuple, list],
             include_invalid: bool = False,
             conditions: CondModel = None,
-    ) -> list:
+            return_frameIDs: bool = False
+    ) -> Union[list, Tuple[List[float], List[int]]]:
         """
         Parse through the loaded observations and retrieve a specific KW from
         all of them. There is no sort of the files. The output will follow the
@@ -560,6 +620,7 @@ class DataClass(BASE):
 
         Parameters
         ----------
+        return_frameIDs
         KW : str
             KW from the Frame.observation_info dictionary
         subInstruments : Union[tuple, list]
@@ -576,6 +637,7 @@ class DataClass(BASE):
             List of the KW
         """
         output = []
+        all_frameIDs = []
 
         for subInst in subInstruments:
             try:
@@ -592,6 +654,10 @@ class DataClass(BASE):
                         output.append(None)
                         continue
                 output.append(self.get_frame_by_ID(frameID).get_KW_value(KW))
+                all_frameIDs.append(frameID)
+
+        if return_frameIDs:
+            return output, available_frameIDs
 
         return output
 
@@ -741,7 +807,7 @@ class DataClass(BASE):
         return self.frameID_map.keys()
 
     def get_instrument_information(self) -> dict:
-        return self._inst_type.instrument_properties
+        return self.observations[0].instrument_properties
 
     def get_stellar_template(self, subInst: str):
         return self.StellarModel.request_data(subInst)
@@ -764,7 +830,7 @@ class DataClass(BASE):
         logger.debug("DataClass storing Data to {}", output_path)
         self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
-        
+
         for frame in self.observations:
             frame.trigger_data_storage()
 
@@ -790,6 +856,14 @@ class DataClass(BASE):
     ########################
     #          MISC        #
     ########################
+    def has_instrument_data(self, instrument: str) -> bool:
+        """
+        Check if the first loaded frame is of a given Instrument
+
+        .. warning::
+            in the off-chance that we mix data this will give problems...
+        """
+        return self.observations[0].is_Instrument(instrument)
 
     def has_instrument_data(self, instrument: str) -> bool:
         """
@@ -846,8 +920,7 @@ class DataClass(BASE):
         See if the given instrument is one of the ones that has extra information to load.
         If so, then
         """
-        info_load_map = {
-        }
+        info_load_map = {"CARMENES": self.load_CARMENES_extra_information}
 
         logger.info("Checking if the instrument has extra data to load")
         for key, load_func in info_load_map.items():
@@ -857,6 +930,96 @@ class DataClass(BASE):
                 return
 
         logger.info("Current instrument does not need to load anything from the outside")
+
+    def load_CARMENES_extra_information(self) -> None:
+        """CARMENES pipeline does not give RVs, we have to do an external load of the information
+
+        Parameters
+        ----------
+        shaq_folder : str
+            Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
+        """
+
+        name_to_search = self.Target.true_name
+
+        if self.observations[0]._internal_configs["is_KOBE_data"]:
+            if "KOBE-" not in name_to_search:
+                name_to_search = "KOBE-" + name_to_search  # temporary fix for naming problem!
+        else:
+            logger.info(f"Not loading KOBE data, searching for {name_to_search} dat file with Rvs")
+
+        shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
+        override_BERV = self.observations[0]._internal_configs["override_BERV"]
+
+        if shaq_folder.name.endswith("dat"):
+            logger.info("Received the previous RV file, not searching for outputs")
+            shaqfile = shaq_folder
+        else:
+            logger.info("Searching for outputs of previous RV extraction")
+            shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
+
+        if shaqfile.exists():
+            logger.info("Loading extra CARMENES data from {}", shaqfile)
+        else:
+            logger.critical(f"RV file does not exist on {shaqfile}")
+            raise custom_exceptions.InvalidConfiguration("Missing RV file for data")
+
+        number_loads = 0
+        locs = []
+        loaded_BJDs = [frame.get_KW_value("BJD") for frame in self.observations]
+        with open(shaqfile) as file:
+            for line in file:
+                if "#" in line:  # header or other "BAD" files
+                    continue
+                # TODO: implement a more thorough check in here, to mark the "bad" frames as invalid!
+                ll = line.strip().split()
+                if len(ll) == 0:
+                    logger.warning(f"shaq RV from {name_to_search} has empty line")
+                    continue
+                bjd = round(float(ll[1]) - 2400000.0, 7)  # we have the full bjd date
+
+                try:
+                    index = loaded_BJDs.index(
+                        bjd
+                    )  # to make sure that everything is loaded in the same order
+                    locs.append(index)
+                except ValueError:
+                    logger.warning("RV shaq has entry that does not exist in the S2D files")
+                    continue
+
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV", float(ll[5]) * kilometer_second, optional=False
+                )
+                self.observations[index].import_KW_from_outside(
+                    "DRS_RV_ERR", float(ll[3]) * kilometer_second, optional=False
+                )
+                if override_BERV:
+                    self.observations[index].import_KW_from_outside(
+                        "BERV", float(ll[10]) * kilometer_second, optional=False
+                    )
+
+                self.observations[index].import_KW_from_outside(
+                    "FWHM", float(ll[11]), optional=True
+                )
+                self.observations[index].import_KW_from_outside(
+                    "BIS SPAN", float(ll[13]), optional=True
+                )
+
+                drift_val = np.nan_to_num(float(ll[7])) * meter_second
+                drift_err = np.nan_to_num(float(ll[8])) * meter_second
+                self.observations[index].import_KW_from_outside("drift", drift_val, optional=False)
+                self.observations[index].import_KW_from_outside(
+                    "drift_ERR", drift_err, optional=False
+                )
+
+                number_loads += 1
+
+                self.observations[index].finalized_external_data_load()
+        if number_loads < len(self.observations):
+            msg = "RV shaq outputs does not have value for all S2D files of {} ({}/{})".format(
+                name_to_search, number_loads, len(self.observations)
+            )
+            logger.critical(msg)
 
     def __repr__(self):
         return (

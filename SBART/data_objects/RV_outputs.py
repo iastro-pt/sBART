@@ -44,6 +44,8 @@ class RV_holder(BASE):
         "full_path",
         "filename",
         "frameIDs",
+        "DLW",
+        "DLW_ERR"
     ]
 
     def __init__(self, subInsts: List[str], output_keys: List[str], storage_path: Path):
@@ -311,7 +313,7 @@ class RV_holder(BASE):
             # TODO: do we want to search for the "optimal" one?
             self.output_keys.insert(0, time_keys[0])
 
-        for key_index, key in enumerate(["RVc", "RVc_ERR"]):
+        for key_index, key in enumerate(["RVc", "RVc_ERR", "DLW", "DLW_ERR"]):
             if key not in self.output_keys:
                 logger.warning(
                     "Mandatory key <{}> not present in the selected outputs. Adding it",
@@ -376,6 +378,7 @@ class RV_holder(BASE):
         load_full_flags=False,
         load_work_pkgs=False,
         SBART_version: Optional[str] = None,
+        only_load_type: Optional[str] = None
     ):
         high_level_path = ensure_path_from_input(high_level_path,
                                                  ensure_existence=True
@@ -410,7 +413,9 @@ class RV_holder(BASE):
 
         for path in high_level_path.iterdir():
             is_merged = "merged" in path.stem
-
+            if only_load_type is not None and path.stem != only_load_type:
+                logger.info(f"Only loading rv cubes of the {only_load_type} type.")
+                continue
             logger.debug("Loading <{}> data", "merged" if is_merged else "individual")
             if not path.is_dir():
                 logger.warning("Found file inside loading folder. Skipping it")

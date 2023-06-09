@@ -1,4 +1,4 @@
-current_version="0.1.6"
+current_version="0.3.0"
 bump_type="patch" # major / minor / patch
 
 
@@ -9,7 +9,7 @@ tag_name=v$current_version
 ####
 
 
-poetry run towncrier build
+towncrier build
 git commit -m "Building changelog"
 
 ####

@@ -1,17 +1,18 @@
-from copy import copy
-from typing import List, Union
+from typing import List
 
 import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
+from SBART.DataUnits import Classical_Unit
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils import custom_exceptions, meter_second
-from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.DataUnits import Classical_Unit
+from SBART.utils.custom_exceptions import BadTemplateError
 from .target_function import target
+from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit
+from ...utils.math_tools.weighted_mean import weighted_mean
 
 
 class RV_step(RV_routine):
@@ -86,7 +87,6 @@ class RV_step(RV_routine):
             target=target,
             valid_samplers=["chi_squared", "Window"],
         )
-
     def run_routine(
         self,
         dataClass,
@@ -166,6 +166,27 @@ class RV_step(RV_routine):
             final_error = [i * meter_second for i in final_error]
             cube.update_computed_RVS(final_rv, final_error)
 
+            data_unit_act = ActIndicators_Unit(available_inds=["DLW"], tot_number_orders=cube.N_orders,
+                                               number_OBS=len(cube.frameIDs), list_of_fIDS=cube.frameIDs
+                                               )
+
+            ind, errs = data_unit_act.get_all_orderwise_indicator("DLW")
+            problematic_orders = cube.problematic_orders
+
+            ind[:, problematic_orders] = np.nan
+            errs[:, problematic_orders] = np.nan
+
+            squared_errors = errs ** 2
+            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+
+            for index, frameID in enumerate(cube.frameIDs):
+                data_unit_act.store_combined_indicators(frameID,
+                                                        "DLW",
+                                                        ind_value=final_ind[index],
+                                                        ind_err=ind_error[index]
+                                                        )
+
+            cube.add_extra_storage_unit(data_unit_act)
             self._output_RVcubes.add_RV_cube(inst, RV_cube=cube, is_merged=True)
 
             self._output_RVcubes.store_computed_RVs_to_disk(
@@ -177,6 +198,9 @@ class RV_step(RV_routine):
 
     def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         data_unit = Classical_Unit()
+        data_unit_act = ActIndicators_Unit(available_inds=["DLW"], tot_number_orders =empty_cube.N_orders,
+                                           number_OBS=len(empty_cube.frameIDs), list_of_fIDS=empty_cube.frameIDs
+                                           )
 
         for pkg in worker_outputs:
             for order_pkg in pkg:
@@ -198,9 +222,15 @@ class RV_step(RV_routine):
                                            order=order,
                                            rvs=order_pkg["RV_array"],
                                            chi_squared=order_pkg["metric_evaluations"],
-                                           fit_coeffs=order_pkg["chi_squared_fit_params"]
-                                           )
+                                           fit_coeffs=order_pkg["chi_squared_fit_params"],
 
+                                           )
+                    data_unit_act.store_orderwise_indicators(frameID=frameID,
+                                                             order=order,
+                                                             ind_name="DLW",
+                                                             ind_value=order_pkg["DLW"],
+                                                             ind_err=order_pkg["DLW_ERR"],
+                                                             )
         empty_cube.update_worker_information(worker_outputs)
 
         final_rv, final_error = orderwise_combination(
@@ -209,9 +239,25 @@ class RV_step(RV_routine):
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]
-
         empty_cube.update_computed_RVS(final_rv, final_error)
-        empty_cube.add_extra_storage_unit(data_unit)
+
+        ind, errs = data_unit_act.get_all_orderwise_indicator("DLW")
+        problematic_orders = empty_cube.problematic_orders
+
+        ind[:, problematic_orders] = np.nan
+        errs[:, problematic_orders] = np.nan
+
+        squared_errors = errs ** 2
+        final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+
+        for index, frameID in enumerate(empty_cube.frameIDs):
+            data_unit_act.store_combined_indicators(frameID,
+                                                    "DLW",
+                                                    ind_value=final_ind[index],
+                                                    ind_err=ind_error[index]
+                                                    )
+        empty_cube.add_extra_storage_unit(data_unit_act)
+
         return empty_cube
 
     def build_chi2_fit(self, fit_metrics):

@@ -1,10 +1,11 @@
 from typing import NoReturn, Set
 
+import numpy as np
 from loguru import logger
 
 from SBART.utils.BASE import BASE
 from SBART.utils import custom_exceptions
-from SBART.utils.shift_spectra import apply_BERV_correction
+from SBART.utils.shift_spectra import apply_BERV_correction, remove_BERV_correction
 from SBART.utils.status_codes import OrderStatus
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
@@ -23,6 +24,9 @@ class Spectrum(BASE):
     """
 
     def __init__(self, **kwargs):
+        # If True, the object will never close its data to save resources
+        self._never_close = False
+
         self._default_params = self._default_params
         self.has_spectrum_component = True
 
@@ -48,6 +52,23 @@ class Spectrum(BASE):
 
         self.was_telluric_corrected = False
 
+    def update_uncertainties(self, new_values) -> NoReturn:
+        """
+        Allow to update the uncertainty values, which allows for manual SNR changes
+
+        Parameters
+        ----------
+        new_values
+            Numpy array with the new uncertainties
+        Returns
+        -------
+
+        """
+        # self.uncertainties = full(self.spectra.shape, 200)
+        if self.spectra.shape != new_values.shape:
+            raise custom_exceptions.InvalidConfiguration("The new uncertainties don't have the same size as the spectra")
+        self.uncertainties = new_values
+
     def regenerate_order_status(self):
         logger.warning(f"Resetting order status of {self.name}")
         try:
@@ -55,6 +76,7 @@ class Spectrum(BASE):
                 self._OrderStatus = OrderStatus(self.N_orders)
         except AttributeError:
             pass
+
     def check_if_data_correction_enabled(self, property_name) -> bool:
         """
         If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
@@ -101,6 +123,24 @@ class Spectrum(BASE):
         berv = BERV_value.to(kilometer_second).value
         self.wavelengths = apply_BERV_correction(self.wavelengths, berv)
         self.is_BERV_corrected = True
+
+    def remove_BERV_correction(self, BERV_value: RV_measurement):
+        """
+        Remove the BERV correction from a given observation
+
+        Parameters
+        ----------
+        BERV_value
+
+        Returns
+        -------
+
+        """
+        if not self.is_BERV_corrected:
+            return
+        berv = BERV_value.to(kilometer_second).value
+        self.wavelengths = remove_BERV_correction(self.wavelengths, berv)
+        self.is_BERV_corrected = False
 
     def apply_telluric_correction(self, wavelengths, model, model_uncertainty):
         """
@@ -183,7 +223,7 @@ class Spectrum(BASE):
 
         self._data_access_checks()
         if order in self.bad_orders and not include_invalid:
-            raise custom_exceptions.BadOrderError()
+            raise custom_exceptions.BadOrderError(f"{order=} is invalid!")
 
         return (
             self.wavelengths[order],
@@ -227,12 +267,35 @@ class Spectrum(BASE):
                 self.spectral_mask.get_custom_mask(),
             )
 
+    def scale_spectra(self, factor: float) -> NoReturn:
+        self._data_access_checks()
+        logger.info("Scaling up frame!")
+        self.spectra *= factor
+        self.uncertainties *= factor
+
+    def set_frame_as_Zscore(self) -> NoReturn:
+        """
+        Re-defining the frame as one with zero mean and unit-variance (z-score)
+        Returns
+        -------
+
+        """
+        logger.info("Setting up frame as a Zscore!")
+        for order in range(self.N_orders):
+            _, flux, _, mask = self.get_data_from_spectral_order(order=order, include_invalid=True)
+            valid_mask = ~mask
+            mean, std = np.mean(flux[valid_mask]), np.std(flux[valid_mask])
+            self.spectra = (self.spectra - mean) / std
+
     def close_arrays(self) -> NoReturn:
         """
         Close the arrays that are currently open in memory. Next time we try to access them, the disk file will be re-opened.
         Saves RAM at the cost of more I/O operations
 
         """
+        if self._never_close:
+            logger.warning("Frame has been set to never close its arrays!")
+            return
         self._spectrum_has_data_on_memory = False
 
         self.qual_data = None
@@ -311,4 +374,3 @@ class Spectrum(BASE):
             True if it has the arrays loaded on memory
         """
         return self._spectrum_has_data_on_memory
-

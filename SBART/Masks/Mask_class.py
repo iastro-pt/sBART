@@ -69,7 +69,7 @@ class Mask:
             except KeyError as e:
                 self.logger.warning(f"Key {e} does not exist in mask")
 
-        custom_mask = np.zeros(self._internal_mask.shape, dtype=np.bool)
+        custom_mask = np.zeros(self._internal_mask.shape, dtype=bool)
 
         custom_mask[np.where(np.isin(self._internal_mask, non_interest_points) == 0)] = True
         custom_mask.flags.writeable = False

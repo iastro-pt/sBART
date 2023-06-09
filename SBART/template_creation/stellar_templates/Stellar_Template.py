@@ -85,7 +85,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.package_pool = None
         self.output_pool = None
         self.target_name = None
-
+        self._reference_frameID = None
+        self._reference_filepath = None
         self.used_fpaths = []
         self._conditions = None
 
@@ -207,6 +208,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
         self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
 
+
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
         entire_mask = self.spectral_mask.get_custom_mask()
@@ -281,6 +283,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "was_telluric_corrected": self.was_telluric_corrected,
             "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
             "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
+            "_reference_frameID": self._reference_frameID,
+            "_reference_filepath": self._reference_filepath,
         }
 
         with open(miscInfo, mode="w") as file:
@@ -418,7 +422,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             self.wavelengths = hdulist["WAVE"].data
             self.uncertainties = hdulist["UNCERTAINTIES"].data
 
-            mask = hdulist["MASK"].data.astype(np.bool)
+            mask = hdulist["MASK"].data.astype(bool)
             self.spectral_mask = Mask(initial_mask=mask)
 
         self.array_size = self.spectra.shape

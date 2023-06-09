@@ -15,6 +15,9 @@ from SBART.utils.UserConfigs import (
 
 class ModellingBase(BASE):
     _name = "SpecModelBase"
+
+    # The _default parameters that we define, must be added as configurations in the Modelling class
+    # Otherwise, the user values will never reach here!
     _default_params = BASE._default_params + DefaultValues(
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
         NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue)

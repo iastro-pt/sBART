@@ -33,7 +33,7 @@ class Spectral_Normalization(BASE):
 
     Notes:
 
-        [1] Name of the spectral normalizers (Currently, RASSINE and Poly-Norm)
+        [1] Name of the spectral normalizers, that are described in :mod:`SBART.spectral_normalization`
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
@@ -126,7 +126,6 @@ class Spectral_Normalization(BASE):
         name = "S1D"
         loaded_info = self._normalization_information.get_norm_info_from_order(name)
 
-
         wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
         new_waves, new_flux, new_uncert, norm_keys = norm_interface.launch_epochwise_normalization(wavelengths=wavelengths,
@@ -134,9 +133,9 @@ class Spectral_Normalization(BASE):
                                                                                         uncertainties=uncerts,
                                                                                         loaded_info=loaded_info,
                                                                                         )
-        self.wavelengths = new_waves
-        self.spectra = new_flux
-        self.uncertainties = new_uncert
+        self.wavelengths = new_waves.reshape(wavelengths.shape)
+        self.spectra = new_flux.reshape(wavelengths.shape)
+        self.uncertainties = new_uncert.reshape(wavelengths.shape)
         logger.warning("Epoch wise normalization is overriding the minimum SNR!")
         self._internal_configs["minimum_order_SNR"] = 0
         self.regenerate_order_status()
@@ -145,7 +144,6 @@ class Spectral_Normalization(BASE):
         self._already_normalized_data = True
         # Trigger a new check of the data integrity, as we have just overloaded the entire
         # S2D spectrum. However, this ignores any kind of quality check!
-        self.build_mask(bypass_QualCheck=True)
 
     def trigger_orderwise_method(self, norm_interface):
         # TODO: see if we want to parallelize this!

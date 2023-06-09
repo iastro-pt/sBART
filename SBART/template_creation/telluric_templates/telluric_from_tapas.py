@@ -15,7 +15,7 @@ from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
     Positive_Value_Constraint,
-    StringValue,
+    PathValue,
     UserParam,
     PathValue,
 )

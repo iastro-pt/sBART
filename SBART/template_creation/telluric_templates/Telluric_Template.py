@@ -21,7 +21,7 @@ from SBART.utils.UserConfigs import (
 )
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.shift_spectra import apply_BERV_correction
-from SBART.utils.spectral_conditions import KEYWORD_condition
+from SBART.utils.spectral_conditions import KEYWORD_condition, Empty_condition
 from SBART.utils.status_codes import DISK_LOADED_DATA, MISSING_DATA, SUCCESS
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import find_overlaps
 from SBART.utils.units import kilometer_second
@@ -103,6 +103,8 @@ class TelluricTemplate(BaseTemplate):
         self._loaded_dataclass_info = False
 
         self.template = None
+
+        self._metric_selection_conditions = Empty_condition()
 
     # Workaround to avoid calling spectra to the binary telluric template (to make things internally consistent)
     @property
@@ -219,7 +221,7 @@ class TelluricTemplate(BaseTemplate):
             return np.nan
 
         # Placing upper limit of temperature at 50ºC
-        conditions = KEYWORD_condition("ambient_temperature", [[None, 323.15]])
+        self._metric_selection_conditions += KEYWORD_condition("ambient_temperature", [[None, 323.15]])
 
         if self.__class__.method_name.lower() == "telfit":
             # 1 December 2014, because no GDAS profile for telfit
@@ -227,14 +229,14 @@ class TelluricTemplate(BaseTemplate):
             # add condition so that the reference observation is more than week
             # ago, to guarantee the GDAS profile already exists
             one_week_ago = int(Time.now().jd - 7)
-            conditions += KEYWORD_condition("BJD", [[2453340, one_week_ago]])
+            self._metric_selection_conditions += KEYWORD_condition("BJD", [[2453340, one_week_ago]])
 
         logger.debug("Using Relative humidity as the selection criterion for reference observation")
         metric_to_select = dataclass.collect_KW_observations(
             KW="relative_humidity",
             subInstruments=[self._associated_subInst],
             include_invalid=False,
-            conditions=conditions,
+            conditions=self._metric_selection_conditions,
         )
 
         # due to the conditions, some elements may be None
@@ -249,7 +251,7 @@ class TelluricTemplate(BaseTemplate):
                 KW="airmass",
                 subInstruments=[self._associated_subInst],
                 include_invalid=False,
-                conditions=conditions,
+                conditions=self._metric_selection_conditions,
             )
 
             # due to the conditions, some elements may be None
@@ -423,9 +425,13 @@ class TelluricTemplate(BaseTemplate):
     def for_feature_correction(self) -> bool:
         return self._application_mode == "correction"
 
+    def store_metrics(self):
+        ...
+
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         try:
-            return super().trigger_data_storage(*args, **kwargs)
+            super().trigger_data_storage(*args, **kwargs)
+            self.store_metrics()
         except custom_exceptions.FailedStorage:
             return
 

@@ -58,7 +58,7 @@ def compute_outliers(
 
     temp_mask = template_mask
 
-    full_outlier_mask = np.ones(spectra_mask.shape, dtype=np.bool)
+    full_outlier_mask = np.ones(spectra_mask.shape, dtype=bool)
 
     # Find the template blocks and the (shifted) wavelength at the start and end of each!
     template_blocks = build_blocks(np.where(temp_mask == 1))
@@ -83,7 +83,7 @@ def compute_outliers(
         spectra_wave = spectra_wavelengths[current_mask]
         spectra_uncert = spec_uncert[current_mask]
 
-        interpolate_wave_indexes = np.zeros(spectra_wave.shape, dtype=np.bool)
+        interpolate_wave_indexes = np.zeros(spectra_wave.shape, dtype=bool)
         for wavelengths_block in blocks:
             # calculates the common wavelengths, for all RV shifts
             # first value: highest initial wavelenngth

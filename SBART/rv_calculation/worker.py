@@ -193,6 +193,7 @@ def worker(
                             RVLowerBound.to(meter_second).value,
                             RVUpperBound.to(meter_second).value,
                         ),
+                        "SAVE_DISK_SPACE": worker_configs["SAVE_DISK_SPACE"]
                     }
                     full_target_kwargs = {
                         **target_kwargs,

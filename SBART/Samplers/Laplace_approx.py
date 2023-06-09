@@ -181,10 +181,15 @@ class Laplace_approx(SbartBaseSampler):
 
             output_pkg["RV_uncertainty"] = np.sqrt(RV_variance) * meter_second
 
+            logger.info("Computing post-RV metrics for mode {}".format(self.mode))
+
             if self.mode == "epoch-wise":
                 target_kwargs["run_information"]["target_specific_configs"][
                     "compute_metrics"
                 ] = True
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "SAVE_DISK_SPACE"
+                ] = self.disk_save_enabled
                 target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
                 model_misspec, log_likelihood, orders = target_interface(
                     optimization_output.x, target_kwargs
@@ -193,6 +198,7 @@ class Laplace_approx(SbartBaseSampler):
             else:
                 target_kwargs["compute_metrics"] = True
                 target_kwargs["weighted"] = True
+                target_kwargs["SAVE_DISK_SPACE"] = self.disk_save_enabled
                 _, model_misspec = target_interface(optimization_output.x, target, target_kwargs)
 
             output_pkg["FluxModel_misspecification"] = model_misspec

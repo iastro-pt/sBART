@@ -22,7 +22,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     StringValue,
     UserParam,
-    ValueFromList,
+    ValueFromList, NumericValue
 )
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.status_codes import SUCCESS
@@ -31,12 +31,13 @@ from .Telluric_Template import TelluricTemplate
 
 atmospheric_profiles_coords_dict = {
     "HARPS": "-70.7-29.3",
+    "NIRPS": "-70.7-29.3",
     "ESPRESSO": "-70.4-24.6",
+    "HARPSN": "-17.9+28.8"
 }
 
 
 def download_gdas_archive(archive_name, storage_path):
-
     url = "https://ftp.eso.org/pub/dfs/pipelines/skytools/molecfit/gdas/"
     url += archive_name
     urllib.request.urlretrieve(url, storage_path)
@@ -47,7 +48,9 @@ def get_atmospheric_profile(instrument, datetime, storage_folder):
     try:
         coords = atmospheric_profiles_coords_dict[instrument]
     except KeyError as exc:
-        raise custom_exceptions.InvalidConfiguration(f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}") from exc
+        raise custom_exceptions.InvalidConfiguration(
+            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}"
+        ) from exc
 
     archive_name = f"gdas_profiles_C{coords}.tar.gz"
     profile_archive = os.path.join(storage_folder, f"gdas_profiles_C{coords}.tar.gz")
@@ -86,8 +89,16 @@ class TelfitTelluric(TelluricTemplate):
     Atmosphere profiles are downloaded to ensure that we get the best model possible
 
     **User parameters:**
+    ================================ ================ ================ ================ ================
+    Parameter name                      Mandatory      Default Value    Valid Values    Comment
+    ================================ ================ ================ ================ ================
+    TELFIT_HUMIDITY_THRESHOLD            False          None            Numerical        [1]
+    ================================ ================ ================ ================ ================
 
-        - No unique user parameter
+
+    .. note::
+        [1] - Value used to enforce a maximum value for the humidity. If this is set any negative value, use the
+        maximum humidity from the loaded observations
 
 
     .. note::
@@ -102,6 +113,7 @@ class TelfitTelluric(TelluricTemplate):
             "download", constraint=StringValue
         ),  # download / default / path
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
+        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
         PARAMS_TO_FIT=UserParam(
@@ -113,12 +125,12 @@ class TelfitTelluric(TelluricTemplate):
     method_name = "Telfit"
 
     def __init__(
-        self,
-        subInst: str,
-        user_configs: Optional[UI_DICT] = None,
-        extension_mode: str = "lines",
-        application_mode: str = "removal",
-        loaded: bool = False,
+            self,
+            subInst: str,
+            user_configs: Optional[UI_DICT] = None,
+            extension_mode: str = "lines",
+            application_mode: str = "removal",
+            loaded: bool = False,
     ):
         if MISSING_TELFIT:
             raise custom_exceptions.InvalidConfiguration("Telfit is not currently installed")
@@ -169,54 +181,94 @@ class TelfitTelluric(TelluricTemplate):
 
         self.modeler = telfit.Modeler(print_lblrtm_output=False)
 
-    def _prepare_GDAS_data(self, selected_frame):
+    def _prepare_GDAS_data(self, dataClass, selected_frame):
 
         logger.info("Preparing GDAS data load!")
         if selected_frame.is_Instrument("CARMENES") and (
-            self._internal_configs["atmosphere_profile"] == "download"
-            or self._internal_configs["force_download"]
+                self._internal_configs["atmosphere_profile"] == "download"
+                or self._internal_configs["force_download"]
         ):
             raise custom_exceptions.InvalidConfiguration(
-                "We can't automate download from GDAS archive"
+                "We can't automate download from GDAS archive for CARMENES"
             )
 
         resources_folder = os.path.join(SBART_LOC, "resources/atmosphere_profiles")
 
+        failed_download = True
         if self._internal_configs["atmosphere_profile"] == "download":
             # logger.debug("GDAS data load mode set to download")
             logger.info("Launching GDAS profile downloader")
             instrument, date = selected_frame.inst_name, selected_frame.get_KW_value("ISO-DATE")
-            with get_atmospheric_profile(instrument, date, resources_folder) as gdas:
-                data = np.loadtxt(gdas).copy()
-            return data
 
-        elif self._internal_configs["atmosphere_profile"] == "default":
-            logger.info("Using the default atmosphere profile")
+            logger.warning("Iterating over other possible frames to search for a working reference")
+            failed_tests = [self._reference_frameID]
+            for kw in ["relative_humidity", "airmass"]:
+                metric_to_select, frameIDs = dataClass.collect_KW_observations(
+                    KW=kw,
+                    subInstruments=[self._associated_subInst],
+                    include_invalid=False,
+                    conditions=self._metric_selection_conditions,
+                    return_frameIDs=True
+                )
+                metric_to_select = np.asarray(metric_to_select, dtype=float)
+                if not any(np.isfinite(metric_to_select)):
+                    logger.warning(f"Metric {kw} is not finite. Can't use it to select observatioons")
+                    continue
+                else:
+                    # Stop if we have finite values!
+                    break
+
+            sort_inds = np.argsort(metric_to_select)
+            frames_to_search = np.asarray(frameIDs)[sort_inds][::-1]
+
+            max_search_iterations = min(10, len(frameIDs))
+            for attempt_nb in range(max_search_iterations):  # todo: add here the search for a new reference!
+                selected_ID = frames_to_search[0]
+
+                date = dataClass.get_KW_from_frameID(frameID=selected_ID,
+                                                     KW="ISO-DATE"
+                                                     )
+                try:
+                    with get_atmospheric_profile(instrument, date, resources_folder) as gdas:
+                        data = np.loadtxt(gdas).copy()
+                    failed_download = False
+                    self._reference_frameID = selected_ID
+                    self._associated_BERV = dataClass.get_KW_from_frameID(KW="BERV",
+                                                                          frameID=selected_ID
+                                                                          )
+                    break # If we found it, no need to continue
+                except KeyError:
+                    logger.info(f"{date=} failed to find GDAS profile (Iter: {attempt_nb + 1} / {max_search_iterations})")
+                    failed_tests.append(selected_ID)
+                    frames_to_search = frames_to_search[1:]
+
+            if failed_download:
+                logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
+
+        if self._internal_configs["atmosphere_profile"] == "default" or failed_download:
             atmos_profile_file = os.path.join(
                 resources_folder,
                 f"{selected_frame.inst_name}_atmosphere_profile.txt",
             )
-            data = np.loadtxt(atmos_profile_file, usecols=(0, 1, 2, 3), skiprows=4)
-            return data
+            data = np.loadtxt(atmos_profile_file)
 
         elif os.path.exists(self._internal_configs["atmosphere_profile"]) and not len(
-            self._internal_configs["atmosphere_profile"] == 0
+                self._internal_configs["atmosphere_profile"] == 0
         ):
+            # what does this do???
             atmos_profile_file = self._internal_configs["atmosphere_profile"]
-        else:
-            raise custom_exceptions.InvalidConfiguration()
+            data = np.loadtxt(atmos_profile_file)
 
-        logger.info("Loading atmosphere profile from local file: {}", atmos_profile_file)
-        data = np.loadtxt(atmos_profile_file)
         logger.info("Finished setup of GDAS profile")
         return data
 
-    def configure_modeler(self, selected_frame) -> None:
+    def configure_modeler(self, dataclass) -> None:
         """
         see https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas
         """
+        selected_frame = dataclass.get_frame_by_ID(self._reference_frameID)
         logger.info("Configuring the Telfit modeler for {}", selected_frame)
-        data = self._prepare_GDAS_data(selected_frame)
+        data = self._prepare_GDAS_data(dataClass=dataclass, selected_frame=selected_frame)
 
         # hPa       m     K       %
         Pres, height, Temp, _ = data.T
@@ -273,7 +325,7 @@ class TelfitTelluric(TelluricTemplate):
         logger.info("Finished configurating the modeler")
 
     def _generate_telluric_model(
-        self, model_parameters, OBS_properties, fixed_params=None, grid=None
+            self, model_parameters, OBS_properties, fixed_params=None, grid=None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """COmpute the transmittance spectra using tellfit
 
@@ -293,8 +345,8 @@ class TelfitTelluric(TelluricTemplate):
 
         if grid is None:
             # ask for a model slightly larger than the wavelength coverage of the instrument
-            lowfreq = 1e7 / (OBS_properties["wavelength_coverage"][1] - 50)
-            highfreq = 1e7 / (OBS_properties["wavelength_coverage"][0] + 50)
+            lowfreq = 1e7 / (OBS_properties["wavelength_coverage"][1] + 50)
+            highfreq = 1e7 / (OBS_properties["wavelength_coverage"][0] - 50)
         else:
             lowfreq = 1e7 / grid.max()
             highfreq = 1e7 / grid.min()
@@ -347,7 +399,7 @@ class TelfitTelluric(TelluricTemplate):
         except custom_exceptions.StopComputationError:
             return
 
-        self.configure_modeler(dataClass.get_frame_by_ID(self._reference_frameID))
+        self.configure_modeler(dataClass)
 
         OBS_properties = {
             **{"airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID)},
@@ -361,8 +413,8 @@ class TelfitTelluric(TelluricTemplate):
             frameID=self._reference_frameID, allow_disabled=True
         )
         names = self._fitModel.get_component_names(include_disabled=True)
+        logger.debug(f"Parameters in use: {names}")
         logger.info(f"Using params: {parameter_values}")
-
         wavelengths, tell_spectra = self._generate_telluric_model(
             model_parameters={},
             OBS_properties=OBS_properties,
@@ -392,7 +444,7 @@ class TelfitTelluric(TelluricTemplate):
         super()._generate_model_parameters(dataClass)
 
         for frameID in dataClass.get_frameIDs_from_subInst(
-            self._associated_subInst, include_invalid=False
+                self._associated_subInst, include_invalid=False
         ):
             frame = dataClass.get_frame_by_ID(frameID)
             initial_guess = {
@@ -406,6 +458,12 @@ class TelfitTelluric(TelluricTemplate):
                 logger.warning(
                     "Relative humidity is not finite. Using default value of {}%", initial_guess["humidity"]
                 )
+
+            if 0 <= self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] < initial_guess["humidity"]:
+                initial_guess["humidity"] = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
+                user_cap = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
+                curr_val = initial_guess["humidity"]
+                logger.warning(f"Relative humidity ({curr_val}) is above the user-provided threshold ({user_cap}). Falling back to it")
 
             if not np.isfinite(initial_guess["temperature"]):
                 initial_guess["temperature"] = 290.5
@@ -428,3 +486,15 @@ class TelfitTelluric(TelluricTemplate):
             if param_name not in self._internal_configs["PARAMS_TO_FIT"]:
                 logger.info("{} not fitting {}. Fixing it to initial guess", self.name, param_name)
                 self._fitModel.disable_param(param_name)
+
+    def store_metrics(self):
+        super().store_metrics()
+        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
+        parameter_values = self._fitModel.get_fit_results_from_frameID(
+            frameID=self._reference_frameID, allow_disabled=True
+        )
+        names = self._fitModel.get_component_names(include_disabled=True)
+
+        with open(metrics_path / f"telfit_info_{self._associated_subInst}.txt", mode="w") as to_write:
+            for nam, val in zip(names, parameter_values):
+                to_write.write(f"{nam}:  {val}\n")

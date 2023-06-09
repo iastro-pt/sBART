@@ -147,8 +147,8 @@ class SumStellar(StellarTemplate):
         inst_info = dataClass.get_instrument_information()
         N_orders = inst_info["array_size"][0]
 
-        epoch_errors = dataClass.collect_RV_information(
-            KW=self.RV_keyword + "_ERR",
+        epoch_BERVs = dataClass.collect_RV_information(
+            KW="BERV",
             subInst=self._associated_subInst,
             frameIDs=self.frameIDs_to_use,
             units=kilometer_second,
@@ -165,13 +165,15 @@ class SumStellar(StellarTemplate):
             include_invalid=False,
         )
 
-        chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_errors)]
+        chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_BERVs)]
+        self._reference_frameID = chosen_epochID
+        self._reference_filepath = dataClass.get_filename_from_frameID(self._reference_frameID)
 
         wave_reference, _, _, _ = dataClass.get_frame_arrays_by_ID(chosen_epochID)
 
         self.wavelengths = remove_RVshift(
             wave_reference,
-            stellar_RV=epochsRVs[np.argmin(epoch_errors)],
+            stellar_RV=epochsRVs[np.argmin(epoch_BERVs)],
         )
 
         logger.info(
@@ -258,7 +260,7 @@ class SumStellar(StellarTemplate):
 
         self.spectra = shr_tmp[:] / len(self.frameIDs_to_use)
 
-        new_mask = np.zeros(self.spectra.shape, dtype=np.bool)
+        new_mask = np.zeros(self.spectra.shape, dtype=bool)
 
         # plt.plot(shr_counts[2], marker = 'x', linestyle ='')
         # plt.axhline(len(self.frameIDs_to_use))
@@ -332,7 +334,7 @@ class SumStellar(StellarTemplate):
                     )[0]
 
                     wavelengths_to_interpolate = np.zeros(
-                        stellar_template_wavelengths[order].shape, dtype=np.bool
+                        stellar_template_wavelengths[order].shape, dtype=bool
                     )
 
                     # until now the mask has ones in the regions to remove

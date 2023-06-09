@@ -1,0 +1,24 @@
+[build-system]
+requires = ["Cython>=0.29.27", "setuptools>=60.8.1", "numpy>=1.22.3"]
+
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = "E0401"
+
+
+[tool.towncrier]
+name = "SBART"
+package = "SBART"
+directory = "newsfragments/"
+filename = "docs/NEWS.rst"
+issue_format = "`#{issue} <https://github.com/iastro-pt/sBART/issues/{issue}>`_"
+underlines = "~~~"
+template = "towncrier_template.rst"
+
+[tool.towncrier.fragment.feature]
+[tool.towncrier.fragment.break]
+[tool.towncrier.fragment.bugfix]
+
+[tool.towncrier.fragment.misc]
+showcontent = true

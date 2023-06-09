@@ -144,9 +144,12 @@ def SBART_target(params, **kwargs):
             fit_degree=1,
         )
 
-        misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
+        if not kwargs.get("SAVE_DISK_SPACE", False):
+            misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
             kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
-        )
+            )
+        else:
+            misspec_metric = np.asarray([0])
 
         return -1 * order_value / weight, misspec_metric
     return -1 * order_value / weight

@@ -361,11 +361,11 @@ class RV_Bayesian(RV_routine):
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
         if self._internal_configs["RV_extraction"] == "epoch-wise":
 
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=np.bool))
+            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=  bool))
             self._shared_mem_buffers["mask_cache"] = buffer_info
 
             buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"][0], dtype=np.bool)
+                np.zeros(inst_info["array_size"][0], dtype=  bool)
             )
             self._shared_mem_buffers["cached_orders"] = buffer_info
 

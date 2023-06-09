@@ -109,14 +109,17 @@ class RV_routine(BASE):
                 "SA",
                 "DRIFT",
                 "DRIFT_ERR",
+                "DLW",
+                "DLW_ERR",
                 "filename",
                 "frameIDs",
             ],
             constraint=ValueFromList(
-                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs"]
+                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs", "DLW", "DLW_ERR"]
             ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
+        SAVE_DISK_SPACE=UserParam(False, constraint=BooleanValue),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(
             1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))
@@ -221,6 +224,7 @@ class RV_routine(BASE):
             except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
                 raise custom_exceptions.StopComputationError from exc
+
             try:
                 self.load_previous_RVoutputs()
             except custom_exceptions.NoDataError as exc:
@@ -312,6 +316,12 @@ class RV_routine(BASE):
             check_metadata=check_metadata,
         )
 
+        if self._internal_configs["SAVE_DISK_SPACE"]:
+            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
+            self.sampler.enable_disk_savings()
+        else:
+            self.sampler.disable_disk_savings()
+
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
@@ -351,7 +361,6 @@ class RV_routine(BASE):
                     dataClass=dataClass,
                     subInst=subInst,
                 )
-                output_cube.update_skip_reason(original_to_skip[subInst], ORDER_SKIP)
 
                 if self.loaded_from_previous_run:
                     # if we are loading from the orders to skip from a previous run,
@@ -433,6 +442,10 @@ class RV_routine(BASE):
             )
             return RV_cube(subInst, valid_IDS, dataClass.get_instrument_information())
 
+        is_merged = self._internal_configs["order_removal_mode"] == "global"
+        # UGLYYYY!
+        self.sampler.is_merged_subInst = is_merged
+
         worker_outputs = self.sampler.manage_RV_calculation(
             dataClass,
             subInst,
@@ -443,12 +456,12 @@ class RV_routine(BASE):
             output_pool=self.output_pool,
         )
 
-        is_merged = self._internal_configs["order_removal_mode"] == "global"
         cube = self._output_RVcubes.generate_new_cube(dataClass,
                                                       subInst,
                                                       is_merged=is_merged,
                                                       has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise"
                                                       )
+        cube.update_skip_reason(self.to_skip[subInst], ORDER_SKIP)
 
         cube.update_skip_reason(template_bad_orders, BAD_TEMPLATE)
         cube.load_data_from_DataClass(dataClass)
@@ -505,6 +518,7 @@ class RV_routine(BASE):
             "CONTINUUM_FIT_TYPE": self._internal_configs["CONTINUUM_FIT_TYPE"],
             "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
+            "SAVE_DISK_SPACE": self._internal_configs["SAVE_DISK_SPACE"],
         }
         return worker_configs
 

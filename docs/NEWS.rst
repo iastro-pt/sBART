@@ -4,26 +4,36 @@ Release Notes
 
 .. towncrier release notes start
 
-SBART 0-3-0 (2023-06-09)
+SBART 0-4-0 (2023-06-09)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-No significant changes.
+Break
+~~~~~
 
+- Removed the spectra_format configuration of SBART
 
-SBART 0-3-0 (2023-03-29)
-~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bugfix
 ~~~~~~
 
+- Fixing telfit access to its default profile
+- Avoid multiple data reloads of S1D data from ESPRESSO
+- Fixing mutability issue on the class properties of the instruments
 - Properly propagate the user-provided target name  (`#31 <https://github.com/iastro-pt/sBART/issues/31>`_)
+- Removing calls to np.bool  (`#33 <https://github.com/iastro-pt/sBART/issues/33>`_)
 
 
 Feature
 ~~~~~~~
 
-- Adding easier way of bulk-normalizing stellar spectra 
-- Allow to select observations from disk files (update to SpectralConditions) 
+- Adding easier way of bulk-normalizing stellar spectra
+- Allow to transform S1D Frame into S2D
+- Updated the interface for the DataClass
+- Add fallback for Telfit templates for reference frames for which we can't download GDAS profile
+- Allow to select observations from disk files (update to SpectralConditions)
+- Loading ESPRESSO binX and binY
+- Adding the DLW algorithm as an activity indicator
+- Automatic recognition of filetypes
 
 
 Misc
@@ -59,6 +69,7 @@ Feature
 - Sigma-clipping RVs based on the DRS estimate 
 - Plotting transmittance spectrum 
 - Allow to reject Frames based on warning KW flags that might exist 
+- Provide framework to normalize the stellar spectra (currently RASSINE) 
 - Introducing GP interpolation for stellar spectra (Frames and Stellar Templates) 
 - Introducing NearestNeighbor interpolation option 
 

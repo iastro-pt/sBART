@@ -133,6 +133,7 @@ class RV_cube(BASE):
         self._loaded_inst_info = True
         self._saved_to_disk = False
 
+
     def add_extra_storage_unit(self, new_unit: UnitModel, generate_root=True):
         logger.info("Adding a new storage unit")
         if generate_root:
@@ -273,7 +274,7 @@ class RV_cube(BASE):
             final_RVs = self.cached_info["previous_SBART_RV"]
             final_RVs_ERR = self.cached_info["previous_SBART_RV_ERR"]
         else:
-            logger.critical("which = {} is not supported by get_RV_timeseries", which)
+            logger.critical(f"which = {which} is not supported by get_RV_timeseries")
             raise InvalidConfiguration
 
         if apply_drift_corr is None:
@@ -384,6 +385,34 @@ class RV_cube(BASE):
     def get_raw_DRS_RVs(self) -> Tuple[list, list]:
         return self.cached_info["DRS_RV"], self.cached_info["DRS_RV_ERR"]
 
+    def get_TM_activity_indicator(self, act_name):
+        """
+        Get the DLW measurements if they exist.Otherwise return array of nans
+        Parameters
+        ----------
+        act_name
+
+        Returns
+        -------
+        list
+            Values
+        list
+            Uncertainties
+        """
+
+        nan_list = [np.nan for _ in self.frameIDs]
+        try:
+            unit = self.get_storage_unit("Indicators")
+        except NoDataError:
+            logger.critical("There is no storage unit that stores activity indicators")
+            return nan_list, nan_list
+
+        try:
+            values, errors = unit.get_combined_measurements(act_name)
+        except KeyError:
+            values, errors = nan_list, nan_list
+        return values, errors
+
     def get_frame_orderwise_status(self, frameID) -> List[Status]:
         return self._OrderStatus.get_status_from_order(frameID, all_orders=True)
 
@@ -457,6 +486,8 @@ class RV_cube(BASE):
         _, corr_rv, corr_err = self.get_RV_timeseries(
             which="SBART", apply_SA_corr=True, as_value=True, units=kilometer_second
         )
+        dlw, dlw_err = self.get_TM_activity_indicator("DLW")
+
         data_blocks = {
             "BJD": self.cached_info["BJD"],
             "MJD": self.cached_info["MJD"],
@@ -469,6 +500,8 @@ class RV_cube(BASE):
             "full_path": self.cached_info["date_folders"],
             "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
             "frameIDs": self.frameIDs,
+            "DLW": dlw,
+            "DLW_ERR": dlw_err
         }
         return data_blocks
 
@@ -615,10 +648,10 @@ class RV_cube(BASE):
 
         self.export_skip_reasons(dataClassProxy)
         self.compute_statistics()
-        self.plot_RVs()
+        self.plot_RVs(dataClassProxy)
         self._saved_to_disk = True
 
-    def plot_RVs(self) -> None:
+    def plot_RVs(self, dataClassProxy) -> None:
         """Plot & store the RV timeseries
 
         Parameters
@@ -708,7 +741,7 @@ class RV_cube(BASE):
                         marker="o",
                         linestyle="",
                         alpha=0.3,
-                        )
+                    )
 
                     # TODO: understand why this gives UserWarning: Warning: converting a masked element to nan.
                     ax_full[0].errorbar(
@@ -717,7 +750,7 @@ class RV_cube(BASE):
                         data,
                         marker="o",
                         linestyle="",
-                        )
+                    )
 
                     ax_full[1].plot(data[self.problematic_orders], marker="o", linestyle="", alpha=0.3)
                     ax_full[1].plot(valid_orders, marker="x", linestyle="")
@@ -755,7 +788,7 @@ class RV_cube(BASE):
                     frameID = order_pkg["frameID"]
                     order = order_pkg["order"]
                     empty_array[order, sorted_IDs.index(frameID)] = order_pkg["Total_Flux_Order"]
-            empty_array /= np.max(empty_array, axis=1)[:, None] #normalize across the orders
+            empty_array /= np.max(empty_array, axis=1)[:, None]  # normalize across the orders
 
             fig, ax = plt.subplots(figsize=(20, 10), constrained_layout=True)
             figure_list.append(fig)
@@ -768,6 +801,36 @@ class RV_cube(BASE):
             final_path = build_filename(diagnostics_path, "OrderwiseFlux", "png")
             fig.savefig(final_path)
 
+        try:
+            unit = self.get_storage_unit("Indicators")
+            fig, ax = plt.subplots(2, 2, sharey=True, figsize=(20, 10), constrained_layout=True)
+            figure_list.append(fig)
+            dlw, err = unit.get_combined_measurements("DLW")
+            contrast = dataClassProxy.collect_KW_observations("CONTRAST", [self.subInst])
+            FWHM = dataClassProxy.collect_KW_observations("FWHM", [self.subInst])
+            BIS = dataClassProxy.collect_KW_observations("BIS SPAN", [self.subInst])
+            ax[0, 0].errorbar(self.obs_times, dlw, err, ls='', marker='x')
+            ax[0, 0].set_xlabel("BJD")
+            ax[1, 0].scatter(FWHM, dlw)
+            ax[1, 0].set_xlabel("FWHM")
+
+            ax[0, 1].errorbar(contrast, dlw, err)
+            ax[0, 1].set_xlabel("CONTRAST")
+            ax[1, 1].errorbar(BIS, dlw, err)
+            ax[1, 1].set_xlabel("BIS SPAN")
+            final_path = build_filename(diagnostics_path, "DLW_correlations", "png")
+            fig.savefig(final_path, dpi=300)
+
+            fig, ax = plt.subplots(1,1, sharey=True, figsize=(20, 10), constrained_layout=True)
+
+            chroma_val, chroma_err = unit.get_all_orderwise_indicator("DLW")
+            for order_info,errors in zip(chroma_val, chroma_err):
+                ax.scatter(list(range(self.N_orders)), order_info)
+            final_path = build_filename(diagnostics_path, "DLW_orderwise", "png")
+            fig.savefig(final_path, dpi=300)
+
+        except NoDataError:
+            pass
 
         logger.debug("Closing figures from {}", self.name)
         for figure in figure_list:

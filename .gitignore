@@ -1,5 +1,6 @@
 *egg-info
-
+SPLEAF/*
+manual_tests/*
 *summary*
 docs/_build/*
 docs/low_level_interface/SBART
@@ -16,9 +17,12 @@ tests/*outputs/*
 
 
 .idea/
-
-
-
+SBART/resources/atmosphere_profiles/*
+*logs*
+*outputs*
+*inputs*
+*_Storage*
+*templates
 
 # Distribution / packaging
 .Python
