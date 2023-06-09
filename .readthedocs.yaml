@@ -13,7 +13,6 @@ build:
 
   apt_packages:
     - python3-numpy
-    - python-numpy
 
   jobs:
     post_create_environment:
