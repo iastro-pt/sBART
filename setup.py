@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import setuptools
 
 curr_file = Path(__file__).parent.absolute()
@@ -15,13 +16,11 @@ ext = '.pyx' if USE_CYTHON else '.c'
 
 targ_path = curr_file / "SBART" / "utils" / "cython_codes"
 
-pyx_files = targ_path.glob(f"**/*{ext}")
-
+pyx_files = list(targ_path.glob(f"**/*{ext}"))
 targets = {}
 for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
     parts = parts[:-1] + (parts[-1].split(".")[0],)
-
     targets[".".join(parts)] = (entry.relative_to(curr_file )).as_posix()
 
 ext_modules = [
@@ -33,6 +32,7 @@ ext_modules = [
     )
     for key, value in targets.items()
 ]
+
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
@@ -49,16 +49,19 @@ if USE_CYTHON:
 from distutils.core import setup
 
 
-all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
-print(all_packages)
+all_packages = setuptools.find_packages(where=".",
+                                        include=["SBART", "SBART.*"]
+                                        )
+
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
-      packages=list(i for i in setuptools.find_namespace_packages("SBART") if "SBART." in i),
+      packages=all_packages,
       include_package_data=True,
       ext_modules=ext_modules,
-      install_requires=required
+      install_requires=required,
+      include_dirs=[np.get_include()]
       )
