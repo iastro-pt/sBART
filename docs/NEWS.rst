@@ -4,6 +4,12 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-3-0 (2023-06-09)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+No significant changes.
+
+
 SBART 0-3-0 (2023-03-29)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
