@@ -1,6 +1,10 @@
 from pathlib import Path
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    raise Exception("s-BART needs a working numpy installation for compilation purposes")
+
 import setuptools
 
 curr_file = Path(__file__).parent.absolute()

@@ -8,6 +8,7 @@ SBART can be pip-installed:
 
     pip install SBART
 
+However, before doing so, we need numpy to be installed beforehand!
 
 To use `Telfit <https://github.com/kgullikson88/Telluric-Fitter>`_. it must be installed independently:
 
