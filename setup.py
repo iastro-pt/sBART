@@ -48,14 +48,16 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
+
 all_packages = setuptools.find_packages(where=".", include=["SBART", "SBART.*"])
+print(all_packages)
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
-      packages=all_packages,
+      packages=list(i for i in setuptools.find_namespace_packages("SBART") if "SBART." in i),
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required
