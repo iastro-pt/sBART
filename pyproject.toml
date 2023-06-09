@@ -1,0 +1,15 @@
+[tool.towncrier]
+name = "SBART"
+package = "SBART"
+directory = "newsfragments/"
+filename = "docs/NEWS.rst"
+issue_format = "`#{issue} <https://github.com/iastro-pt/sBART/issues/{issue}>`_"
+underlines = "~~~"
+template = "towncrier_template.rst"
+
+[tool.towncrier.fragment.feature]
+[tool.towncrier.fragment.break]
+[tool.towncrier.fragment.bugfix]
+
+[tool.towncrier.fragment.misc]
+showcontent = true
