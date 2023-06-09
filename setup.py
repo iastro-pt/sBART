@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy
 
 import setuptools
 
@@ -61,7 +62,7 @@ setup(name='SBART',
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
-      include_dirs=[],
+      include_dirs=[numpy.get_include()],
       # package_data={"SBART": ["utils/tapas_downloader",
       #                         "resources/*",
       #                         "outside_tools/*",
