@@ -17,7 +17,8 @@ build:
   jobs:
     post_create_environment:
       - echo "Pre-installation of numpy"
-      - pip install --upgrade pip setuptools numpy
+      - pip install --upgrade pip numpy
+      - pip install setuptools==58.1.0
       - python -m pip install -r dev_requirements.txt
       - pip install .
 
