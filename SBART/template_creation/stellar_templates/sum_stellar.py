@@ -260,7 +260,7 @@ class SumStellar(StellarTemplate):
 
         self.spectra = shr_tmp[:] / len(self.frameIDs_to_use)
 
-        new_mask = np.zeros(self.spectra.shape, dtype=np.bool)
+        new_mask = np.zeros(self.spectra.shape, dtype=bool)
 
         # plt.plot(shr_counts[2], marker = 'x', linestyle ='')
         # plt.axhline(len(self.frameIDs_to_use))
@@ -334,7 +334,7 @@ class SumStellar(StellarTemplate):
                     )[0]
 
                     wavelengths_to_interpolate = np.zeros(
-                        stellar_template_wavelengths[order].shape, dtype=np.bool
+                        stellar_template_wavelengths[order].shape, dtype=bool
                     )
 
                     # until now the mask has ones in the regions to remove

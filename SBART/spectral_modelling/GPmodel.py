@@ -312,9 +312,9 @@ def build_gp(
         mean=jnp.exp(params["log_mean"]),
     )
 
-
-@partial(jax.jit, static_argnames=("kern_type",))
-def loss(params, XX_data, YY_data, YY_variance, kern_type):
-    # TODO: understand if we can pass args to this function!
-    gp = build_gp(params, XX_data, YY_variance, kern_type)
-    return -gp.log_probability(YY_data)
+if not MISSING_TINYGP:
+    @partial(jax.jit, static_argnames=("kern_type",))
+    def loss(params, XX_data, YY_data, YY_variance, kern_type):
+        # TODO: understand if we can pass args to this function!
+        gp = build_gp(params, XX_data, YY_variance, kern_type)
+        return -gp.log_probability(YY_data)

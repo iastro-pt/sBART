@@ -35,7 +35,7 @@ def find_wavelength_limits(
                 template_order_wavelengths[block[-1]],
             )
         )
-    valid_wave_positions = np.zeros(current_order_wavelength.shape, dtype=np.bool)
+    valid_wave_positions = np.zeros(current_order_wavelength.shape, dtype=  bool)
     for wavelengths_block in blocks:
         # calculates the common wavelengths, for all RV shifts
         # first value: highest initial wavelenngth
