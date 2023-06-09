@@ -2,7 +2,7 @@
 Chi-squared minimization, for a classical template matching approach.
 """
 
-from typing import Tuple
+from typing import Tuple, Dict, Any, Optional
 
 import numpy as np
 from loguru import logger
@@ -34,7 +34,7 @@ class chi_squared_sampler(SamplerModel):
                                                        )
                       )
 
-    def __init__(self, rv_step, rv_prior, user_configs):
+    def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
         """
 
         Parameters
