@@ -15,7 +15,7 @@ USE_CYTHON = False  # command line option, try-import, ...
 
 ext = '.pyx' if USE_CYTHON else '.c'
 
-targ_path = curr_file / "SBART" / "utils" / "cython_codes"
+targ_path = curr_file / "src" / "SBART" / "utils" / "cython_codes"
 
 pyx_files = list(targ_path.glob(f"**/*{ext}"))
 targets = {}
@@ -67,15 +67,17 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_namespace_packages("SBART")
-
+all_packages = setuptools.find_packages(where='src',
+                                                  # include=["SBART.*"]
+                                                  )
 print(all_packages)
 
 requ_path = Path(__file__).parent
 with open(requ_path / 'requirements.txt') as f:
     required = f.read().splitlines()
 
-setup(name='SBART', package_dir={"": "SBART"},
+setup(name='SBART',
+      package_dir={"": "src"},
       version=version,
       description='Python Distribution Utilities',
       packages=all_packages,

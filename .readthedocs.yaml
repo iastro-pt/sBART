@@ -17,7 +17,6 @@ build:
   jobs:
     post_create_environment:
       - pip install --upgrade pip numpy wheel build
-      - python -m build
 
 python:
 
