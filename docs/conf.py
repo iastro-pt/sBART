@@ -79,6 +79,7 @@ autodoc_default_options = {
 }
 
 numpydoc_show_class_members=False
+nbsphinx_execute = 'never'
 
 def setup(app):
     # https://stackoverflow.com/a/43186995
