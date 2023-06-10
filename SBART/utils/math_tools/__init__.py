@@ -1,1 +1,0 @@
-from .compute_variation import check_variation_inside_interval
