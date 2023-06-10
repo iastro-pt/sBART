@@ -32,7 +32,6 @@ git tag -a v1.4 -m "New sBART release"
 ####
 
 git push --tags
-
 ####
 # Finally, publish the package
 ####
