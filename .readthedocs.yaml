@@ -14,9 +14,10 @@ build:
 #  apt_packages:
 #    - python3-numpy
 #
-#  jobs:
-#    post_create_environment:
-#      - pip install --upgrade pip numpy wheel
+  jobs:
+    post_create_environment:
+      - pip install --upgrade pip numpy wheel build
+      - python -m build
 
 python:
 
