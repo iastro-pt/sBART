@@ -7,26 +7,21 @@ version: 2
 
 # Set the version of Python and other tools you might need
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
   tools:
-    python: "3.8"
-    # You can also specify other tool versions:
-    # nodejs: "16"
-    # rust: "1.55"
-    # golang: "1.17"
+    python: "3.9"
+#
+#  apt_packages:
+#    - python3-numpy
+#
   jobs:
-    pre_create_environment:
-      - asdf plugin add poetry
-      - asdf install poetry latest
-      - asdf global poetry latest
-      - poetry config virtualenvs.create false
-    pre_install:
-      - echo "Exporting project dependencies to requirements.txt"
-      - poetry export  --dev --without-hashes -f requirements.txt --output requirements_export.txt
+    post_create_environment:
+      - pip install --upgrade pip numpy wheel build
 
 python:
+
   install:
-    - requirements: requirements_export.txt
+    - requirements: dev_requirements.txt
     - method: pip
       path: .
 

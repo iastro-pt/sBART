@@ -13,3 +13,7 @@ template = "towncrier_template.rst"
 
 [tool.towncrier.fragment.misc]
 showcontent = true
+
+
+[build-system]
+requires = ["setuptools", "wheel", "Cython", "numpy"]
