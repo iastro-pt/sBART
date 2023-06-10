@@ -10,17 +10,18 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.9"
+#
+#  apt_packages:
+#    - python3-numpy
+#
+#  jobs:
+#    post_create_environment:
+#      - pip install --upgrade pip numpy wheel
 
-  apt_packages:
-    - python3-numpy
-
-  jobs:
-    post_create_environment:
-      - echo "Pre-installation of numpy"
-      - pip install --upgrade pip numpy wheel
-      - python -m pip install -r dev_requirements.txt
+python:
 
   install:
+    - requirements: dev_requirements.txt
     - method: pip
       path: .
 
