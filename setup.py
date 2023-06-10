@@ -67,14 +67,14 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_namespace_packages("", include="SBART")
+all_packages = setuptools.find_namespace_packages("SBART")
 
 print(all_packages)
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-setup(name='SBART',
+setup(name='SBART', package_dir={"": "SBART"},
       version=version,
       description='Python Distribution Utilities',
       packages=all_packages,
