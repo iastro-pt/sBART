@@ -71,7 +71,8 @@ all_packages = setuptools.find_namespace_packages("SBART")
 
 print(all_packages)
 
-with open('requirements.txt') as f:
+requ_path = Path(__file__).parent
+with open(requ_path / 'requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='SBART', package_dir={"": "SBART"},
