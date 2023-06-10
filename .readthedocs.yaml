@@ -18,9 +18,11 @@ build:
     post_create_environment:
       - echo "Pre-installation of numpy"
       - pip install --upgrade pip numpy wheel
-      - pip install setuptools==58.1.0
       - python -m pip install -r dev_requirements.txt
-      - pip install .
+
+  install:
+    - method: pip
+      path: .
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
