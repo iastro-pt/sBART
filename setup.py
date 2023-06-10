@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy
@@ -22,6 +23,24 @@ for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
     parts = parts[:-1] + (parts[-1].split(".")[0],)
     targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
+
+
+# https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#distributing-cython-modules
+def no_cythonize(extensions, **_ignore):
+    for extension in extensions:
+        sources = []
+        for sfile in extension.sources:
+            path, ext = os.path.splitext(sfile)
+            if ext in (".pyx", ".py"):
+                if extension.language == "c++":
+                    ext = ".cpp"
+                else:
+                    ext = ".c"
+                sfile = path + ext
+            sources.append(sfile)
+        extension.sources[:] = sources
+    return extensions
+
 
 ext_modules = [
     Extension(
@@ -48,17 +67,17 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_packages(where=".",
-                                        include=["SBART", "SBART.*"]
-                                        )
+all_packages = setuptools.find_namespace_packages("", include="SBART")
+
 print(all_packages)
+
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(name='SBART',
       version=version,
       description='Python Distribution Utilities',
-      packages=setuptools.find_namespace_packages("", include="SBART"),
+      packages=all_packages,
       include_package_data=True,
       ext_modules=ext_modules,
       install_requires=required,
