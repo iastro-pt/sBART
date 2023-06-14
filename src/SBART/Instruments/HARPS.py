@@ -157,7 +157,7 @@ class HARPS(Frame):
             folder_name = file_name
 
             e2ds_files = glob.glob(os.path.join(folder_name, "*e2ds_A.fits"), recursive=True)
-            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*.fits"), recursive=True)
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
 
             for name, elems in [("e2ds_A", e2ds_files), ("ccf", ccf_files)]:
                 if len(elems) > 1:
