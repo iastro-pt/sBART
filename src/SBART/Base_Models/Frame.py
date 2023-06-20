@@ -331,8 +331,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         user_configs = self._internal_configs._user_configs
         user_configs["minimum_order_SNR"] = 0
 
+        inst_properties = self.instrument_properties["array_sizes"]
+        if new_S2D_size is not None:
+            inst_properties["S2D"] = new_S2D_size
         new_frame = Frame(inst_name=self.inst_name,
-                          array_size=self.instrument_properties["array_sizes"],
+                          array_size=inst_properties,
                           file_path=self.file_path,
                           frameID=self.frameID,
                           KW_map=self._KW_map,
