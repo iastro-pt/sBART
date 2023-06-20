@@ -334,6 +334,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         inst_properties = self.instrument_properties["array_sizes"]
         if new_S2D_size is not None:
             inst_properties["S2D"] = new_S2D_size
+
         new_frame = Frame(inst_name=self.inst_name,
                           array_size=inst_properties,
                           file_path=self.file_path,
@@ -351,10 +352,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame._spectrum_has_data_on_memory = True # to avoid new data loads!
         new_frame._never_close = True # ensure that we don't lose the transformation
         new_frame.spectral_format = "S2D"
-        new_frame.instrument_properties["array_size"] = self.instrument_properties["array_sizes"]["S2D"]
-        new_frame.array_size = self.instrument_properties["array_sizes"]["S2D"]
+        new_frame.instrument_properties["array_size"] = inst_properties
+        new_frame.array_size = new_S2D_size
         new_frame.sub_instrument = self.sub_instrument
         new_frame.is_blaze_corrected = self.is_blaze_corrected
+        new_frame.observation_info["orderwise_SNRs"] = [1 for _ in range(new_S2D_size[0])]
         new_frame.regenerate_order_status()
         return new_frame
 
