@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, NoReturn, Optional
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple
 
 import numpy as np
 from astropy.io import fits
@@ -277,9 +277,16 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         else:
             raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
-    def copy_into_S2D(self):
+    def copy_into_S2D(self, new_S2D_size: Optional[Tuple[int, int]] = None):
         """
         Return a new object which contains the S1D that that has been converted into a S2D
+
+        Parameters
+        -----------
+        new_S2D_size: Optional[Tuple[int, int]]
+            Size of the new S2D size, should be a tuple with two elements: (number orders, pixel in order).
+            If it is None, then uses the standard size of S2D files of this instrument. **Default:** None
+
         Returns
         -------
 
@@ -288,7 +295,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             raise custom_exceptions.InvalidConfiguration("Can't transform S2D file into S2D file")
         logger.warning("Creating a copy of a S1D Frame for transformation into S2D")
 
-        og_shape = self.instrument_properties["array_sizes"]["S2D"]
+        og_shape = self.instrument_properties["array_sizes"]["S2D"] if new_S2D_size is None else new_S2D_size
+
         reconstructed_S2D = np.zeros(og_shape)
         reconstructed_wavelengths = np.zeros(og_shape)
         reconstructed_uncertainties = np.zeros(og_shape)
