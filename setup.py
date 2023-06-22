@@ -21,9 +21,8 @@ pyx_files = list(targ_path.glob(f"**/*{ext}"))
 targets = {}
 for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
-    parts = parts[:-1] + (parts[-1].split(".")[0],)
+    parts = parts[1:-1] + (parts[-1].split(".")[0],)
     targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
-
 
 # https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#distributing-cython-modules
 def no_cythonize(extensions, **_ignore):
@@ -70,7 +69,6 @@ from distutils.core import setup
 all_packages = setuptools.find_packages(where='src',
                                                   # include=["SBART.*"]
                                                   )
-print(all_packages)
 
 requ_path = Path(__file__).parent
 with open(requ_path / 'requirements.txt') as f:
