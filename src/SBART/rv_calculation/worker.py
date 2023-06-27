@@ -200,7 +200,7 @@ def worker(
 
                     if worker_configs["remove_OBS_from_template"]:
                         # We need to pass the frame if we want to remove the OBs from the template
-                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID),
+                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID)
                     else:
                         target_kwargs["frame"] = None
 
