@@ -97,6 +97,7 @@ class RV_routine(BASE):
             6, constraint=NumericValue
         ),  # tolerance for outliers in spectra - temp comp
         outlier_metric=UserParam("Paper", ValueFromList(("Paper", "MAD"))),
+        remove_OBS_from_template=UserParam(False, BooleanValue, ),
         min_block_size=UserParam(
             50, constraint=Positive_Value_Constraint
         ),  # Min number of consecutive points to not reject a region
@@ -512,6 +513,7 @@ class RV_routine(BASE):
             "OUTLIER_TOLERANCE": self._internal_configs["sigma_outliers_tolerance"],
             "MAX_ITERATIONS": 100,
             "METRIC_TO_USE": self._internal_configs["outlier_metric"],
+            "remove_OBS_from_template": self._internal_configs["remove_OBS_from_template"],
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],

@@ -44,7 +44,8 @@ def target(params, **kwargs):
                                                                                                 shift_RV_by=tentative_RV_shift,
                                                                                                 new_wavelengths=
                                                                                                 current_wavelength[indexes],
-                                                                                                include_invalid=False
+                                                                                                include_invalid=False,
+                                                                                                remove_OB=kwargs["frame"]
                                                                                                 )
 
     normalized_template, normalized_uncerts, coefs, residuals = match_continuum_levels(

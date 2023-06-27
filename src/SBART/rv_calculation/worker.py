@@ -6,6 +6,8 @@ import numpy as np
 from loguru import logger
 
 from SBART.Quality_Control.outlier_detection import compute_outliers
+
+from SBART.data_objects import DataClass
 from SBART.utils import find_wavelength_limits
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
 from SBART.utils.custom_exceptions import (
@@ -25,7 +27,7 @@ from SBART.utils.work_packages import WorkerOutput
 
 
 def worker(
-        dataClassProxy,
+        dataClassProxy:DataClass,
         input_queue: Queue,
         out_queue: Queue,
         worker_configs: dict,
@@ -193,8 +195,15 @@ def worker(
                             RVLowerBound.to(meter_second).value,
                             RVUpperBound.to(meter_second).value,
                         ),
-                        "SAVE_DISK_SPACE": worker_configs["SAVE_DISK_SPACE"]
+                        "SAVE_DISK_SPACE": worker_configs["SAVE_DISK_SPACE"],
                     }
+
+                    if worker_configs["remove_OBS_from_template"]:
+                        # We need to pass the frame if we want to remove the OBs from the template
+                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID),
+                    else:
+                        target_kwargs["frame"] = None
+
                     full_target_kwargs = {
                         **target_kwargs,
                         **data["target_specific_configs"],
