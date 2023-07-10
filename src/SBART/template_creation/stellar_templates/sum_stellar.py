@@ -15,6 +15,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
+    Positive_Value_Constraint
 )
 from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
 from SBART.utils.custom_exceptions import (
@@ -46,6 +47,9 @@ class SumStellar(StellarTemplate):
     method_name = "Sum"
     _default_params = StellarTemplate._default_params + DefaultValues(
         ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
+        FLUX_threshold_for_template=UserParam(default_value=1,
+                                              constraint=Positive_Value_Constraint,
+                                              comment="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values"),
     )
 
     def __init__(self, subInst: str, user_configs: Optional[dict] = None, loaded: bool = False):
@@ -266,7 +270,7 @@ class SumStellar(StellarTemplate):
         # plt.axhline(len(self.frameIDs_to_use))
         # plt.show()
         new_mask[np.where(shr_counts != len(self.frameIDs_to_use))] = True
-        new_mask[np.where(self.spectra < 1)] = True
+        new_mask[np.where(self.spectra < self._internal_configs["FLUX_threshold_for_template"])] = True
 
         logger.debug("Ensuring increasing wavelenghs in the stellar template")
         # ENsure that we always have increasing wavelengths
