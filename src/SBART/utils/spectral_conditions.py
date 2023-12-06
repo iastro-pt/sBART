@@ -306,13 +306,16 @@ class WarningFlag_Notset(ConditionModel):
     Reject the observation if the given warning flag is True
     """
 
-    def __init__(self, flag_name: str):
+    def __init__(self, flag_name: str, full_flag=False):
         self.flag_name = flag_name
-
+        self.full_flag=full_flag
         super().__init__()
 
     def select_spectra(self, frame) -> Flag:
-        msg = f"QC flag {self.flag_name} meets the bad value"
+        if self.full_flag:
+            msg = self.full_flag
+        else:
+            msg = f"QC flag {self.flag_name} meets the bad value"
         KW_flag = KW_WARNING(msg)
         if frame.status.check_if_warning_exists(KW_flag):
             message = f"Frame has the KW warning flag {self.flag_name} active"
