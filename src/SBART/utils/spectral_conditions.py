@@ -224,7 +224,7 @@ class KEYWORD_condition(ConditionModel):
                 logger.warning(
                     "Frame has a NaN value for the KW: {}. Not applying the spectral condition",
                     self.KW,
-                )
+                    )
             if self._include_edges:
                 if bound_elem[0] <= KW_val <= bound_elem[1]:
                     keep = True
@@ -308,12 +308,12 @@ class WarningFlag_Notset(ConditionModel):
 
     def __init__(self, flag_name: str, full_flag=False):
         self.flag_name = flag_name
-        self.full_flag=full_flag
+        self.full_flag = full_flag
         super().__init__()
 
     def select_spectra(self, frame) -> Flag:
         if self.full_flag:
-            msg = self.full_flag
+            msg = self.flag_name
         else:
             msg = f"QC flag {self.flag_name} meets the bad value"
         KW_flag = KW_WARNING(msg)
@@ -329,7 +329,7 @@ class WarningFlag_Notset(ConditionModel):
     def cond_info(self) -> str:
         return "Warning KW flag {} was raised".format(
             self.flag_name
-        )
+            )
 
 
 class FNAME_condition(ConditionModel):
@@ -386,4 +386,4 @@ class FNAME_condition(ConditionModel):
     def cond_info(self) -> str:
         return "Filename list {} - only keep: {}".format(
             self._filename_list, self._only_keep_filenames
-        )
+            )
