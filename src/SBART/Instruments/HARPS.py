@@ -178,7 +178,7 @@ class HARPS(Frame):
             file_start, *_ = os.path.basename(file_name).split("_")
 
             found_CCF = False
-            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*.fits"), recursive=True)
 
             for file in ccf_files:
                 if file_start in file:
