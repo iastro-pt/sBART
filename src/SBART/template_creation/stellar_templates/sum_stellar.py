@@ -49,7 +49,7 @@ class SumStellar(StellarTemplate):
         ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
         FLUX_threshold_for_template=UserParam(default_value=1,
                                               constraint=Positive_Value_Constraint,
-                                              comment="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values"),
+                                              description="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values"),
     )
 
     def __init__(self, subInst: str, user_configs: Optional[dict] = None, loaded: bool = False):
