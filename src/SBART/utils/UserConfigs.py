@@ -140,7 +140,7 @@ ListValue = ValueFromDtype((list, tuple))
 
 
 class UserParam:
-    __slots__ = ("_valueConstraint", "_default_value", "_mandatory", "quiet")
+    __slots__ = ("_valueConstraint", "_default_value", "_mandatory", "quiet", "description")
 
     def __init__(
             self,
@@ -148,12 +148,13 @@ class UserParam:
             constraint: Optional[Constraint] = None,
             mandatory: bool = False,
             quiet: bool = False,
-            comment: Optional[str] = None,
+            description: Optional[str] = None,
     ):
         self._valueConstraint = constraint if constraint is not None else Constraint("")
         self._default_value = default_value
         self._mandatory = mandatory
         self.quiet = quiet
+        self.description = description
 
     def apply_constraints_to_value(self, param_name, value) -> NoReturn:
         self._valueConstraint.apply_to_value(param_name, value)
