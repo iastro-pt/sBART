@@ -127,7 +127,7 @@ class ESPRESSO(ESO_PIPELINE):
             "HIERARCH ESO INS{} ADC{} SENS1": 0,  # related with ADC2 problem
             "HIERARCH ESO INS{} ADC{} TEMP": 0,  # related with ADC2 problem
         }
-
+        found_ADC_issue = False
         for flag, bad_value in nonfatal_QC_flags.items():
             found_UT = False
             for UT_KW in ["", "2", "3", "4"]:
@@ -138,6 +138,7 @@ class ESPRESSO(ESO_PIPELINE):
                             msg = f"QC flag {ADC_KW} has a value of {bad_value}"
                             logger.warning(msg)
                             self._status.store_warning(KW_WARNING(msg))
+                            found_ADC_issue = True 
                         found_UT = True
                 except:
                     pass
@@ -145,6 +146,10 @@ class ESPRESSO(ESO_PIPELINE):
                 logger.critical(
                     f"Did not find the entry for the following UT related metric: {flag}"
                 )
+        
+        if found_ADC_issue:
+            self._status.store_warning(KW_WARNING("ADC2 issues found"))
+            
         super().check_header_QC_ESO_DRS(header)
 
     def build_mask(self, bypass_QualCheck: bool = False) -> None:
