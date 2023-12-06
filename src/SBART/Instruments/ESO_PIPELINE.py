@@ -33,7 +33,10 @@ class ESO_PIPELINE(Frame):
     _default_params = Frame._default_params + DefaultValues(
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
         UseMolecfit=UserParam(False, constraint=BooleanValue),
-        use_old_pipeline=UserParam(default_value=False, constraint=BooleanValue)
+        use_old_pipeline=UserParam(default_value=False, constraint=BooleanValue),
+        SCIRED_CHECK_IS_FATAL=UserParam(default_value=True,
+                                        constraint=BooleanValue,
+                                        description="Automatically reject frames with QC SCIRED CHECK = 0 ")
     )
 
     _default_params.update("apply_FluxCorr",
@@ -334,14 +337,20 @@ class ESO_PIPELINE(Frame):
 
     def check_header_QC_ESO_DRS(self, header):
 
-        fatal_QC_flags = {f"HIERARCH {self.KW_identifier} QC SCIRED CHECK": 0}
-
+        fatal_QC_flags = {}
+                
         nonfatal_QC_flags = {
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED FLUX CORR CHECK": 0,
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
         }
+
+        if self._internal_configs["SCIRED_CHECK_IS_FATAL"]:
+            fatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
+        else:
+            nonfatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
+
 
         for flag, bad_value in fatal_QC_flags.items():
             if header[flag] == bad_value:
