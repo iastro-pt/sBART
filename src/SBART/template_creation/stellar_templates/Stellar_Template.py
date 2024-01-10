@@ -211,6 +211,43 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
         self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
 
+    def add_new_frame_to_template(self, frame: Frame):
+        """
+        Allow to inject a new observation into a pre-existing model. This base function checks for
+        a match on the different flux corrections and ensures that the loaded Flag is set to False,
+        so that it is possible to update the disk products afterwards.
+
+        Parameters
+        ----------
+        frame: Frame
+            A new frame to inject into the stellar template
+
+        Returns
+        -------
+
+        Raises
+        -------
+        custom_exceptions.InvalidConfiguration:
+            If the flux corrections of the Frame do not match those from the stellar template
+
+        """
+
+        logger.info("Adding new frame to pre-existing stellar template. Updating model!")
+        self._loaded = False
+        blaze_corrected = frame.check_if_data_correction_enabled("is_blaze_corrected")
+        telluric_corrected = frame.check_if_data_correction_enabled("was_telluric_corrected")
+        BERV_corrected = frame.check_if_data_correction_enabled("is_BERV_corrected")
+        flux_atmos_balance_corrected = frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
+        flux_dispersion_balance_corrected = frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
+
+        validity_array = [blaze_corrected, telluric_corrected, BERV_corrected, flux_atmos_balance_corrected, flux_dispersion_balance_corrected]
+
+        if not all(validity_array):
+            msg = f"New frame does not match the corrections from the stellar template ({validity_array=})"
+            logger.critical(msg)
+            raise custom_exceptions.InvalidConfiguration(msg)
+
+
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
         entire_mask = self.spectral_mask.get_custom_mask()
