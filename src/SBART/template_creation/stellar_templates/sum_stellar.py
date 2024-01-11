@@ -291,18 +291,17 @@ class SumStellar(StellarTemplate):
 
     def add_new_frame_to_template(self, frame: Frame):
         super().add_new_frame_to_template(frame)
-        # TODO: maybe add a check for the validity of the Frame
 
         if not frame.is_valid:
             logger.critical("Injected frame does not pass the SBART-defined QC flags, template will not be updated")
             return
 
-        self.template *= len(self.used_fpaths)
+        self.spectra *= len(self.used_fpaths)
         self.uncertainties *= len(self.used_fpaths)
         self.uncertainties **= 2
         self.used_fpaths.append(frame.file_path)
 
-        for order in range(frame.valid_orders):
+        for order in range(frame.N_orders):
             if order in self.bad_orders:
                 # no need to handle the orders that are marked as "bad" in the original template
                 continue
@@ -325,7 +324,7 @@ class SumStellar(StellarTemplate):
 
             current_epochRV = convert_data(
                 frame.get_KW_value("DRS_RV"),
-                units=kilometer_second,
+                new_units=kilometer_second,
                 as_value=True
                 )
 
@@ -355,17 +354,25 @@ class SumStellar(StellarTemplate):
                 include_invalid=False
                 )
 
-            self.template += int_ord
-            self.uncertainties += int_err ** 2
+            self.spectra[order][wavelengths_to_interpolate] += int_ord
+            self.uncertainties[order][wavelengths_to_interpolate] += int_err ** 2
 
+            # reject non-interpolated points
             self.spectral_mask.add_indexes_to_mask_order(
                 order=order,
                 indexes=np.where(wavelengths_to_interpolate == False),
                 mask_type=MISSING_DATA
                 )
 
+            # reject low-flux points
+            self.spectral_mask.add_indexes_to_mask_order(
+                order=order,
+                indexes=np.where(self.spectra[order] < self._internal_configs["FLUX_threshold_for_template"]),
+                mask_type=MISSING_DATA
+                )
+
         self.uncertainties = np.sqrt(self.uncertainties) / len(self.used_fpaths)
-        self.template /= len(self.used_fpaths)
+        self.spectra /= len(self.used_fpaths)
 
     def perform_calculations(self, in_queue, out_queue, buffer_info, **kwargs):
         """
