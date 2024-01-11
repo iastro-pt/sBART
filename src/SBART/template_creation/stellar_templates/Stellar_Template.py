@@ -234,16 +234,21 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         logger.info("Adding new frame to pre-existing stellar template. Updating model!")
         self._loaded = False
-        blaze_corrected = frame.check_if_data_correction_enabled("is_blaze_corrected")
-        telluric_corrected = frame.check_if_data_correction_enabled("was_telluric_corrected")
-        BERV_corrected = frame.check_if_data_correction_enabled("is_BERV_corrected")
-        flux_atmos_balance_corrected = frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
-        flux_dispersion_balance_corrected = frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
 
-        validity_array = [blaze_corrected, telluric_corrected, BERV_corrected, flux_atmos_balance_corrected, flux_dispersion_balance_corrected]
+        keep = True
+        for name, val1, val2 in [("Blaze", self.is_blaze_corrected, frame.check_if_data_correction_enabled("is_blaze_corrected")),
+                                 ("Telluric", self.was_telluric_corrected, frame.check_if_data_correction_enabled("was_telluric_corrected")),
+                                 ("BERV_corrected", self.is_BERV_corrected, frame.check_if_data_correction_enabled("is_BERV_corrected")),
+                                 ("Flux atmos balance", self.flux_atmos_balance_corrected, frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")),
+                                 ("flux_dispersion_balance_corrected", self.flux_dispersion_balance_corrected, frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")),
+                                 ("sub-Instrument", self.sub_instrument, frame.sub_instrument)
+                                 ]:
+            if val1 != val2:
+                keep = False
+                logger.warning(f"Template-frame corrections are different: {name} - template: {val1} - Frame: {val2}")
 
-        if not all(validity_array):
-            msg = f"New frame does not match the corrections from the stellar template ({validity_array=})"
+        if not keep:
+            msg = f"New frame does not match the corrections from the stellar template"
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
 
