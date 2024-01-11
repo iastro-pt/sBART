@@ -595,7 +595,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         og_lambda, og_spectra, og_errs = wavelength[desired_inds], flux[desired_inds], uncertainties[desired_inds]
 
-        if remove_OB is not None:
+        if remove_OB is not None:  # TODO: check that this is working as expected
             if remove_OB.frameID in self.frameIDs_to_use:
                 ccf_rv = convert_data(
                     remove_OB.get_KW_value(self.RV_keyword),
