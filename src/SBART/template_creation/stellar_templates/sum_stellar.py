@@ -364,7 +364,7 @@ class SumStellar(StellarTemplate):
                 mask_type=MISSING_DATA
                 )
 
-        self.uncertainties = np.sqrt(self.uncertainties)
+        self.uncertainties = np.sqrt(self.uncertainties) / len(self.used_fpaths)
         self.template /= len(self.used_fpaths)
 
     def perform_calculations(self, in_queue, out_queue, buffer_info, **kwargs):
