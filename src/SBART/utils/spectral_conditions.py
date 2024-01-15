@@ -63,7 +63,7 @@ Reject observation if a given warning flag was set when loading the spectra
 
 .. code-block:: python
 
-    bad_subInst_condition = WarningFlag_set("HIERARCH ESO QC SCIRED DRIFT CHECK")
+    bad_subInst_condition = WarningFlag_Notset("HIERARCH ESO QC SCIRED DRIFT CHECK")
 
 Combining conditions
 ================================
@@ -387,3 +387,30 @@ class FNAME_condition(ConditionModel):
         return "Filename list {} - only keep: {}".format(
             self._filename_list, self._only_keep_filenames
             )
+
+
+class SNR_condition(ConditionModel):
+    """
+    Reject observations based on the order-wise SNR. Compares the SNR
+    of the valid orders against the minimum SNR that is provided to this
+    object.
+
+    Mostly useful for the creation of the stellar template
+    """
+    def __init__(self, minimum_SNR: float):
+        self.minimum_SNR = minimum_SNR
+        super().__init__()
+
+        if minimum_SNR <= 0:
+            raise InvalidConfiguration(f"SNR must be >= 0 ({minimum_SNR})")
+
+    def select_spectra(self, frame):
+        KW = np.asarray(frame.get_KW_value("orderwise_snrs"))
+        valid_orders = list(frame.valid_orders())
+        message = f"Did not pass SNR cutoff: {self.minimum_SNR:}"
+        flag = VALID if np.any(KW[valid_orders] < self.minimum_SNR) else USER_BLOCKED(message)
+        return flag
+
+    @property
+    def cond_info(self):
+        return f"Minimum order-wise SNR of: {self.minimum_SNR}"
