@@ -88,7 +88,7 @@ For a :py:class:`~SBART.data_objects.DataClass.DataClass` object, we can use its
 """
 
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, overload
 
 import numpy as np
 from loguru import logger
@@ -173,12 +173,14 @@ class ConditionModel:
 
 
 class KEYWORD_condition(ConditionModel):
+    """
+    Limit the KW to be inside the defined interval (edges included)
+    Parameters
+    ===============
+    """
+
     def __init__(self, KW: str, bounds: List[Any], include_edges: bool = True):
-        """
-        Limit the KW to be inside the defined interval (edges included)
-        Parameters
-        ===============
-        """
+
         self.KW = KW
         self.bounds = bounds
         super().__init__()
@@ -216,6 +218,7 @@ class KEYWORD_condition(ConditionModel):
         else:
             self.bounds = new_bounds
 
+    @overload
     def select_spectra(self, frame):
         keep = False
         KW_val = frame.get_KW_value(self.KW)

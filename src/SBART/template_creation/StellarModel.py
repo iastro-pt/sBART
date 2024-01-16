@@ -1,3 +1,7 @@
+"""
+Handles the creation of the stellar models
+"""
+
 from pathlib import Path
 from typing import Optional, Set
 

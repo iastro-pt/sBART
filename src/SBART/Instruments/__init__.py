@@ -14,6 +14,12 @@ with all providing the same user-interface (after they load all the necessary in
 
 """
 
+__all__ = ["ESPRESSO",
+           "HARPS",
+           "CARMENES",
+           "HARPSN",
+           "NIRPS",
+           ]
 from .ESPRESSO import ESPRESSO
 from .HARPS import HARPS
 from .CARMENES import CARMENES
