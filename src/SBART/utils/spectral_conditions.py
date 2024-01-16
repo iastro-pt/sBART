@@ -86,6 +86,7 @@ For a :py:class:`~SBART.data_objects.DataClass.DataClass` object, we can use its
     data.reject_observations(full_conditions)
 
 """
+
 from pathlib import Path
 from typing import Any, List, Tuple
 
@@ -95,7 +96,7 @@ from loguru import logger
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
-
+from typing import override
 
 class ConditionModel:
     """
@@ -311,6 +312,7 @@ class WarningFlag_Notset(ConditionModel):
         self.full_flag = full_flag
         super().__init__()
 
+    @override
     def select_spectra(self, frame) -> Flag:
         if self.full_flag:
             msg = self.flag_name
@@ -367,6 +369,7 @@ class FNAME_condition(ConditionModel):
         self._only_keep_filenames = only_keep_filenames
         super().__init__()
 
+    @override
     def select_spectra(self, frame) -> Flag:
         if not self._only_keep_filenames:
             if frame.fname in self._filename_list:
@@ -404,6 +407,7 @@ class SNR_condition(ConditionModel):
         if minimum_SNR <= 0:
             raise InvalidConfiguration(f"SNR must be >= 0 ({minimum_SNR})")
 
+    @override
     def select_spectra(self, frame):
         KW = np.asarray(frame.get_KW_value("orderwise_snrs"))
         valid_orders = list(frame.valid_orders())
