@@ -8,7 +8,7 @@ import tqdm
 from loguru import logger
 from tabletexifier import Table
 
-from Base_Models.Frame import Frame
+from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions, open_buffer
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
