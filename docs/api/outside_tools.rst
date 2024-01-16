@@ -7,10 +7,8 @@ Outside tools
 .. automodule:: SBART.Quality_Control
 
 
-.. autosummary::
-   :toctree: summary
+.. autofunction:: create_logger
+.. autofunction:: Load_RVoutputs
 
-    create_logger
-    Load_RVoutputs
 
 
