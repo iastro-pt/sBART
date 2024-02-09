@@ -96,7 +96,7 @@ from loguru import logger
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
-from typing import override
+from typing_extensions import override
 
 class ConditionModel:
     """
