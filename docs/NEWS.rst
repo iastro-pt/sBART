@@ -4,6 +4,22 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0-4-0 (2024-02-09)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Bugfix
+~~~~~~
+
+- The HARPS interface correctly picks with the CCF_A file 
+
+
+Feature
+~~~~~~~
+
+- allow greater control in the selection of available frames 
+- Added a new condition to check order-wise SNR
+
+
 SBART 0-4-0 (2023-06-09)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
