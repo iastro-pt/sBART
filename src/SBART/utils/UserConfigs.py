@@ -148,7 +148,7 @@ class UserParam:
             constraint: Optional[Constraint] = None,
             mandatory: bool = False,
             quiet: bool = False,
-            description: str = ""
+            description: Optional[str] = None,
     ):
         self._valueConstraint = constraint if constraint is not None else Constraint("")
         self._default_value = default_value

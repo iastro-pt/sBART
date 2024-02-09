@@ -256,7 +256,7 @@ class DataClass(BASE):
 
         self._applied_telluric_removal = True
 
-    def replace_frames_with_S2D_version(self):
+    def replace_frames_with_S2D_version(self, new_shape: Optional[Tuple[int, int]] = None):
         """
         In-place substitution of all frames with their S2D-compatible shapes!
         Returns
@@ -265,7 +265,7 @@ class DataClass(BASE):
         """
         logger.warning("Transforming the frames to have a S2D-compatible shape")
         for index, frame in enumerate(self.observations):
-            s2d_frame = frame.copy_into_S2D()
+            s2d_frame = frame.copy_into_S2D(new_S2D_size=new_shape)
             s2d_frame.build_mask()
             self.observations[index] = s2d_frame
             del frame

@@ -1,35 +1,38 @@
 .. _SbartAPI:
 
-
 ============
 SBART API
 ============
 
 Public interface
-====================
-
-.. autosummary::
-    :toctree: summary
-    :recursive:
-
-    SBART.data_objects
-    SBART.Instruments
-    SBART.Quality_Control
-    SBART.template_creation
-    SBART.rv_calculation
-    SBART.Samplers
-    SBART.utils
+-------------------
+.. currentmodule:: SBART
 
 
-Low-level packages
-====================
+.. toctree::
+    :maxdepth: 1
 
-.. autosummary::
-    :toctree: summary
-    :recursive:
+    data_objects
+    Instruments
+    template_creation
+    rv_calculation
+    Samplers
+    Quality_Control
+    outside_tools
+    utils
 
-    SBART.Base_Models
-    SBART.Components
-    SBART.Masks
-    SBART.outside_tools
-    SBART.spectral_normalization
+Low-level interface
+---------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    Base_Models
+    Components
+    Masks
+    DataUnits
+    spectral_normalization
+
+
+
+

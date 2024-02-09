@@ -63,7 +63,7 @@ Reject observation if a given warning flag was set when loading the spectra
 
 .. code-block:: python
 
-    bad_subInst_condition = WarningFlag_set("HIERARCH ESO QC SCIRED DRIFT CHECK")
+    bad_subInst_condition = WarningFlag_Notset("HIERARCH ESO QC SCIRED DRIFT CHECK")
 
 Combining conditions
 ================================
@@ -86,8 +86,9 @@ For a :py:class:`~SBART.data_objects.DataClass.DataClass` object, we can use its
     data.reject_observations(full_conditions)
 
 """
+
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, overload
 
 import numpy as np
 from loguru import logger
@@ -95,7 +96,7 @@ from loguru import logger
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
-
+from typing_extensions import override
 
 class ConditionModel:
     """
@@ -172,12 +173,14 @@ class ConditionModel:
 
 
 class KEYWORD_condition(ConditionModel):
+    """
+    Limit the KW to be inside the defined interval (edges included)
+    Parameters
+    ===============
+    """
+
     def __init__(self, KW: str, bounds: List[Any], include_edges: bool = True):
-        """
-        Limit the KW to be inside the defined interval (edges included)
-        Parameters
-        ===============
-        """
+
         self.KW = KW
         self.bounds = bounds
         super().__init__()
@@ -215,6 +218,7 @@ class KEYWORD_condition(ConditionModel):
         else:
             self.bounds = new_bounds
 
+    @overload
     def select_spectra(self, frame):
         keep = False
         KW_val = frame.get_KW_value(self.KW)
@@ -224,7 +228,7 @@ class KEYWORD_condition(ConditionModel):
                 logger.warning(
                     "Frame has a NaN value for the KW: {}. Not applying the spectral condition",
                     self.KW,
-                )
+                    )
             if self._include_edges:
                 if bound_elem[0] <= KW_val <= bound_elem[1]:
                     keep = True
@@ -306,13 +310,17 @@ class WarningFlag_Notset(ConditionModel):
     Reject the observation if the given warning flag is True
     """
 
-    def __init__(self, flag_name: str):
+    def __init__(self, flag_name: str, full_flag=False):
         self.flag_name = flag_name
-
+        self.full_flag = full_flag
         super().__init__()
 
+    @override
     def select_spectra(self, frame) -> Flag:
-        msg = f"QC flag {self.flag_name} meets the bad value"
+        if self.full_flag:
+            msg = self.flag_name
+        else:
+            msg = f"QC flag {self.flag_name} meets the bad value"
         KW_flag = KW_WARNING(msg)
         if frame.status.check_if_warning_exists(KW_flag):
             message = f"Frame has the KW warning flag {self.flag_name} active"
@@ -326,7 +334,7 @@ class WarningFlag_Notset(ConditionModel):
     def cond_info(self) -> str:
         return "Warning KW flag {} was raised".format(
             self.flag_name
-        )
+            )
 
 
 class FNAME_condition(ConditionModel):
@@ -364,6 +372,7 @@ class FNAME_condition(ConditionModel):
         self._only_keep_filenames = only_keep_filenames
         super().__init__()
 
+    @override
     def select_spectra(self, frame) -> Flag:
         if not self._only_keep_filenames:
             if frame.fname in self._filename_list:
@@ -383,4 +392,32 @@ class FNAME_condition(ConditionModel):
     def cond_info(self) -> str:
         return "Filename list {} - only keep: {}".format(
             self._filename_list, self._only_keep_filenames
-        )
+            )
+
+
+class SNR_condition(ConditionModel):
+    """
+    Reject observations based on the order-wise SNR. Compares the SNR
+    of the valid orders against the minimum SNR that is provided to this
+    object.
+
+    Mostly useful for the creation of the stellar template
+    """
+    def __init__(self, minimum_SNR: float):
+        self.minimum_SNR = minimum_SNR
+        super().__init__()
+
+        if minimum_SNR <= 0:
+            raise InvalidConfiguration(f"SNR must be >= 0 ({minimum_SNR})")
+
+    @override
+    def select_spectra(self, frame):
+        KW = np.asarray(frame.get_KW_value("orderwise_snrs"))
+        valid_orders = list(frame.valid_orders())
+        message = f"Did not pass SNR cutoff: {self.minimum_SNR:}"
+        flag = VALID if np.any(KW[valid_orders] < self.minimum_SNR) else USER_BLOCKED(message)
+        return flag
+
+    @property
+    def cond_info(self):
+        return f"Minimum order-wise SNR of: {self.minimum_SNR}"

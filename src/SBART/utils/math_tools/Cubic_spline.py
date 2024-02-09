@@ -2,13 +2,21 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+from loguru import logger
 from scipy.misc import derivative
 
-from SBART.utils.cython_codes.cubic_interpolation import (
-    partial_derivative,
-    second_derivative,
-    tridiagonal_inverter,
-)
+from SBART.utils import custom_exceptions
+
+try:
+    from SBART.utils.cython_codes.cubic_interpolation import (
+        partial_derivative,
+        second_derivative,
+        tridiagonal_inverter,
+    )
+    CYTHON_UNAVAILABLE = False
+except ImportError:
+    logger.critical("Cython interface is not found, please make sure that the installation went smoothly")
+    CYTHON_UNAVAILABLE = True
 
 # np.seterr(all='raise')
 
@@ -22,6 +30,8 @@ class CustomCubicSpline:
         ignore_covariances=True,
         n_threads=4,
     ):
+        if CYTHON_UNAVAILABLE:
+            raise custom_exceptions.InternalError("Cython interface is not installed")
         self.old_wavelengths = old_wavelengths
         self.original_data = original_data
         self.original_errors = original_errors

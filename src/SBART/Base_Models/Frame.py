@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, NoReturn, Optional
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple
 
 import numpy as np
 from astropy.io import fits
@@ -277,9 +277,16 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         else:
             raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
-    def copy_into_S2D(self):
+    def copy_into_S2D(self, new_S2D_size: Optional[Tuple[int, int]] = None):
         """
         Return a new object which contains the S1D that that has been converted into a S2D
+
+        Parameters
+        -----------
+        new_S2D_size: Optional[Tuple[int, int]]
+            Size of the new S2D size, should be a tuple with two elements: (number orders, pixel in order).
+            If it is None, then uses the standard size of S2D files of this instrument. **Default:** None
+
         Returns
         -------
 
@@ -288,7 +295,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             raise custom_exceptions.InvalidConfiguration("Can't transform S2D file into S2D file")
         logger.warning("Creating a copy of a S1D Frame for transformation into S2D")
 
-        og_shape = self.instrument_properties["array_sizes"]["S2D"]
+        og_shape = self.instrument_properties["array_sizes"]["S2D"] if new_S2D_size is None else new_S2D_size
+
         reconstructed_S2D = np.zeros(og_shape)
         reconstructed_wavelengths = np.zeros(og_shape)
         reconstructed_uncertainties = np.zeros(og_shape)
@@ -323,8 +331,12 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         user_configs = self._internal_configs._user_configs
         user_configs["minimum_order_SNR"] = 0
 
+        inst_properties = self.instrument_properties["array_sizes"]
+        if new_S2D_size is not None:
+            inst_properties["S2D"] = new_S2D_size
+
         new_frame = Frame(inst_name=self.inst_name,
-                          array_size=self.instrument_properties["array_sizes"],
+                          array_size=inst_properties,
                           file_path=self.file_path,
                           frameID=self.frameID,
                           KW_map=self._KW_map,
@@ -340,10 +352,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame._spectrum_has_data_on_memory = True # to avoid new data loads!
         new_frame._never_close = True # ensure that we don't lose the transformation
         new_frame.spectral_format = "S2D"
-        new_frame.instrument_properties["array_size"] = self.instrument_properties["array_sizes"]["S2D"]
-        new_frame.array_size = self.instrument_properties["array_sizes"]["S2D"]
+        new_frame.instrument_properties["array_size"] = new_S2D_size
+        new_frame.array_size = new_S2D_size
         new_frame.sub_instrument = self.sub_instrument
         new_frame.is_blaze_corrected = self.is_blaze_corrected
+        new_frame.observation_info["orderwise_SNRs"] = [1 for _ in range(new_S2D_size[0])]
         new_frame.regenerate_order_status()
         return new_frame
 
