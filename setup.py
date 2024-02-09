@@ -9,7 +9,7 @@ curr_file = Path(__file__).parent.absolute()
 
 from setuptools import Extension
 
-version = "0.4.0"
+version = "0.5.0"
 
 USE_CYTHON = False  # command line option, try-import, ...
 
@@ -23,6 +23,7 @@ for entry in pyx_files:
     parts = entry.relative_to(curr_file).parts
     parts = parts[1:-1] + (parts[-1].split(".")[0],)
     targets[".".join(parts)] = (entry.relative_to(curr_file)).as_posix()
+
 
 # https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#distributing-cython-modules
 def no_cythonize(extensions, **_ignore):
