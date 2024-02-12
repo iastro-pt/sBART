@@ -35,12 +35,12 @@ class SbartBaseSampler(SamplerModel):
     _name = SamplerModel._name + " SBART"
 
     def __init__(
-            self,
-            mode: str,
-            RV_step: RV_measurement,
-            RV_window: Tuple[RV_measurement, RV_measurement],
-            user_configs,
-            sampler_folders: Optional[Dict[str, str]] = None,
+        self,
+        mode: str,
+        RV_step: RV_measurement,
+        RV_window: Tuple[RV_measurement, RV_measurement],
+        user_configs,
+        sampler_folders: Optional[Dict[str, str]] = None,
     ):
         """
         Approximate the posterior distribution with a LaPlace approximation;
@@ -96,7 +96,9 @@ class SbartBaseSampler(SamplerModel):
         return flux_misspec, log_like, orders
 
     def compute_epochwise_combination(self, outputs):
-        return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
+        return np.sum(
+            [pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS]
+        )
 
     def show_posterior(self, mean_value, variance, RVs):
         """
@@ -104,7 +106,7 @@ class SbartBaseSampler(SamplerModel):
         """
         std = np.sqrt(variance)
         gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (
-                std * np.sqrt(2 * np.pi)
+            std * np.sqrt(2 * np.pi)
         )
 
         plt.scatter(RVs, gaussian(RVs, mean_value, std))

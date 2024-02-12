@@ -2,7 +2,7 @@ from pathlib import Path
 from loguru import logger
 from typing import NoReturn, Dict
 
-import numpy as np 
+import numpy as np
 from SBART.utils.BASE import BASE
 from SBART.utils.UserConfigs import (
     DefaultValues,
@@ -47,11 +47,11 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines", ))),
+        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines",))),
         # We have to add this here, so that the parameters are not rejected by the config validation
         SPLINE_TYPE=UserParam("cubic"),
         INTERPOLATION_ERR_PROP=UserParam("interpolation"),
-        NUMBER_WORKERS=UserParam(1)
+        NUMBER_WORKERS=UserParam(1),
     )
 
     def __init__(self, **kwargs):
@@ -72,16 +72,19 @@ class Spectral_Modelling(BASE):
     def initialize_modelling_interface(self):
         if self.initialized_interface:
             return
-        interface_init = {"obj_info": self.spectrum_information,
-                          "user_configs": self._internal_configs.get_user_configs()
-                          }
+        interface_init = {
+            "obj_info": self.spectrum_information,
+            "user_configs": self._internal_configs.get_user_configs(),
+        }
         self._modelling_interfaces: Dict[str, "ModellingBase"] = {
             "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init),
         }
 
         if self._internalPaths.root_storage_path is None:
-            logger.critical("{self.name} launching modelling interface without a root path. Fallback to current directory")
+            logger.critical(
+                "{self.name} launching modelling interface without a root path. Fallback to current directory"
+            )
             self.generate_root_path(Path("."))
 
         for comp in self._modelling_interfaces.values():
@@ -103,19 +106,29 @@ class Spectral_Modelling(BASE):
         try:
             key = "INTERPOL_MODE"
             self._internal_configs.update_configs_with_values({key: new_properties[key]})
-            logger.info("Changing the interpolation mode of {} to {}",self.name, new_properties[key])
+            logger.info(
+                "Changing the interpolation mode of {} to {}", self.name, new_properties[key]
+            )
         except KeyError as e:
             pass
 
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
-    def interpolate_spectrum_to_wavelength(self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+    def interpolate_spectrum_to_wavelength(
+        self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False
+    ):
         self.initialize_modelling_interface()
 
-        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(
+            order, include_invalid
+        )
         desired_inds = ~mask
 
-        og_lambda, og_spectra, og_errs = wavelength[desired_inds], flux[desired_inds], uncertainties[desired_inds]
+        og_lambda, og_spectra, og_errs = (
+            wavelength[desired_inds],
+            flux[desired_inds],
+            uncertainties[desired_inds],
+        )
 
         if RV_shift_mode == "apply":
             shift_function = apply_RVshift
@@ -127,15 +140,16 @@ class Spectral_Modelling(BASE):
         og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
 
         try:
-            new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(og_lambda=og_lambda,
-                                                                                                og_spectra=og_spectra,
-                                                                                                og_err=og_errs,
-                                                                                                new_wavelengths=new_wavelengths,
-                                                                                                order=order
-                                                                                                )
+            new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(
+                og_lambda=og_lambda,
+                og_spectra=og_spectra,
+                og_err=og_errs,
+                new_wavelengths=new_wavelengths,
+                order=order,
+            )
         except custom_exceptions.StopComputationError as exc:
             logger.critical("Interpolation of {} has failed", self.name)
-            raise exc 
+            raise exc
 
         return np.asarray(new_flux), np.asarray(new_errors)
 

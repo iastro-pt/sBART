@@ -9,7 +9,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     Positive_Value_Constraint,
-    IntegerValue
+    IntegerValue,
 )
 
 
@@ -29,6 +29,7 @@ class NormalizationBase(BASE):
     previous rejections of spectral orders.
 
     """
+
     _object_type = "Spectral normalizer"
 
     _name = "SpecNormBase"
@@ -41,18 +42,18 @@ class NormalizationBase(BASE):
     orderwise_application = True
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
-
-        super().__init__(user_configs=user_configs,
-                         needed_folders=needed_folders,
-                         quiet_user_params=True
-                         )
+        super().__init__(
+            user_configs=user_configs, needed_folders=needed_folders, quiet_user_params=True
+        )
         self._spec_info = obj_info
         self._ran_normalization_fit: bool = False
 
     def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         self._ensure_epochwise_normalizer()
         if len(loaded_info) != 0:
-            return *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
+            return *self._apply_epoch_normalization(
+                wavelengths, flux, uncertainties, **loaded_info
+            ), loaded_info
         return self._fit_epochwise_normalization(wavelengths, flux, uncertainties)
 
     def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
@@ -83,7 +84,9 @@ class NormalizationBase(BASE):
         self._normalization_sanity_checks()
 
         if len(loaded_info) != 0:
-            return *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, **loaded_info), loaded_info
+            return *self._apply_orderwise_normalization(
+                wavelengths, flux, uncertainties, **loaded_info
+            ), loaded_info
         return self._fit_orderwise_normalization(wavelengths, flux, uncertainties)
 
     def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
@@ -108,7 +111,9 @@ class NormalizationBase(BASE):
 
         """
         if not self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(f"Can't ask for order-wise normalization on {self.name}")
+            raise custom_exceptions.InvalidConfiguration(
+                f"Can't ask for order-wise normalization on {self.name}"
+            )
 
     def _ensure_epochwise_normalizer(self):
         """
@@ -118,4 +123,6 @@ class NormalizationBase(BASE):
 
         """
         if self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(f"Can't ask for epoch-wise normalization on {self.name}")
+            raise custom_exceptions.InvalidConfiguration(
+                f"Can't ask for epoch-wise normalization on {self.name}"
+            )

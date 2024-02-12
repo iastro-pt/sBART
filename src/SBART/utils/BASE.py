@@ -9,7 +9,9 @@ from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
 from SBART.utils.types import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, InternalParameters
-plt.switch_backend('agg')
+
+plt.switch_backend("agg")
+
 
 class BASE:
     """
@@ -25,15 +27,16 @@ class BASE:
     _default_params = DefaultValues()
 
     def __init__(
-            self,
-            user_configs: Optional[UI_DICT] = None,
-            root_level_path: Optional[UI_PATH] = None,
-            needed_folders: Optional[Dict[str, str]] = None,
-            start_with_valid_status: bool = True,
-            quiet_user_params: bool = False
+        self,
+        user_configs: Optional[UI_DICT] = None,
+        root_level_path: Optional[UI_PATH] = None,
+        needed_folders: Optional[Dict[str, str]] = None,
+        start_with_valid_status: bool = True,
+        quiet_user_params: bool = False,
     ):
-
-        self._internal_configs = InternalParameters(self.name, self._default_params, no_logs=quiet_user_params)
+        self._internal_configs = InternalParameters(
+            self.name, self._default_params, no_logs=quiet_user_params
+        )
 
         if user_configs is None:
             user_configs = {}
@@ -65,7 +68,9 @@ class BASE:
     def generate_root_path(self, storage_path: Path, no_logs=True) -> NoReturn:
         """ """
         if not isinstance(storage_path, (str, Path)):
-            raise custom_exceptions.InvalidConfiguration(f"The root path must be a string or Path object, instead of {storage_path}")
+            raise custom_exceptions.InvalidConfiguration(
+                f"The root path must be a string or Path object, instead of {storage_path}"
+            )
 
         if not isinstance(storage_path, Path):
             storage_path = Path(storage_path)

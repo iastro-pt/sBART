@@ -12,8 +12,10 @@ from SBART.utils.paths_tools import build_filename
 try:
     import jax, jaxopt
     import jax.numpy as jnp
+
     jax.config.update("jax_enable_x64", True)
     import tinygp
+
     MISSING_TINYGP = False
 except ImportError:
     MISSING_TINYGP = True
@@ -27,7 +29,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
-    Positive_Value_Constraint
+    Positive_Value_Constraint,
 )
 
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
@@ -60,19 +62,17 @@ class GPSpecModel(ModellingBase):
         POSTERIOR_CHARACTERIZATION=UserParam(
             "minimize", constraint=ValueFromList(["minimize", "MCMC"])
         ),
-        OPTIMIZATION_MAX_ITER=UserParam(1000, constraint=Positive_Value_Constraint)
+        OPTIMIZATION_MAX_ITER=UserParam(1000, constraint=Positive_Value_Constraint),
     )
 
     def __init__(self, obj_info, user_configs):
-
         possible_folders = {}
         for kern in self._default_params["GP_KERNEL"].existing_constraints.available_options:
             possible_folders[f"modelling_information_{kern}"] = f"_SpecModelParams/{kern}"
 
-        super().__init__(obj_info=obj_info,
-                         user_configs=user_configs,
-                         needed_folders=possible_folders
-                         )
+        super().__init__(
+            obj_info=obj_info, user_configs=user_configs, needed_folders=possible_folders
+        )
 
         # Going to treat the orders as frameIDs to use the Model class!
 
@@ -123,7 +123,9 @@ class GPSpecModel(ModellingBase):
         # TODO: ensure that loaded information is in accordance with the current parameters!
         return super().load_previous_model_results_from_disk(model_component_in_use)
 
-    def generate_model_from_order(self, og_lambda, og_spectra, og_err, new_wavelengths, order) -> NoReturn:
+    def generate_model_from_order(
+        self, og_lambda, og_spectra, og_err, new_wavelengths, order
+    ) -> NoReturn:
         """
         Fit the stellar spectrum from a given order. If it has already been recomputed (or if it has previously failed)
         does nothing
@@ -148,9 +150,13 @@ class GPSpecModel(ModellingBase):
             return
 
         try:
-            solution_array, result_flag = self._launch_GP_fit(og_lambda, og_spectra, og_err, new_wavelengths, order)
+            solution_array, result_flag = self._launch_GP_fit(
+                og_lambda, og_spectra, og_err, new_wavelengths, order
+            )
         except Exception as e:
-            msg = "Unknown error found when fitting GP to order {}: {}".format(order, traceback.print_tb(e.__traceback__))
+            msg = "Unknown error found when fitting GP to order {}: {}".format(
+                order, traceback.print_tb(e.__traceback__)
+            )
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
             solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
@@ -165,7 +171,9 @@ class GPSpecModel(ModellingBase):
         # TODO: store information related with the GP parameters!
         return super()._store_model_to_disk()
 
-    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
+    def interpolate_spectrum_to_wavelength(
+        self, og_lambda, og_spectra, og_err, new_wavelengths, order
+    ):
         """
         Interpolate the order of this spectrum to a given wavelength, using a GP. If the GP fit is yet to be done,
         then it is done beforehand.
@@ -191,6 +199,7 @@ class GPSpecModel(ModellingBase):
         """
 
         import time
+
         t0 = time.time()
 
         t1 = time.time()
@@ -201,7 +210,9 @@ class GPSpecModel(ModellingBase):
         try:
             fit_results = self._modelling_parameters.get_fit_results_from_frameID(order)
         except custom_exceptions.NoConvergenceError as exc:
-            logger.critical("Can't interpolate wavelengths from order that has not achieved convergence")
+            logger.critical(
+                "Can't interpolate wavelengths from order that has not achieved convergence"
+            )
             raise exc
 
         param_names = self._modelling_parameters.get_enabled_params()
@@ -209,8 +220,8 @@ class GPSpecModel(ModellingBase):
         optimal_combinations = {i: j for i, j in zip(param_names, fit_results)}
         data_dict = {
             "XX_data": jnp.asarray(og_lambda),
-            "YY_variance": jnp.asarray(og_err ** 2),
-            "kern_type": kern_type
+            "YY_variance": jnp.asarray(og_err**2),
+            "kern_type": kern_type,
         }
 
         t1 = time.time()
@@ -222,7 +233,6 @@ class GPSpecModel(ModellingBase):
         return mu, std
 
     def _launch_GP_fit(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
-
         initial_params, bounds = self._modelling_parameters.generate_optimizer_inputs(
             order, rv_units=None
         )
@@ -233,7 +243,7 @@ class GPSpecModel(ModellingBase):
         data_dict = {
             "XX_data": jnp.asarray(og_lambda),
             "YY_data": jnp.asarray(og_spectra),
-            "YY_variance": jnp.asarray(og_err ** 2),
+            "YY_variance": jnp.asarray(og_err**2),
         }
 
         self._modelling_parameters.update_params_initial_guesses(
@@ -249,11 +259,9 @@ class GPSpecModel(ModellingBase):
         if self._internal_configs["POSTERIOR_CHARACTERIZATION"] == "minimize":
             solver = jaxopt.ScipyMinimize(
                 fun=loss_opt,
-                options={"maxiter": self._internal_configs["OPTIMIZATION_MAX_ITER"],
-                         "disp": True
-                         },
+                options={"maxiter": self._internal_configs["OPTIMIZATION_MAX_ITER"], "disp": True},
                 method="BFGS",
-                tol=1e-10
+                tol=1e-10,
             )
             # print(initial_guess, "\n --..-- \n", data_dict)
             soln = solver.run(jax.tree_map(jnp.asarray, initial_guess), **data_dict)
@@ -295,14 +303,11 @@ def generate_kernel(amplitude, length_scale, kern_type):
     # Building the tinyGP model for minimization
 
 
-def build_gp(
-        params,
-        XX_data,
-        YY_variance,
-        kern_type
-):
+def build_gp(params, XX_data, YY_variance, kern_type):
     kernel = generate_kernel(
-        amplitude=jnp.exp(params["log_amplitude"]), length_scale=jnp.exp(params["log_scale"]), kern_type=kern_type
+        amplitude=jnp.exp(params["log_amplitude"]),
+        length_scale=jnp.exp(params["log_scale"]),
+        kern_type=kern_type,
     )
 
     return tinygp.GaussianProcess(
@@ -312,7 +317,9 @@ def build_gp(
         mean=jnp.exp(params["log_mean"]),
     )
 
+
 if not MISSING_TINYGP:
+
     @partial(jax.jit, static_argnames=("kern_type",))
     def loss(params, XX_data, YY_data, YY_variance, kern_type):
         # TODO: understand if we can pass args to this function!

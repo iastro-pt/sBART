@@ -34,31 +34,35 @@ class ESO_PIPELINE(Frame):
         Telluric_Corrected=UserParam(False, constraint=BooleanValue),
         UseMolecfit=UserParam(False, constraint=BooleanValue),
         use_old_pipeline=UserParam(default_value=False, constraint=BooleanValue),
-        SCIRED_CHECK_IS_FATAL=UserParam(default_value=True,
-                                        constraint=BooleanValue,
-                                        description="Automatically reject frames with QC SCIRED CHECK = 0 ")
+        SCIRED_CHECK_IS_FATAL=UserParam(
+            default_value=True,
+            constraint=BooleanValue,
+            description="Automatically reject frames with QC SCIRED CHECK = 0 ",
+        ),
     )
 
-    _default_params.update("apply_FluxCorr",
-                           UserParam(False, constraint=BooleanValue),
-                           )
+    _default_params.update(
+        "apply_FluxCorr",
+        UserParam(False, constraint=BooleanValue),
+    )
 
-    _default_params.update("apply_FluxBalance_Norm",
-                           UserParam(False, constraint=BooleanValue),
-                           )
+    _default_params.update(
+        "apply_FluxBalance_Norm",
+        UserParam(False, constraint=BooleanValue),
+    )
 
     def __init__(
-            self,
-            inst_name,
-            array_size,
-            file_path,
-            KW_identifier,
-            user_configs: Optional[Dict[str, Any]] = None,
-            reject_subInstruments: Optional[Iterable[str]] = None,
-            frameID: Optional[int] = None,
-            quiet_user_params: bool = True,
-            override_KW_map=None,
-            override_indicators=None,
+        self,
+        inst_name,
+        array_size,
+        file_path,
+        KW_identifier,
+        user_configs: Optional[Dict[str, Any]] = None,
+        reject_subInstruments: Optional[Iterable[str]] = None,
+        frameID: Optional[int] = None,
+        quiet_user_params: bool = True,
+        override_KW_map=None,
+        override_indicators=None,
     ):
         """
 
@@ -88,7 +92,7 @@ class ESO_PIPELINE(Frame):
             "RA": "RA",
             "DEC": "DEC",
             "SPEC_TYPE": f"HIERARCH {KW_identifier} QC CCF MASK",
-            "EXPTIME": "EXPTIME"
+            "EXPTIME": "EXPTIME",
         }
         if override_KW_map is not None:
             for key, value in override_KW_map.items():
@@ -100,10 +104,12 @@ class ESO_PIPELINE(Frame):
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
-            available_indicators=("CONTRAST", "FWHM", "BIS SPAN") if override_indicators is None else override_indicators,
+            available_indicators=("CONTRAST", "FWHM", "BIS SPAN")
+            if override_indicators is None
+            else override_indicators,
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
-            quiet_user_params=quiet_user_params
+            quiet_user_params=quiet_user_params,
         )
 
         self.instrument_properties["is_drift_corrected"] = True
@@ -136,7 +142,6 @@ class ESO_PIPELINE(Frame):
             self.load_ESO_DRS_S2D_data()
 
     def load_S1D_data(self):
-
         super().load_S1D_data()
 
         if self._internal_configs["use_old_pipeline"]:
@@ -205,15 +210,23 @@ class ESO_PIPELINE(Frame):
 
     def _load_ESO_DRS_KWs(self, header):
         if self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from new pipeline with the config for the old one")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from new pipeline with the config for the old one"
+            )
 
         # Load BERV info + previous RV
-        self.observation_info["MAX_BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
-        self.observation_info["BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
+        self.observation_info["MAX_BERV"] = (
+            header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
+        )
+        self.observation_info["BERV"] = (
+            header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
+        )
 
-        self.observation_info["DRS_RV"] = header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
+        self.observation_info["DRS_RV"] = (
+            header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
+        )
         self.observation_info["DRS_RV_ERR"] = (
-                header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
+            header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
         )
 
         for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
@@ -228,10 +241,11 @@ class ESO_PIPELINE(Frame):
 
     def load_ESO_DRS_S2D_data(self, overload_SCIDATA_key=None):
         if self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from new pipeline with the config for the old one")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from new pipeline with the config for the old one"
+            )
 
         with fits.open(self.file_path) as hdulist:
-
             self.wavelengths = hdulist["WAVEDATA_VAC_BARY"].data
             self.qual_data = hdulist["QUALDATA"].data
 
@@ -267,7 +281,7 @@ class ESO_PIPELINE(Frame):
 
                 corr_model[
                     flux_corr == 1
-                    ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
+                ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
                 self.spectra = self.spectra / corr_model  # correct from chromatic variations
                 self.flux_atmos_balance_corrected = True
                 # TODO: understand if we want to include the factor in uncertainties or not!
@@ -297,7 +311,9 @@ class ESO_PIPELINE(Frame):
 
     def load_ESO_DRS_S1D_data(self):
         if self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from new pipeline with the config for the old one")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from new pipeline with the config for the old one"
+            )
 
         with fits.open(self.file_path) as hdulist:
             full_data = hdulist[1].data
@@ -336,9 +352,8 @@ class ESO_PIPELINE(Frame):
         self._blaze_function = blaze_corr / S2D
 
     def check_header_QC_ESO_DRS(self, header):
-
         fatal_QC_flags = {}
-                
+
         nonfatal_QC_flags = {
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED FLUX CORR CHECK": 0,
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
@@ -350,7 +365,6 @@ class ESO_PIPELINE(Frame):
             fatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
         else:
             nonfatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
-
 
         for flag, bad_value in fatal_QC_flags.items():
             if header[flag] == bad_value:

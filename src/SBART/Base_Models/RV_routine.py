@@ -29,7 +29,7 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromDtype,
     ValueFromList,
-    IterableMustHave
+    IterableMustHave,
 )
 from SBART.utils.work_packages import ShutdownPackage
 
@@ -97,11 +97,13 @@ class RV_routine(BASE):
             6, constraint=NumericValue
         ),  # tolerance for outliers in spectra - temp comp
         outlier_metric=UserParam("Paper", ValueFromList(("Paper", "MAD"))),
-        remove_OBS_from_template=UserParam(False, BooleanValue, ),
+        remove_OBS_from_template=UserParam(
+            False,
+            BooleanValue,
+        ),
         min_block_size=UserParam(
             50, constraint=Positive_Value_Constraint
         ),  # Min number of consecutive points to not reject a region
-
         output_fmt=UserParam(
             [
                 "BJD",
@@ -116,8 +118,24 @@ class RV_routine(BASE):
                 "frameIDs",
             ],
             constraint=ValueFromList(
-                ["BJD", "MJD", "RVc", "RVc_ERR", "OBJ", "SA", "DRIFT", "DRIFT_ERR", "full_path", "filename", "frameIDs", "DLW", "DLW_ERR"]
-            ) + IterableMustHave(("RVc", "RVc_ERR")) + IterableMustHave(("MJD", "BJD"), mode='either')
+                [
+                    "BJD",
+                    "MJD",
+                    "RVc",
+                    "RVc_ERR",
+                    "OBJ",
+                    "SA",
+                    "DRIFT",
+                    "DRIFT_ERR",
+                    "full_path",
+                    "filename",
+                    "frameIDs",
+                    "DLW",
+                    "DLW_ERR",
+                ]
+            )
+            + IterableMustHave(("RVc", "RVc_ERR"))
+            + IterableMustHave(("MJD", "BJD"), mode="either"),
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
         SAVE_DISK_SPACE=UserParam(False, constraint=BooleanValue),
@@ -137,13 +155,13 @@ class RV_routine(BASE):
     )
 
     def __init__(
-            self,
-            N_jobs: int,
-            RV_configs: dict,
-            sampler,
-            target,
-            valid_samplers: Iterable[str],
-            extra_folders_needed: Optional[Dict[str, str]] = None,
+        self,
+        N_jobs: int,
+        RV_configs: dict,
+        sampler,
+        target,
+        valid_samplers: Iterable[str],
+        extra_folders_needed: Optional[Dict[str, str]] = None,
     ):
         super().__init__(RV_configs, needed_folders=extra_folders_needed)
         self.package_pool = None
@@ -216,7 +234,9 @@ class RV_routine(BASE):
             raise custom_exceptions.NoDataError
 
         if check_metadata:
-            logger.debug(f"Comparing metadata with the one stored in {dataClass.get_internalPaths().root_storage_path}")
+            logger.debug(
+                f"Comparing metadata with the one stored in {dataClass.get_internalPaths().root_storage_path}"
+            )
 
             try:
                 previous_metadata = MetaData.load_from_json(
@@ -263,13 +283,13 @@ class RV_routine(BASE):
                 raise custom_exceptions.NoDataError("Metadata check removed all subInsts")
 
     def run_routine(
-            self,
-            dataClass,
-            storage_path: UI_PATH,
-            orders_to_skip: Union[Iterable, str, dict] = (),
-            store_data: bool = True,
-            check_metadata: bool = False,
-            store_cube_to_disk=True,
+        self,
+        dataClass,
+        storage_path: UI_PATH,
+        orders_to_skip: Union[Iterable, str, dict] = (),
+        store_data: bool = True,
+        check_metadata: bool = False,
+        store_cube_to_disk=True,
     ) -> None:
         """
         Trigger the RV extraction for all sub-Instruments
@@ -318,7 +338,9 @@ class RV_routine(BASE):
         )
 
         if self._internal_configs["SAVE_DISK_SPACE"]:
-            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
+            logger.info(
+                f"{self.name} will save disk space. Setting up the sampler to store less data"
+            )
             self.sampler.enable_disk_savings()
         else:
             self.sampler.disable_disk_savings()
@@ -326,11 +348,12 @@ class RV_routine(BASE):
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
-
             # Check here if the Stellar template will be interpolated with a GP:
             logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
             if "GP" in dataClass.get_stellar_model().get_interpol_modes():
-                raise custom_exceptions.InternalError("Can't interpolate with GPs without having the memory saving mode enabled")
+                raise custom_exceptions.InternalError(
+                    "Can't interpolate with GPs without having the memory saving mode enabled"
+                )
 
             self.sampler.disable_memory_savings()
 
@@ -398,18 +421,27 @@ class RV_routine(BASE):
         """
         base_message = "Comparing spectra and template with different"
 
-        comparison_map = (("is_blaze_corrected", "BLAZE correction states"),
-                          ("flux_atmos_balance_corrected", "corrections of the flux balance due to the atmosphere"),
-                          ("flux_dispersion_balance_corrected", "corrections of the flux dispersion with wavelength"),
-                          ("was_telluric_corrected", "telluric correction states")
-                          )
+        comparison_map = (
+            ("is_blaze_corrected", "BLAZE correction states"),
+            (
+                "flux_atmos_balance_corrected",
+                "corrections of the flux balance due to the atmosphere",
+            ),
+            (
+                "flux_dispersion_balance_corrected",
+                "corrections of the flux dispersion with wavelength",
+            ),
+            ("was_telluric_corrected", "telluric correction states"),
+        )
         messages_to_pass = []
         bad_comparison = False
         for kw_name, key_message in comparison_map:
             template_val = getattr(stellar_template, kw_name)
             frame_val = first_frame.check_if_data_correction_enabled(kw_name)
             if frame_val != template_val:
-                messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
+                messages_to_pass.append(
+                    f"{base_message} {key_message} ({template_val} vs {frame_val})"
+                )
 
                 if kw_name != "was_telluric_corrected":
                     bad_comparison = True
@@ -418,7 +450,9 @@ class RV_routine(BASE):
             logger.warning(message)
 
         if bad_comparison:
-            raise custom_exceptions.InvalidConfiguration("Failed comparison between template and spectra")
+            raise custom_exceptions.InvalidConfiguration(
+                "Failed comparison between template and spectra"
+            )
 
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
@@ -431,9 +465,9 @@ class RV_routine(BASE):
         stellar_template = stellar_model.request_data(subInstrument=subInst)
         first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
 
-        self._validate_template_with_frame(stellar_template=stellar_template,
-                                           first_frame=first_frame
-                                           )
+        self._validate_template_with_frame(
+            stellar_template=stellar_template, first_frame=first_frame
+        )
 
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
@@ -457,11 +491,12 @@ class RV_routine(BASE):
             output_pool=self.output_pool,
         )
 
-        cube = self._output_RVcubes.generate_new_cube(dataClass,
-                                                      subInst,
-                                                      is_merged=is_merged,
-                                                      has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise"
-                                                      )
+        cube = self._output_RVcubes.generate_new_cube(
+            dataClass,
+            subInst,
+            is_merged=is_merged,
+            has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise",
+        )
         cube.update_skip_reason(self.to_skip[subInst], ORDER_SKIP)
 
         cube.update_skip_reason(template_bad_orders, BAD_TEMPLATE)
@@ -648,7 +683,6 @@ class RV_routine(BASE):
     #########################
 
     def trigger_data_storage(self, dataClassProxy, store_data: bool = True) -> NoReturn:
-
         if not store_data:
             logger.info("Storage of products from {} is temporarily disabled!", self.name)
             return
@@ -716,7 +750,9 @@ class RV_routine(BASE):
 
             if good + bad != 0:
                 logger.debug(
-                    "Received {} shutdown signals. Still missing  {}", good + bad, self._live_workers
+                    "Received {} shutdown signals. Still missing  {}",
+                    good + bad,
+                    self._live_workers,
                 )
             else:
                 if no_shutdown_counter == 400:

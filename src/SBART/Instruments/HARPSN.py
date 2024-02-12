@@ -11,12 +11,7 @@ from scipy.constants import convert_temperature
 from SBART.Base_Models.Frame import Frame
 from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
-from SBART.utils.status_codes import (
-    ERROR_THRESHOLD,
-    NAN_DATA,
-    SATURATION,
-    KW_WARNING
-)
+from SBART.utils.status_codes import ERROR_THRESHOLD, NAN_DATA, SATURATION, KW_WARNING
 from SBART.utils.status_codes import FATAL_KW
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
@@ -27,7 +22,7 @@ from SBART.utils.status_codes import (
     NAN_DATA,
     SATURATION,
     SUCCESS,
-    KW_WARNING
+    KW_WARNING,
 )
 
 from .ESO_PIPELINE import ESO_PIPELINE
@@ -68,13 +63,12 @@ class HARPSN(ESO_PIPELINE):
     _default_params = ESO_PIPELINE._default_params
 
     def __init__(
-            self,
-            file_path,
-            user_configs: Optional[Dict[str, Any]] = None,
-            reject_subInstruments=None,
-            frameID=None,
-            quiet_user_params: bool = True
-
+        self,
+        file_path,
+        user_configs: Optional[Dict[str, Any]] = None,
+        reject_subInstruments=None,
+        frameID=None,
+        quiet_user_params: bool = True,
     ):
         """
 
@@ -94,7 +88,7 @@ class HARPSN(ESO_PIPELINE):
 
         coverage = [390, 700]
         search_status = SUCCESS
-        if user_configs.get("use_old_pipeline", False): # For the old pipeline!
+        if user_configs.get("use_old_pipeline", False):  # For the old pipeline!
             override_KW_map = {
                 "OBJECT": "HIERARCH TNG OBS TARG NAME",  # "OBJECT",
                 "BJD": "HIERARCH TNG DRS BJD",
@@ -104,14 +98,14 @@ class HARPSN(ESO_PIPELINE):
                 "RA": "RA",
                 "DEC": "DEC",
                 "SPEC_TYPE": "HIERARCH TNG TEL TARG SPTYPE",
-                "MD5-CHECK": "HIERARCH TNG DRS BJD", # Missing the MD5 on the old pipe, so this is a stopgap
+                "MD5-CHECK": "HIERARCH TNG DRS BJD",  # Missing the MD5 on the old pipe, so this is a stopgap
             }
             file_path, self.ccf_path, search_status = self.find_files(file_path)
             override_indicators = ("CONTRAST", "FWHM")
 
             # The flag for the BERV correction is set at the time of loading the S2D arrays!
 
-        else: # For the new pipeline
+        else:  # For the new pipeline
             override_KW_map = {"OBJECT": "HIERARCH TNG OBS TARG NAME"}
             override_indicators = None
 
@@ -125,7 +119,7 @@ class HARPSN(ESO_PIPELINE):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
-            override_indicators=override_indicators
+            override_indicators=override_indicators,
         )
 
         if user_configs["use_old_pipeline"] and not search_status.is_good_flag:
@@ -146,7 +140,9 @@ class HARPSN(ESO_PIPELINE):
 
     def _load_old_DRS_KWs(self, header):
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from old pipeline without the config"
+            )
 
         self.observation_info["MAX_BERV"] = header["HIERARCH TNG DRS BERVMX"] * kilometer_second
         self.observation_info["BERV"] = header["HIERARCH TNG DRS BERV"] * kilometer_second
@@ -206,7 +202,9 @@ class HARPSN(ESO_PIPELINE):
         Load the necessarfy CCF data from the file!
         """
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from old pipeline without the config"
+            )
 
         logger.debug("Loading data from the ccf file")
         header = fits.getheader(self.ccf_path)
@@ -219,7 +217,9 @@ class HARPSN(ESO_PIPELINE):
 
         RV_err = header.get("HIERARCH TNG DRS DVRMS", None)
         if RV_err is None:
-            logger.critical("Couldn't find DRS error from the appropriate KW. Estimating it with photon noise!")
+            logger.critical(
+                "Couldn't find DRS error from the appropriate KW. Estimating it with photon noise!"
+            )
             RV_err = np.sqrt(
                 header["HIERARCH TNG DRS CAL TH ERROR"] ** 2
                 +
@@ -235,7 +235,9 @@ class HARPSN(ESO_PIPELINE):
         Convert from air wavelenbgths to vacuum
         """
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't construct wavelengths for new pipeline")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't construct wavelengths for new pipeline"
+            )
 
         # degree of the polynomial
         d = hdr["HIERARCH TNG DRS CAL TH DEG LL"]
@@ -277,7 +279,9 @@ class HARPSN(ESO_PIPELINE):
         HARPS-TERRA pipeline
         """
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
+            raise custom_exceptions.InvalidConfiguration(
+                "Can't load data from old pipeline without the config"
+            )
 
         if self._internal_configs["use_old_pipeline"]:
             self.is_BERV_corrected = False
@@ -326,7 +330,6 @@ class HARPSN(ESO_PIPELINE):
 
         if not isinstance(file_name, Path):
             file_name = Path(file_name)
-
 
         search_status = MISSING_DATA("Missing the ccf file")
         ccf_path = None

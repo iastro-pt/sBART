@@ -98,6 +98,7 @@ from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
 from typing_extensions import override
 
+
 class ConditionModel:
     """
     Defines the Base Condition Class, from which we can generate new conditions. The conditions represent a boolean check that
@@ -140,7 +141,6 @@ class ConditionModel:
 
         flags = []
         for condition in self._condition_list:
-
             output_flag = condition(frame)
             if output_flag != VALID:
                 flags.append(output_flag)
@@ -180,7 +180,6 @@ class KEYWORD_condition(ConditionModel):
     """
 
     def __init__(self, KW: str, bounds: List[Any], include_edges: bool = True):
-
         self.KW = KW
         self.bounds = bounds
         super().__init__()
@@ -203,7 +202,6 @@ class KEYWORD_condition(ConditionModel):
                 raise InvalidConfiguration("The lower bound must be larger than the upper one")
 
     def _standardize_bounds(self):
-
         new_bounds = []
         for bound in self._bounds_to_check:
             new_entry = bound
@@ -228,7 +226,7 @@ class KEYWORD_condition(ConditionModel):
                 logger.warning(
                     "Frame has a NaN value for the KW: {}. Not applying the spectral condition",
                     self.KW,
-                    )
+                )
             if self._include_edges:
                 if bound_elem[0] <= KW_val <= bound_elem[1]:
                     keep = True
@@ -273,7 +271,6 @@ class SubInstrument_condition(ConditionModel):
         super().__init__()
 
     def select_spectra(self, frame) -> Flag:
-
         if frame.is_SubInstrument(self._bad_subInst):
             message = "Removed subInstrument: {}".format(self._bad_subInst)
             flag = USER_BLOCKED(message)
@@ -332,9 +329,7 @@ class WarningFlag_Notset(ConditionModel):
 
     @property
     def cond_info(self) -> str:
-        return "Warning KW flag {} was raised".format(
-            self.flag_name
-            )
+        return "Warning KW flag {} was raised".format(self.flag_name)
 
 
 class FNAME_condition(ConditionModel):
@@ -353,7 +348,9 @@ class FNAME_condition(ConditionModel):
         selected
     """
 
-    def __init__(self, filename_list: list, only_keep_filenames=False, load_from_file: bool = False):
+    def __init__(
+        self, filename_list: list, only_keep_filenames=False, load_from_file: bool = False
+    ):
         self._load_from_file = load_from_file
         if self._load_from_file:
             logger.info(f"Loading files to 'condition' from a disk file: {filename_list}")
@@ -392,7 +389,7 @@ class FNAME_condition(ConditionModel):
     def cond_info(self) -> str:
         return "Filename list {} - only keep: {}".format(
             self._filename_list, self._only_keep_filenames
-            )
+        )
 
 
 class SNR_condition(ConditionModel):
@@ -403,6 +400,7 @@ class SNR_condition(ConditionModel):
 
     Mostly useful for the creation of the stellar template
     """
+
     def __init__(self, minimum_SNR: float):
         self.minimum_SNR = minimum_SNR
         super().__init__()

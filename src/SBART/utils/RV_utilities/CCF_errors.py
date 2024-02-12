@@ -23,7 +23,7 @@ def RVerror(rv, ccf, eccf=1.0):
 
 
 def fgauss(x, a, mu, sigma, c, d):
-    return c + a * np.exp(-((x - mu) ** 2.0) / (2.0 * sigma ** 2.0)) + d * np.array(x)
+    return c + a * np.exp(-((x - mu) ** 2.0) / (2.0 * sigma**2.0)) + d * np.array(x)
 
 
 def ccffitRV(rv, ccf, eccf):

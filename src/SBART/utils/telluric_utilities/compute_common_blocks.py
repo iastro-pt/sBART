@@ -8,7 +8,6 @@ def compute_common(values):
     basis = values[0]
 
     for OBS_data in values[1:]:
-
         new_basis = []
 
         for base_index, base in enumerate(basis):

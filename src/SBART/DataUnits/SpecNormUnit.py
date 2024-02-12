@@ -50,7 +50,7 @@ class SpecNorm_Unit(UnitModel):
         for key, values in self.stored_info.items():
             data[key] = {}
             for key_1, order_values in values.items():
-                data[key][key_1] =  json_ready_converter(order_values)
+                data[key][key_1] = json_ready_converter(order_values)
 
         with open(self.get_storage_filename(), mode="w") as handle:
             json.dump(data, handle, indent=4)
@@ -66,9 +66,7 @@ class SpecNorm_Unit(UnitModel):
         """
         super().load_from_disk(rv_cube_fpath)
 
-        new_unit = SpecNorm_Unit(frame_name=filename,
-                                 algo_name=algo_name
-                                 )
+        new_unit = SpecNorm_Unit(frame_name=filename, algo_name=algo_name)
 
         new_unit.generate_root_path(rv_cube_fpath)
         unit_path = Path(new_unit.get_storage_filename())
@@ -80,10 +78,9 @@ class SpecNorm_Unit(UnitModel):
             profile = {}
             for str_key, info in norm_info.items():
                 try:
-                    profile[int(str_key)] = {j: float(k) for j,k in info.items()}
+                    profile[int(str_key)] = {j: float(k) for j, k in info.items()}
                 except ValueError:
                     profile[str_key] = info
             new_unit.stored_info = profile
         logger.info("Loaded previous normalization parameters from disk")
         return new_unit
-

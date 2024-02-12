@@ -8,9 +8,14 @@ from loguru import logger
 # warnings.simplefilter('error', UserWarning)
 
 
-def setup_SBART_logger(storage_path: str, RV_method: str, instrument,
-                       log_to_terminal: bool = True,
-                       terminal_log_level='DEBUG', write_to_file=True) -> None:
+def setup_SBART_logger(
+    storage_path: str,
+    RV_method: str,
+    instrument,
+    log_to_terminal: bool = True,
+    terminal_log_level="DEBUG",
+    write_to_file=True,
+) -> None:
     """Call from outside the module to setup the logger and necessary folders + structure
 
     FIXME: This will create empty log files for all sub_instruments of the instrument, even if it has no data!

@@ -40,7 +40,9 @@ class RV_cube(BASE):
 
     """
 
-    def __init__(self, subInst: str, frameIDs: List[int], instrument_properties: dict, has_orderwise_rvs):
+    def __init__(
+        self, subInst: str, frameIDs: List[int], instrument_properties: dict, has_orderwise_rvs
+    ):
         """
         It contains:
             - the SA correction value (and applies it)
@@ -133,7 +135,6 @@ class RV_cube(BASE):
         self._loaded_inst_info = True
         self._saved_to_disk = False
 
-
     def add_extra_storage_unit(self, new_unit: UnitModel, generate_root=True):
         logger.info("Adding a new storage unit")
         if generate_root:
@@ -225,12 +226,12 @@ class RV_cube(BASE):
     # #################################
 
     def get_RV_timeseries(
-            self,
-            which: str,
-            apply_SA_corr: bool,
-            as_value: bool,
-            units=None,
-            apply_drift_corr=None,
+        self,
+        which: str,
+        apply_SA_corr: bool,
+        as_value: bool,
+        units=None,
+        apply_drift_corr=None,
     ) -> Tuple[list, list, list]:
         """Return the RV timeseries
 
@@ -284,7 +285,6 @@ class RV_cube(BASE):
             correct_drift = apply_drift_corr
 
         if correct_drift:
-
             logger.info("Cleaning RVs of {} from the drift", self._associated_subInst)
             corrected_rv = []
             corrected_err = []
@@ -307,13 +307,13 @@ class RV_cube(BASE):
         return self.obs_times, final_RVs, final_RVs_ERR
 
     def get_RV_from_ID(
-            self,
-            frameID: int,
-            which: str,
-            apply_SA_corr: bool,
-            as_value: bool,
-            units,
-            apply_drift_corr=None,
+        self,
+        frameID: int,
+        which: str,
+        apply_SA_corr: bool,
+        as_value: bool,
+        units,
+        apply_drift_corr=None,
     ):
         """Retrieve the BJD, RV and RV_ERR from a given frameID
 
@@ -360,9 +360,7 @@ class RV_cube(BASE):
         min_time = 55500  # always use the same reference frame
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
-        secular_correction = [
-            SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times
-        ]
+        secular_correction = [SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times]
 
         self.cached_info["SA_correction"] = secular_correction
 
@@ -501,7 +499,7 @@ class RV_cube(BASE):
             "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
             "frameIDs": self.frameIDs,
             "DLW": dlw,
-            "DLW_ERR": dlw_err
+            "DLW_ERR": dlw_err,
         }
         return data_blocks
 
@@ -572,7 +570,7 @@ class RV_cube(BASE):
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                    self._associated_subInst, include_invalid=True
+                self._associated_subInst, include_invalid=True
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(
@@ -609,7 +607,6 @@ class RV_cube(BASE):
                     (order_skip_reasons, frame_orderskip_reasons),
                     (file_skip_reasons, frame_skip),
                 ]:
-
                     for master_key in ["Warnings", "Rejections"]:
                         for key, original_dict in local_dict[master_key].items():
                             master_dict[master_key][key] = original_dict
@@ -626,13 +623,13 @@ class RV_cube(BASE):
                         file.write(f"\n\t\t\t{flag}:{description}")
 
     def export_results(
-            self,
-            keys: List[str],
-            header: List[str],
-            dataClassProxy,
-            text=True,
-            rdb=True,
-            append=False,
+        self,
+        keys: List[str],
+        header: List[str],
+        dataClassProxy,
+        text=True,
+        rdb=True,
+        append=False,
     ):
         if self._saved_to_disk:
             return
@@ -752,12 +749,16 @@ class RV_cube(BASE):
                         linestyle="",
                     )
 
-                    ax_full[1].plot(data[self.problematic_orders], marker="o", linestyle="", alpha=0.3)
+                    ax_full[1].plot(
+                        data[self.problematic_orders], marker="o", linestyle="", alpha=0.3
+                    )
                     ax_full[1].plot(valid_orders, marker="x", linestyle="")
 
                     centered_RVs = valid_RVs - np.nanmedian(valid_RVs)
 
-                    ax_part[0].errorbar(orders, centered_RVs, valid_orders, marker="o", linestyle="")
+                    ax_part[0].errorbar(
+                        orders, centered_RVs, valid_orders, marker="o", linestyle=""
+                    )
 
                     ax_part[1].plot(valid_orders, marker="x", linestyle="")
 
@@ -809,7 +810,7 @@ class RV_cube(BASE):
             contrast = dataClassProxy.collect_KW_observations("CONTRAST", [self.subInst])
             FWHM = dataClassProxy.collect_KW_observations("FWHM", [self.subInst])
             BIS = dataClassProxy.collect_KW_observations("BIS SPAN", [self.subInst])
-            ax[0, 0].errorbar(self.obs_times, dlw, err, ls='', marker='x')
+            ax[0, 0].errorbar(self.obs_times, dlw, err, ls="", marker="x")
             ax[0, 0].set_xlabel("BJD")
             ax[1, 0].scatter(FWHM, dlw)
             ax[1, 0].set_xlabel("FWHM")
@@ -821,10 +822,10 @@ class RV_cube(BASE):
             final_path = build_filename(diagnostics_path, "DLW_correlations", "png")
             fig.savefig(final_path, dpi=300)
 
-            fig, ax = plt.subplots(1,1, sharey=True, figsize=(20, 10), constrained_layout=True)
+            fig, ax = plt.subplots(1, 1, sharey=True, figsize=(20, 10), constrained_layout=True)
 
             chroma_val, chroma_err = unit.get_all_orderwise_indicator("DLW")
-            for order_info,errors in zip(chroma_val, chroma_err):
+            for order_info, errors in zip(chroma_val, chroma_err):
                 ax.scatter(list(range(self.N_orders)), order_info)
             final_path = build_filename(diagnostics_path, "DLW_orderwise", "png")
             fig.savefig(final_path, dpi=300)
@@ -924,7 +925,9 @@ class RV_cube(BASE):
             "cached_info": {"target": self.cached_info["target"].json_ready},
         }
         data_out["cached_info"]["ISO-DATE"] = self.cached_info["ISO-DATE"]
-        data_out["cached_info"]["date_folders"] = list([i.as_posix() for i in self.cached_info["date_folders"]])
+        data_out["cached_info"]["date_folders"] = list(
+            [i.as_posix() for i in self.cached_info["date_folders"]]
+        )
 
         data_out["has_orderwise_rvs"] = self.has_orderwise_rvs
         with open(storage_path, mode="w") as file:
@@ -1033,11 +1036,11 @@ class RV_cube(BASE):
 
     @classmethod
     def load_cube_from_disk(
-            cls,
-            subInst_path,
-            load_full_flag: bool = False,
-            load_work_pkgs: bool = False,
-            SBART_version: Optional[str] = None,
+        cls,
+        subInst_path,
+        load_full_flag: bool = False,
+        load_work_pkgs: bool = False,
+        SBART_version: Optional[str] = None,
     ):
         # TODO: load and store the data units!!
 
@@ -1088,7 +1091,10 @@ class RV_cube(BASE):
             has_orderwise_rvs = True
 
         new_cube = RV_cube(
-            subInst=subInst, frameIDs=frameIDs, instrument_properties=instrument_info, has_orderwise_rvs=has_orderwise_rvs
+            subInst=subInst,
+            frameIDs=frameIDs,
+            instrument_properties=instrument_info,
+            has_orderwise_rvs=has_orderwise_rvs,
         )
 
         logger.debug("Loading misc Info:")

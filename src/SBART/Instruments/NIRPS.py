@@ -11,12 +11,7 @@ from scipy.constants import convert_temperature
 from SBART.Base_Models.Frame import Frame
 from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
-from SBART.utils.status_codes import (
-    ERROR_THRESHOLD,
-    NAN_DATA,
-    SATURATION,
-    KW_WARNING
-)
+from SBART.utils.status_codes import ERROR_THRESHOLD, NAN_DATA, SATURATION, KW_WARNING
 from SBART.utils.status_codes import FATAL_KW
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
@@ -27,10 +22,11 @@ from SBART.utils.status_codes import (
     NAN_DATA,
     SATURATION,
     SUCCESS,
-    KW_WARNING
+    KW_WARNING,
 )
 
 from .ESO_PIPELINE import ESO_PIPELINE
+
 
 def val_cheby(coeffs, xvector, domain):
     """
@@ -87,13 +83,12 @@ class NIRPS(ESO_PIPELINE):
     _default_params = ESO_PIPELINE._default_params
 
     def __init__(
-            self,
-            file_path,
-            user_configs: Optional[Dict[str, Any]] = None,
-            reject_subInstruments=None,
-            frameID=None,
-            quiet_user_params: bool = True
-
+        self,
+        file_path,
+        user_configs: Optional[Dict[str, Any]] = None,
+        reject_subInstruments=None,
+        frameID=None,
+        quiet_user_params: bool = True,
     ):
         """
 
@@ -114,14 +109,14 @@ class NIRPS(ESO_PIPELINE):
 
         super().__init__(
             inst_name="NIRPS",
-            array_size={"S2D": (71, 4084)}, # TODO: find about this
+            array_size={"S2D": (71, 4084)},  # TODO: find about this
             file_path=file_path,
             KW_identifier="ESO",
             frameID=frameID,
             override_KW_map=None,
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
-            quiet_user_params=quiet_user_params
+            quiet_user_params=quiet_user_params,
         )
 
         self.instrument_properties["wavelength_coverage"] = coverage
@@ -129,14 +124,11 @@ class NIRPS(ESO_PIPELINE):
         # TODO: setup info for telfit. Do we need to do anything for the tellurics or is everything handled by the DRS?
 
         self.instrument_properties["resolution"] = 100000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-            "La Silla Observatory"
-        )
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("La Silla Observatory")
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
         self.instrument_properties["site_pressure"] = 750
-
 
     def is_APERO_data(self) -> bool:
         """
@@ -160,11 +152,11 @@ class NIRPS(ESO_PIPELINE):
 
         nbypix, nbxpix = image.shape
         # get the keys with the wavelength polynomials
-        wave_hdr = hdr['WAVE0*']
+        wave_hdr = hdr["WAVE0*"]
         # concatenate into a numpy array
         wave_poly = np.array([wave_hdr[i] for i in range(len(wave_hdr))])
         # get the number of orders
-        nord = hdr['WAVEORDN']
+        nord = hdr["WAVEORDN"]
         # get the per-order wavelength solution
         wave_poly = wave_poly.reshape(nord, len(wave_poly) // nord)
         # project polynomial coefficiels
@@ -189,9 +181,11 @@ class NIRPS(ESO_PIPELINE):
             self.observation_info["MAX_BERV"] = header[f"BERVMAX"] * kilometer_second
             self.observation_info["BERV"] = header[f"BERV"] * kilometer_second
 
-            self.observation_info["DRS_RV"] = header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
+            self.observation_info["DRS_RV"] = (
+                header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
+            )
             self.observation_info["DRS_RV_ERR"] = (
-                    header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
+                header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
             )
 
             for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):

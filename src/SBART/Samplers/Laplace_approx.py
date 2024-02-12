@@ -22,7 +22,12 @@ class Laplace_approx(SbartBaseSampler):
 
     _name = "Laplace"
 
-    def __init__(self, RV_step: RV_measurement, rv_prior: Tuple[RV_measurement, RV_measurement], user_configs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        RV_step: RV_measurement,
+        rv_prior: Tuple[RV_measurement, RV_measurement],
+        user_configs: Optional[Dict[str, Any]] = None,
+    ):
         """
 
         Parameters

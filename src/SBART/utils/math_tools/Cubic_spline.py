@@ -13,9 +13,12 @@ try:
         second_derivative,
         tridiagonal_inverter,
     )
+
     CYTHON_UNAVAILABLE = False
 except ImportError:
-    logger.critical("Cython interface is not found, please make sure that the installation went smoothly")
+    logger.critical(
+        "Cython interface is not found, please make sure that the installation went smoothly"
+    )
     CYTHON_UNAVAILABLE = True
 
 # np.seterr(all='raise')
@@ -40,10 +43,10 @@ class CustomCubicSpline:
         self.ignore_covariances = ignore_covariances
 
         if ignore_covariances:
-            self.cov_matrix = original_errors ** 2
+            self.cov_matrix = original_errors**2
         else:
             self.cov_matrix = (
-                np.zeros((original_data.size, original_data.size)) + original_errors ** 2
+                np.zeros((original_data.size, original_data.size)) + original_errors**2
             )
 
         self._cached_h = False
@@ -84,7 +87,6 @@ class CustomCubicSpline:
         return self._inv_h
 
     def compute_partial(self, index_i):
-
         try:
             return self._partials[index_i]
         except KeyError:
@@ -215,7 +217,6 @@ class CustomCubicSpline:
         self.second_derivatives = self.compute_second_derivative()
 
         for new_index, new_wave_position in enumerate(new_wavelengths):
-
             found_exact_match = False
 
             for index in range(start_index, number_points):
@@ -244,8 +245,8 @@ class CustomCubicSpline:
                 delta_x = x_1 - x_0
                 A = (x_1 - new_wave_position) / delta_x
                 B = (new_wave_position - x_0) / delta_x
-                C = (1 / 6) * (A ** 3 - A) * (delta_x) ** 2
-                D = (1 / 6) * (B ** 3 - B) * (delta_x) ** 2
+                C = (1 / 6) * (A**3 - A) * (delta_x) ** 2
+                D = (1 / 6) * (B**3 - B) * (delta_x) ** 2
 
                 interpolated_value = (
                     A * original_data[index_0]

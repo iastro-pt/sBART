@@ -31,12 +31,12 @@ def stretch_continuum_nodel(x, template, *model_coeffs):
 
 
 def fit_continuum_level(
-        spectra_wave,
-        spectra,
-        template,
-        interpolate_wave_indexes,
-        fit_degree: int,
-        continuum_type: str,
+    spectra_wave,
+    spectra,
+    template,
+    interpolate_wave_indexes,
+    fit_degree: int,
+    continuum_type: str,
 ):
     min_val = np.min(np.abs(template))
     offset = 1e6 if min_val < 1e-3 else 1
@@ -48,9 +48,7 @@ def fit_continuum_level(
     if continuum_type == "paper":
         spectral_ratio = (spectra * offset) / (template * offset)
         yy_data = spectral_ratio
-        coeffs, coefs_cov = optimize.curve_fit(
-            polynomial_continuum_model, xx_data, yy_data, p0=p0
-        )
+        coeffs, coefs_cov = optimize.curve_fit(polynomial_continuum_model, xx_data, yy_data, p0=p0)
         continuum_model = lambda x, coeffs: polynomial_continuum_model(x, *coeffs)
     elif continuum_type == "stretch":
         Matrice1 = np.array([template, xx_data, np.ones(len(xx_data))]).transpose()
@@ -59,18 +57,21 @@ def fit_continuum_level(
         coeffs, coefs_cov = res1.x, [0 for _ in res1.x]
         continuum_model = lambda x, coeffs: stretch_continuum_nodel(x, template, *coeffs)
     else:
-        raise custom_exceptions.InternalError("Passed wrong keyword {} for the continuum type!", continuum_type)
+        raise custom_exceptions.InternalError(
+            "Passed wrong keyword {} for the continuum type!", continuum_type
+        )
     return coeffs, coefs_cov, spectral_ratio, continuum_model
 
 
-def match_continuum_levels(spectra_wave,
-                           spectra,
-                           template,
-                           interpolate_wave_indexes,
-                           fit_degree: int,
-                           continuum_type: str,
-                           template_uncertainties=None
-                           ):
+def match_continuum_levels(
+    spectra_wave,
+    spectra,
+    template,
+    interpolate_wave_indexes,
+    fit_degree: int,
+    continuum_type: str,
+    template_uncertainties=None,
+):
     """
     Match the continuum level of the template to that of the provided observation.
     If the template uncertainties are passed, it will also update them, accounting for the
@@ -90,17 +91,16 @@ def match_continuum_levels(spectra_wave,
     -------
 
     """
-    coeffs, cov, spec_ratio, cont_model = fit_continuum_level(spectra_wave,
-                                                              spectra=spectra,
-                                                              template=template,
-                                                              interpolate_wave_indexes=interpolate_wave_indexes,
-                                                              fit_degree=fit_degree,
-                                                              continuum_type=continuum_type
-                                                              )
+    coeffs, cov, spec_ratio, cont_model = fit_continuum_level(
+        spectra_wave,
+        spectra=spectra,
+        template=template,
+        interpolate_wave_indexes=interpolate_wave_indexes,
+        fit_degree=fit_degree,
+        continuum_type=continuum_type,
+    )
 
-    continuum_model = cont_model(spectra_wave[interpolate_wave_indexes],
-                                 coeffs
-                                 )
+    continuum_model = cont_model(spectra_wave[interpolate_wave_indexes], coeffs)
 
     if continuum_type == "paper":
         normalized_template = continuum_model * template

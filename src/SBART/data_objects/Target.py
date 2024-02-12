@@ -9,6 +9,7 @@ from SBART.utils.RV_utilities import secular_acceleration
 from SBART.utils.units import meter_second
 from SBART.utils import custom_exceptions
 
+
 class Target:
     """
     Represents an observed object.  This class provides an interface to handle data sanitization and simbad lookups
@@ -170,7 +171,6 @@ class Target:
 
     @property
     def json_ready(self) -> Dict[str, Any]:
-
         out = {}
         out["raw_name"] = self.true_name
         return out

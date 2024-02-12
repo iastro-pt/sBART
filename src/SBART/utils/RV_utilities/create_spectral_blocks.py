@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def build_blocks(indexes):
     """Evaluate the output of a np.where to find the continuous regions in it.
     This returns a numpy array, where each entry is a list of a 'set' of ones.

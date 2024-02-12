@@ -97,12 +97,12 @@ def compute_outliers(
             interpolate_wave_indexes[wavelengths_limits] = True
 
         new_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
-                                                           new_wavelengths=spectra_wave[interpolate_wave_indexes],
-                                                           shift_RV_by=obs_rv,
-                                                           RV_shift_mode="apply",
-                                                           order=order,
-                                                           include_invalid=False
-                                                           )
+            new_wavelengths=spectra_wave[interpolate_wave_indexes],
+            shift_RV_by=obs_rv,
+            RV_shift_mode="apply",
+            order=order,
+            include_invalid=False,
+        )
         new_template, _, _ = match_continuum_levels(
             spectra_wave,
             spectra_flux[interpolate_wave_indexes],
@@ -120,7 +120,7 @@ def compute_outliers(
 
         if worker_configs["METRIC_TO_USE"] == "MAD":
             metric = (spectra_flux[interpolate_wave_indexes] - new_template) / np.sqrt(
-                interpol_errors ** 2 + spectra_uncert[interpolate_wave_indexes] ** 2
+                interpol_errors**2 + spectra_uncert[interpolate_wave_indexes] ** 2
             )
 
             metric = (metric - np.median(metric)) / median_abs_deviation(metric, scale="normal")

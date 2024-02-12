@@ -2,8 +2,10 @@ from typing import Tuple
 
 import numpy as np
 from astropy.units import Quantity
+
 try:
     from iCCF import gaussfit
+
     MISSING_iCCF = False
 except ImportError:
     MISSING_iCCF = True

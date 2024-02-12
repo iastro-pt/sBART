@@ -26,13 +26,11 @@ class chi_squared_sampler(SamplerModel):
     """
 
     _name = "chi_squared"
-    _default_params = SamplerModel._default_params + \
-                      DefaultValues(
-                          RV_ESTIMATION_MODE=UserParam("NORMAL",
-                                                       constraint=ValueFromList(("NORMAL", "DRS-LIKE")),
-                                                       mandatory=False
-                                                       )
-                      )
+    _default_params = SamplerModel._default_params + DefaultValues(
+        RV_ESTIMATION_MODE=UserParam(
+            "NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False
+        )
+    )
 
     def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
         """
@@ -46,10 +44,7 @@ class chi_squared_sampler(SamplerModel):
 
         """
         super().__init__(
-            mode="order-wise",
-            RV_step=rv_step,
-            RV_window=rv_prior,
-            user_configs=user_configs
+            mode="order-wise", RV_step=rv_step, RV_window=rv_prior, user_configs=user_configs
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
@@ -110,15 +105,16 @@ class chi_squared_sampler(SamplerModel):
         elif RV_estimation_mode == "DRS-LIKE":
             local_rvs = np.arange(rv_bounds[0][0], rv_bounds[0][1], rv_step)
 
-            local_curve = list(map(lambda x: self.apply_orderwise(x, target, target_kwargs),
-                                   local_rvs
-                                   )
-                               )
+            local_curve = list(
+                map(lambda x: self.apply_orderwise(x, target, target_kwargs), local_rvs)
+            )
             apply_parabolic_fit = True
             order_status = SUCCESS
 
         else:
-            raise NotImplementedError(f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}")
+            raise NotImplementedError(
+                f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}"
+            )
 
         if apply_parabolic_fit:
             try:
@@ -148,10 +144,10 @@ class chi_squared_sampler(SamplerModel):
             a, b = np.nan, np.nan
             order_status = CONVERGENCE_FAIL(msg)
         else:
-            new_target_kwargs = {**target_kwargs, **{"get_minimum_information": True,
-                                                     "SAVE_DISK_SPACE": self.disk_save_enabled
-                                                     }
-                                 }
+            new_target_kwargs = {
+                **target_kwargs,
+                **{"get_minimum_information": True, "SAVE_DISK_SPACE": self.disk_save_enabled},
+            }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
                 out_pkg[key] = val
@@ -182,17 +178,17 @@ class chi_squared_sampler(SamplerModel):
         rv_minimum = rvs[index]
 
         rv = rv_minimum - 0.5 * rv_step * (chi_squared[index + 1] - chi_squared[index - 1]) / (
-                chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
+            chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
         )
 
         rv_err = (
-                2
-                * (rv_step ** 2)
-                / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
+            2
+            * (rv_step**2)
+            / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
         )
 
         a = (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]) / (
-                2 * rv_step ** 2
+            2 * rv_step**2
         )
         b = (chi_squared[index + 1] - chi_squared[index - 1]) / (2 * rv_step)
         return rv, np.sqrt(rv_err), a, b

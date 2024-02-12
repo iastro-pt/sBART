@@ -41,7 +41,11 @@ class Flag:
     def __eq__(self, flag_2):
         if not isinstance(flag_2, Flag):
             return False
-        return (self.name == flag_2.name) and (self.code == flag_2.code) and (self.extra_info == flag_2.extra_info)
+        return (
+            (self.name == flag_2.name)
+            and (self.code == flag_2.code)
+            and (self.extra_info == flag_2.extra_info)
+        )
 
     def add_extra_info(self, extra_info: str) -> NoReturn:
         self.extra_info = extra_info
@@ -134,6 +138,7 @@ class Status:
             self._stored_flags.remove(flag)
         except KeyError:
             logger.warning(f"Trying to remove flag that doesn't exist (flag)")
+
     ###
     #   Adding new flags
     ###
@@ -220,7 +225,6 @@ class Status:
 
         message.append(f"\n" + base_indent + indent_character + "Rejection Flags:")
         if not self.is_valid:
-
             for flag in self._stored_flags:
                 if not flag.is_good_flag:
                     message.append(
@@ -301,7 +305,6 @@ class OrderStatus:
         frameID: Optional[int] = None,
         all_frames: bool = False,
     ) -> NoReturn:
-
         if self._internal_mode == "line":
             self._OrderStatus[0, order] += order_flag
         elif self._internal_mode == "matrix":
@@ -424,7 +427,6 @@ class OrderStatus:
         include_header: bool = True,
         include_footer: bool = True,
     ) -> Tuple[List[str], Dict]:
-
         skip_reasons = {"Warnings": {}, "Rejections": {}}
 
         indent_character = "\t"
@@ -649,7 +651,6 @@ NON_COMMON_WAVELENGTH = Flag(
 MULTIPLE_REASONS = Flag("MULTIPLE", 100)  # flagged by more than one reason
 
 if __name__ == "__main__":
-
     x = MULTIPLE_REASONS("ewoquiqweoui")
     print(x)
     y = OrderStatus(4, [1, 2, 3, 4, 5, 6])

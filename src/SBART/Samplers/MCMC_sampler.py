@@ -73,7 +73,7 @@ class MCMC_sampler(SbartBaseSampler):
 
     _default_params = SbartBaseSampler._default_params + DefaultValues(
         MAX_ITERATIONS=UserParam(1000, constraint=NumericValue),
-        ensemble_moves=UserParam(None), # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
+        ensemble_moves=UserParam(None),  # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
         N_walkers=UserParam(4, constraint=NumericValue),
     )
 
@@ -145,9 +145,7 @@ class MCMC_sampler(SbartBaseSampler):
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
 
         if self.mode == "epoch-wise":
-            target_kwargs["run_information"]["target_specific_configs"][
-                "compute_metrics"
-            ] = True
+            target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
             target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
             model_misspec, log_likelihood, orders = internal_func(
                 out_pkg["RV"].value, target_kwargs
@@ -204,7 +202,6 @@ class MCMC_sampler(SbartBaseSampler):
                 autocorrelation_evolution.append(autocorr)
 
             else:
-
                 posterior_mean, posterior_std = estimate_RV_from_chains(
                     sampler=sampler,
                     burn_in=burn_in,
@@ -230,7 +227,6 @@ class MCMC_sampler(SbartBaseSampler):
         eff_BurnIN = burn_in
 
         if not RV_converged:
-
             if not BurnIn_converged:
                 eff_BurnIN = int(10 * autocorr)
                 logger.warning(
@@ -279,13 +275,16 @@ class MCMC_sampler(SbartBaseSampler):
         return sampler, MCMC_status, output_pkg, header_info
 
     def store_metrics(self, sampler, target_KWARGS: dict, header_info: Dict[str, Any]):
-
         ###
         #   Build header
         ###
         frameID = target_KWARGS["run_information"]["frameID"]
         rel_path = "individual_subInst" if not self.is_merged_subInst else "merged_subInst"
-        base_path = self._internalPaths.root_storage_path / rel_path / target_KWARGS["run_information"]["subInst"]
+        base_path = (
+            self._internalPaths.root_storage_path
+            / rel_path
+            / target_KWARGS["run_information"]["subInst"]
+        )
         header = ["General information:"]
         for header_KW, KW_val in header_info.items():
             header.append(f"\n\t{header_KW} : {KW_val}")

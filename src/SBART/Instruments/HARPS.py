@@ -19,7 +19,7 @@ from SBART.utils.status_codes import (
     NAN_DATA,
     SATURATION,
     SUCCESS,
-    KW_WARNING
+    KW_WARNING,
 )
 from SBART.utils.units import kilometer_second, meter_second
 
@@ -58,12 +58,12 @@ class HARPS(Frame):
     _name = "HARPS"
 
     def __init__(
-            self,
-            file_path,
-            user_configs: Optional[Dict[str, Any]] = None,
-            reject_subInstruments=None,
-            frameID=None,
-            quiet_user_params: bool = True
+        self,
+        file_path,
+        user_configs: Optional[Dict[str, Any]] = None,
+        reject_subInstruments=None,
+        frameID=None,
+        quiet_user_params: bool = True,
     ):
         """
 
@@ -119,9 +119,7 @@ class HARPS(Frame):
         self.instrument_properties["is_drift_corrected"] = False
 
         self.instrument_properties["resolution"] = 115_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-            "La Silla Observatory"
-        )
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("La Silla Observatory")
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
@@ -140,7 +138,9 @@ class HARPS(Frame):
         if "e2ds" in self.file_path.stem.lower():
             return "S2D"
         else:
-            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
+            raise custom_exceptions.InternalError(
+                f"{self.name} can't recognize the file that it received!"
+            )
 
     def find_files(self, file_name):
         """
@@ -235,7 +235,6 @@ class HARPS(Frame):
         return vacuum_wavelengths
 
     def load_instrument_specific_KWs(self, header):
-
         self.observation_info["MAX_BERV"] = header["HIERARCH ESO DRS BERVMX"] * kilometer_second
         self.observation_info["BERV"] = header["HIERARCH ESO DRS BERV"] * kilometer_second
 

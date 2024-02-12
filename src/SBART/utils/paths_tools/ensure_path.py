@@ -4,7 +4,9 @@ from typing import Union
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
 
 
-def ensure_path_from_input(input_path: Union[str, pathlib.Path], ensure_existence: bool = False) -> pathlib.Path:
+def ensure_path_from_input(
+    input_path: Union[str, pathlib.Path], ensure_existence: bool = False
+) -> pathlib.Path:
     """
     Ensure that a given path is a pathlib.Path object
 
