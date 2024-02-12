@@ -15,12 +15,19 @@ from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.shift_spectra import apply_BERV_correction
 from SBART.utils.status_codes import MISSING_DATA, Flag, MISSING_SHAQ_RVS
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam, BooleanValue, ValueFromDtype
+from SBART.utils.UserConfigs import (
+    DefaultValues,
+    PathValue,
+    UserParam,
+    BooleanValue,
+    ValueFromDtype,
+)
 
 
 class CARMENES(Frame):
     """
-    Interface to handle KOBE-CARMENES data (optical arm only), loading the initial RV estimate from CCF files stored in a different directory.
+    Interface to handle KOBE-CARMENES data (optical arm only),
+    loading the initial RV estimate from CCF files stored in a different directory.
 
     This class defines 1 sub-Instruments:
 
@@ -56,7 +63,7 @@ class CARMENES(Frame):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments=None,
         frameID=None,
-        quiet_user_params: bool = True
+        quiet_user_params: bool = True,
     ):
         """
 
@@ -87,8 +94,7 @@ class CARMENES(Frame):
 
         super().__init__(
             inst_name="CARMENES",
-            array_size={"S2D": [61, 4096]
-                        },
+            array_size={"S2D": [61, 4096]},
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
@@ -96,7 +102,7 @@ class CARMENES(Frame):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             need_external_data_load=True,
-            quiet_user_params=quiet_user_params
+            quiet_user_params=quiet_user_params,
         )
 
         self.instrument_properties["wavelength_coverage"] = coverage
@@ -123,10 +129,11 @@ class CARMENES(Frame):
         if "vis_A" in name_lowercase:
             return "S2D"
         else:
-            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received ( - {self.file_path.stem})!")
+            raise custom_exceptions.InternalError(
+                f"{self.name} can't recognize the file that it received ( - {self.file_path.stem})!"
+            )
 
     def load_instrument_specific_KWs(self, header):
-
         self.observation_info["airmass"] = header[f"AIRMASS"]
 
         # Load BERV info + previous RV
