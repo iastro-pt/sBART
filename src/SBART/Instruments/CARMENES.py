@@ -158,7 +158,7 @@ class CARMENES(Frame):
                 header[f"HIERARCH CARACAL FOX SNR {order}"]
             )
 
-    def load_S2D_data(self) -> Mask:
+    def load_S2D_data(self):
         if self.is_open:
             return
         super().load_S2D_data()
@@ -182,7 +182,7 @@ class CARMENES(Frame):
     def load_S1D_data(self) -> Mask:
         raise NotImplementedError
 
-    def build_mask(self, bypass_QualCheck: bool = False) -> None:
+    def build_mask(self, bypass_QualCheck: bool = False) -> NoReturn:
         super().build_mask(bypass_QualCheck)
 
         # remove extremely negative points!

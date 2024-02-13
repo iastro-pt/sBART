@@ -96,7 +96,7 @@ class ESPRESSO(ESO_PIPELINE):
             except KeyError as e:
                 if i == 4:
                     msg = "\tCannot find ESO TELx AIRM START key"
-                    raise KeyError(msg)
+                    raise KeyError(msg) from e
 
         # Environmental KWs for telfit (also needs airmassm previously loaded)
         ambi_KWs = {
