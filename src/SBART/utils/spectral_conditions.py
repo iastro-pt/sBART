@@ -216,7 +216,6 @@ class KEYWORD_condition(ConditionModel):
         else:
             self.bounds = new_bounds
 
-    @overload
     def select_spectra(self, frame):
         keep = False
         KW_val = frame.get_KW_value(self.KW)
