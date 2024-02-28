@@ -189,13 +189,6 @@ class TelfitTelluric(TelluricTemplate):
 
     def _prepare_GDAS_data(self, dataClass, selected_frame):  # pylint: disable=C0103
         logger.info("Preparing GDAS data load!")
-        if selected_frame.is_Instrument("CARMENES") and (
-            self._internal_configs["atmosphere_profile"] == "download"
-            or self._internal_configs["force_download"]
-        ):
-            raise custom_exceptions.InvalidConfiguration(
-                "We can't automate download from GDAS archive for CARMENES"
-            )
 
         resources_folder = os.path.join(SBART_LOC, "resources/atmosphere_profiles")
 
