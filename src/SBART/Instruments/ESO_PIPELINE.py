@@ -31,9 +31,17 @@ class ESO_PIPELINE(Frame):
     """
 
     _default_params = Frame._default_params + DefaultValues(
-        Telluric_Corrected=UserParam(False, constraint=BooleanValue),
+        Telluric_Corrected=UserParam(
+            False,
+            constraint=BooleanValue,
+            description="The Frame was already corrected from telluric features",
+        ),
         UseMolecfit=UserParam(False, constraint=BooleanValue),
-        use_old_pipeline=UserParam(default_value=False, constraint=BooleanValue),
+        use_old_pipeline=UserParam(
+            default_value=False,
+            constraint=BooleanValue,
+            description="Use data from the old pipeline. Only available to selected instruments",
+        ),
         SCIRED_CHECK_IS_FATAL=UserParam(
             default_value=True,
             constraint=BooleanValue,
@@ -43,7 +51,11 @@ class ESO_PIPELINE(Frame):
 
     _default_params.update(
         "apply_FluxCorr",
-        UserParam(False, constraint=BooleanValue),
+        UserParam(
+            False,
+            constraint=BooleanValue,
+            description="Apply the blue-red flux correction due to the wavelength dependence of the atmospheric extinction. Only available on data from ESO pipeline (ESPRESSO)",
+        ),
     )
 
     _default_params.update(

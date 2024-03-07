@@ -112,15 +112,27 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     _default_params = DefaultValues(
         bypass_QualCheck=UserParam(False, constraint=BooleanValue),
-        open_without_BervCorr=UserParam(False, constraint=BooleanValue),
+        open_without_BervCorr=UserParam(
+            False,
+            constraint=BooleanValue,
+            description="Ensure that the Frame is not BERV corrected, independently of correction being applied or not in the official pipeline",
+        ),
         apply_FluxCorr=UserParam(False, constraint=ValueFromList((False,))),
-        use_air_wavelengths=UserParam(False, constraint=BooleanValue),
+        use_air_wavelengths=UserParam(
+            False,
+            constraint=BooleanValue,
+            description="Use air wavelengths, instead of the vacuum ones",
+        ),
         apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
         reject_order_percentage=UserParam(
             0.25, constraint=ValueInInterval((0, 1), include_edges=True)
         ),
         # If the SNR is smaller, discard the order:
-        minimum_order_SNR=UserParam(5, constraint=Positive_Value_Constraint),
+        minimum_order_SNR=UserParam(
+            5,
+            constraint=Positive_Value_Constraint,
+            description="SNR threshold under which the spectral order is rejected",
+        ),
         bypass_ST_designation=UserParam(
             default_value=None, constraint=ValueFromList((None, "S2D", "S1D"))
         ),
