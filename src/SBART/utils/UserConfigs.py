@@ -187,7 +187,27 @@ class UserParam:
         return self._default_value
 
     def __repr__(self):
-        return f"Default Value: {self._default_value}; Mandatory Flag: {self._mandatory}; Constraints: {self._valueConstraint}\n"
+        return f" Mandatory Flag: {self._mandatory}\nDefault Value: {self._default_value}\n Constraints: {self._valueConstraint}\n"
+
+    def get_terminal_output(self, indent_level: int = 1) -> str:
+        """Generate terminal-formatted text from this UserParam
+
+        Args:
+            indent_level (int, optional): How many tabs to add at the start of each line. Defaults to 1.
+
+        Returns:
+            str: Formatted message with the Description, mandatory status, default value and constraints
+        """
+        offset = indent_level * "\t"
+        message = ""
+        for name, value in [
+            ("Description", self.description),
+            ("Mandatory", self._mandatory),
+            ("Default value", self._default_value),
+            ("Constraints", self._valueConstraint),
+        ]:
+            message += offset + f"{name}:: {value}\n"
+        return message
 
 
 class InternalParameters:
@@ -218,11 +238,13 @@ class InternalParameters:
                         key,
                     )
                 continue
+
             try:
                 parameter_def_information.apply_constraints_to_value(key, value)
             except InvalidConfiguration as exc:
                 logger.critical("User-given parameter {} does not meet the constraints", key)
                 raise InternalError from exc
+
             self._user_configs[key] = value
 
             if not self.no_logs:
@@ -339,10 +361,10 @@ class DefaultValues:
         return self.__repr__()
 
     def __repr__(self) -> str:
-        representation = "User_ params:\n\n"
+        representation = f"Configurations:\n\n"
 
         for key, value in self.default_mapping.items():
-            representation += f"|{key} : {value} \n"
+            representation += f"Name:: {key}\n{value.get_terminal_output()} \n"
 
         return representation
 

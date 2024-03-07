@@ -136,5 +136,10 @@ class BASE:
         return self.__class__._name
 
     @classmethod
+    def config_help(cls):
+        """Prints a message to terminal, showing all possible configurations and their constraints"""
+        print(cls._default_params)
+
+    @classmethod
     def control_parameters(cls):
         return cls._default_params.keys()
