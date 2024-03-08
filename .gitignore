@@ -17,7 +17,13 @@ tests/*outputs/*
 
 
 .idea/
-SBART/resources/atmosphere_profiles/*
+src/SBART/resources/atmosphere_profiles/*
+
+docs/tutorials/templates/*
+tests/complete/templates/*
+tests/**/templates/
+tests/**/*.json
+
 *logs*
 *outputs*
 *inputs*
