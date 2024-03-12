@@ -102,7 +102,7 @@ class ESPRESSO(ESO_PIPELINE):
         ambi_KWs = {
             "relative_humidity": "AMBI RHUM",
             "ambient_temperature": "AMBI TEMP",
-            "seeing": "IA FWHM",
+            "seeing": "AMBI FWHM START",
         }
 
         for name, endKW in ambi_KWs.items():
