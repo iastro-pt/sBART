@@ -19,7 +19,7 @@ logger.disable(__name__)
 
 import os
 
-if os.environ.get("NO_GRAPHICAL_BACKEND", 0):
+if os.environ.get("NO_GRAPHICAL_BACKEND", "False") == "True":
     import matplotlib.pyplot as plt
 
     logger.warning("sbart disabling graphical backend for matplotlib")
