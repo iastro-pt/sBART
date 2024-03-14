@@ -10,8 +10,6 @@ from SBART.utils.status_codes import Flag, Status
 from SBART.utils.types import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, InternalParameters
 
-plt.switch_backend("agg")
-
 
 class BASE:
     """
