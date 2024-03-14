@@ -17,7 +17,7 @@ def orderwise_combination(RV_cube, variance_estimator) -> RV_cube:
     rvs[:, problematic_orders] = np.nan
     errors[:, problematic_orders] = np.nan
 
-    squared_errors = errors ** 2
+    squared_errors = errors**2
     final_rv, final_error = weighted_mean(rvs, squared_errors, variance_estimator)
 
     return final_rv, final_error

@@ -18,7 +18,7 @@ from SBART.utils.spectral_conditions import (
 
 
 def config_update_with_fallback_to_default(
-        config_dict, SBART_key_name, user_configs, user_key_name=None
+    config_dict, SBART_key_name, user_configs, user_key_name=None
 ):
     try:
         user_key_name = SBART_key_name if user_key_name is None else user_key_name
@@ -28,10 +28,20 @@ def config_update_with_fallback_to_default(
     return config_dict
 
 
-def run_target(rv_method, input_fpath, storage_path, instrument_name, user_configs, share_telluric=None, share_stellar=None,
-               force_stellar_creation=False, force_telluric_creation=False, sampler_name=None, sampler_configs=None,
-               log_to_terminal=False
-               ):
+def run_target(
+    rv_method,
+    input_fpath,
+    storage_path,
+    instrument_name,
+    user_configs,
+    share_telluric=None,
+    share_stellar=None,
+    force_stellar_creation=False,
+    force_telluric_creation=False,
+    sampler_name=None,
+    sampler_configs=None,
+    log_to_terminal=False,
+):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
             raise Exception("Trying to use a template that does not exist ({})".format(path))
@@ -57,7 +67,7 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
         storage_path=storage_path,
         instrument=instrument,
         instrument_options=instrument_configs,
-        sigma_clip_RVs=user_configs.get("SIGMA_CLIP_RV", None)
+        sigma_clip_RVs=user_configs.get("SIGMA_CLIP_RV", None),
     )
 
     if "REJECT_OBS" in user_configs:
@@ -91,9 +101,10 @@ def run_target(rv_method, input_fpath, storage_path, instrument_name, user_confi
     stellar_model_configs = user_configs.get("STELLAR_MODEL_CONFIGS", {})
     stellar_template_configs = user_configs.get("STELLAR_TEMPLATE_CONFIGS", {})
 
-    ModelStell = StellarModel(user_configs=stellar_model_configs,
-                              root_folder_path=storage_path if share_stellar is None else share_stellar
-                              )
+    ModelStell = StellarModel(
+        user_configs=stellar_model_configs,
+        root_folder_path=storage_path if share_stellar is None else share_stellar,
+    )
     try:
         StellarTemplateConditions = user_configs["StellarTemplateConditions"]
     except KeyError:

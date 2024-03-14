@@ -59,9 +59,7 @@ class TapasTelluric(TelluricTemplate):
         user_info=UserParam(["", ""], quiet=True),
         download_tapas=UserParam(True, constraint=BooleanValue),
         download_path=UserParam(None, constraint=PathValue, mandatory=True),
-        timeout=UserParam(
-            10, Positive_Value_Constraint
-        ),
+        timeout=UserParam(10, Positive_Value_Constraint),
         request_interval=UserParam(60, Positive_Value_Constraint),
     )
     method_name = "Tapas"
@@ -154,9 +152,10 @@ class TapasTelluric(TelluricTemplate):
                 format="mjd",
             )
 
-            ra, dec = dataClass.get_KW_from_frameID(
-                "RA", self._reference_frameID
-            ), dataClass.get_KW_from_frameID("DEC", self._reference_frameID)
+            ra, dec = (
+                dataClass.get_KW_from_frameID("RA", self._reference_frameID),
+                dataClass.get_KW_from_frameID("DEC", self._reference_frameID),
+            )
             c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
 
             string_RA, string_DEC = c.to_string("hmsdms", sep=":").split()
@@ -234,7 +233,6 @@ class TapasTelluric(TelluricTemplate):
 
         with open(self._tapas_file_path) as file:
             for line_ind, line in enumerate(file):
-
                 if r"baryvcor" in line:
                     tapas_BERV = float(line.split("=")[1])
                     break

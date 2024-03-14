@@ -13,7 +13,7 @@ version = "0.5.0"
 
 USE_CYTHON = False  # command line option, try-import, ...
 
-ext = '.pyx' if USE_CYTHON else '.c'
+ext = ".pyx" if USE_CYTHON else ".c"
 
 targ_path = curr_file / "src" / "SBART" / "utils" / "cython_codes"
 
@@ -61,34 +61,36 @@ if USE_CYTHON:
     Cython.Compiler.Options.annotate = True
     from Cython.Build import cythonize
 
-    ext_modules = cythonize(ext_modules,
-                            compiler_directives=compiler_directives,
-                            )
+    ext_modules = cythonize(
+        ext_modules,
+        compiler_directives=compiler_directives,
+    )
 
 from distutils.core import setup
 
-all_packages = setuptools.find_packages(where='src',
-                                                  # include=["SBART.*"]
-                                                  )
+all_packages = setuptools.find_packages(
+    where="src",
+    # include=["SBART.*"]
+)
 
 requ_path = Path(__file__).parent
-with open(requ_path / 'requirements.txt') as f:
+with open(requ_path / "requirements.txt") as f:
     required = f.read().splitlines()
 
-setup(name='SBART',
-      package_dir={"": "src"},
-      version=version,
-      description='Python Distribution Utilities',
-      packages=all_packages,
-      include_package_data=True,
-      ext_modules=ext_modules,
-      install_requires=required,
-      include_dirs=[numpy.get_include()],
-      # package_data={"SBART": ["utils/tapas_downloader",
-      #                         "resources/*",
-      #                         "outside_tools/*",
-      #                         "utils/cython_codes/cubic_interpolation/__init__.py"
-      #                         ]
-      #               }
-
-      )
+setup(
+    name="SBART",
+    package_dir={"": "src"},
+    version=version,
+    description="Python Distribution Utilities",
+    packages=all_packages,
+    include_package_data=True,
+    ext_modules=ext_modules,
+    install_requires=required,
+    include_dirs=[numpy.get_include()],
+    # package_data={"SBART": ["utils/tapas_downloader",
+    #                         "resources/*",
+    #                         "outside_tools/*",
+    #                         "utils/cython_codes/cubic_interpolation/__init__.py"
+    #                         ]
+    #               }
+)

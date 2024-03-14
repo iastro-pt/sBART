@@ -66,7 +66,9 @@ class Spectrum(BASE):
         """
         # self.uncertainties = full(self.spectra.shape, 200)
         if self.spectra.shape != new_values.shape:
-            raise custom_exceptions.InvalidConfiguration("The new uncertainties don't have the same size as the spectra")
+            raise custom_exceptions.InvalidConfiguration(
+                "The new uncertainties don't have the same size as the spectra"
+            )
         self.uncertainties = new_values
 
     def regenerate_order_status(self):
@@ -84,9 +86,10 @@ class Spectrum(BASE):
         Thus, we check if the desired property is currently given as a input argument. If it is, return its
         value, otherwise default to the class property values!
         """
-        kw_map = {"flux_atmos_balance_corrected": "apply_FluxCorr",
-                  "flux_dispersion_balance_corrected": "apply_FluxBalance_Norm"
-                  }
+        kw_map = {
+            "flux_atmos_balance_corrected": "apply_FluxCorr",
+            "flux_dispersion_balance_corrected": "apply_FluxBalance_Norm",
+        }
         if property_name == "is_BERV_corrected":
             # Every frame will be berv corrected (if this is not done by the DRS)
             return True
@@ -95,7 +98,9 @@ class Spectrum(BASE):
             return getattr(self, property_name)
 
         if property_name not in kw_map:
-            raise custom_exceptions.InternalError("Searching for a data correction that is not available ({})", property_name)
+            raise custom_exceptions.InternalError(
+                "Searching for a data correction that is not available ({})", property_name
+            )
         try:
             return self._internal_configs[kw_map[property_name]]
         except KeyError:
@@ -337,13 +342,14 @@ class Spectrum(BASE):
 
     @property
     def spectrum_information(self):
-        return {"N_orders": self.N_orders,
-                "object_type": self._object_type,
-                "blaze_corrected": self.is_blaze_corrected,
-                "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
-                "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
-                "telluric_corrected": self.was_telluric_corrected,
-                }
+        return {
+            "N_orders": self.N_orders,
+            "object_type": self._object_type,
+            "blaze_corrected": self.is_blaze_corrected,
+            "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
+            "flux_dispersion_balance_corrected": self.flux_dispersion_balance_corrected,
+            "telluric_corrected": self.was_telluric_corrected,
+        }
 
     @property
     def N_orders(self) -> int:

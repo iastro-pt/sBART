@@ -15,7 +15,6 @@ class UnitModel(BASE):
     _name = "StorageUnit::"
 
     def __init__(self, frameIDs, N_orders, needed_folders=None):
-
         super().__init__(needed_folders=needed_folders)
         self.associated_frameIDs = frameIDs
         self.N_orders = N_orders
@@ -30,4 +29,3 @@ class UnitModel(BASE):
     def load_from_disk(cls, root_path: Path):
         if not root_path.exists():
             raise custom_exceptions.NoDataError
-

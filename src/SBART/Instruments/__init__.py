@@ -14,13 +14,15 @@ with all providing the same user-interface (after they load all the necessary in
 
 """
 
-__all__ = ["ESPRESSO",
-           "HARPS",
-           ]
+__all__ = [
+    "ESPRESSO",
+    "HARPS",
+]
 from .ESPRESSO import ESPRESSO
 from .HARPS import HARPS
 
 
-instrument_dict = {"ESPRESSO": ESPRESSO,
-                   "HARPS": HARPS,
-                   }
+instrument_dict = {
+    "ESPRESSO": ESPRESSO,
+    "HARPS": HARPS,
+}

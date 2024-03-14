@@ -9,7 +9,6 @@ from SBART.utils.status_codes import MULTIPLE_REASONS
 
 class Mask:
     def __init__(self, initial_mask, mask_type="normal"):
-
         self.mask_type = mask_type
         self._internal_mask = initial_mask
         self._outdated_cache = True
@@ -133,7 +132,6 @@ class Mask:
         self._internal_mask[np.where(np.isin(self._internal_mask, interest_points) == 0)] = 0
 
     def compute_statistics(self, detailed=False):
-
         if self.mask_type == "binary":
             sum_mask = np.sum(self.get_custom_mask([]), axis=1)
             string = "\tMinimum masked points (order {}): {}\n\tMaximum masked points (order {}): {}\n\tmedian (across all orders) masked points: {}"
@@ -159,7 +157,6 @@ class Mask:
             full_mask = self._internal_mask
 
             for index, sum_mask in enumerate(full_mask):
-
                 if detailed:
                     logger.info("\n\tEpoch  # {}".format(index))
 
@@ -182,7 +179,6 @@ class Mask:
 
                     global_points.append(0)
                     for key in self._current_types:
-
                         caused_by_reason = all_ords[key]
                         string = "\t\t{}\t\t(order {}): {}\t\t(order {}): {} \t {}"
 

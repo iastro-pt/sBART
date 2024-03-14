@@ -17,6 +17,15 @@ from loguru import logger
 
 logger.disable(__name__)
 
+import os
+
+if os.environ.get("NO_GRAPHICAL_BACKEND", "False") == "True":
+    import matplotlib.pyplot as plt
+
+    logger.warning("sbart disabling graphical backend for matplotlib")
+    plt.switch_backend("agg")
+
+
 # Is this a good idea? Guess not...
 import pathlib
 

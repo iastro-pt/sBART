@@ -15,10 +15,10 @@ def ranges(a):
     uniques = np.intersect1d(_none_1, _1_none)
     R, nums = [], []
     for start, end in zip(starts, ends):
-        R.append(f'{start}-{end}')
+        R.append(f"{start}-{end}")
         nums.append(start)
     for u in uniques:
         R.append(str(u))
         nums.append(u)
     R = np.array(R)[np.argsort(nums)]
-    return ', '.join(R)
+    return ", ".join(R)

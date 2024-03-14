@@ -14,7 +14,6 @@ def calculate_telluric_mask(data_class, telluric_temp):
     new_mask = np.zeros(spectra_wavelengths.shape, dtype=bool)
     for epoch in range(data_class.number_of_epochs):
         for order in range(data_class.mat_size[0]):
-
             spectra_wave_order = spectra_wavelengths[epoch][order]
             temp_order = tell_template[order]
             ratios = np.zeros(temp_order.shape)

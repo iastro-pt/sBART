@@ -10,11 +10,7 @@ from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.data_objects import DataClass
 from SBART.utils import find_wavelength_limits
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
-from SBART.utils.custom_exceptions import (
-    BadOrderError,
-    InvalidConfiguration,
-    StopComputationError
-)
+from SBART.utils.custom_exceptions import BadOrderError, InvalidConfiguration, StopComputationError
 from SBART.utils.status_codes import (
     HIGH_CONTAMINATION,
     INTERNAL_ERROR,
@@ -27,11 +23,11 @@ from SBART.utils.work_packages import WorkerOutput
 
 
 def worker(
-        dataClassProxy:DataClass,
-        input_queue: Queue,
-        out_queue: Queue,
-        worker_configs: dict,
-        sampler=None,
+    dataClassProxy: DataClass,
+    input_queue: Queue,
+    out_queue: Queue,
+    worker_configs: dict,
+    sampler=None,
 ):
     if sampler.mode == "epoch-wise":
         # open shared memory array to store the computed mask
@@ -249,7 +245,9 @@ def worker(
                             logger.critical(f"{spec_s2d[current_order_mask]}")
                             logger.critical(f"{temp[template_order_mask]}")
 
-                            raise StopComputationError(f"RV optimization failed on {current_epochID=}, {current_order=}") from e
+                            raise StopComputationError(
+                                f"RV optimization failed on {current_epochID=}, {current_order=}"
+                            ) from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
                             #     spec_wave[current_order_mask],

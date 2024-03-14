@@ -48,7 +48,7 @@ class ESPRESSO(ESO_PIPELINE):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments: Optional[Iterable[str]] = None,
         frameID: Optional[int] = None,
-        quiet_user_params: bool = True
+        quiet_user_params: bool = True,
     ):
         """
 
@@ -69,27 +69,22 @@ class ESPRESSO(ESO_PIPELINE):
 
         super().__init__(
             inst_name="ESPRESSO",
-            array_size={"S2D": (170, 9111),
-                        "S1D": (1, 443262)
-                        },
+            array_size={"S2D": (170, 9111), "S1D": (1, 443262)},
             file_path=file_path,
             frameID=frameID,
             KW_identifier="ESO",
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
-            quiet_user_params=quiet_user_params
+            quiet_user_params=quiet_user_params,
         )
 
         self.instrument_properties["wavelength_coverage"] = coverage
         self.instrument_properties["resolution"] = 140_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-            "Cerro Paranal"
-        )
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("Cerro Paranal")
         self.instrument_properties["is_drift_corrected"] = True
 
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
         self.instrument_properties["site_pressure"] = 750
-
 
     def load_telemetry_info(self, header):
         # Find the UT number and load the airmass
@@ -101,12 +96,13 @@ class ESPRESSO(ESO_PIPELINE):
             except KeyError as e:
                 if i == 4:
                     msg = "\tCannot find ESO TELx AIRM START key"
-                    raise KeyError(msg)
+                    raise KeyError(msg) from e
 
         # Environmental KWs for telfit (also needs airmassm previously loaded)
         ambi_KWs = {
             "relative_humidity": "AMBI RHUM",
             "ambient_temperature": "AMBI TEMP",
+            "seeing": "AMBI FWHM START",
         }
 
         for name, endKW in ambi_KWs.items():
@@ -120,7 +116,6 @@ class ESPRESSO(ESO_PIPELINE):
         self.observation_info["DET_BINY"] = header["HIERARCH ESO DET BINY"]
 
     def check_header_QC_ESO_DRS(self, header):
-
         nonfatal_QC_flags = {
             "HIERARCH ESO INS{} ADC{} RA": 0,  # related with ADC2 problem
             "HIERARCH ESO INS{} ADC{} dec": 0,  # related with ADC2 problem
@@ -138,7 +133,7 @@ class ESPRESSO(ESO_PIPELINE):
                             msg = f"QC flag {ADC_KW} has a value of {bad_value}"
                             logger.warning(msg)
                             self._status.store_warning(KW_WARNING(msg))
-                            found_ADC_issue = True 
+                            found_ADC_issue = True
                         found_UT = True
                 except:
                     pass
@@ -146,10 +141,10 @@ class ESPRESSO(ESO_PIPELINE):
                 logger.critical(
                     f"Did not find the entry for the following UT related metric: {flag}"
                 )
-        
+
         if found_ADC_issue:
             self._status.store_warning(KW_WARNING("ADC2 issues found"))
-            
+
         super().check_header_QC_ESO_DRS(header)
 
     def build_mask(self, bypass_QualCheck: bool = False) -> None:

@@ -22,7 +22,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     ACTIVITY_LINE,
     TELLURIC,
     Status,
-    SIGMA_CLIP_REJECTION
+    SIGMA_CLIP_REJECTION,
 )
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
@@ -51,14 +51,14 @@ class DataClass(BASE):
     """
 
     def __init__(
-            self,
-            input_files: Iterable[UI_PATH],
-            storage_path: UI_PATH,
-            instrument: Type[Frame],
-            instrument_options: dict,
-            reject_subInstruments: Optional[Iterable[str]] = None,
-            target_name: str = None,
-            sigma_clip_RVs: Optional[float] = None
+        self,
+        input_files: Iterable[UI_PATH],
+        storage_path: UI_PATH,
+        instrument: Type[Frame],
+        instrument_options: dict,
+        reject_subInstruments: Optional[Iterable[str]] = None,
+        target_name: str = None,
+        sigma_clip_RVs: Optional[float] = None,
     ):
         """
         Parameters
@@ -112,7 +112,7 @@ class DataClass(BASE):
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
-                    quiet_user_params=frameID != 0  # Only the first frame will output logs
+                    quiet_user_params=frameID != 0,  # Only the first frame will output logs
                 )
             )
 
@@ -154,7 +154,7 @@ class DataClass(BASE):
     ########################
 
     def load_previous_SBART_results(
-            self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
+        self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
     ):
         """
         Load the results from a previous application of SBART, storing the RV and uncertainty inside the corresponding
@@ -184,29 +184,29 @@ class DataClass(BASE):
         for ID_index, frameID in enumerate(self.get_valid_frameIDS()):
             frame = self.get_frame_by_ID(frameID)
             cube = RV_RESULTS.get_RV_cube(frame.sub_instrument, merged=use_merged_cube)
-            _, sbart_rv, sbart_uncert = cube.get_RV_from_ID(frameID=frameID,
-                                                            which="SBART",
-                                                            apply_SA_corr=False,
-                                                            as_value=False,
-                                                            units=None,
-                                                            apply_drift_corr=False
-                                                            )
+            _, sbart_rv, sbart_uncert = cube.get_RV_from_ID(
+                frameID=frameID,
+                which="SBART",
+                apply_SA_corr=False,
+                as_value=False,
+                units=None,
+                apply_drift_corr=False,
+            )
 
             previous_filename = cube.cached_info["date_folders"][cube.frameIDs.index(frameID)]
 
             if previous_filename != frame.file_path:
-                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(frame.sub_instrument,
-                                                                                                     previous_filename,
-                                                                                                     frame.file_path
-                                                                                                     )
+                msg = (
+                    "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(
+                        frame.sub_instrument, previous_filename, frame.file_path
+                    )
+                )
                 logger.critical(msg)
                 raise InvalidConfiguration(msg)
 
             cube_ids = cube.frameIDs
 
-            frame.store_previous_SBART_result(RV=sbart_rv,
-                                              RV_err=sbart_uncert
-                                              )
+            frame.store_previous_SBART_result(RV=sbart_rv, RV_err=sbart_uncert)
 
     def reject_order_region_from_frame(self, frameID: int, order: int, region):
         frame = self.get_frame_by_ID(frameID)
@@ -231,7 +231,6 @@ class DataClass(BASE):
             frame.mark_wavelength_region(reason=ACTIVITY_LINE, wavelength_blocks=blocked_regions)
 
     def remove_telluric_features(self, Telluric_Template: TelluricModel) -> None:
-
         for subInstrument in self.get_subInstruments_with_valid_frames():
             valid_frameIDS = self.get_frameIDs_from_subInst(subInstrument)
 
@@ -351,31 +350,28 @@ class DataClass(BASE):
                 logger.info("Loaded data from KW : {}", equal_KW, collected_KW)
 
         if self.sigma_clip_RVs is not None:
-            logger.info(f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV")
+            logger.info(
+                f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV"
+            )
 
             for subInstrument in self.get_subInstruments_with_valid_frames():
-                RV = self.collect_RV_information(KW="DRS_RV",
-                                                 subInst=subInstrument,
-                                                 include_invalid=False,
-                                                 as_value=True
-                                                 )
-                err = self.collect_RV_information(KW="DRS_RV_ERR",
-                                                  subInst=subInstrument,
-                                                  include_invalid=False,
-                                                  as_value=True
-                                                  )
+                RV = self.collect_RV_information(
+                    KW="DRS_RV", subInst=subInstrument, include_invalid=False, as_value=True
+                )
+                err = self.collect_RV_information(
+                    KW="DRS_RV_ERR", subInst=subInstrument, include_invalid=False, as_value=True
+                )
                 mean_RV = np.median(RV)
-                metric = np.std(RV
-                                )  # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
+                metric = np.std(
+                    RV
+                )  # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
 
-                bounds = [mean_RV - self.sigma_clip_RVs * metric,
-                          mean_RV + self.sigma_clip_RVs * metric
-                          ]
+                bounds = [
+                    mean_RV - self.sigma_clip_RVs * metric,
+                    mean_RV + self.sigma_clip_RVs * metric,
+                ]
 
-                bad_indexes = np.where(np.logical_or(RV < bounds[0],
-                                                     RV > bounds[1]
-                                                     )
-                                       )
+                bad_indexes = np.where(np.logical_or(RV < bounds[0], RV > bounds[1]))
                 valid_frameIDs = self.get_frameIDs_from_subInst(subInstrument)
                 bad_IDS = np.asarray(valid_frameIDs)[bad_indexes]
 
@@ -544,14 +540,18 @@ class DataClass(BASE):
 
     def update_interpol_properties_of_all_frames(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
-            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+            raise custom_exceptions.InvalidConfiguration(
+                "The interpolation properties must be passed as a dictionary"
+            )
 
         for frame in self.observations:
             frame.set_interpolation_properties(new_properties)
 
     def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
-            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
+            raise custom_exceptions.InvalidConfiguration(
+                "The interpolation properties must be passed as a dictionary"
+            )
 
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
@@ -566,16 +566,20 @@ class DataClass(BASE):
         frame = self.get_frame_by_ID(frameID)
         frame.set_interpolation_properties(new_properties)
 
-    def interpolate_frame_order(self, frameID, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False):
+    def interpolate_frame_order(
+        self, frameID, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False
+    ):
         """
         Interpolate a given order to a new wavelength solution
         """
         frame = self.get_frame_by_ID(frameID)
-        return frame.interpolate_spectrum_to_wavelength(order=order, new_wavelengths=new_wavelengths,
-                                                        shift_RV_by=shift_RV_by,
-                                                        RV_shift_mode=RV_shift_mode,
-                                                        include_invalid=include_invalid
-                                                        )
+        return frame.interpolate_spectrum_to_wavelength(
+            order=order,
+            new_wavelengths=new_wavelengths,
+            shift_RV_by=shift_RV_by,
+            RV_shift_mode=RV_shift_mode,
+            include_invalid=include_invalid,
+        )
 
     def get_frame_arrays_by_ID(self, frameID: int):
         """
@@ -606,12 +610,12 @@ class DataClass(BASE):
         return frame.status
 
     def collect_KW_observations(
-            self,
-            KW: str,
-            subInstruments: Union[tuple, list],
-            include_invalid: bool = False,
-            conditions: CondModel = None,
-            return_frameIDs: bool = False
+        self,
+        KW: str,
+        subInstruments: Union[tuple, list],
+        include_invalid: bool = False,
+        conditions: CondModel = None,
+        return_frameIDs: bool = False,
     ) -> Union[list, Tuple[List[float], List[int]]]:
         """
         Parse through the loaded observations and retrieve a specific KW from
@@ -662,13 +666,13 @@ class DataClass(BASE):
         return output
 
     def collect_RV_information(
-            self,
-            KW,
-            subInst: str,
-            frameIDs=None,
-            include_invalid: bool = False,
-            units=None,
-            as_value: bool = True,
+        self,
+        KW,
+        subInst: str,
+        frameIDs=None,
+        include_invalid: bool = False,
+        units=None,
+        as_value: bool = True,
     ) -> list:
         """Return the RV measurements (or BERV) from the observations of a given sub-Instrument
 
@@ -743,7 +747,7 @@ class DataClass(BASE):
         return out
 
     def get_frameIDs_from_subInst(
-            self, subInstrument: str, include_invalid: bool = False
+        self, subInstrument: str, include_invalid: bool = False
     ) -> List[int]:
         """Get all frameIDs associated with a given instrument. By default, only returns the valid ones
 
@@ -1023,6 +1027,6 @@ class DataClass(BASE):
 
     def __repr__(self):
         return (
-                f"Data Class from {self._inst_type.instrument_properties['name']} holding "
-                + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
+            f"Data Class from {self._inst_type.instrument_properties['name']} holding "
+            + ", ".join([f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()])
         )

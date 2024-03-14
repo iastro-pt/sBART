@@ -66,7 +66,6 @@ def find_overlaps(input_blocks: List[List[float]]) -> List[List[float]]:
 
 
 if __name__ == "__main__":
-
     inputs = [[1, 4], [4, 5], [2, 3], [5, 6], [6, 7], [9, 10], [100, 199]] * 9111 * 170
 
     print("----////------")

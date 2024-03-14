@@ -29,10 +29,11 @@ class Classical_Unit(UnitModel):
         if frameID not in self.chi_squared_profile:
             self.chi_squared_profile[frameID] = {}
 
-        self.chi_squared_profile[frameID][order] = {"RVs": rvs,
-                                                    "profile": chi_squared,
-                                                    "fit_params": fit_coeffs,
-                                                    }
+        self.chi_squared_profile[frameID][order] = {
+            "RVs": rvs,
+            "profile": chi_squared,
+            "fit_params": fit_coeffs,
+        }
 
     def get_ChiSquared_frameID_information(self, frameID: int) -> dict:
         try:
@@ -46,12 +47,13 @@ class Classical_Unit(UnitModel):
         except KeyError as exc:
             raise custom_exceptions.NoDataError(f"There is no information order {order=}")
 
-    def plot_ChiSquared(self, frameID, order, show_plot = True):
-
+    def plot_ChiSquared(self, frameID, order, show_plot=True):
         if frameID == "all":
             frames = list(self.chi_squared_profile.keys())
             if len(frames) == 0:
-                raise custom_exceptions.NoDataError("There is no chi squared value stored in this dataUnit")
+                raise custom_exceptions.NoDataError(
+                    "There is no chi squared value stored in this dataUnit"
+                )
         else:
             frames = [frameID]
 
@@ -60,7 +62,7 @@ class Classical_Unit(UnitModel):
         for f_ID in frames:
             frame_info = self.get_ChiSquared_frameID_information(f_ID)
 
-            if order == 'all':
+            if order == "all":
                 orders = list(frame_info.keys())
             else:
                 orders = order
@@ -113,7 +115,7 @@ class Classical_Unit(UnitModel):
                 chi_squared_profile = json.load(handle)
                 profile = {}
                 for str_key, info in chi_squared_profile.items():
-                    profile[int(str_key)] = {int(j): k for j,k in info.items()}
+                    profile[int(str_key)] = {int(j): k for j, k in info.items()}
                 new_unit.chi_squared_profile = profile
         except FileNotFoundError:
             logger.critical(f"Couldn't find the .json file on {new_unit.get_storage_filename()}")

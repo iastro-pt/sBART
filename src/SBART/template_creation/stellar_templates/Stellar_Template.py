@@ -19,12 +19,12 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     IntegerValue,
     UserParam,
-    Positive_Value_Constraint
-    )
+    Positive_Value_Constraint,
+)
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import (
     NoDataError,
-    )
+)
 from SBART.utils.status_codes import HIGH_CONTAMINATION, MISSING_DATA, OrderStatus
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils.units import convert_data, kilometer_second
@@ -66,17 +66,16 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
         MEMORY_SAVE_MODE=UserParam(
             False, constraint=BooleanValue
-            ),  # if True, close the S2D files after using them!
+        ),  # if True, close the S2D files after using them!
         MINIMUM_NUMBER_OBS=UserParam(
             3, constraint=IntegerValue
-            ),  # minimum number of OBS to create stellar template
-        )
+        ),  # minimum number of OBS to create stellar template
+    )
 
     template_type = "Stellar"
     method_name = "Base"
 
     def __init__(self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False):
-
         super().__init__(subInst, user_configs, loaded)
 
         self.rejection_array = None
@@ -125,7 +124,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "Starting creation of {} template from {}",
             self.__class__.template_type,
             self._associated_subInst,
-            )
+        )
 
         array_size = dataClass.get_instrument_information()["array_size"]
         self.array_size = array_size
@@ -138,10 +137,10 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
                 "{} has no valid observations. Not computing {} template",
                 self._associated_subInst,
                 self.__class__.template_type,
-                )
+            )
             self.add_to_status(
                 MISSING_DATA("No valid observations from {}".format(self._associated_subInst))
-                )
+            )
 
         self._base_checks_for_template_creation()
 
@@ -151,13 +150,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             logger.info(
                 "No conditions for the creation of the stellar template. Using all available frames from {}",
                 self._associated_subInst,
-                )
+            )
             IDS_to_use = self.frameIDs_to_use
         else:
             logger.info(
                 "Evaluating spectral conditions to select the valid observations from {}",
                 self._associated_subInst,
-                )
+            )
             IDS_to_use = []
             for frameID in self.frameIDs_to_use:
                 keep, flags = conditions.evaluate(dataClass.get_frame_by_ID(frameID))
@@ -168,7 +167,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
                         "FrameID {} rejected from stellar template due to {}",
                         frameID,
                         flags,
-                        )
+                    )
                     self._rejection_flags_map[
                         dataClass.get_filename_from_frameID(frameID, full_path=True)
                     ] = flags
@@ -192,24 +191,30 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
                 self._associated_subInst,
                 len(self.frameIDs_to_use),
                 self._internal_configs["MINIMUM_NUMBER_OBS"],
-                )
+            )
             self.add_to_status(
                 MISSING_DATA(
                     "Can't create stellar template with less than {} observations".format(
                         self._internal_configs["MINIMUM_NUMBER_OBS"]
-                        )
                     )
                 )
+            )
 
         self._base_checks_for_template_creation()
 
         # TODO: ensure that they all observations are consistent!
         first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
         self.is_blaze_corrected = first_frame.check_if_data_correction_enabled("is_blaze_corrected")
-        self.was_telluric_corrected = first_frame.check_if_data_correction_enabled("was_telluric_corrected")
+        self.was_telluric_corrected = first_frame.check_if_data_correction_enabled(
+            "was_telluric_corrected"
+        )
         self.is_BERV_corrected = first_frame.check_if_data_correction_enabled("is_BERV_corrected")
-        self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
-        self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")
+        self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled(
+            "flux_atmos_balance_corrected"
+        )
+        self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled(
+            "flux_dispersion_balance_corrected"
+        )
 
     def add_new_frame_to_template(self, frame: Frame):
         """
@@ -236,22 +241,44 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self._loaded = False
 
         keep = True
-        for name, val1, val2 in [("Blaze", self.is_blaze_corrected, frame.check_if_data_correction_enabled("is_blaze_corrected")),
-                                 ("Telluric", self.was_telluric_corrected, frame.check_if_data_correction_enabled("was_telluric_corrected")),
-                                 ("BERV_corrected", self.is_BERV_corrected, frame.check_if_data_correction_enabled("is_BERV_corrected")),
-                                 ("Flux atmos balance", self.flux_atmos_balance_corrected, frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")),
-                                 ("flux_dispersion_balance_corrected", self.flux_dispersion_balance_corrected, frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected")),
-                                 ("sub-Instrument", self.sub_instrument, frame.sub_instrument)
-                                 ]:
+        for name, val1, val2 in [
+            (
+                "Blaze",
+                self.is_blaze_corrected,
+                frame.check_if_data_correction_enabled("is_blaze_corrected"),
+            ),
+            (
+                "Telluric",
+                self.was_telluric_corrected,
+                frame.check_if_data_correction_enabled("was_telluric_corrected"),
+            ),
+            (
+                "BERV_corrected",
+                self.is_BERV_corrected,
+                frame.check_if_data_correction_enabled("is_BERV_corrected"),
+            ),
+            (
+                "Flux atmos balance",
+                self.flux_atmos_balance_corrected,
+                frame.check_if_data_correction_enabled("flux_atmos_balance_corrected"),
+            ),
+            (
+                "flux_dispersion_balance_corrected",
+                self.flux_dispersion_balance_corrected,
+                frame.check_if_data_correction_enabled("flux_dispersion_balance_corrected"),
+            ),
+            ("sub-Instrument", self.sub_instrument, frame.sub_instrument),
+        ]:
             if val1 != val2:
                 keep = False
-                logger.warning(f"Template-frame corrections are different: {name} - template: {val1} - Frame: {val2}")
+                logger.warning(
+                    f"Template-frame corrections are different: {name} - template: {val1} - Frame: {val2}"
+                )
 
         if not keep:
             msg = f"New frame does not match the corrections from the stellar template"
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
-
 
     def evaluate_bad_orders(self) -> None:
         logger.info("Computing orders with too many points masked")
@@ -265,7 +292,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             if bad_pixels > order_cutoff:
                 msg = "Stellar template rejecting order {} due to having more than {}/{} pixels masked".format(
                     order, order_cutoff, N_pixels_per_order
-                    )
+                )
                 logger.warning(msg)
 
                 self._OrderStatus.add_flag_to_order(order, HIGH_CONTAMINATION(msg))
@@ -308,14 +335,14 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             storage_path,
             f"DetailedFlags_{self._associated_subInst}",
             fmt="json",
-            )
+        )
         self._OrderStatus.store_as_json(detailedFlags_storage)
 
         miscInfo = build_filename(
             storage_path,
             f"miscInfo_{self._associated_subInst}",
             fmt="json",
-            )
+        )
 
         # Note: when adding things here we must use as a key the exact name of the parameter...
         # Note2: carefull with the datatypes that are stored in here...
@@ -329,7 +356,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
             "_reference_frameID": self._reference_frameID,
             "_reference_filepath": self._reference_filepath,
-            }
+        }
 
         with open(miscInfo, mode="w") as file:
             json.dump(storage_information, file, indent=4)
@@ -412,7 +439,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "darkred",
             "purple",
             "black",
-            ]
+        ]
         v = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1]
         l = list(zip(v, c))
         cmap = LinearSegmentedColormap.from_list("rg", l, N=256)
@@ -430,7 +457,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             cmap=cmap,
             shading="auto",
             edgecolors="w",
-            )
+        )
         fig.colorbar(data)
         ax.set_xlabel("Order")
         ax.set_ylabel("FrameID")
@@ -450,7 +477,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             metrics_path / f"order_pixel_rejections_{self._associated_subInst}.txt",
             new_array,
             fmt="%.3f",
-            )
+        )
         fig.savefig(metrics_path / f"order_pixel_rejection_{self._associated_subInst}.pdf")
         plt.close(fig)
 
@@ -477,7 +504,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             storage_path,
             f"DetailedFlags_{self._associated_subInst}",
             fmt="json",
-            )
+        )
 
         self._OrderStatus = OrderStatus.load_from_json(detailedFlags_storage)
 
@@ -485,7 +512,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             storage_path,
             f"miscInfo_{self._associated_subInst}",
             fmt="json",
-            )
+        )
 
         with open(miscInfo) as file:
             json_info = json.load(file)
@@ -497,7 +524,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     # Handle shared memory
     def convert_to_shared_mem(self):
-
         if self._in_shared_mem:
             # Avoid opening multiple arrays!
             logger.info(f"{self.__class__.name} already in shared memory")
@@ -574,10 +600,14 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         return base_name
 
     def interpolate_spectrum_to_wavelength(
-            self, order, new_wavelengths, shift_RV_by,
-            RV_shift_mode, remove_OB: Optional[Frame] = None,
-            include_invalid=False
-            ):
+        self,
+        order,
+        new_wavelengths,
+        shift_RV_by,
+        RV_shift_mode,
+        remove_OB: Optional[Frame] = None,
+        include_invalid=False,
+    ):
         """
         Override of the interpolation algorithm to allow the rejection of OBs
         Parameters
@@ -595,28 +625,34 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         """
         self.initialize_modelling_interface()
 
-        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(
+            order, include_invalid
+        )
         desired_inds = ~mask
 
-        og_lambda, og_spectra, og_errs = wavelength[desired_inds], flux[desired_inds], uncertainties[desired_inds]
+        og_lambda, og_spectra, og_errs = (
+            wavelength[desired_inds],
+            flux[desired_inds],
+            uncertainties[desired_inds],
+        )
 
         if remove_OB is not None:  # TODO: check that this is working as expected
             if remove_OB.frameID in self.frameIDs_to_use:
                 ccf_rv = convert_data(
                     remove_OB.get_KW_value(self.RV_keyword),
                     new_units=kilometer_second,
-                    as_value=True
-                    )
+                    as_value=True,
+                )
                 new_forder, new_ferror = remove_OB.interpolate_spectrum_to_wavelength(
                     new_wavelengths=wavelength,
                     order=order,
                     shift_RV_by=ccf_rv,
-                    RV_shift_mode="remove"
-                    )
+                    RV_shift_mode="remove",
+                )
                 self.get_data_from_spectral_order(order, include_invalid)
 
                 og_spectra = og_spectra - new_forder / len(self.frameIDs_to_use)
-                og_errs = np.sqrt(og_errs ** 2 - new_ferror ** 2)
+                og_errs = np.sqrt(og_errs**2 - new_ferror**2)
 
         if RV_shift_mode == "apply":
             shift_function = apply_RVshift
@@ -631,9 +667,10 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(
                 og_lambda=og_lambda,
                 og_spectra=og_spectra,
-                og_err=og_errs, new_wavelengths=new_wavelengths,
-                order=order
-                )
+                og_err=og_errs,
+                new_wavelengths=new_wavelengths,
+                order=order,
+            )
         except custom_exceptions.StopComputationError as exc:
             logger.critical("Interpolation of {} has failed", self.name)
             raise exc

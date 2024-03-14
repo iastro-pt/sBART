@@ -50,6 +50,7 @@ class TelluricTemplate(BaseTemplate):
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
+
     _name = "Telluric"
     _default_params = BaseTemplate._default_params + DefaultValues(
         continuum_percentage_drop=UserParam(
@@ -221,7 +222,9 @@ class TelluricTemplate(BaseTemplate):
             return np.nan
 
         # Placing upper limit of temperature at 50ºC
-        self._metric_selection_conditions += KEYWORD_condition("ambient_temperature", [[None, 323.15]])
+        self._metric_selection_conditions += KEYWORD_condition(
+            "ambient_temperature", [[None, 323.15]]
+        )
 
         if self.__class__.method_name.lower() == "telfit":
             # 1 December 2014, because no GDAS profile for telfit
@@ -296,7 +299,8 @@ class TelluricTemplate(BaseTemplate):
 
         if not self._loaded_dataclass_info:
             raise custom_exceptions.InvalidConfiguration(
-                f"{ self.name} did not load dataClass information")
+                f"{ self.name} did not load dataClass information"
+            )
 
         logger.info(
             "Starting telluric template creation, with reference ID = {}",

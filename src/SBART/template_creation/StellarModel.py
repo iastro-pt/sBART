@@ -188,11 +188,12 @@ class StellarModel(TemplateFramework):
         return set((temp.interpol_mode for temp in self.templates.values()))
 
     def _compute_template(self, data, subInstrument: str, user_configs: dict):
-
         chosen_template = self.template_map[self._internal_configs["CREATION_MODE"]]
         key = "ALIGNEMENT_RV_SOURCE"
         if key in user_configs:
-            logger.warning(f"Key <{key}> from Stellar Model over-riding the one from the template configs")
+            logger.warning(
+                f"Key <{key}> from Stellar Model over-riding the one from the template configs"
+            )
         user_configs[key] = self._internal_configs[key]
         stellar_template = chosen_template(subInst=subInstrument, user_configs=user_configs)
 
@@ -209,7 +210,6 @@ class StellarModel(TemplateFramework):
         return stellar_template
 
     def get_orders_to_skip(self, subInst: str) -> Set[int]:
-
         if subInst == "all":
             bad_orders = set()
             for temp in self.templates.values():

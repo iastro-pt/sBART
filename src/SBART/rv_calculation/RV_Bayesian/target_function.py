@@ -24,7 +24,7 @@ def SBART_target(params, **kwargs):
     else:
         jitter = 0
 
-    squared_jitter = jitter ** 2
+    squared_jitter = jitter**2
 
     if kwargs["chromatic_trend"] != "none":
         # if the jitter is not included, the chromatic polynomial starts at index 1
@@ -52,18 +52,19 @@ def SBART_target(params, **kwargs):
     current_wavelength = kwargs["spectra_wave"]
     spectra = kwargs["spectra"]
     indexes = np.where(
-            np.logical_and(
-                           current_wavelength >= wave_spectra_starframe[0],
-                           current_wavelength <= wave_spectra_starframe[-1]
-                           )
-                       )
+        np.logical_and(
+            current_wavelength >= wave_spectra_starframe[0],
+            current_wavelength <= wave_spectra_starframe[-1],
+        )
+    )
 
-    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(order=kwargs["current_order"],
-                                                                                                RV_shift_mode="apply",
-                                                                                                shift_RV_by=RV_shift,
-                                                                                                new_wavelengths=current_wavelength[indexes],
-                                                                                                include_invalid=False
-                                                                                                )
+    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+        order=kwargs["current_order"],
+        RV_shift_mode="apply",
+        shift_RV_by=RV_shift,
+        new_wavelengths=current_wavelength[indexes],
+        include_invalid=False,
+    )
     if kwargs["current_order"] == 59 and 0:
         # plt.plot(current_wavelength[indexes], interpolated_template)
         # plt.plot(current_wavelength[indexes], spectra[indexes], color = 'black')
@@ -90,8 +91,8 @@ def SBART_target(params, **kwargs):
     # template not assumed to be noise free
 
     diag = (
-        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
-    ) / interpolated_template ** 2
+        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
+    ) / interpolated_template**2
 
     # Build H matrix
     H = np.ones((2, N))
@@ -102,7 +103,7 @@ def SBART_target(params, **kwargs):
     a_01 = np.sum(H[0] * H[1] / diag)
     a_11 = np.sum(H[1] ** 2 / diag)
 
-    det_A = a_00 * a_11 - a_01 ** 2
+    det_A = a_00 * a_11 - a_01**2
     alpha_00 = a_11 / det_A
     alpha_01 = -a_01 / det_A
     alpha_11 = a_00 / det_A
@@ -146,7 +147,7 @@ def SBART_target(params, **kwargs):
 
         if not kwargs.get("SAVE_DISK_SPACE", False):
             misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
-            kwargs["squared_spectra_uncerts"][indexes] + interpol_errors ** 2 + squared_jitter
+                kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
             )
         else:
             misspec_metric = np.asarray([0])

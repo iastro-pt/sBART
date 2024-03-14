@@ -57,7 +57,7 @@ def run_job(query, timeout=5):
 
 
 def mu(pmra, pmdec):
-    return np.sqrt(pmra ** 2 + pmdec ** 2)
+    return np.sqrt(pmra**2 + pmdec**2)
 
 
 def secular_acceleration(star):

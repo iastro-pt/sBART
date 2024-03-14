@@ -207,7 +207,11 @@ class TemplateFramework(BASE):
 
         which = which.capitalize()
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
-        logger.info("Loading {} template of type {} from disk inside directory", self.__class__.model_type, which)
+        logger.info(
+            "Loading {} template of type {} from disk inside directory",
+            self.__class__.model_type,
+            which,
+        )
         logger.info("\t" + loading_path)
         available_templates = [
             i for i in os.listdir(loading_path) if which in i and i.endswith("fits")

@@ -4,7 +4,6 @@ from numpy import ndarray
 
 
 def open_buffer(buffer_info: dict, open_type: str, buffers: list):
-
     if open_type == "template":
         open_order = [
             "template",

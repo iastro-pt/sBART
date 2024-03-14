@@ -10,7 +10,6 @@ class Paths:
         root_level_path: Optional[Union[str, Path]] = None,
         preconfigured_paths: Optional[Dict[str, str]] = None,
     ):
-
         self._folder_mappings = preconfigured_paths if preconfigured_paths is not None else {}
 
         if isinstance(root_level_path, str):
@@ -63,7 +62,6 @@ class Paths:
     def add_root_path(
         self, path: Union[str, Path], current_folder_name: Optional[str] = None
     ) -> NoReturn:
-
         if isinstance(path, str):
             path = Path(path)
 

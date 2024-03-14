@@ -7,9 +7,12 @@ from .concurrent_tools.open_buffers import open_buffer
 
 try:
     from .cython_codes.matmul import second_term
+
     CYTHON_UNAVAILABLE = False
 except ImportError:
-    logger.critical("Cython interface is not found, please make sure that the installation went smoothly")
+    logger.critical(
+        "Cython interface is not found, please make sure that the installation went smoothly"
+    )
     CYTHON_UNAVAILABLE = True
 
 from .find_nearby_wavelengths import find_close_lambdas

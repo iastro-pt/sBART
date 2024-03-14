@@ -111,7 +111,10 @@ class MetaData:
     @classmethod
     def load_from_json(cls, path):
         storage_path = build_filename(
-            path, "MetaData", fmt="json", SBART_version=None  # we always want the latest version
+            path,
+            "MetaData",
+            fmt="json",
+            SBART_version=None,  # we always want the latest version
         )
         try:
             with open(storage_path) as handle:

@@ -42,7 +42,6 @@ def get_folder_info(tapas_ftp):
 
 
 def download_IPAC_file(tapas_ftp, folder_name, destination):
-
     tapas_ftp.cwd(folder_name)
 
     r = BytesIO()  # to avoid writting to disk
@@ -148,7 +147,6 @@ def get_TAPAS_data(
 
     logger.debug("Entering request cycle")
     while time.time() - t0 <= timeout * 60:
-
         existing_folders = get_folder_info(tapas_ftp)
 
         new_folder = existing_folders - initial_folders

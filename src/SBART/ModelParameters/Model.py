@@ -209,7 +209,6 @@ class Model:
     ####
 
     def save_to_json_file(self, storage_path):
-
         full_json = {"components": {}, "result_flags": None}
 
         for component in self.components:
@@ -253,4 +252,3 @@ class RV_Model(Model):
 
     def get_RV_bounds(self, frameID):
         return self.get_component_by_name("RV").get_bounds(frameID=frameID)
-

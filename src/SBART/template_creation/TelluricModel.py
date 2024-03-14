@@ -48,6 +48,7 @@ class TelluricModel(TemplateFramework):
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
 
     """
+
     model_type = "Telluric"
 
     template_map = {"Telfit": TelfitTelluric, "Tapas": TapasTelluric}
@@ -156,7 +157,6 @@ class TelluricModel(TemplateFramework):
     # Internal Usage:
 
     def _find_templates_from_disk(self, which: str) -> List[str]:
-
         which = which.capitalize()
 
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type)
@@ -188,7 +188,6 @@ class TelluricModel(TemplateFramework):
         return [os.path.join(loading_path, i) for i in available_templates]
 
     def _compute_template(self, data, subInstrument: str, user_configs: dict) -> TelluricTemplate:
-
         creation_mode = self._internal_configs["CREATION_MODE"]
         logger.info("Using template of type: {}", creation_mode)
 

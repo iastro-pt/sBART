@@ -67,7 +67,6 @@ class SamplerModel(BASE):
         user_configs: Optional[UI_DICT] = None,
         needed_folders: Optional[Iterable[str]] = None,
     ):
-
         super().__init__(
             user_configs=user_configs, needed_folders=needed_folders, root_level_path=None
         )
@@ -252,7 +251,7 @@ class SamplerModel(BASE):
                 order=order,
                 run_info=run_info,
                 subInst=run_info["subInst"],
-                model_parameters=optimizer_estimate
+                model_parameters=optimizer_estimate,
             )
             package_queue.put(worker_IN_pkg)
 
@@ -366,11 +365,15 @@ class SamplerModel(BASE):
                 except FrameError:
                     logger.warning("RunTimeRejection of frameID = {}", frameID)
                     continue
-                logger.debug("Using RV window of: {}".format(self.model_params.get_RV_bounds(frameID)))
+                logger.debug(
+                    "Using RV window of: {}".format(self.model_params.get_RV_bounds(frameID))
+                )
                 N_packages = 0
 
                 for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+                    worker_IN_pkg = self._generate_WorkerIn_Package(
+                        frameID, order, run_info, subInst
+                    )
 
                     package_queue.put(worker_IN_pkg)
                     N_packages += 1
@@ -386,7 +389,9 @@ class SamplerModel(BASE):
             N_packages = 0
             for frameID in valid_IDS:
                 for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+                    worker_IN_pkg = self._generate_WorkerIn_Package(
+                        frameID, order, run_info, subInst
+                    )
                     package_queue.put(worker_IN_pkg)
                     N_packages += 1
             worker_prods.append(
@@ -395,9 +400,8 @@ class SamplerModel(BASE):
         return worker_prods
 
     def _epochwise_manager(
-            self, dataClass, subInst: str, run_info, package_queue, output_pool
+        self, dataClass, subInst: str, run_info, package_queue, output_pool
     ) -> List[List[Package]]:
-
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
 
         worker_prods = []
@@ -526,8 +530,9 @@ class SamplerModel(BASE):
     def disable_disk_savings(self) -> NoReturn:
         self.disk_save_enabled = False
 
-    def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
-
+    def _generate_WorkerIn_Package(
+        self, frameID, order, run_info, subInst, **kwargs
+    ) -> WorkerInput:
         worker_IN_pkg = WorkerInput()
         worker_IN_pkg["frameID"] = frameID
         worker_IN_pkg["order"] = order
@@ -584,7 +589,7 @@ class SamplerModel(BASE):
 if __name__ == "__main__":
 
     def target(val):
-        return 3 * val ** 2 + 0 * val - 2
+        return 3 * val**2 + 0 * val - 2
 
     sampler = SamplerModel()
     print(sampler.optimize(target))

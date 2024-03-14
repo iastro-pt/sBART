@@ -52,7 +52,9 @@ class RV_Bayesian(RV_routine):
 
     _default_params = RV_routine._default_params + DefaultValues(
         include_jitter=UserParam(False, constraint=BooleanValue),
-        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))), # This does nothing
+        chromatic_trend=UserParam(
+            "none", ValueFromList(("none", "OrderWise"))
+        ),  # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
         # only used if we compute order-wise RVs
         RV_variance_estimator=UserParam(
@@ -236,7 +238,7 @@ class RV_Bayesian(RV_routine):
 
             for epoch_pkg in pkg:
                 frameID = epoch_pkg["frameID"]
-                order_status = epoch_pkg["status"] # TODO: actually store this!
+                order_status = epoch_pkg["status"]  # TODO: actually store this!
                 RV = epoch_pkg["RV"]
                 uncert = epoch_pkg["RV_uncertainty"]
 
@@ -245,7 +247,6 @@ class RV_Bayesian(RV_routine):
         return empty_cube
 
     def build_target_configs(self) -> dict:
-
         worker_conf = {
             "include_jitter": self._internal_configs["include_jitter"],
             "chromatic_trend": self._internal_configs["chromatic_trend"],
@@ -360,13 +361,10 @@ class RV_Bayesian(RV_routine):
     def _open_shared_memory(self, inst_info: dict) -> None:
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
         if self._internal_configs["RV_extraction"] == "epoch-wise":
-
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=  bool))
+            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=bool))
             self._shared_mem_buffers["mask_cache"] = buffer_info
 
-            buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"][0], dtype=  bool)
-            )
+            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"][0], dtype=bool))
             self._shared_mem_buffers["cached_orders"] = buffer_info
 
             self.sampler.store_shared_buffer(self._shared_mem_buffers)

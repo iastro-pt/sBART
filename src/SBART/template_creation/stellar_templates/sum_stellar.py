@@ -16,14 +16,14 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromList,
-    Positive_Value_Constraint
-    )
+    Positive_Value_Constraint,
+)
 from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
 from SBART.utils.custom_exceptions import (
     BadOrderError,
     BadTemplateError,
     InvalidConfiguration,
-    )
+)
 from SBART.utils.shift_spectra import remove_RVshift
 from SBART.utils.status_codes import INTERNAL_ERROR, MISSING_DATA
 from SBART.utils.units import kilometer_second, convert_data
@@ -51,9 +51,9 @@ class SumStellar(StellarTemplate):
         FLUX_threshold_for_template=UserParam(
             default_value=1,
             constraint=Positive_Value_Constraint,
-            description="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values"
-            ),
-        )
+            description="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values",
+        ),
+    )
 
     def __init__(self, subInst: str, user_configs: Optional[dict] = None, loaded: bool = False):
         super().__init__(subInst=subInst, user_configs=user_configs, loaded=loaded)
@@ -63,7 +63,7 @@ class SumStellar(StellarTemplate):
                 logger.warning(
                     "Stellar template creation will save RAM usage. This will result in multiple open/close "
                     "operations across the entire SBART pipeline! "
-                    )
+                )
 
             self._found_error = False
 
@@ -120,8 +120,8 @@ class SumStellar(StellarTemplate):
                     "Worst SNR",
                     "Worst epoch",
                     "TEMPLATE (median SNR)",
-                    ]
-                )
+                ]
+            )
             table.set_decimal_places(2)
 
             for order in range(dataClass.instrument.N_orders):
@@ -139,8 +139,8 @@ class SumStellar(StellarTemplate):
                         worst[order],
                         np.argmin(snrs, axis=0)[order],
                         np.median(snr),
-                        ]
-                    )
+                    ]
+                )
 
             logger.info(f"SNR analysis:{table}")
         else:
@@ -150,7 +150,6 @@ class SumStellar(StellarTemplate):
             self._mask.compute_statistics()
 
     def launch_parallel(self, dataClass):
-
         inst_info = dataClass.get_instrument_information()
         N_orders = inst_info["array_size"][0]
 
@@ -161,7 +160,7 @@ class SumStellar(StellarTemplate):
             units=kilometer_second,
             as_value=True,
             include_invalid=False,
-            )
+        )
 
         epochsRVs = dataClass.collect_RV_information(
             KW=self.RV_keyword,
@@ -170,7 +169,7 @@ class SumStellar(StellarTemplate):
             units=kilometer_second,
             as_value=True,
             include_invalid=False,
-            )
+        )
 
         chosen_epochID = self.frameIDs_to_use[np.argmin(epoch_BERVs)]
         self._reference_frameID = chosen_epochID
@@ -181,12 +180,12 @@ class SumStellar(StellarTemplate):
         self.wavelengths = remove_RVshift(
             wave_reference,
             stellar_RV=epochsRVs[np.argmin(epoch_BERVs)],
-            )
+        )
 
         logger.info(
             "Using observation from {} as a basis for stellar template construction",
             dataClass.get_frame_by_ID(chosen_epochID),
-            )
+        )
 
         logger.info("Using frameIDs: {}", self.frameIDs_to_use)
 
@@ -196,7 +195,7 @@ class SumStellar(StellarTemplate):
             "subInst": self._associated_subInst,
             "N_orders": N_orders,
             "dataClass": dataClass,
-            }
+        }
 
         logger.info("Launching {} workers!", self._internal_configs["NUMBER_WORKERS"])
 
@@ -208,12 +207,12 @@ class SumStellar(StellarTemplate):
             _ = tqdm.tqdm(
                 total=len(self.frameIDs_to_use) // self._internal_configs["NUMBER_WORKERS"],
                 leave=False,
-                )
+            )
             p = Process(
                 target=self.perform_calculations,
                 args=(self.package_pool, self.output_pool, buffers),
                 kwargs=kwargs,
-                )
+            )
             p.start()
 
         RunTimeRejections = []
@@ -273,7 +272,9 @@ class SumStellar(StellarTemplate):
         # plt.axhline(len(self.frameIDs_to_use))
         # plt.show()
         new_mask[np.where(shr_counts != len(self.frameIDs_to_use))] = True
-        new_mask[np.where(self.spectra < self._internal_configs["FLUX_threshold_for_template"])] = True
+        new_mask[
+            np.where(self.spectra < self._internal_configs["FLUX_threshold_for_template"])
+        ] = True
 
         logger.debug("Ensuring increasing wavelenghs in the stellar template")
         # ENsure that we always have increasing wavelengths
@@ -293,7 +294,9 @@ class SumStellar(StellarTemplate):
         super().add_new_frame_to_template(frame)
 
         if not frame.is_valid:
-            logger.critical("Injected frame does not pass the SBART-defined QC flags, template will not be updated")
+            logger.critical(
+                "Injected frame does not pass the SBART-defined QC flags, template will not be updated"
+            )
             return
 
         self.spectra *= len(self.used_fpaths)
@@ -312,25 +315,23 @@ class SumStellar(StellarTemplate):
                     s2d_data,
                     s2d_uncerts,
                     s2d_mask,
-                    ) = frame.get_data_from_spectral_order(order)
+                ) = frame.get_data_from_spectral_order(order)
             except BadOrderError:
                 self.spectral_mask.add_indexes_to_mask_order(
                     order=order,
                     indexes=np.ones(self.template[order], dtype=bool),
-                    mask_type=MISSING_DATA
-                    )
-                logger.critical("New frame has an invalid order, completely rejecting spectral order from template")
+                    mask_type=MISSING_DATA,
+                )
+                logger.critical(
+                    "New frame has an invalid order, completely rejecting spectral order from template"
+                )
                 continue
 
             current_epochRV = convert_data(
-                frame.get_KW_value("DRS_RV"),
-                new_units=kilometer_second,
-                as_value=True
-                )
+                frame.get_KW_value("DRS_RV"), new_units=kilometer_second, as_value=True
+            )
 
-            wavelengths_to_interpolate = np.zeros(
-                wavelengths.shape, dtype=bool
-                )
+            wavelengths_to_interpolate = np.zeros(wavelengths.shape, dtype=bool)
 
             # until now the mask has ones in the regions to remove
             blocks = build_blocks(np.where(~s2d_mask))
@@ -342,8 +343,8 @@ class SumStellar(StellarTemplate):
                     np.logical_and(
                         self.wavelengths[order] >= start,
                         self.wavelengths[order] <= end,
-                        )
                     )
+                )
                 wavelengths_to_interpolate[interpolation_indexes] = True
 
             int_ord, int_err = frame.interpolate_spectrum_to_wavelength(
@@ -351,25 +352,27 @@ class SumStellar(StellarTemplate):
                 new_wavelengths=self.wavelengths[order][wavelengths_to_interpolate],
                 shift_RV_by=current_epochRV,
                 RV_shift_mode="remove",
-                include_invalid=False
-                )
+                include_invalid=False,
+            )
 
             self.spectra[order][wavelengths_to_interpolate] += int_ord
-            self.uncertainties[order][wavelengths_to_interpolate] += int_err ** 2
+            self.uncertainties[order][wavelengths_to_interpolate] += int_err**2
 
             # reject non-interpolated points
             self.spectral_mask.add_indexes_to_mask_order(
                 order=order,
                 indexes=np.where(wavelengths_to_interpolate == False),
-                mask_type=MISSING_DATA
-                )
+                mask_type=MISSING_DATA,
+            )
 
             # reject low-flux points
             self.spectral_mask.add_indexes_to_mask_order(
                 order=order,
-                indexes=np.where(self.spectra[order] < self._internal_configs["FLUX_threshold_for_template"]),
-                mask_type=MISSING_DATA
-                )
+                indexes=np.where(
+                    self.spectra[order] < self._internal_configs["FLUX_threshold_for_template"]
+                ),
+                mask_type=MISSING_DATA,
+            )
 
         self.uncertainties = np.sqrt(self.uncertainties) / len(self.used_fpaths)
         self.spectra /= len(self.used_fpaths)
@@ -389,12 +392,11 @@ class SumStellar(StellarTemplate):
             stellar_template_wavelengths,
             counts,
             shared_buffers,
-            ) = open_buffer(buffer_info, open_type="template", buffers=shared_buffers)
+        ) = open_buffer(buffer_info, open_type="template", buffers=shared_buffers)
 
         pixels_in_order = stellar_template[0].size
         try:
             while True:
-
                 data_in = in_queue.get()
                 continue_computation = True
                 if not isinstance(data_in, (list, tuple)):
@@ -412,7 +414,7 @@ class SumStellar(StellarTemplate):
                         s2d_data,
                         s2d_uncerts,
                         s2d_mask,
-                        ) = DataClassProxy.get_frame_OBS_order(frameID, order)
+                    ) = DataClassProxy.get_frame_OBS_order(frameID, order)
                 except BadOrderError:
                     continue_computation = False
 
@@ -423,11 +425,11 @@ class SumStellar(StellarTemplate):
                         frameIDs=[frameID],
                         units=kilometer_second,
                         as_value=True,
-                        )[0]
+                    )[0]
 
                     wavelengths_to_interpolate = np.zeros(
                         stellar_template_wavelengths[order].shape, dtype=bool
-                        )
+                    )
 
                     # until now the mask has ones in the regions to remove
                     blocks = build_blocks(np.where(~s2d_mask))
@@ -439,8 +441,8 @@ class SumStellar(StellarTemplate):
                             np.logical_and(
                                 stellar_template_wavelengths[order] >= start,
                                 stellar_template_wavelengths[order] <= end,
-                                )
                             )
+                        )
                         wavelengths_to_interpolate[interpolation_indexes] = True
 
                     template_indices = wavelengths_to_interpolate
@@ -449,23 +451,18 @@ class SumStellar(StellarTemplate):
                         interp_ord, interp_err = DataClassProxy.interpolate_frame_order(
                             frameID=frameID,
                             order=order,
-                            new_wavelengths=
-                            stellar_template_wavelengths[
-                                order][
-                                template_indices],
+                            new_wavelengths=stellar_template_wavelengths[order][template_indices],
                             shift_RV_by=current_epochRV,
                             RV_shift_mode="remove",
-                            include_invalid=False
-                            )
+                            include_invalid=False,
+                        )
 
                     except Exception as e:
                         logger.critical("Interpolation failed due to: {}", e)
                         raise e
 
                     stellar_template[order][wavelengths_to_interpolate] += interp_ord
-                    stellar_template_errors[order][wavelengths_to_interpolate] += (
-                            interp_err ** 2
-                    )
+                    stellar_template_errors[order][wavelengths_to_interpolate] += interp_err**2
                     a = counts[order]
                     a[wavelengths_to_interpolate] = a[wavelengths_to_interpolate] + 1
                     counts[order] = a
