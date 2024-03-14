@@ -9,7 +9,7 @@ curr_file = Path(__file__).parent.absolute()
 
 from setuptools import Extension
 
-version = "0.5.0"
+version = "0.5.1"
 
 USE_CYTHON = False  # command line option, try-import, ...
 

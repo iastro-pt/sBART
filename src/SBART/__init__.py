@@ -2,7 +2,7 @@
 SBART library.
 """
 
-version = "0.5.0"
+version = "0.5.1"
 
 __version__ = version.replace(".", "-")
 __version_info__ = (int(i) for i in __version__.split("-"))
