@@ -1,0 +1,240 @@
+cff-version: 1.2.0
+title: >-
+  A novel framework for semi-Bayesian radial velocities through template
+  matching
+message: >-
+  If you made the use of s-BART, I would appreciate it if you give credit.
+authors:
+  - family-names: Silva
+    given-names: A. M.
+    email: amiguel@astro.up.pt
+    orcid: 'https://orcid.org/0000-0003-4920-738X'
+  - family-names: Faria
+    given-names: J. P.
+    orcid: 'https://orcid.org/0000-0002-6728-244X'
+  - family-names: Santos
+    given-names: N. C.
+  - family-names: Sousa
+    given-names: S. G.
+    orcid: 'https://orcid.org/0000-0001-9047-2965'
+  - family-names: Viana
+    given-names: P. T. P.
+    orcid: 'https://orcid.org/0000-0003-1572-8531'
+  - family-names: Martins
+    given-names: J. H. C.
+  - family-names: Figueira
+    given-names: P.
+    orcid: 'https://orcid.org/0000-0001-8504-283X'
+  - family-names: Lovis
+    given-names: C.
+  - family-names: Pepe
+    given-names: F.
+    orcid: 'https://orcid.org/0000-0002-9815-773X'
+  - family-names: Cristiani
+    given-names: S.
+    orcid: https://orcid.org/0000-0002-2115-5234
+  - family-names: Rebolo
+    given-names: R.
+  - family-names: Allart
+    given-names: R.
+  - family-names: Cabral
+    given-names: A.
+  - family-names: Mehner
+    given-names: A.
+    orcid: 'https://orcid.org/0000-0002-9564-3302'
+  - family-names: Sozzetti
+    given-names: A.
+    orcid: 'https://orcid.org/0000-0002-7504-365X'
+  - family-names: Suárez Mascareño
+    given-names: A.
+    orcid: 'https://orcid.org/0000-0002-3814-5323'
+  - family-names: Martins
+    given-names: C. J. A. P.
+    orcid: 'https://orcid.org/0000-0002-4886-9261'
+  - family-names: Ehrenreich
+    given-names: D.
+  - family-names: Mégevand
+    given-names: D. 
+  - family-names: Palle
+    given-names: E.
+    orcid: 'https://orcid.org/0000-0003-0987-1593'
+  - family-names: Lo Curto
+    given-names: G.
+    orcid: 'https://orcid.org/0000-0002-1158-9354'
+  - family-names: Tabernero
+    given-names: H. M.
+  - family-names: Lillo-Box
+    given-names: J.
+    orcid: 'https://orcid.org/0000-0003-3742-1987'
+  - family-names: González Hernández
+    given-names: J. I.
+    orcid: 'https://orcid.org/0000-0002-0264-7356'
+  - family-names: Zapatero Osorio
+    given-names: M. R.
+  - family-names: Hara
+    given-names: N. C.
+  - family-names: Nunes
+    given-names: N. J.
+    orcid: 'https://orcid.org/0000-0002-3837-6914'
+  - family-names: Di Marcantonio
+    given-names: P.
+    orcid: 'https://orcid.org/0000-0003-3168-2289'
+  - family-names: Udry
+    given-names: S.
+  - family-names: Adibekyan
+    given-names: V.
+    orcid: 'https://orcid.org/0000-0002-0601-6199'
+  - family-names: Dumusque
+    given-names: X.
+repository-code: 'https://github.com/iastro-pt/sBART'
+abstract: >-
+  Context. The ability to detect and characterise an increasing variety of
+  exoplanets has been made possible by the continuous development of stable,
+  high-resolution spectrographs and the Doppler radial velocity (RV) method.
+  The cross-correlation function (CCF) method is one of the traditional
+  approaches used to derive RVs. More recently, template matching has been
+  introduced as an advantageous alternative for M-dwarf stars.
+
+  Aims. We describe a new implementation of the template matching technique for
+  stellar RV estimation within a semi-Bayesian framework, providing a more
+  statistically principled characterisation of the RV measurements and
+  associated uncertainties. This methodology, named the Semi-Bayesian Approach
+  for RVs with Template matching, S-BART, can currently be applied to HARPS and
+  ESPRESSO data. We first validate its performance with respect to other
+  template matching pipelines using HARPS data. We then apply S-BART to
+  ESPRESSO observations, comparing the scatter and uncertainty of the derived
+  RV time series with those obtained using the CCF method. We leave a full
+  analysis of the planetary and activity signals present in the considered
+  datasets for future work.
+
+  Methods. In the context of a semi-Bayesian framework, a common RV shift is
+  assumed to describe the difference between each spectral order of a given
+  stellar spectrum and a template built from the available observations.
+  Posterior probability distributions are obtained for the relative RV
+  associated with each spectrum using the Laplace approximation, after
+  marginalization with respect to the continuum. We also implemented, for
+  validation purposes, a traditional template matching approach, where a RV
+  shift is estimated individually for each spectral order and the final RV
+  estimate is calculated as a weighted average of the RVs of the individual
+  orders.
+
+  Results. The application of our template-based methods to HARPS archival
+  observations of Barnard's star allowed us to validate our implementation
+  against other template matching methods. Although we find similar results,
+  the standard deviation of the RVs derived with S-BART is smaller than that
+  obtained with the HARPS-TERRA and SERVAL pipelines. We believe this is due to
+  differences in the construction of the stellar template and the handling of
+  telluric features. After validating S-BART, we applied it to 33 ESPRESSO GTO
+  targets, evaluating its performance and comparing it to the CCF method as
+  implemented in ESO's official pipeline. We find a decrease in the median RV
+  scatter of ~10 and ~4% for M- and K-type stars, respectively. Our
+  semi-Bayesian framework yields more precise RV estimates than the CCF method,
+  in particular in the case of M-type stars where S-BART achieves a median
+  uncertainty of ~15 cm/s over 309 observations of 16 targets. Further, with
+  the same data we estimated the nightly zero point (NZP) of the instrument,
+  finding a weighted NZP scatter of below ~0.7 m/s. Given that this includes
+  stellar variability, photon noise, and potential planetary signals, it should
+  be taken as an upper limit on the RV precision attainable with ESPRESSO data.
+keywords:
+  - 'techniques: radial velocities'
+  - 'techniques: spectroscopic'
+  - 'techniques: interferometric'
+  - 'planets and satellites: detection'
+  - 'methods: data analysis'
+  - 'planets and satellites: terrestrial planets'
+  - 'methods: statistical'
+preferred-citation:
+  type: article
+  title: >-
+    A novel framework for semi-Bayesian radial velocities through template
+    matching
+  authors:
+    - family-names: Silva
+      given-names: A. M.
+      email: amiguel@astro.up.pt
+      orcid: 'https://orcid.org/0000-0003-4920-738X'
+    - family-names: Faria
+      given-names: J. P.
+      orcid: 'https://orcid.org/0000-0002-6728-244X'
+    - family-names: Santos
+      given-names: N. C.
+    - family-names: Sousa
+      given-names: S. G.
+      orcid: 'https://orcid.org/0000-0001-9047-2965'
+    - family-names: Viana
+      given-names: P. T. P.
+      orcid: 'https://orcid.org/0000-0003-1572-8531'
+    - family-names: Martins
+      given-names: J. H. C.
+    - family-names: Figueira
+      given-names: P.
+      orcid: 'https://orcid.org/0000-0001-8504-283X'
+    - family-names: Lovis
+      given-names: C.
+    - family-names: Pepe
+      given-names: F.
+      orcid: 'https://orcid.org/0000-0002-9815-773X'
+    - family-names: Cristiani
+      given-names: S.
+      orcid: https://orcid.org/0000-0002-2115-5234
+    - family-names: Rebolo
+      given-names: R.
+    - family-names: Allart
+      given-names: R.
+    - family-names: Cabral
+      given-names: A.
+    - family-names: Mehner
+      given-names: A.
+      orcid: 'https://orcid.org/0000-0002-9564-3302'
+    - family-names: Sozzetti
+      given-names: A.
+      orcid: 'https://orcid.org/0000-0002-7504-365X'
+    - family-names: Suárez Mascareño
+      given-names: A.
+      orcid: 'https://orcid.org/0000-0002-3814-5323'
+    - family-names: Martins
+      given-names: C. J. A. P.
+      orcid: 'https://orcid.org/0000-0002-4886-9261'
+    - family-names: Ehrenreich
+      given-names: D.
+    - family-names: Mégevand
+      given-names: D. 
+    - family-names: Palle
+      given-names: E.
+      orcid: 'https://orcid.org/0000-0003-0987-1593'
+    - family-names: Lo Curto
+      given-names: G.
+      orcid: 'https://orcid.org/0000-0002-1158-9354'
+    - family-names: Tabernero
+      given-names: H. M.
+    - family-names: Lillo-Box
+      given-names: J.
+      orcid: 'https://orcid.org/0000-0003-3742-1987'
+    - family-names: González Hernández
+      given-names: J. I.
+      orcid: 'https://orcid.org/0000-0002-0264-7356'
+    - family-names: Zapatero Osorio
+      given-names: M. R.
+    - family-names: Hara
+      given-names: N. C.
+    - family-names: Nunes
+      given-names: N. J.
+      orcid: 'https://orcid.org/0000-0002-3837-6914'
+    - family-names: Di Marcantonio
+      given-names: P.
+      orcid: 'https://orcid.org/0000-0003-3168-2289'
+    - family-names: Udry
+      given-names: S.
+    - family-names: Adibekyan
+      given-names: V.
+      orcid: 'https://orcid.org/0000-0002-0601-6199'
+    - family-names: Dumusque
+      given-names: X.
+  doi: "10.1051/0004-6361/202142262"
+  journal: 'A&A'
+  year: 2022
+  month: 07
+  volume: 663
+  number: 'A143'
+  url: 'https://doi.org/10.1051/0004-6361/202142262'
+license: MIT
