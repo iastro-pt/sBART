@@ -1,0 +1,5 @@
+include src/SBART/resources/*
+include src/SBART/resources/atmosphere_profiles/*
+include src/SBART/utils/tapas_downloader/*
+include src/SBART/outside_tools/*
+include src/SBART/utils/cython_codes/cubic_interpolation/__init__.py
