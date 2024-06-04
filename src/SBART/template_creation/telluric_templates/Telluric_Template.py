@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import warnings
 from pathlib import Path
 from typing import List, NoReturn, Optional, Union
@@ -129,7 +128,9 @@ class TelluricTemplate(BaseTemplate):
         self.internal_val = updated_value
 
     def get_data_from_spectral_order(self, order: int, include_invalid: bool = False):
-        uncertainties = self.uncertainties[order] if self.for_feature_correction else None
+        uncertainties = (
+            self.uncertainties[order] if self.for_feature_correction else None
+        )
         return self.wavelengths[order], self.template[order], uncertainties
 
     def get_data_from_full_spectrum(self):
@@ -190,7 +191,10 @@ class TelluricTemplate(BaseTemplate):
         if not self.is_valid:
             return [], np.nan * kilometer_second
 
-        if self._associated_subInst not in DataClass.get_subInstruments_with_valid_frames():
+        if (
+            self._associated_subInst
+            not in DataClass.get_subInstruments_with_valid_frames()
+        ):
             logger.warning(
                 "{} has no valid observations. Not computing telluric template",
                 self._associated_subInst,
@@ -230,10 +234,14 @@ class TelluricTemplate(BaseTemplate):
             [description]
         """
         try:
-            valid_frame_ids = dataclass.get_frameIDs_from_subInst(self._associated_subInst)
-        except NoDataError as exc:
-            msg = "{} has no valid observations. Not computing telluric template".format(
+            valid_frame_ids = dataclass.get_frameIDs_from_subInst(
                 self._associated_subInst
+            )
+        except NoDataError as exc:
+            msg = (
+                "{} has no valid observations. Not computing telluric template".format(
+                    self._associated_subInst
+                )
             )
 
             logger.warning(msg)
@@ -251,9 +259,13 @@ class TelluricTemplate(BaseTemplate):
             # add condition so that the reference observation is more than week
             # ago, to guarantee the GDAS profile already exists
             one_week_ago = int(Time.now().jd - 7)
-            self._metric_selection_conditions += KEYWORD_condition("BJD", [[2453340, one_week_ago]])
+            self._metric_selection_conditions += KEYWORD_condition(
+                "BJD", [[2453340, one_week_ago]]
+            )
 
-        logger.debug("Using Relative humidity as the selection criterion for reference observation")
+        logger.debug(
+            "Using Relative humidity as the selection criterion for reference observation"
+        )
         metric_to_select = dataclass.collect_KW_observations(
             KW="relative_humidity",
             subInstruments=[self._associated_subInst],
@@ -280,7 +292,9 @@ class TelluricTemplate(BaseTemplate):
             metric_to_select = [-1 if m is None else m for m in metric_to_select]
 
         chosen_frameID = valid_frame_ids[np.argmax(metric_to_select)]
-        self._associated_BERV = dataclass.get_frame_by_ID(chosen_frameID).get_KW_value("BERV")
+        self._associated_BERV = dataclass.get_frame_by_ID(chosen_frameID).get_KW_value(
+            "BERV"
+        )
 
         logger.info(
             "Telluric Template from {} using {} as the reference",
@@ -294,7 +308,9 @@ class TelluricTemplate(BaseTemplate):
     #  Creation of the telluric binary mask #
     #########################################
 
-    def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
+    def create_telluric_template(
+        self, dataClass, custom_frameID: Optional[int] = None
+    ) -> None:
         logger.info(
             "Starting creation of {} template from {}",
             self.__class__.template_type,
@@ -303,7 +319,8 @@ class TelluricTemplate(BaseTemplate):
 
         if custom_frameID is not None:
             logger.info(
-                "Creation of Telluric Template is based on a custom frameID: {}", custom_frameID
+                "Creation of Telluric Template is based on a custom frameID: {}",
+                custom_frameID,
             )
             self._reference_frameID = custom_frameID
         else:
@@ -343,7 +360,9 @@ class TelluricTemplate(BaseTemplate):
         # TODO:  optimize the list of blocked features! It will have a very bad scaling with N_{obs}
         logger.info("Creating list of blocked features due to tellurics")
         if not self.was_loaded:
-            logger.info("Extending telluric features with the mode: <{}>", self._extension_mode)
+            logger.info(
+                "Extending telluric features with the mode: <{}>", self._extension_mode
+            )
 
         indexes = build_blocks(np.where(self.template != 0))
         updated_block = []
@@ -459,8 +478,7 @@ class TelluricTemplate(BaseTemplate):
     def for_feature_correction(self) -> bool:
         return self._application_mode == "correction"
 
-    def store_metrics(self):
-        ...
+    def store_metrics(self): ...
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         try:
@@ -531,7 +549,9 @@ class TelluricTemplate(BaseTemplate):
         hdul = fits.HDUList(hdus_cubes)
 
         filename = f"{self.storage_name}_{self._associated_subInst}.fits"
-        logger.debug("Storing template to {}", self._internalPaths.root_storage_path / filename)
+        logger.debug(
+            "Storing template to {}", self._internalPaths.root_storage_path / filename
+        )
         hdul.writeto(self._internalPaths.root_storage_path / filename, overwrite=True)
 
         metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
