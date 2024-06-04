@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import warnings
 from pathlib import Path
 from typing import List, NoReturn, Optional, Union
 
-from h11 import Data
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
