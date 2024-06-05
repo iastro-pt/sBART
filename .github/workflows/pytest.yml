@@ -1,0 +1,23 @@
+name: Pytest
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Run benchmark
+        run: >
+          pip install -r requirements.txt
+
+          pip install .
+
+          python3 -m pytest
