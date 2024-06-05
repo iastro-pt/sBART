@@ -593,7 +593,7 @@ class TelluricTemplate(BaseTemplate):
             self.template = template
             self.wavelengths = waves
 
-            self.use_approximated_BERV_correction = hdulist[1][
+            self.use_approximated_BERV_correction = hdulist[1].header[
                 "HIERARCH APPROX BERV CORRECTION"
             ]
 
