@@ -59,6 +59,11 @@ class ESO_PIPELINE(Frame):
     )
 
     _default_params.update(
+        "USE_APPROX_BERV_CORRECTION",
+        UserParam(True, constraint=BooleanValue),
+    )
+
+    _default_params.update(
         "apply_FluxBalance_Norm",
         UserParam(False, constraint=BooleanValue),
     )
@@ -73,7 +78,6 @@ class ESO_PIPELINE(Frame):
         reject_subInstruments: Optional[Iterable[str]] = None,
         frameID: Optional[int] = None,
         quiet_user_params: bool = True,
-        use_approximated_BERV_correction=True,  # By default this is True
         override_KW_map=None,
         override_indicators=None,
     ):
@@ -132,7 +136,6 @@ class ESO_PIPELINE(Frame):
                 else override_indicators
             ),
             user_configs=user_configs,
-            use_approximated_BERV_correction=use_approximated_BERV_correction,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
         )
