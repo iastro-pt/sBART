@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, NoReturn, Optional, Union
@@ -591,6 +592,7 @@ class TelluricTemplate(BaseTemplate):
             self.template = template
             self.wavelengths = waves
 
+<<<<<<< HEAD
             try:
                 self.use_approximated_BERV_correction = hdulist[1].header[
                     "HIERARCH APPROX BERV CORRECTION"
@@ -598,7 +600,6 @@ class TelluricTemplate(BaseTemplate):
             except KeyError:
                 logger.warning("Loading old telluric template with missing keywords")
                 self.use_approximated_BERV_correction = False
-
         self.add_to_status(DISK_LOADED_DATA(f"Loaded data from {loading_path}"))
 
     def _finish_template_creation(self):
