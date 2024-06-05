@@ -95,12 +95,17 @@ class Spectrum(BASE):
         kw_map = {
             "flux_atmos_balance_corrected": "apply_FluxCorr",
             "flux_dispersion_balance_corrected": "apply_FluxBalance_Norm",
+            "is_skysub": "is__skysub",
         }
         if property_name == "is_BERV_corrected":
             # Every frame will be berv corrected (if this is not done by the DRS)
             return True
 
-        if property_name in ["was_telluric_corrected", "is_blaze_corrected"]:
+        if property_name in [
+            "was_telluric_corrected",
+            "is_blaze_corrected",
+            "is_skysub",
+        ]:
             return getattr(self, property_name)
 
         if property_name not in kw_map:
