@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import EarthLocation
 from loguru import logger
 from scipy.constants import convert_temperature
+from sqlalchemy import Boolean
 
 from SBART.utils.status_codes import ERROR_THRESHOLD, KW_WARNING
 from SBART.Instruments.ESO_PIPELINE import ESO_PIPELINE
@@ -74,7 +75,6 @@ class ESPRESSO(ESO_PIPELINE):
             frameID=frameID,
             KW_identifier="ESO",
             user_configs=user_configs,
-            use_approximated_BERV_correction=True,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
         )

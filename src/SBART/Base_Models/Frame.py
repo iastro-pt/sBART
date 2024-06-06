@@ -155,6 +155,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             constraint=NumericValue,
             description="Sigma clip the flux values. Disabled if the value is -1 (the default), as it is scarcely needed and we have outlier detection on the RV extraction",
         ),
+        USE_APPROX_BERV_CORRECTION=UserParam(
+            False,
+            constraint=BooleanValue,
+            description="Use the approximated BERV correction",
+        ),
     )
 
     def __init__(
@@ -168,7 +173,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         user_configs: Optional[Dict[str, Any]] = None,
         reject_subInstruments: Optional[Iterable[str]] = None,
         need_external_data_load: bool = False,
-        use_approximated_BERV_correction=False,
         init_log: bool = True,
         quiet_user_params: bool = True,
     ):
@@ -203,8 +207,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         quiet_user_params
             If True, there are no logs for the generation of the user parameters of each Frame
         """
-
-        self.use_approximated_BERV_correction = use_approximated_BERV_correction
 
         self.instrument_properties = {
             "name": inst_name,
@@ -247,6 +249,10 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ]
         self.array_size = self.instrument_properties["array_size"]
         super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
+
+        self.use_approximated_BERV_correction = self._internal_configs[
+            "USE_APPROX_BERV_CORRECTION"
+        ]
 
         # stores the information loaded from the header of the S2D files. THis dict will be the default values in case
         # the instrument does not support them!
@@ -869,7 +875,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if self._header is None:
             self._header = fits.getheader(self.file_path)
         return self._header[kw]
-    
+
     ####################################
     #       properties of the Frames
     ####################################
