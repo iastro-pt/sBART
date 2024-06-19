@@ -111,8 +111,7 @@ class ESO_PIPELINE(Frame):
             "SPEC_TYPE": f"HIERARCH {KW_identifier} QC CCF MASK",
             "EXPTIME": "EXPTIME",
             "DRS_CCF_MASK": f"HIERARCH {KW_identifier} QC CCF MASK",
-            "DRS_FLUX_CORRECTION_TEMPLATE": f"HIERARCH {KW_identifier} PRO REC1 CAL8 NAME",
-
+            "DRS_FLUX_CORRECTION_TEMPLATE": "HIERARCH ESO PRO REC1 CAL8 NAME",
         }
         if override_KW_map is not None:
             for key, value in override_KW_map.items():
