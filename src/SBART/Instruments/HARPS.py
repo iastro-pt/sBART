@@ -118,7 +118,6 @@ class HARPS(ESO_PIPELINE):
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
-            use_approximated_BERV_correction=True,
             override_KW_map=KW_map,
             override_indicators=("CONTRAST", "FWHM"),
         )
