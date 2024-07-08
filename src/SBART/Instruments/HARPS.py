@@ -141,6 +141,7 @@ class HARPS(ESO_PIPELINE):
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
         self.instrument_properties["site_pressure"] = 750
+        self.is_blaze_corrected = False
 
     def load_telemetry_info(self, header):
         """
@@ -423,7 +424,6 @@ class HARPS(ESO_PIPELINE):
 
         """
         super().load_S2D_data()
-        self.is_blaze_corrected = False
 
         with fits.open(self.file_path) as hdulist:
             # Compute the wavelength solution + BERV correction
