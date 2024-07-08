@@ -594,9 +594,13 @@ class TelluricTemplate(BaseTemplate):
             self.template = template
             self.wavelengths = waves
 
-            self.use_approximated_BERV_correction = hdulist[1].header[
-                "HIERARCH APPROX BERV CORRECTION"
-            ]
+            try:
+                self.use_approximated_BERV_correction = hdulist[1].header[
+                    "HIERARCH APPROX BERV CORRECTION"
+                ]
+            except KeyError:
+                logger.warning("Loading old telluric template with missing keywords")
+                self.use_approximated_BERV_correction = False
 
         self.add_to_status(DISK_LOADED_DATA(f"Loaded data from {loading_path}"))
 

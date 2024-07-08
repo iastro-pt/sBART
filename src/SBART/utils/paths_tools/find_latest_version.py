@@ -22,7 +22,11 @@ def find_latest_version(path, enable_logs: bool = True) -> str:
     version_sum = []
 
     for filename in os.listdir(path):
-        if os.path.isdir(os.path.join(path, filename)) or "_" not in filename:
+        if (
+            os.path.isdir(os.path.join(path, filename))
+            or "_" not in filename
+            or filename.startswith(".")
+        ):
             continue
 
         available_cubes.append(filename)
