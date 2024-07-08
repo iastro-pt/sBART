@@ -99,6 +99,8 @@ class HARPS(ESO_PIPELINE):
                 "DEC": "DEC",
                 "MD5-CHECK": "DATASUM",
                 "SPEC_TYPE": None,
+                "DRS_CCF_MASK": None,
+                "DRS_FLUX_CORRECTION_TEMPLATE": None,
             }
         else:
             mat_size = (71, 4096)
@@ -242,7 +244,6 @@ class HARPS(ESO_PIPELINE):
             bis_files = glob.glob(
                 os.path.join(folder_name, "*bis*A.fits"), recursive=True
             )
-
             for file in ccf_files:
                 if file_start in file:
                     ccf_path = file
@@ -252,7 +253,6 @@ class HARPS(ESO_PIPELINE):
                 if file_start in file:
                     bis_path = file
                     found_BIS = True
-
             if found_CCF:
                 logger.info("Found CCF file: {}".format(ccf_path))
                 search_status = SUCCESS("Found CCF file")
@@ -263,7 +263,7 @@ class HARPS(ESO_PIPELINE):
                 ccf_path = ""
 
             if not found_BIS:
-                bis_path = ""
+                bis_path = None
 
         return e2ds_path, ccf_path, bis_path, search_status
 
@@ -380,7 +380,6 @@ class HARPS(ESO_PIPELINE):
         self.observation_info["DRS_RV"] = (
             header["HIERARCH ESO DRS CCF RV"] * kilometer_second
         )
-
         self.observation_info["SPEC_TYPE"] = header["HIERARCH ESO DRS CCF MASK"]
 
         RV_err = np.sqrt(
@@ -405,7 +404,7 @@ class HARPS(ESO_PIPELINE):
             as_value=True,
         )
 
-        if Path(self.BIS_file).exists():
+        if self.BIS_file is not None:
             head = fits.getheader(self.BIS_file)
             self.observation_info["BIS SPAN"] = head["HIERARCH ESO DRS BIS SPAN"]
 
