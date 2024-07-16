@@ -65,6 +65,11 @@ class TelluricTemplate(BaseTemplate):
             1, constraint=ValueInInterval([0, 100], include_edges=True)
         ),
         force_download=UserParam(False, constraint=BooleanValue),
+        inverse_mask=UserParam(
+            False,
+            constraint=BooleanValue,
+            description="If True, rejects everything that is not flagged as a telluric. Default is False.",
+        ),
     )
     template_type = "Telluric"
     method_name = "Base"
@@ -116,6 +121,11 @@ class TelluricTemplate(BaseTemplate):
         self._metric_selection_conditions = Empty_condition()
 
         self.use_approximated_BERV_correction = False
+        if self._internal_configs["inverse_mask"]:
+            if self._extension_mode != "window":
+                raise custom_exceptions.InternalError(
+                    "Can't inverse the telluric mask without using a window extension mode"
+                )
 
     # Workaround to avoid calling spectra to the binary telluric template (to make things internally consistent)
     @property
@@ -363,8 +373,13 @@ class TelluricTemplate(BaseTemplate):
                 "Extending telluric features with the mode: <{}>", self._extension_mode
             )
 
-        indexes = build_blocks(np.where(self.template != 0))
         updated_block = []
+
+        if self._internal_configs["inverse_mask"]:
+            indexes = build_blocks(np.where(self.template == 0))
+        else:
+            indexes = build_blocks(np.where(self.template != 0))
+
         for telluric_block in indexes:
             interval = self.wavelengths[telluric_block]
             # first overlap search, to take advantage of the smaller list size in here (when compared against the "global" one)
@@ -375,7 +390,9 @@ class TelluricTemplate(BaseTemplate):
         self._masked_wavelengths = find_overlaps(updated_block)
         self._computed_wave_blocks = True
 
-    def _extend_detections(self, telluric_block: List[list]) -> List[List[float]]:
+    def _extend_detections(
+        self, telluric_block: List[list], shrink=False
+    ) -> List[List[float]]:
         """Extend each block of telluric detection based on the self._extension_mode that was selected by the user
 
         Parameters
@@ -412,8 +429,13 @@ class TelluricTemplate(BaseTemplate):
 
         elif self._extension_mode == "window":
             berv = self.MAXBERV.to(kilometer_second).value
-            lowest_wavelength = berv_function(telluric_block[0], BERV=-berv)
-            highest_wavelength = berv_function(telluric_block[1], BERV=berv)
+            berv_multiplier = -1 if shrink else 1
+            lowest_wavelength = berv_function(
+                telluric_block[0], BERV=-berv * berv_multiplier
+            )
+            highest_wavelength = berv_function(
+                telluric_block[1], BERV=berv * berv_multiplier
+            )
             updated_block.append([lowest_wavelength, highest_wavelength])
 
         return updated_block
