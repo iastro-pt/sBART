@@ -375,10 +375,7 @@ class TelluricTemplate(BaseTemplate):
 
         updated_block = []
 
-        if self._internal_configs["inverse_mask"]:
-            indexes = build_blocks(np.where(self.template == 0))
-        else:
-            indexes = build_blocks(np.where(self.template != 0))
+        indexes = build_blocks(np.where(self.template != 0))
 
         for telluric_block in indexes:
             interval = self.wavelengths[telluric_block]
@@ -389,6 +386,24 @@ class TelluricTemplate(BaseTemplate):
 
         self._masked_wavelengths = find_overlaps(updated_block)
         self._computed_wave_blocks = True
+
+        if self._internal_configs["inverse_mask"]:
+            new_blocks = [[0, self._masked_wavelengths[0][0]]]
+            for index in range(len(self._masked_wavelengths) - 1):
+                new_blocks.append(
+                    (
+                        self._masked_wavelengths[index][1],
+                        self._masked_wavelengths[index + 1][0],
+                    )
+                )
+            new_blocks.append(
+                (
+                    self._masked_wavelengths[-1][1],
+                    self._masked_wavelengths[-1][1] * 1000,
+                )
+            )
+
+            self._masked_wavelengths = new_blocks
 
     def _extend_detections(
         self, telluric_block: List[list], shrink=False
@@ -429,13 +444,8 @@ class TelluricTemplate(BaseTemplate):
 
         elif self._extension_mode == "window":
             berv = self.MAXBERV.to(kilometer_second).value
-            berv_multiplier = -1 if shrink else 1
-            lowest_wavelength = berv_function(
-                telluric_block[0], BERV=-berv * berv_multiplier
-            )
-            highest_wavelength = berv_function(
-                telluric_block[1], BERV=berv * berv_multiplier
-            )
+            lowest_wavelength = berv_function(telluric_block[0], BERV=-berv)
+            highest_wavelength = berv_function(telluric_block[1], BERV=berv)
             updated_block.append([lowest_wavelength, highest_wavelength])
 
         return updated_block
@@ -471,23 +481,6 @@ class TelluricTemplate(BaseTemplate):
 
         self._compute_wave_blocks()
 
-        if self._internal_configs["inverse_mask"]:
-            new_blocks = [[0, self._masked_wavelengths[0][0]]]
-            for index in range(len(self._masked_wavelengths) - 1):
-                new_blocks.append(
-                    (
-                        self._masked_wavelengths[index][1],
-                        self._masked_wavelengths[index + 1][0],
-                    )
-                )
-            new_blocks.append(
-                (
-                    self._masked_wavelengths[-1][1],
-                    self._masked_wavelengths[-1][1] * 1000,
-                )
-            )
-
-            self._masked_wavelengths = new_blocks
 
     #######################################
     #  Outside access to the properties   #
