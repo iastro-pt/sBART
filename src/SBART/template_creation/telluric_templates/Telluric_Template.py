@@ -471,6 +471,24 @@ class TelluricTemplate(BaseTemplate):
 
         self._compute_wave_blocks()
 
+        if self._internal_configs["inverse_mask"]:
+            new_blocks = [[0, self._masked_wavelengths[0][0]]]
+            for index in range(len(self._masked_wavelengths) - 1):
+                new_blocks.append(
+                    (
+                        self._masked_wavelengths[index][1],
+                        self._masked_wavelengths[index + 1][0],
+                    )
+                )
+            new_blocks.append(
+                (
+                    self._masked_wavelengths[-1][1],
+                    self._masked_wavelengths[-1][1] * 1000,
+                )
+            )
+
+            self._masked_wavelengths = new_blocks
+
     #######################################
     #  Outside access to the properties   #
     #######################################
@@ -614,7 +632,6 @@ class TelluricTemplate(BaseTemplate):
             self.template = template
             self.wavelengths = waves
 
-<<<<<<< HEAD
             try:
                 self.use_approximated_BERV_correction = hdulist[1].header[
                     "HIERARCH APPROX BERV CORRECTION"
