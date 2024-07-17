@@ -185,7 +185,12 @@ class RV_step(RV_routine):
             errs[:, problematic_orders] = np.nan
 
             squared_errors = errs**2
-            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+
+            try:
+                final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+            except:
+                final_ind = [np.nan for _ in final_rv]
+                ind_error = [np.nan for _ in final_rv]
 
             for index, frameID in enumerate(cube.frameIDs):
                 data_unit_act.store_combined_indicators(
@@ -261,7 +266,11 @@ class RV_step(RV_routine):
         errs[:, problematic_orders] = np.nan
 
         squared_errors = errs**2
-        final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+        try:
+            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+        except:
+            final_ind = [np.nan for _ in final_rv]
+            ind_error = [np.nan for _ in final_rv]
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
