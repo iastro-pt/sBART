@@ -134,6 +134,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             constraint=Positive_Value_Constraint,
             description="SNR threshold under which the spectral order is rejected",
         ),
+        MAX_ORDER_REJECTION=UserParam(
+            50,
+            constraint=ValueInInterval(0, 100),
+            description="Maximum number of orders that a Frame can reject before being considered invalid",
+        ),
         bypass_ST_designation=UserParam(
             default_value=None, constraint=ValueFromList((None, "S2D", "S1D"))
         ),
@@ -707,8 +712,17 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if len(self.bad_orders) == self.N_orders:
             logger.critical("All spectral orders of Frame {} have been rejected", self)
             self.add_to_status(NO_VALID_ORDERS(" Rejected all spectral orders"))
-        elif len(self.bad_orders) > 0.8 * self.N_orders:
-            logger.warning("Frame {} is rejecting more than 80% of the spectral orders", self)
+        elif len(self.bad_orders) >= self._internal_configs["MAX_ORDER_REJECTION"] * self.N_orders:
+            logger.warning(
+                "Frame {} is rejecting more than {} % of the spectral orders",
+                self,
+                self._internal_configs["MAX_ORDER_REJECTION"],
+            )
+            self.add_to_status(
+                NO_VALID_ORDERS(
+                    f" Rejected more than {self._internal_configs['MAX_ORDER_REJECTION']} % of spectral orders"
+                )
+            )
 
     ####################################
     #      Sanity Checks               #
