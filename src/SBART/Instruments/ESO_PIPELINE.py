@@ -156,6 +156,22 @@ class ESO_PIPELINE(Frame):
             self._load_ESO_DRS_KWs(header)
         self.load_telemetry_info(header)
 
+        drs_version = header.get("HIERARCH ESO PRO REC1 PIPE ID", "espdr/3.0.0")
+        version = drs_version.split("/")[-1]
+
+        # TODO: Check the number of the DRS version that has this fixed
+        version_sum = lambda a: sum(
+            a * 10**b for a, b in zip(map(int, a.split(".")[::-1]), range(3))
+        )
+
+        if version_sum(version) < version_sum("3.2.1"):
+            # For older versions we always need to use the
+            # approximated BERV correction
+            self.use_approximated_BERV_correction = True
+        else:
+            # Newer versions don't need the approximated BERV correction
+            self.use_approximated_BERV_correction = False
+
     def load_S2D_data(self):
         if self.is_open:
             logger.debug("{} has already been opened", self.__str__())
@@ -318,9 +334,9 @@ class ESO_PIPELINE(Frame):
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
                 corr_model = np.polyval(coeff, hdulist[5].data)
 
-                corr_model[
-                    flux_corr == 1
-                ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
+                corr_model[flux_corr == 1] = (
+                    1  # orders where the CORR FACTOR are 1 do not have correction!
+                )
                 self.spectra = (
                     self.spectra / corr_model
                 )  # correct from chromatic variations
