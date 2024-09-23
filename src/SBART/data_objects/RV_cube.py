@@ -1030,13 +1030,17 @@ class RV_cube(BASE):
                 f"Optimal_Intervals_{self._associated_subInst}",
                 fmt="txt",
             )
-
-            for N_interval in [2, 3]:
-                tab = self.run_cromatic_interval_optimization(
-                    N_intervals=N_interval, min_number_orders=10
+            if self.N_obs < 200:
+                for N_interval in [2, 3]:
+                    tab = self.run_cromatic_interval_optimization(
+                        N_intervals=N_interval, min_number_orders=10
+                    )
+                    if tab is not None:
+                        tab.write_to_file(path=storage_path)
+            else:
+                logger.warning(
+                    "More than 200 observations loaded, skipping optimization of order interval"
                 )
-                if tab is not None:
-                    tab.write_to_file(path=storage_path)
         except Exception as e:
             logger.critical(f"Generation of optimal intervals failed due to {e}")
 
