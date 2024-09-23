@@ -7,9 +7,9 @@ from scipy.constants import convert_temperature
 
 from SBART.Base_Models.Frame import Frame
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
 from SBART.utils.status_codes import FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
+from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
 
 
 class ESO_PIPELINE(Frame):
@@ -223,14 +223,18 @@ class ESO_PIPELINE(Frame):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} METEO {endKW}"]
+            self.observation_info[name] = header[
+                f"HIERARCH {self.KW_identifier} METEO {endKW}"
+            ]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
 
         if self.observation_info["relative_humidity"] == 255:
-            logger.warning(f"{self.name} has an invalid value in the humidity sensor...")
+            logger.warning(
+                f"{self.name} has an invalid value in the humidity sensor..."
+            )
             self.observation_info["relative_humidity"] = np.nan
 
         self.observation_info["airmass"] = header["AIRMASS"]
@@ -277,11 +281,15 @@ class ESO_PIPELINE(Frame):
             self.wavelengths = hdulist["WAVEDATA_VAC_BARY"].data
             self.qual_data = hdulist["QUALDATA"].data
 
-            SCIDATA_KEY = "SCIDATA" if overload_SCIDATA_key is None else overload_SCIDATA_key
+            SCIDATA_KEY = (
+                "SCIDATA" if overload_SCIDATA_key is None else overload_SCIDATA_key
+            )
             ERRDATA_KEY = "ERRDATA"
 
             if self._internal_configs["Telluric_Corrected"]:
-                logger.info("Loading S2D file from a non-DRS source (telluric corrected file)")
+                logger.info(
+                    "Loading S2D file from a non-DRS source (telluric corrected file)"
+                )
                 SCIDATA_KEY += "_CORR"
                 ERRDATA_KEY += "_CORR"
 
@@ -292,7 +300,10 @@ class ESO_PIPELINE(Frame):
                 logger.debug("Starting chromatic flux correction")
                 keyword = f"HIERARCH {self.KW_identifier} QC ORDER%d FLUX CORR"
                 flux_corr = np.array(
-                    [hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)]
+                    [
+                        hdulist[0].header[keyword % o]
+                        for o in range(1, self.N_orders + 1)
+                    ]
                 )
                 fit_nb = (flux_corr != 1.0).sum()
 
@@ -307,10 +318,12 @@ class ESO_PIPELINE(Frame):
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
                 corr_model = np.polyval(coeff, hdulist[5].data)
 
-                corr_model[
-                    flux_corr == 1
-                ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
-                self.spectra = self.spectra / corr_model  # correct from chromatic variations
+                corr_model[flux_corr == 1] = (
+                    1  # orders where the CORR FACTOR are 1 do not have correction!
+                )
+                self.spectra = (
+                    self.spectra / corr_model
+                )  # correct from chromatic variations
                 self.flux_atmos_balance_corrected = True
                 # TODO: understand if we want to include the factor in uncertainties or not!
                 # self.uncertainties = self.uncertainties / corr_model # maintain the SNR in the corrected spectrum
@@ -322,7 +335,9 @@ class ESO_PIPELINE(Frame):
                 # / corr_model
 
             if self._internal_configs["apply_FluxBalance_Norm"]:
-                logger.info("Normalizing the flux balance distribution due to dispersion")
+                logger.info(
+                    "Normalizing the flux balance distribution due to dispersion"
+                )
                 # The physical sizes of the pixels (on the CCD) are the same
                 # The flux that reaches eeach pixel is different, due to dispersion
                 # The spectra will have a trend, even after removing the instrumental effect
@@ -352,8 +367,12 @@ class ESO_PIPELINE(Frame):
             logger.warning("SBART using air wavelengths!")
 
         self.wavelengths = full_data[wave_kw].reshape((1, self.array_size[1]))
-        self.spectra = full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
-        self.uncertainties = full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
+        self.spectra = (
+            full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
+        )
+        self.uncertainties = (
+            full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
+        )
         self.qual_data = full_data["quality"].reshape((1, self.array_size[1]))
         self.build_mask(bypass_QualCheck=False)
 
@@ -384,10 +403,15 @@ class ESO_PIPELINE(Frame):
 
         nonfatal_QC_flags = {
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED FLUX CORR CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
         }
+        if not self.is_skysub:
+            extra_checks = {
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
+                f"HIERARCH {self.KW_identifier}"
+                + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
+            }
+            nonfatal_QC_flags = {**nonfatal_QC_flags, **extra_checks}
 
         if self._internal_configs["SCIRED_CHECK_IS_FATAL"]:
             fatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
@@ -412,7 +436,9 @@ class ESO_PIPELINE(Frame):
                 self._status.store_warning(KW_WARNING(msg))
 
         if self._status.number_warnings > 0:
-            logger.warning("Found {} warning flags in the header KWs", self._status.number_warnings)
+            logger.warning(
+                "Found {} warning flags in the header KWs", self._status.number_warnings
+            )
 
     @property
     def bare_fname(self) -> str:

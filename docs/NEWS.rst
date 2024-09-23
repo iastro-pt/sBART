@@ -4,6 +4,29 @@ Release Notes
 
 .. towncrier release notes start
 
+SBART 0.6.0 (2024-09-23)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Break
+~~~~~
+
+- Changed the definition of the columns in the default output files (and the RVc entry) 
+
+
+Bugfix
+~~~~~~
+
+- The HARPS interface correctly picks with the CCF_A file 
+
+
+Feature
+~~~~~~~
+
+- allow greater control in the selection of available frames 
+- Added the average value for the relativistic terms in the BERV correction (similarly to ESPRESSO DRS) 
+- Added a new condition to check order-wise SNR 
+
+
 SBART 0-3-0 (2023-06-09)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
