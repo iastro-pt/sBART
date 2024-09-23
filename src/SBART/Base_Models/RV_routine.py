@@ -3,6 +3,7 @@ from multiprocessing import Process, Queue
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
@@ -760,6 +761,8 @@ class RV_routine(BASE):
         self.kill_workers()
         self.close_queues()
         self.close_shared_mem_arrays()
+        # Ensure that no pyplot window is open after everything is closed down
+        plt.close("all")
 
     def close_shared_mem_arrays(self) -> None:
         """Close any array that might exist in shared memory"""
