@@ -102,7 +102,9 @@ class RV_routine(BASE):
             constraint=ValueFromList(("per_subInstrument", "global")),
         ),
         sigma_outliers_tolerance=UserParam(
-            6, constraint=NumericValue
+            6,
+            constraint=NumericValue,
+            description="Sigma-clip for outliers in spectra <-> template comparison",
         ),  # tolerance for outliers in spectra - temp comp
         outlier_metric=UserParam("Paper", ValueFromList(("Paper", "MAD"))),
         remove_OBS_from_template=UserParam(
@@ -174,8 +176,8 @@ class RV_routine(BASE):
         extra_folders_needed: Optional[Dict[str, str]] = None,
     ):
         super().__init__(RV_configs, needed_folders=extra_folders_needed)
-        self.package_pool = None
-        self.output_pool = None
+        self.package_pool: Optional[Queue] = None
+        self.output_pool: Optional[Queue] = None
 
         self.N_jobs = N_jobs
         self._live_workers = 0
