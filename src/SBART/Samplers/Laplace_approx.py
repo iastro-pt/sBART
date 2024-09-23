@@ -6,9 +6,9 @@ from scipy.misc import derivative
 from scipy.optimize import minimize, minimize_scalar
 
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
+from SBART.utils.types import RV_measurement
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package
-from SBART.utils.types import RV_measurement
 
 from .SbartBaseSampler import SbartBaseSampler
 

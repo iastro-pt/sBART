@@ -7,8 +7,8 @@ from loguru import logger
 from scipy.constants import convert_temperature
 from sqlalchemy import Boolean
 
-from SBART.utils.status_codes import ERROR_THRESHOLD, KW_WARNING
 from SBART.Instruments.ESO_PIPELINE import ESO_PIPELINE
+from SBART.utils.status_codes import ERROR_THRESHOLD, KW_WARNING
 
 
 class ESPRESSO(ESO_PIPELINE):

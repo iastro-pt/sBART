@@ -1,11 +1,11 @@
 import ftplib
 import gzip
-import ujson as json
 import os
 import time
 from io import BytesIO
 
 import requests
+import ujson as json
 from loguru import logger
 
 from SBART import SBART_LOC

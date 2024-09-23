@@ -3,14 +3,12 @@ from typing import Set
 import numpy as np
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.utils import custom_exceptions
-from SBART.utils.shift_spectra import (
-    apply_BERV_correction,
-    remove_BERV_correction,
-    apply_approximated_BERV_correction,
-    remove_approximated_BERV_correction,
-)
+from SBART.utils.BASE import BASE
+from SBART.utils.shift_spectra import (apply_approximated_BERV_correction,
+                                       apply_BERV_correction,
+                                       remove_approximated_BERV_correction,
+                                       remove_BERV_correction)
 from SBART.utils.status_codes import OrderStatus
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second

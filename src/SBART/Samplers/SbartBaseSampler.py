@@ -4,7 +4,7 @@ Common interface of the SBART samplers.
 **Note:** Not supposed to be used by the user!
 
 """
-import time
+
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -13,12 +13,11 @@ import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.types import RV_measurement
+from SBART.ModelParameters import ModelComponent
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
+from SBART.utils.types import RV_measurement
 from SBART.utils.work_packages import Package
-
-from SBART.ModelParameters import ModelComponent
 
 
 class SbartBaseSampler(SamplerModel):

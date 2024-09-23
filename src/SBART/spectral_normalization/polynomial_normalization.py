@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
-from SBART.utils import custom_exceptions
 from loguru import logger
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
+from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import DefaultValues
 
 

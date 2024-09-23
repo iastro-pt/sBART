@@ -4,17 +4,18 @@ import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
-from SBART.DataUnits import Classical_Unit
 from SBART.data_objects.RV_cube import RV_cube
+from SBART.DataUnits import Classical_Unit, RV_Precision_Unit
 from SBART.utils import custom_exceptions, meter_second
-from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.custom_exceptions import BadTemplateError
-from SBART.DataUnits import RV_Precision_Unit
-from .target_function import target
+from SBART.utils.expected_precision_interval import RVprecUnit_optimization
+from SBART.utils.RV_utilities.orderwiseRVcombination import \
+    orderwise_combination
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+
 from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit
 from ...utils.math_tools.weighted_mean import weighted_mean
-from SBART.utils.expected_precision_interval import RVprecUnit_optimization
+from .target_function import target
 
 
 class RV_step(RV_routine):

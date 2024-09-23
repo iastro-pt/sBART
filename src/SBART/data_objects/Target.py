@@ -1,14 +1,14 @@
 import os
+from pathlib import Path
 from typing import Any, Dict
 
-from pathlib import Path
 import numpy as np
 from loguru import logger
 
 from SBART import SBART_LOC
+from SBART.utils import custom_exceptions
 from SBART.utils.RV_utilities import secular_acceleration
 from SBART.utils.units import meter_second
-from SBART.utils import custom_exceptions
 
 
 class Target:

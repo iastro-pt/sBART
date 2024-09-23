@@ -3,17 +3,17 @@ import subprocess
 from copy import deepcopy
 from pathlib import Path
 from typing import NoReturn
-from scipy.interpolate import CubicSpline
 
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.units.format import fits
-
-from SBART.utils import custom_exceptions
 from loguru import logger
+from scipy.interpolate import CubicSpline
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
-from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam, BooleanValue
+from SBART.utils import custom_exceptions
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
+                                     UserParam)
 
 
 class RASSINE_normalization(NormalizationBase):

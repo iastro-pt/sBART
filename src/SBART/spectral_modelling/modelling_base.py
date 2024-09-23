@@ -1,16 +1,12 @@
-from loguru import logger
-from typing import NoReturn, Dict, Any
+from typing import Any, Dict, NoReturn
 
+from loguru import logger
+
+from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.ModelParameters import Model, ModelComponent
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    UserParam,
-    Positive_Value_Constraint,
-    IntegerValue,
-)
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, IntegerValue,
+                                     Positive_Value_Constraint, UserParam)
 
 
 class ModellingBase(BASE):

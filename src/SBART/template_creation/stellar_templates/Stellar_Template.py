@@ -1,33 +1,27 @@
-import ujson as json
 from pathlib import Path
-from typing import NoReturn, Union, Optional, Any, Dict, List
+from typing import Any, Dict, List, NoReturn, Optional, Union
 
 import numpy as np
+import ujson as json
 from astropy.io import fits
 from loguru import logger
 from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-from SBART.Base_Models.Frame import Frame
 from SBART import __version__
+from SBART.Base_Models.Frame import Frame
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Components import Spectral_Modelling
 from SBART.Masks import Mask
 from SBART.utils import build_filename, custom_exceptions
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    IntegerValue,
-    UserParam,
-    Positive_Value_Constraint,
-)
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
-from SBART.utils.custom_exceptions import (
-    NoDataError,
-)
-from SBART.utils.status_codes import HIGH_CONTAMINATION, MISSING_DATA, OrderStatus
+from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.utils.status_codes import (HIGH_CONTAMINATION, MISSING_DATA,
+                                      OrderStatus)
 from SBART.utils.units import convert_data, kilometer_second
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, IntegerValue,
+                                     Positive_Value_Constraint, UserParam)
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):

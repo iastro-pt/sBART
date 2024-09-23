@@ -1,8 +1,7 @@
+from pathlib import Path
 from typing import NoReturn
 
 import ujson as json
-from pathlib import Path
-
 from loguru import logger
 from matplotlib import pyplot as plt
 

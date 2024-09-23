@@ -1,18 +1,14 @@
 from pathlib import Path
-from loguru import logger
-from typing import NoReturn, Dict
+from typing import Dict, NoReturn
 
 import numpy as np
-from SBART.utils.BASE import BASE
-from SBART.utils.UserConfigs import (
-    DefaultValues,
-    UserParam,
-    ValueFromList,
-)
+from loguru import logger
 
-from SBART.spectral_modelling import ScipyInterpolSpecModel, GPSpecModel
-from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
+from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
 
 class Spectral_Modelling(BASE):

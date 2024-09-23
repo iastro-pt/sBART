@@ -1,6 +1,7 @@
 import numpy as np
 
 from SBART.utils.shift_spectra import apply_RVshift
+
 from .create_spectral_blocks import build_blocks
 
 

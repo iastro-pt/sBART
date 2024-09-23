@@ -1,6 +1,7 @@
+from tabletexifier import Table
+
 from SBART.Instruments import ESPRESSO
 from SBART.utils.units import convert_data
-from tabletexifier import Table
 
 try:
     from eniric.precision import rv_precision

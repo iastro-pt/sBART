@@ -1,8 +1,7 @@
-import ujson as json
 from pathlib import Path
-
 from typing import Dict, List, NoReturn, Tuple, Union
 
+import ujson as json
 from loguru import logger
 
 from SBART.utils import custom_exceptions

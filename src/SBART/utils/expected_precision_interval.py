@@ -1,7 +1,8 @@
+from loguru import logger
+from tabletexifier import Table
+
 from SBART.Instruments import ESPRESSO
 from SBART.utils.units import convert_data
-from tabletexifier import Table
-from loguru import logger
 
 try:
     from eniric.precision import rv_precision

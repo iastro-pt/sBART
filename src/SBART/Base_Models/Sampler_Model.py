@@ -1,21 +1,18 @@
 import time
-from typing import Iterable, NoReturn, Optional, Tuple, Union, List
+from typing import Iterable, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 from astropy.units import Quantity
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.utils.custom_exceptions import (
-    DeadWorkerError,
-    FrameError,
-    InvalidConfiguration,
-)
-from SBART.utils.status_codes import INTERNAL_ERROR, Flag, SUCCESS
+from SBART.utils.BASE import BASE
+from SBART.utils.custom_exceptions import (DeadWorkerError, FrameError,
+                                           InvalidConfiguration)
+from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
 from SBART.utils.types import UI_DICT
 from SBART.utils.units import meter_second
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package, WorkerInput
 
 

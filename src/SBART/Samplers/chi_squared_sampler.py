@@ -2,16 +2,16 @@
 Chi-squared minimization, for a classical template matching approach.
 """
 
-from typing import Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from loguru import logger
 from scipy.optimize import minimize_scalar
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.UserConfigs import ValueFromList, UserParam, DefaultValues
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package
 
 

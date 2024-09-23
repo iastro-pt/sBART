@@ -3,14 +3,16 @@ from typing import List, Type
 
 from loguru import logger
 
-from SBART.Base_Models.TemplateFramework import TemplateFramework
 from SBART.Base_Models.Template_Model import BaseTemplate
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
+from SBART.Base_Models.TemplateFramework import TemplateFramework
+from SBART.utils.custom_exceptions import (InvalidConfiguration,
+                                           TemplateNotExistsError)
 from SBART.utils.types import UI_DICT, UI_PATH
-from .telluric_templates.Telluric_Template import TelluricTemplate
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+
 from .telluric_templates.telluric_from_tapas import TapasTelluric
 from .telluric_templates.telluric_from_telfit import TelfitTelluric
+from .telluric_templates.Telluric_Template import TelluricTemplate
 
 
 class TelluricModel(TemplateFramework):

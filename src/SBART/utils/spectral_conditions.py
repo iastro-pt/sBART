@@ -92,11 +92,11 @@ from typing import Any, List, Tuple, overload
 
 import numpy as np
 from loguru import logger
+from typing_extensions import override
 
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
-from typing_extensions import override
+from SBART.utils.status_codes import KW_WARNING, USER_BLOCKED, VALID, Flag
 
 
 class ConditionModel:

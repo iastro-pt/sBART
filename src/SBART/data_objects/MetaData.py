@@ -1,6 +1,6 @@
-import ujson as json
 from pathlib import Path
 
+import ujson as json
 from loguru import logger
 
 from SBART.utils import build_filename, custom_exceptions

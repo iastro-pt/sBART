@@ -14,15 +14,11 @@ from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.RV_utilities import airtovac
-from SBART.utils.status_codes import (
-    ERROR_THRESHOLD,
-    MISSING_DATA,
-    NAN_DATA,
-    SATURATION,
-    SUCCESS,
-    KW_WARNING,
-)
-from SBART.utils.units import kilometer_second, meter_second, convert_data
+from SBART.utils.status_codes import (ERROR_THRESHOLD, KW_WARNING,
+                                      MISSING_DATA, NAN_DATA, SATURATION,
+                                      SUCCESS)
+from SBART.utils.units import convert_data, kilometer_second, meter_second
+
 from .ESO_PIPELINE import ESO_PIPELINE
 
 

@@ -14,24 +14,16 @@ from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
-from SBART.utils.custom_exceptions import (
-    BadTemplateError,
-    DeadWorkerError,
-    InvalidConfiguration,
-)
+from SBART.utils.concurrent_tools.evaluate_worker_shutdown import \
+    evaluate_shutdown
+from SBART.utils.custom_exceptions import (BadTemplateError, DeadWorkerError,
+                                           InvalidConfiguration)
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.types import UI_PATH
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    IterableMustHave,
-    NumericValue,
-    Positive_Value_Constraint,
-    UserParam,
-    ValueFromDtype,
-    ValueFromList,
-)
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues,
+                                     IterableMustHave, NumericValue,
+                                     Positive_Value_Constraint, UserParam,
+                                     ValueFromDtype, ValueFromList)
 from SBART.utils.work_packages import ShutdownPackage
 
 

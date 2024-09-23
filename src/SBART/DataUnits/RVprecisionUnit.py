@@ -1,16 +1,15 @@
 from pathlib import Path
-from typing import Any, Dict, NoReturn, List, Optional
+from typing import Any, Dict, List, NoReturn, Optional
 
 import numpy as np
 import ujson as json
 from loguru import logger
+from tabletexifier import Table
 
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.utils import custom_exceptions
 from SBART.utils.json_ready_converter import json_ready_converter
 from SBART.utils.paths_tools import build_filename
-
-from tabletexifier import Table
 
 
 class RV_Precision_Unit(UnitModel):

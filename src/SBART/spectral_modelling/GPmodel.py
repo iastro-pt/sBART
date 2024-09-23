@@ -1,8 +1,8 @@
 import traceback
-from typing import NoReturn
 from functools import partial
-import numpy as np
+from typing import NoReturn
 
+import numpy as np
 from loguru import logger
 
 from SBART.ModelParameters.Parameter import JaxComponent
@@ -10,8 +10,9 @@ from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools import build_filename
 
 try:
-    import jax, jaxopt
+    import jax
     import jax.numpy as jnp
+    import jaxopt
 
     jax.config.update("jax_enable_x64", True)
     import tinygp
@@ -23,19 +24,11 @@ except ImportError:
     import numpy as jnp
 
 from SBART.ModelParameters import Model
-
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    UserParam,
-    ValueFromList,
-    Positive_Value_Constraint,
-)
-
-from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
-
-
 from SBART.spectral_modelling.modelling_base import ModellingBase
+from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues,
+                                     Positive_Value_Constraint, UserParam,
+                                     ValueFromList)
 
 
 class GPSpecModel(ModellingBase):

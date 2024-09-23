@@ -11,22 +11,17 @@ from tabletexifier import Table
 from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions, open_buffer
+from SBART.utils.concurrent_tools.close_interfaces import (close_buffers,
+                                                           kill_workers)
+from SBART.utils.custom_exceptions import (BadOrderError, BadTemplateError,
+                                           InvalidConfiguration)
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
-from SBART.utils.UserConfigs import (
-    DefaultValues,
-    UserParam,
-    ValueFromList,
-    Positive_Value_Constraint,
-)
-from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
-from SBART.utils.custom_exceptions import (
-    BadOrderError,
-    BadTemplateError,
-    InvalidConfiguration,
-)
 from SBART.utils.shift_spectra import remove_RVshift
 from SBART.utils.status_codes import INTERNAL_ERROR, MISSING_DATA
-from SBART.utils.units import kilometer_second, convert_data
+from SBART.utils.units import convert_data, kilometer_second
+from SBART.utils.UserConfigs import (DefaultValues, Positive_Value_Constraint,
+                                     UserParam, ValueFromList)
+
 from .Stellar_Template import StellarTemplate
 
 

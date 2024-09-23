@@ -1,36 +1,33 @@
 from __future__ import annotations
-from collections import defaultdict
 
-import ujson as json
+from collections import defaultdict
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
+from typing import (Any, Dict, Iterable, List, NoReturn, Optional, Tuple, Type,
+                    Union)
 
 import numpy as np
+import ujson as json
 from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.utils.BASE import BASE
 from SBART.Base_Models.Frame import Frame
-from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
-from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
+from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
+from SBART.utils.custom_exceptions import (FrameError, InvalidConfiguration,
+                                           NoDataError)
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
-    ACTIVITY_LINE,
-    KW_WARNING,
-    TELLURIC,
-    Status,
-    SIGMA_CLIP_REJECTION,
-)
+    ACTIVITY_LINE, KW_WARNING, SIGMA_CLIP_REJECTION, TELLURIC, Status)
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
-from SBART.utils import custom_exceptions
 
 
 class DataClass(BASE):

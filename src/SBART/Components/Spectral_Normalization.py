@@ -1,22 +1,17 @@
 from pathlib import Path
-from loguru import logger
-from typing import NoReturn, Dict, Optional
+from typing import Dict, NoReturn, Optional
 
 import numpy as np
-from SBART.utils.BASE import BASE
-from SBART.utils.UserConfigs import (
-    DefaultValues,
-    UserParam,
-    ValueFromList,
-    BooleanValue,
-    PathValue,
-)
+from loguru import logger
 
-from SBART.spectral_normalization.normalization_base import NormalizationBase
-from SBART.spectral_normalization import available_normalization_interfaces
-from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils import custom_exceptions
 from SBART.DataUnits import SpecNorm_Unit
+from SBART.spectral_normalization import available_normalization_interfaces
+from SBART.spectral_normalization.normalization_base import NormalizationBase
+from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
+from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
+                                     UserParam, ValueFromList)
 
 
 class Spectral_Normalization(BASE):

@@ -1,19 +1,15 @@
 from typing import NoReturn
 
 import numpy as np
+from scipy.interpolate import (CubicSpline, PchipInterpolator, RBFInterpolator,
+                               interp1d)
 
-from SBART.utils.UserConfigs import (
-    DefaultValues,
-    UserParam,
-    ValueFromList,
-    IntegerValue,
-    Positive_Value_Constraint,
-)
-from scipy.interpolate import CubicSpline, PchipInterpolator, interp1d, RBFInterpolator
-
-from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
-from SBART.utils import custom_exceptions
 from SBART.spectral_modelling.modelling_base import ModellingBase
+from SBART.utils import custom_exceptions
+from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
+from SBART.utils.UserConfigs import (DefaultValues, IntegerValue,
+                                     Positive_Value_Constraint, UserParam,
+                                     ValueFromList)
 
 
 class ScipyInterpolSpecModel(ModellingBase):

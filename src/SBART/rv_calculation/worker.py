@@ -5,23 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
-from SBART.Quality_Control.outlier_detection import compute_outliers
-
 from SBART.data_objects import DataClass
+from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.utils import find_wavelength_limits
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
-from SBART.utils.custom_exceptions import (
-    BadOrderError,
-    InvalidConfiguration,
-    StopComputationError,
-)
-from SBART.utils.status_codes import (
-    HIGH_CONTAMINATION,
-    INTERNAL_ERROR,
-    MASSIVE_RV_PRIOR,
-    SHUTDOWN,
-    SUCCESS,
-)
+from SBART.utils.custom_exceptions import (BadOrderError, InvalidConfiguration,
+                                           StopComputationError)
+from SBART.utils.status_codes import (HIGH_CONTAMINATION, INTERNAL_ERROR,
+                                      MASSIVE_RV_PRIOR, SHUTDOWN, SUCCESS)
 from SBART.utils.units import kilometer_second, meter_second
 from SBART.utils.work_packages import WorkerOutput
 

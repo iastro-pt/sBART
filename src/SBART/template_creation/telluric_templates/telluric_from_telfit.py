@@ -16,21 +16,15 @@ except ModuleNotFoundError:
 from loguru import logger
 
 from SBART import SBART_LOC
+from SBART.internals.cache import DB_connection
 from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    Positive_Value_Constraint,
-    StringValue,
-    UserParam,
-    ValueFromList,
-    NumericValue,
-)
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.status_codes import SUCCESS
 from SBART.utils.types import UI_DICT
-from SBART.internals.cache import DB_connection
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, NumericValue,
+                                     Positive_Value_Constraint, StringValue,
+                                     UserParam, ValueFromList)
 
 from .Telluric_Template import TelluricTemplate
 

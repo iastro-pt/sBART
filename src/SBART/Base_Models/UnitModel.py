@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import NoReturn
 
-from SBART.utils.BASE import BASE
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 
 
 class UnitModel(BASE):

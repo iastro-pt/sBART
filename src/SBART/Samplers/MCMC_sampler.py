@@ -10,7 +10,7 @@ from loguru import logger
 
 from SBART.utils import custom_exceptions, meter_second, status_codes
 from SBART.utils.math_tools import check_variation_inside_interval
-from SBART.utils.status_codes import SUCCESS, Flag, WARNING
+from SBART.utils.status_codes import SUCCESS, WARNING, Flag
 from SBART.utils.UserConfigs import DefaultValues, NumericValue, UserParam
 from SBART.utils.work_packages import Package
 

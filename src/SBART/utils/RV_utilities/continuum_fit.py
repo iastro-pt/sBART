@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 from loguru import logger
 from scipy import optimize
+
 from SBART.utils import custom_exceptions
 
 

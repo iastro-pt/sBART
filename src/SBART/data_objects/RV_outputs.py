@@ -11,10 +11,12 @@ from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.utils.BASE import BASE
 from SBART.data_objects.RV_cube import RV_cube
-from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
-from SBART.utils.paths_tools import build_filename, find_latest_version, ensure_path_from_input
+from SBART.utils.BASE import BASE
+from SBART.utils.custom_exceptions import (InvalidConfiguration,
+                                           NoComputedRVsError)
+from SBART.utils.paths_tools import (build_filename, ensure_path_from_input,
+                                     find_latest_version)
 
 
 class RV_holder(BASE):

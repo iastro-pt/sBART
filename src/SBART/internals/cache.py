@@ -4,17 +4,18 @@ from pathlib import Path
 from pdb import pm
 from typing import List, NoReturn, Optional, Union
 
+from loguru import logger
 from scipy.datasets import download_all
-
-from SBART import __version__ as SBART_version
 from sqlalchemy import create_engine, delete, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database
-from loguru import logger
+
+from SBART import __version__ as SBART_version
 
 resource_path = Path(__file__).parent.parent / "resources"
-from SBART.internals.db_tables import Base, Target, GDAS_profile
 import numpy as np
+
+from SBART.internals.db_tables import Base, GDAS_profile, Target
 
 
 class DB_connection:

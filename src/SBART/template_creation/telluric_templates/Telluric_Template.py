@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import List, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, List, NoReturn, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
 from loguru import logger
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from SBART.data_objects import DataClass
@@ -19,22 +17,17 @@ from SBART import __version__
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
-from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    UserParam,
-    ValueInInterval,
-)
 from SBART.utils.custom_exceptions import NoDataError
-from SBART.utils.shift_spectra import (
-    apply_BERV_correction,
-    apply_approximated_BERV_correction,
-)
-from SBART.utils.spectral_conditions import KEYWORD_condition, Empty_condition
+from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
+from SBART.utils.shift_spectra import (apply_approximated_BERV_correction,
+                                       apply_BERV_correction)
+from SBART.utils.spectral_conditions import Empty_condition, KEYWORD_condition
 from SBART.utils.status_codes import DISK_LOADED_DATA, MISSING_DATA, SUCCESS
-from SBART.utils.telluric_utilities.compute_overlaps_blocks import find_overlaps
+from SBART.utils.telluric_utilities.compute_overlaps_blocks import \
+    find_overlaps
 from SBART.utils.units import kilometer_second
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, UserParam,
+                                     ValueInInterval)
 
 
 class TelluricTemplate(BaseTemplate):

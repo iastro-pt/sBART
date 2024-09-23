@@ -1,10 +1,10 @@
 import numpy as np
 
+from SBART.utils.math_tools.numerical_derivatives import \
+    first_numerical_derivative
 from SBART.utils.RV_utilities import ensure_valid_RV
 from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
-from SBART.utils.shift_spectra import apply_RVshift, SPEED_OF_LIGHT
-
-from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
+from SBART.utils.shift_spectra import SPEED_OF_LIGHT, apply_RVshift
 
 
 def target(params, **kwargs):

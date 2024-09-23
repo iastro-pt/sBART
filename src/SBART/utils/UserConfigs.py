@@ -5,7 +5,7 @@ from typing import Any, Dict, NoReturn, Optional
 import numpy as np
 from loguru import logger
 
-from SBART.utils.custom_exceptions import InvalidConfiguration, InternalError
+from SBART.utils.custom_exceptions import InternalError, InvalidConfiguration
 
 
 class Constraint:

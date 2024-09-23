@@ -8,36 +8,25 @@ import numpy as np
 from astropy.io import fits
 from loguru import logger
 
-from SBART.Components import Spectral_Modelling, Spectrum, Spectral_Normalization
+from SBART.Components import (Spectral_Modelling, Spectral_Normalization,
+                              Spectrum)
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import (
-    BooleanValue,
-    DefaultValues,
-    NumericValue,
-    Positive_Value_Constraint,
-    UserParam,
-    ValueFromList,
-    ValueInInterval,
-)
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.ranges import ranges
-from SBART.utils.status_codes import (
-    HIGH_CONTAMINATION,
-    LOADING_EXTERNAL_DATA,
-    LOW_SNR,
-    MISSING_DATA,
-    MISSING_EXTERNAL_DATA,
-    MISSING_FILE,
-    NO_VALID_ORDERS,
-    NON_COMMON_WAVELENGTH,
-    QUAL_DATA,
-    Flag,
-    Status,
-)
-from SBART.utils.telluric_utilities.compute_overlaps_blocks import check_if_overlap
+from SBART.utils.status_codes import (HIGH_CONTAMINATION,
+                                      LOADING_EXTERNAL_DATA, LOW_SNR,
+                                      MISSING_DATA, MISSING_EXTERNAL_DATA,
+                                      MISSING_FILE, NO_VALID_ORDERS,
+                                      NON_COMMON_WAVELENGTH, QUAL_DATA, Flag,
+                                      Status)
+from SBART.utils.telluric_utilities.compute_overlaps_blocks import \
+    check_if_overlap
 from SBART.utils.types import RV_measurement
 from SBART.utils.units import kilometer_second
+from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, NumericValue,
+                                     Positive_Value_Constraint, UserParam,
+                                     ValueFromList, ValueInInterval)
 
 
 class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):

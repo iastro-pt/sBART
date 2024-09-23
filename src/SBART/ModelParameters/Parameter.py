@@ -12,9 +12,9 @@ except ImportError:
 
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.types import RV_measurement
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 

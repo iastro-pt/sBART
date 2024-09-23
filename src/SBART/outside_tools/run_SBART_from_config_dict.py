@@ -2,20 +2,17 @@ import math
 import os
 from pathlib import Path
 
+from SBART.data_objects import DataClass, DataClassManager
 from SBART.Instruments import instrument_dict as instrument_name_map
-from SBART.Quality_Control.activity_indicators import Indicators
-from SBART.Samplers import Sampler_map
-from SBART.data_objects import DataClassManager
-from SBART.data_objects import DataClass
 from SBART.outside_tools.create_logger import setup_SBART_logger
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
 from SBART.rv_calculation.rv_stepping.RV_step import RV_step
+from SBART.Samplers import Sampler_map
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.spectral_conditions import (
-    Empty_condition,
-)
+from SBART.utils.spectral_conditions import Empty_condition
 
 
 def config_update_with_fallback_to_default(

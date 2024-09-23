@@ -21,7 +21,6 @@ __all__ = [
 from .ESPRESSO import ESPRESSO
 from .HARPS import HARPS
 
-
 instrument_dict = {
     "ESPRESSO": ESPRESSO,
     "HARPS": HARPS,

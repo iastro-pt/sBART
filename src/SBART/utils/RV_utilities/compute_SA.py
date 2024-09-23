@@ -4,10 +4,10 @@ import warnings
 import numpy as np
 from astropy import units as u
 from astroquery.simbad import Simbad
-
-from SBART.utils.units import meter_second
-from SBART.internals.cache import DB_connection
 from loguru import logger
+
+from SBART.internals.cache import DB_connection
+from SBART.utils.units import meter_second
 
 as_yr = u.arcsec / u.year
 mas_yr = u.milliarcsecond / u.year

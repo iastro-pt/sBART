@@ -5,9 +5,9 @@
 import numpy as np
 
 from SBART.utils import second_term
-from SBART.utils.RV_utilities import ensure_valid_RV, compute_DLW
-from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.math_tools.build_polynomial import evaluate_polynomial
+from SBART.utils.RV_utilities import compute_DLW, ensure_valid_RV
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.shift_spectra import apply_RVshift
 
 

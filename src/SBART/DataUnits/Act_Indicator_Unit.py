@@ -1,9 +1,8 @@
-from typing import NoReturn, List
+from pathlib import Path
+from typing import List, NoReturn
 
 import numpy as np
 import ujson as json
-from pathlib import Path
-
 from loguru import logger
 from matplotlib import pyplot as plt
 
