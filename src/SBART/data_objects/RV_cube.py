@@ -488,6 +488,11 @@ class RV_cube(BASE):
         return self._Rv_orderwise.shape[1]
 
     @property
+    def N_obs(self) -> int:
+        """Return the total number of observations"""
+        return self._Rv_orderwise.shape[0]
+
+    @property
     def name(self) -> str:
         return "RV cube from {}".format(self._associated_subInst)
 
