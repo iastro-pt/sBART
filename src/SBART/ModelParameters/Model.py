@@ -57,7 +57,9 @@ class Model:
         for component in self.get_enabled_components():
             init_guess, bound = component.get_optimizer_input(frameID)
 
-            if isinstance(init_guess, RV_measurement):  # convert astropy.units to "unitless" values
+            if isinstance(
+                init_guess, RV_measurement
+            ):  # convert astropy.units to "unitless" values
                 init_guess = convert_data(init_guess, new_units=rv_units, as_value=True)
                 bound = convert_data(bound, new_units=rv_units, as_value=True)
 
@@ -77,7 +79,9 @@ class Model:
         for component in self.components:
             if component.param_name == param_name:
                 return component.is_enabled
-        raise custom_exceptions.InvalidConfiguration("Parameter {} doesn't exist", param_name)
+        raise custom_exceptions.InvalidConfiguration(
+            "Parameter {} doesn't exist", param_name
+        )
 
     def has_valid_identifier_results(self, identifier):
         if identifier in self._results_flags:
@@ -109,7 +113,9 @@ class Model:
         if not self.has_results_stored:
             self.has_results_stored = True
 
-    def _change_param_settings(self, param_name: str, set_to_True: bool, mode: str) -> NoReturn:
+    def _change_param_settings(
+        self, param_name: str, set_to_True: bool, mode: str
+    ) -> NoReturn:
         found = False
         for component in self.components:
             if component.param_name == param_name:
@@ -126,7 +132,9 @@ class Model:
                         component.unlock_param()
 
         if not found:
-            raise custom_exceptions.InvalidConfiguration("Param {} does not exist", param_name)
+            raise custom_exceptions.InvalidConfiguration(
+                "Param {} does not exist", param_name
+            )
 
     def enable_full_model(self):
         for comp in self.components:
@@ -180,7 +188,9 @@ class Model:
         for comp in self.components:
             if comp.param_name == param_name:
                 return comp
-        raise custom_exceptions.InternalError(f"Parameter ({param_name}) does not exist")
+        raise custom_exceptions.InternalError(
+            f"Parameter ({param_name}) does not exist"
+        )
 
     def get_components_of_type(self, desired_type, only_enabled=True):
         return [
@@ -190,10 +200,15 @@ class Model:
         ]
 
     def get_names_of_type(self, desired_type, only_enabled=True):
-        return [comp.param_name for comp in self.get_components_of_type(desired_type, only_enabled)]
+        return [
+            comp.param_name
+            for comp in self.get_components_of_type(desired_type, only_enabled)
+        ]
 
     def get_components(self, include_disabled=False):
-        return [comp for comp in self.components if (comp.is_enabled or include_disabled)]
+        return [
+            comp for comp in self.components if (comp.is_enabled or include_disabled)
+        ]
 
     def get_component_names(self, include_disabled):
         return [comp.param_name for comp in self.get_components(include_disabled)]
@@ -212,7 +227,10 @@ class Model:
         full_json = {"components": {}, "result_flags": None}
 
         for component in self.components:
-            full_json["components"] = {**full_json["components"], **component.json_ready()}
+            full_json["components"] = {
+                **full_json["components"],
+                **component.json_ready(),
+            }
 
         full_json["result_flags"] = {
             int(d_ID): flag.to_json() for d_ID, flag in self._results_flags.items()
@@ -235,7 +253,8 @@ class Model:
 
         loaded_model = Model(params_of_model=model_params)
         loaded_model._results_flags = {
-            int(d_ID): Flag.create_from_json(info) for d_ID, info in data["result_flags"].items()
+            int(d_ID): Flag.create_from_json(info)
+            for d_ID, info in data["result_flags"].items()
         }
 
         return loaded_model

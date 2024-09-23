@@ -59,14 +59,15 @@ def SBART_target(params, **kwargs):
         )
     )
 
-    interpolated_template, interpol_errors = (
-        StellarTemplate.interpolate_spectrum_to_wavelength(
-            order=kwargs["current_order"],
-            RV_shift_mode="apply",
-            shift_RV_by=RV_shift,
-            new_wavelengths=current_wavelength[indexes],
-            include_invalid=False,
-        )
+    (
+        interpolated_template,
+        interpol_errors,
+    ) = StellarTemplate.interpolate_spectrum_to_wavelength(
+        order=kwargs["current_order"],
+        RV_shift_mode="apply",
+        shift_RV_by=RV_shift,
+        new_wavelengths=current_wavelength[indexes],
+        include_invalid=False,
     )
     if kwargs["current_order"] == 59 and 0:
         # plt.plot(current_wavelength[indexes], interpolated_template)
@@ -97,7 +98,9 @@ def SBART_target(params, **kwargs):
     # template not assumed to be noise free
 
     diag = (
-        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
+        kwargs["squared_spectra_uncerts"][indexes]
+        + interpol_errors**2
+        + squared_jitter
     ) / interpolated_template**2
 
     # Build H matrix
@@ -149,16 +152,19 @@ def SBART_target(params, **kwargs):
         # Flux model miss-specification
         # Use the expected value for the parameters of the polynomial
 
-        normalized_template, normalized_uncerts, coefs, residuals = (
-            match_continuum_levels(
-                current_wavelength,
-                spectra[indexes],
-                interpolated_template,
-                indexes,
-                continuum_type="paper",
-                fit_degree=1,
-                template_uncertainties=interpol_errors,
-            )
+        (
+            normalized_template,
+            normalized_uncerts,
+            coefs,
+            residuals,
+        ) = match_continuum_levels(
+            current_wavelength,
+            spectra[indexes],
+            interpolated_template,
+            indexes,
+            continuum_type="paper",
+            fit_degree=1,
+            template_uncertainties=interpol_errors,
         )
 
         if not kwargs.get("SAVE_DISK_SPACE", False):

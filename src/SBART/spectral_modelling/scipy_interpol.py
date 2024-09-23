@@ -39,10 +39,12 @@ class ScipyInterpolSpecModel(ModellingBase):
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam(
-            "cubic", constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"])
+            "cubic",
+            constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"]),
         ),
         INTERPOLATION_ERR_PROP=UserParam(
-            "interpolation", constraint=ValueFromList(["none", "interpolation", "propagation"])
+            "interpolation",
+            constraint=ValueFromList(["none", "interpolation", "propagation"]),
         ),
         NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
     )
@@ -116,17 +118,17 @@ class ScipyInterpolSpecModel(ModellingBase):
                 extra = {"bc_type": "natural"}
             else:
                 extra = {}
-            CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                og_lambda, og_spectra, **extra
-            )
+            CSplineInterpolator = interpolator_map[
+                self._internal_configs["SPLINE_TYPE"]
+            ](og_lambda, og_spectra, **extra)
             new_data = CSplineInterpolator(new_wavelengths)
 
             if propagate_interpol_errors == "none":
                 new_errors = np.zeros(new_data.shape)
             else:
-                CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                    og_lambda, og_err, **extra
-                )
+                CSplineInterpolator = interpolator_map[
+                    self._internal_configs["SPLINE_TYPE"]
+                ](og_lambda, og_err, **extra)
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:
             raise custom_exceptions.InvalidConfiguration(

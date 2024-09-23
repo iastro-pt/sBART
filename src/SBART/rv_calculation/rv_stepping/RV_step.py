@@ -109,7 +109,9 @@ class RV_step(RV_routine):
                 store_cube_to_disk=store_cube_to_disk,
             )
         except custom_exceptions.NoDataError:
-            logger.opt(exception=True).info("No data to process after checking metadata")
+            logger.opt(exception=True).info(
+                "No data to process after checking metadata"
+            )
             return
 
         except Exception as e:
@@ -200,7 +202,9 @@ class RV_step(RV_routine):
 
         self.trigger_data_storage(dataClass)
 
-    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def process_workers_output(
+        self, empty_cube: RV_cube, worker_outputs: List[list]
+    ) -> RV_cube:
         data_unit = Classical_Unit()
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],

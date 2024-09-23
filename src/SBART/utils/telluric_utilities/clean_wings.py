@@ -37,10 +37,14 @@ def clean_wings_order(
         # removes the previous BERV correction and calculates the edges based on the MAXBERV window!
         # The template was created for the
         lowest_wavelength = (
-            current_order_wavelengths[start] * (c - BERV_window) / (c + template_base_berv)
+            current_order_wavelengths[start]
+            * (c - BERV_window)
+            / (c + template_base_berv)
         )
         highest_wavelength = (
-            current_order_wavelengths[end] * (c + BERV_window) / (c + template_base_berv)
+            current_order_wavelengths[end]
+            * (c + BERV_window)
+            / (c + template_base_berv)
         )
         telluric_bin_temp[
             np.where(

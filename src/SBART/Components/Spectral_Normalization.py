@@ -4,7 +4,13 @@ from typing import NoReturn, Dict, Optional
 
 import numpy as np
 from SBART.utils.BASE import BASE
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList, BooleanValue, PathValue
+from SBART.utils.UserConfigs import (
+    DefaultValues,
+    UserParam,
+    ValueFromList,
+    BooleanValue,
+    PathValue,
+)
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.spectral_normalization import available_normalization_interfaces
@@ -39,14 +45,17 @@ class Spectral_Normalization(BASE):
     _default_params = BASE._default_params + DefaultValues(
         NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
         NORMALIZATION_MODE=UserParam(
-            "RASSINE", constraint=ValueFromList(list(available_normalization_interfaces.keys()))
+            "RASSINE",
+            constraint=ValueFromList(list(available_normalization_interfaces.keys())),
         ),
         S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
         RASSINE_path=UserParam(mandatory=False, constraint=PathValue, default_value=""),
     )
 
     def __init__(self, **kwargs):
-        self._default_params = self._default_params + Spectral_Normalization._default_params
+        self._default_params = (
+            self._default_params + Spectral_Normalization._default_params
+        )
         self.has_normalization_component = True
         super().__init__(**kwargs)
 
@@ -143,7 +152,12 @@ class Spectral_Normalization(BASE):
 
         wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
-        new_waves, new_flux, new_uncert, norm_keys = norm_interface.launch_epochwise_normalization(
+        (
+            new_waves,
+            new_flux,
+            new_uncert,
+            norm_keys,
+        ) = norm_interface.launch_epochwise_normalization(
             wavelengths=wavelengths,
             flux=flux,
             uncertainties=uncerts,
@@ -169,9 +183,15 @@ class Spectral_Normalization(BASE):
             )
 
             mask_to_use = ~mask
-            loaded_info = self._normalization_information.get_norm_info_from_order(order)
+            loaded_info = self._normalization_information.get_norm_info_from_order(
+                order
+            )
 
-            new_flux, new_uncerts, norm_keys = norm_interface.launch_orderwise_normalization(
+            (
+                new_flux,
+                new_uncerts,
+                norm_keys,
+            ) = norm_interface.launch_orderwise_normalization(
                 wavelengths=wavelengths[mask_to_use],
                 flux=flux[mask_to_use],
                 uncertainties=uncerts[mask_to_use],

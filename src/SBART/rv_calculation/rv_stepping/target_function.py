@@ -40,7 +40,10 @@ def target(params, **kwargs):
         )
     )
 
-    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+    (
+        interpolated_template,
+        interpol_errors,
+    ) = StellarTemplate.interpolate_spectrum_to_wavelength(
         order=kwargs["current_order"],
         RV_shift_mode="apply",
         shift_RV_by=tentative_RV_shift,
@@ -59,9 +62,13 @@ def target(params, **kwargs):
         template_uncertainties=interpol_errors,
     )
 
-    final_uncertainties = 1 / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2)
+    final_uncertainties = 1 / (
+        kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2
+    )
 
-    chi_squared_val = np.sum(final_uncertainties * (spectra[indexes] - normalized_template) ** 2)
+    chi_squared_val = np.sum(
+        final_uncertainties * (spectra[indexes] - normalized_template) ** 2
+    )
 
     if kwargs.get("get_minimum_information", False):
         # This will be triggered when the sampler sends a request to get more information

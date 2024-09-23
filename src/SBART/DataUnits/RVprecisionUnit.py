@@ -55,7 +55,9 @@ class RV_Precision_Unit(UnitModel):
             "pred_err": pred_err,
         }
 
-    def get_RVcontent_frameID_information(self, frameID: int) -> Dict[int, Dict[str, List[Any]]]:
+    def get_RVcontent_frameID_information(
+        self, frameID: int
+    ) -> Dict[int, Dict[str, List[Any]]]:
         """Retrieve the RV from one frameID
 
         Args:
@@ -71,9 +73,13 @@ class RV_Precision_Unit(UnitModel):
         try:
             return self.RVcontent_info[frameID]
         except KeyError as exc:
-            raise custom_exceptions.NoDataError(f"There is no information from {frameID=}") from exc
+            raise custom_exceptions.NoDataError(
+                f"There is no information from {frameID=}"
+            ) from exc
 
-    def get_RVcontent_order_information(self, frameID: int, order: int) -> Dict[str, List[Any]]:
+    def get_RVcontent_order_information(
+        self, frameID: int, order: int
+    ) -> Dict[str, List[Any]]:
         """Retrieve RV content information from one order
 
         Args:
@@ -90,7 +96,9 @@ class RV_Precision_Unit(UnitModel):
         try:
             return self.get_RVcontent_frameID_information(frameID)[order]
         except KeyError as exc:
-            raise custom_exceptions.NoDataError(f"There is no information order {order=}") from exc
+            raise custom_exceptions.NoDataError(
+                f"There is no information order {order=}"
+            ) from exc
 
     def ingest_table(self, optimized_table):
         self._optim_table.append(optimized_table)
@@ -151,7 +159,9 @@ class RV_Precision_Unit(UnitModel):
                     profile[int(str_key)] = {int(j): k for j, k in info.items()}
                 new_unit.RVcontent_info = profile
         except FileNotFoundError:
-            logger.critical(f"Couldn't find the .json file on {new_unit.get_storage_filename()}")
+            logger.critical(
+                f"Couldn't find the .json file on {new_unit.get_storage_filename()}"
+            )
 
         return new_unit
 

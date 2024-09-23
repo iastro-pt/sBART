@@ -46,7 +46,8 @@ class CustomCubicSpline:
             self.cov_matrix = original_errors**2
         else:
             self.cov_matrix = (
-                np.zeros((original_data.size, original_data.size)) + original_errors**2
+                np.zeros((original_data.size, original_data.size))
+                + original_errors**2
             )
 
         self._cached_h = False
@@ -107,7 +108,9 @@ class CustomCubicSpline:
         partials[0] = 0
         partials[-1] = 0
 
-        partial_derivative(inv_h_matrix, self.inv_delta_wave, index_i, partials, self.n_threads)
+        partial_derivative(
+            inv_h_matrix, self.inv_delta_wave, index_i, partials, self.n_threads
+        )
 
         # avoid underflows
         partials[np.where(np.abs(partials) < 1e-100)] = 0

@@ -107,10 +107,17 @@ class RV_precision(RV_routine):
             )
 
         super().run_routine(
-            dataClass, storage_path, orders_to_skip, store_data, check_metadata, store_cube_to_disk
+            dataClass,
+            storage_path,
+            orders_to_skip,
+            store_data,
+            check_metadata,
+            store_cube_to_disk,
         )
 
-    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def process_workers_output(
+        self, empty_cube: RV_cube, worker_outputs: List[list]
+    ) -> RV_cube:
         data_unit = RV_Precision_Unit()
         for pkg in worker_outputs:
             for order_pkg in pkg:

@@ -83,7 +83,9 @@ class BaseTemplate(Spectrum):
         super().trigger_data_storage(clobber)
 
         if self.was_loaded:
-            logger.debug(f"Loaded {self.template_type} template will not be saved to disk")
+            logger.debug(
+                f"Loaded {self.template_type} template will not be saved to disk"
+            )
             raise custom_exceptions.FailedStorage
 
         if not self.is_valid:
@@ -94,7 +96,9 @@ class BaseTemplate(Spectrum):
 
     def _base_checks_for_template_creation(self):
         if not self.is_valid:
-            logger.warning("Template will not be created. Check previous error messages")
+            logger.warning(
+                "Template will not be created. Check previous error messages"
+            )
             raise custom_exceptions.StopComputationError
 
         if self.was_loaded:
@@ -132,13 +136,17 @@ class BaseTemplate(Spectrum):
             try:
                 os.remove(template_path)
             except FileNotFoundError:
-                logger.warning("Previous template not found under the path <{}>", template_path)
+                logger.warning(
+                    "Previous template not found under the path <{}>", template_path
+                )
                 raise custom_exceptions.FailedStorage
         else:
             logger.warning("Disabled removal of old disk files!")
 
         if not self.is_valid:
-            raise custom_exceptions.FailedStorage("Template is not valid. Not storing data to disk")
+            raise custom_exceptions.FailedStorage(
+                "Template is not valid. Not storing data to disk"
+            )
 
     def load_from_file(self, root_path, loading_path: str) -> None:
         """
@@ -219,7 +227,10 @@ class BaseTemplate(Spectrum):
 
     @property
     def spectrum_information(self):
-        return {**{"subInstrument": self.sub_instrument}, **super().spectrum_information}
+        return {
+            **{"subInstrument": self.sub_instrument},
+            **super().spectrum_information,
+        }
 
     @property
     def name(self) -> str:

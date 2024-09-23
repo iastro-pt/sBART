@@ -10,12 +10,16 @@ class Paths:
         root_level_path: Optional[Union[str, Path]] = None,
         preconfigured_paths: Optional[Dict[str, str]] = None,
     ):
-        self._folder_mappings = preconfigured_paths if preconfigured_paths is not None else {}
+        self._folder_mappings = (
+            preconfigured_paths if preconfigured_paths is not None else {}
+        )
 
         if isinstance(root_level_path, str):
             root_level_path = Path(root_level_path)
 
-        self._root_path: Optional[Path] = root_level_path if root_level_path is not None else None
+        self._root_path: Optional[Path] = (
+            root_level_path if root_level_path is not None else None
+        )
 
         # For lazy creation of the folders and to avoid multiple creation attempts
         self._constructed_folders = set()
@@ -80,5 +84,6 @@ class Paths:
 
 if __name__ == "__main__":
     handler = Paths(
-        "/home/amiguel/seminar/teste_code_changes/CARMENES", {"testes": "testepaths/hkasdh"}
+        "/home/amiguel/seminar/teste_code_changes/CARMENES",
+        {"testes": "testepaths/hkasdh"},
     )

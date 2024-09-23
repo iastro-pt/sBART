@@ -59,7 +59,11 @@ def find_lines_indexes(
                 start = blocks[jump_index][0]
                 end = blocks[jump_index][-1]
 
-            if jump < 10 and jump_index < len(pixel_jumps) - 1 and (end + 1 - start) >= 2:
+            if (
+                jump < 10
+                and jump_index < len(pixel_jumps) - 1
+                and (end + 1 - start) >= 2
+            ):
                 end = blocks[jump_index + 1][-1]
                 new_block = False
             else:
@@ -75,12 +79,18 @@ def find_lines_indexes(
         is_line[order][marked_regions] = 1
         if make_plot:
             axis[0].scatter(
-                wave[marked_regions], flux[marked_regions], color="red", ls="--", marker="d"
+                wave[marked_regions],
+                flux[marked_regions],
+                color="red",
+                ls="--",
+                marker="d",
             )
             axis[0].plot(wave, flux)
             axis[1].plot(wave, first_derivative, marker="+")
             axis[1].scatter(
-                wave[derivative_regions], first_derivative[derivative_regions], color="blue"
+                wave[derivative_regions],
+                first_derivative[derivative_regions],
+                color="blue",
             )
 
             plt.show()
@@ -93,6 +103,8 @@ if __name__ == "__main__":
 
     from SBART.Instruments import ESPRESSO
 
-    frame = ESPRESSO(path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={})
+    frame = ESPRESSO(
+        path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={}
+    )
 
     find_lines_indexes(frame, list(range(0, 100)))

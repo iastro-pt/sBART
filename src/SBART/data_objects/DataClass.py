@@ -362,7 +362,12 @@ class DataClass(BASE):
     def _validate_loaded_observations(self) -> None:
         """Check if the same DRS version is used across all loaded files!"""
 
-        for equal_KW in ["DRS-VERSION", "SPEC_TYPE", "DRS_CCF_MASK", "DRS_FLUX_CORRECTION_TEMPLATE"]:
+        for equal_KW in [
+            "DRS-VERSION",
+            "SPEC_TYPE",
+            "DRS_CCF_MASK",
+            "DRS_FLUX_CORRECTION_TEMPLATE",
+        ]:
             collected_KW = set(
                 self.collect_KW_observations(equal_KW, self._inst_type.sub_instruments)
             )
@@ -379,11 +384,13 @@ class DataClass(BASE):
             frame = self.get_frame_by_ID(fID)
             mapping_values["BLAZE"].append(frame.is_blaze_corrected)
             mapping_values["SKYSUB"].append(frame.is_skysub)
-        
+
         for key, value in mapping_values.items():
             if len(set(value)) != 1:
-                logger.critical(f"We have a different correction type in {key}:{set(value)}")
-        
+                logger.critical(
+                    f"We have a different correction type in {key}:{set(value)}"
+                )
+
         if self.sigma_clip_RVs is not None:
             logger.info(
                 f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV"
@@ -671,7 +678,7 @@ class DataClass(BASE):
         include_invalid: bool = False,
         conditions: CondModel = None,
         return_frameIDs: bool = False,
-        from_header: bool = False
+        from_header: bool = False,
     ) -> Union[list, Tuple[List[float], List[int]]]:
         """
         Parse through the loaded observations and retrieve a specific KW from
@@ -691,7 +698,7 @@ class DataClass(BASE):
             If True, also retrieve the KWs of Frames deemed to not be valid. By
             default False
         from_header: bool, optional
-            If True, searches the fits header, rather than the internal keywords. 
+            If True, searches the fits header, rather than the internal keywords.
             By default, False
 
         Returns
@@ -716,7 +723,7 @@ class DataClass(BASE):
                     if not keep:
                         output.append(None)
                         continue
-                
+
                 frame = self.get_frame_by_ID(frameID)
 
                 if from_header:
@@ -1017,7 +1024,6 @@ class DataClass(BASE):
         logger.info(
             "Current instrument does not need to load anything from the outside"
         )
-
 
     def __repr__(self):
         return (

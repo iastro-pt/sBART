@@ -82,7 +82,9 @@ def remove_BERV_correction(wave, BERV: float):
     return wave / (1 + BERV / SPEED_OF_LIGHT)
 
 
-def shift_to_spectrograph_frame(wave: np.ndarray, stellar_RV: float, BERV: float) -> np.ndarray:
+def shift_to_spectrograph_frame(
+    wave: np.ndarray, stellar_RV: float, BERV: float
+) -> np.ndarray:
     """Remove the contributions of the RV from the star and remove the BERV correction
 
     Parameters

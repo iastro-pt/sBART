@@ -3,7 +3,9 @@ import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 
-from SBART.utils.math_tools.numerical_derivatives import compute_non_uni_step_first_derivative
+from SBART.utils.math_tools.numerical_derivatives import (
+    compute_non_uni_step_first_derivative,
+)
 from SBART.utils.shift_spectra import SPEED_OF_LIGHT
 
 import scipy.optimize as sc
@@ -18,7 +20,9 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
     deriv_1 = derivative
     # plt.plot(spec_wave[1:-1], deriv_1)
 
-    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
+    derivative, errors = compute_non_uni_step_first_derivative(
+        spec_wave, derivative, errors
+    )
     derivative = np.asarray(derivative)
     errors = np.asarray(errors)
 
@@ -48,7 +52,10 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
         squared_weights
         * squared_derivative
         * squared_residuals
-        * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals)
+        * (
+            squared_derivative_errors / squared_derivative
+            + res_variance / squared_residuals
+        )
     )
     sigma_B = np.sum(squared_weights * (2 * derivative * errors) ** 2)
 

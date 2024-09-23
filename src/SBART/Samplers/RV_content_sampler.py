@@ -74,9 +74,12 @@ class RVcontent_sampler(SamplerModel):
         # TODO: send here previous SBART RV!
         init_guess = 0
 
-        predicted_velocity, predicted_error, quality, pix_sum_in_template = self.apply_orderwise(
-            init_guess, target, target_kwargs
-        )
+        (
+            predicted_velocity,
+            predicted_error,
+            quality,
+            pix_sum_in_template,
+        ) = self.apply_orderwise(init_guess, target, target_kwargs)
 
         for key, value in [
             ("RV", predicted_velocity * kilometer_second),

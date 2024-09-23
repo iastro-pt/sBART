@@ -10,7 +10,11 @@ from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.data_objects import DataClass
 from SBART.utils import find_wavelength_limits
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
-from SBART.utils.custom_exceptions import BadOrderError, InvalidConfiguration, StopComputationError
+from SBART.utils.custom_exceptions import (
+    BadOrderError,
+    InvalidConfiguration,
+    StopComputationError,
+)
 from SBART.utils.status_codes import (
     HIGH_CONTAMINATION,
     INTERNAL_ERROR,
@@ -161,11 +165,19 @@ def worker(
                     plt.plot(spec_wave, ~spec_mask, color="blue")
                     plt.show()
 
-                output_package["Total_Flux_Order"] = np.sum(spec_wave[current_order_mask])
+                output_package["Total_Flux_Order"] = np.sum(
+                    spec_wave[current_order_mask]
+                )
 
-                if spec_wave[current_order_mask].size < worker_configs["min_block_size"]:
+                if (
+                    spec_wave[current_order_mask].size
+                    < worker_configs["min_block_size"]
+                ):
                     order_status = MASSIVE_RV_PRIOR
-                elif spec_wave[current_order_mask].size < worker_configs["min_pixel_in_order"]:
+                elif (
+                    spec_wave[current_order_mask].size
+                    < worker_configs["min_pixel_in_order"]
+                ):
                     order_status = HIGH_CONTAMINATION(
                         f"Less than pixels {worker_configs['min_pixel_in_order']} on order"
                     )
@@ -196,7 +208,9 @@ def worker(
 
                     if worker_configs["remove_OBS_from_template"]:
                         # We need to pass the frame if we want to remove the OBs from the template
-                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID)
+                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(
+                            current_epochID
+                        )
                     else:
                         target_kwargs["frame"] = None
 
@@ -208,7 +222,9 @@ def worker(
                     if "ANALYSIS_TYPE" in full_target_kwargs:
                         full_target_kwargs["full_S2D_wavelengths"] = spec_wave
                         full_target_kwargs["full_S2D_mask"] = current_order_mask
-                        full_target_kwargs["previous_RV_OBS"] = obs_rv.to(kilometer_second).value
+                        full_target_kwargs["previous_RV_OBS"] = obs_rv.to(
+                            kilometer_second
+                        ).value
 
                     if sampler_mode == "epoch-wise":
                         if full_target_kwargs.get("compute_metrics", False):
@@ -234,7 +250,9 @@ def worker(
                             (
                                 optimization_output,
                                 order_status,
-                            ) = sampler.optimize_orderwise(target_function, full_target_kwargs)
+                            ) = sampler.optimize_orderwise(
+                                target_function, full_target_kwargs
+                            )
                         except Exception as e:
                             print(traceback.print_tb(e.__traceback__))
                             print("------> ", current_epochID, current_order)
@@ -263,7 +281,9 @@ def worker(
                             # )
                             # plt.show()
 
-                        output_package["N_spectral_pixels"] = spec_wave[current_order_mask].size
+                        output_package["N_spectral_pixels"] = spec_wave[
+                            current_order_mask
+                        ].size
                         output_package.ingest_data(optimization_output)
 
             if order_status != SUCCESS:

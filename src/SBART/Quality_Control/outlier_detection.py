@@ -96,7 +96,10 @@ def compute_outliers(
             )
             interpolate_wave_indexes[wavelengths_limits] = True
 
-        new_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+        (
+            new_template,
+            interpol_errors,
+        ) = StellarTemplate.interpolate_spectrum_to_wavelength(
             new_wavelengths=spectra_wave[interpolate_wave_indexes],
             shift_RV_by=obs_rv,
             RV_shift_mode="apply",
@@ -123,17 +126,23 @@ def compute_outliers(
                 interpol_errors**2 + spectra_uncert[interpolate_wave_indexes] ** 2
             )
 
-            metric = (metric - np.median(metric)) / median_abs_deviation(metric, scale="normal")
+            metric = (metric - np.median(metric)) / median_abs_deviation(
+                metric, scale="normal"
+            )
             threshold = tell_tolerance
             # np.in1d returns a boolean array with the locations of the selected points
             mismatch_full_point = np.where(
                 np.in1d(
                     spectra_wavelengths,
-                    spectra_wave[interpolate_wave_indexes][np.where(np.abs(metric) >= threshold)],
+                    spectra_wave[interpolate_wave_indexes][
+                        np.where(np.abs(metric) >= threshold)
+                    ],
                 )
             )
         else:
-            metric = np.log(np.abs(spectra_flux[interpolate_wave_indexes] / new_template))
+            metric = np.log(
+                np.abs(spectra_flux[interpolate_wave_indexes] / new_template)
+            )
             median = np.median(metric)
             threshold = tell_tolerance * np.std(metric)
             # np.in1d returns a boolean array with the locations of the selected points
@@ -143,7 +152,8 @@ def compute_outliers(
                     spectra_wave[interpolate_wave_indexes][
                         np.where(
                             np.logical_or(
-                                metric >= median + threshold, metric <= median - threshold
+                                metric >= median + threshold,
+                                metric <= median - threshold,
                             )
                         )
                     ],
@@ -240,11 +250,15 @@ def compute_outliers(
             norm = np.mean(
                 spectra_flux[
                     np.where(
-                        np.logical_and(spectra_wave > waves[0] - 0.2, spectra_wave < waves[1] + 0.2)
+                        np.logical_and(
+                            spectra_wave > waves[0] - 0.2, spectra_wave < waves[1] + 0.2
+                        )
                     )
                 ]
             )
-            axis[0, y_dir].plot(spectra_wave, spectra_flux / norm, color="black", label="Spectra")
+            axis[0, y_dir].plot(
+                spectra_wave, spectra_flux / norm, color="black", label="Spectra"
+            )
             axis[0, y_dir].plot(
                 spectra_wave[interpolate_wave_indexes],
                 new_template / norm,
@@ -279,7 +293,9 @@ def compute_outliers(
                 if 1:
                     if y_dir == 0:
                         ticks = np.arange(waves[0], waves[1] + 0.1, 0.2)
-                        axis[i, y_dir].xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+                        axis[i, y_dir].xaxis.set_major_formatter(
+                            FormatStrFormatter("%.2f")
+                        )
                         axis[i, y_dir].set_xticklabels(
                             [f"{i:.1f}" for i in ticks[:-2]] + [f"{ticks[-1]:.0f}"]
                         )
@@ -287,7 +303,9 @@ def compute_outliers(
                     else:
                         ticks = np.arange(waves[0], waves[1] + 1, 1)
                         print(ticks)
-                        axis[i, y_dir].xaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+                        axis[i, y_dir].xaxis.set_major_formatter(
+                            FormatStrFormatter("%.0f")
+                        )
                         # axis[i,y_dir].set_xticklabels(ticks)
                         axis[i, y_dir].set_xticks(ticks)
 

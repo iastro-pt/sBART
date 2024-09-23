@@ -25,5 +25,4 @@ from .HARPS import HARPS
 instrument_dict = {
     "ESPRESSO": ESPRESSO,
     "HARPS": HARPS,
-
 }

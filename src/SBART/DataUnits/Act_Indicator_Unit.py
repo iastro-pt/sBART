@@ -33,14 +33,20 @@ class ActIndicators_Unit(UnitModel):
         self._list_of_fIDs = list_of_fIDS
 
         if not load_from_disk:
-            self.combined_holder = {i: [np.nan for _ in list_of_fIDS] for i in available_inds}
-            self.combined_error_holder = {i: [np.nan for _ in list_of_fIDS] for i in available_inds}
+            self.combined_holder = {
+                i: [np.nan for _ in list_of_fIDS] for i in available_inds
+            }
+            self.combined_error_holder = {
+                i: [np.nan for _ in list_of_fIDS] for i in available_inds
+            }
 
             self.indicators_holder = {
-                i: np.zeros((number_OBS, tot_number_orders)) + np.nan for i in available_inds
+                i: np.zeros((number_OBS, tot_number_orders)) + np.nan
+                for i in available_inds
             }
             self.indicators_errors_holder = {
-                i: np.zeros((number_OBS, tot_number_orders)) + np.nan for i in available_inds
+                i: np.zeros((number_OBS, tot_number_orders)) + np.nan
+                for i in available_inds
             }
         else:
             self.combined_holder = {}
@@ -61,13 +67,17 @@ class ActIndicators_Unit(UnitModel):
 
     def get_orderwise_measurement_of_frame(self, frameID, ind_name):
         index = self._list_of_fIDs.index(frameID)
-        return self.indicators_holder[ind_name][index], self.indicators_errors_holder[ind_name][
-            index
-        ]
+        return (
+            self.indicators_holder[ind_name][index],
+            self.indicators_errors_holder[ind_name][index],
+        )
 
     def get_combined_measurement_of_frame(self, frameID, ind_name):
         index = self._list_of_fIDs.index(frameID)
-        return self.combined_holder[ind_name][index], self.combined_error_holder[ind_name][index]
+        return (
+            self.combined_holder[ind_name][index],
+            self.combined_error_holder[ind_name][index],
+        )
 
     def get_combined_measurements(self, ind_name):
         return self.combined_holder[ind_name], self.combined_error_holder[ind_name]
@@ -109,7 +119,8 @@ class ActIndicators_Unit(UnitModel):
             data[name + "_ERR"] = json_ready_converter(combined)
 
         with open(
-            self._internalPaths.root_storage_path / f"combined_measurments.json", mode="w"
+            self._internalPaths.root_storage_path / f"combined_measurments.json",
+            mode="w",
         ) as handle:
             json.dump(data, handle, indent=4)
 

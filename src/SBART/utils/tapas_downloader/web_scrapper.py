@@ -93,9 +93,9 @@ def update_request(template, new_values):
         new_values["instrument"]
     ]
 
-    template["requests"][0]["observation"]["instrument"]["spectralRange"] = "{}%20{}".format(
-        *new_values["spectralRange"]
-    )
+    template["requests"][0]["observation"]["instrument"][
+        "spectralRange"
+    ] = "{}%20{}".format(*new_values["spectralRange"])
 
     new_values["mjd_time"].format = "fits"
 
@@ -173,7 +173,9 @@ def get_TAPAS_data(
         errors_msg = "No folder was added"
     if not error_flag:
         # Download the data from the ftp link
-        storing_path = download_IPAC_file(tapas_ftp, tapas_template_name, storing_destination)
+        storing_path = download_IPAC_file(
+            tapas_ftp, tapas_template_name, storing_destination
+        )
 
     # close connection
     tapas_ftp.quit()

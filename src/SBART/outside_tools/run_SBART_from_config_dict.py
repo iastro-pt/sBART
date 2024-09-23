@@ -46,7 +46,9 @@ def run_target(
 ):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
-            raise Exception("Trying to use a template that does not exist ({})".format(path))
+            raise Exception(
+                "Trying to use a template that does not exist ({})".format(path)
+            )
 
     instrument = instrument_name_map[instrument_name]
     RVstep = user_configs["RVstep"]
@@ -177,4 +179,6 @@ def run_target(
     rv_model.run_routine(data, storage_path, orders)
 
     # ensure that we dont reuse the logger
-    setup_SBART_logger("", "", instrument=instrument, log_to_terminal=False, write_to_file=False)
+    setup_SBART_logger(
+        "", "", instrument=instrument, log_to_terminal=False, write_to_file=False
+    )

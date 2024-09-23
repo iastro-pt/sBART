@@ -20,12 +20,16 @@ class ModellingBase(BASE):
     # Otherwise, the user values will never reach here!
     _default_params = BASE._default_params + DefaultValues(
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
-        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue),
+        NUMBER_WORKERS=UserParam(
+            2, constraint=Positive_Value_Constraint + IntegerValue
+        ),
     )
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
         super().__init__(
-            user_configs=user_configs, needed_folders=needed_folders, quiet_user_params=True
+            user_configs=user_configs,
+            needed_folders=needed_folders,
+            quiet_user_params=True,
         )
 
         # Avoid multiple loads of disk information
@@ -52,13 +56,17 @@ class ModellingBase(BASE):
             except custom_exceptions.NoDataError:
                 logger.warning("No information found on disk from previous modelling.")
         else:
-            logger.info("Forcing model generation. Skipping disk-searches of previous outputs")
+            logger.info(
+                "Forcing model generation. Skipping disk-searches of previous outputs"
+            )
 
         if self._modelling_parameters.has_valid_identifier_results(order):
             # logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
             raise custom_exceptions.AlreadyLoaded
 
-    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths):
+    def interpolate_spectrum_to_wavelength(
+        self, og_lambda, og_spectra, og_err, new_wavelengths
+    ):
         ...
 
     def set_interpolation_properties(self, new_properties) -> NoReturn:
@@ -71,7 +79,9 @@ class ModellingBase(BASE):
         self._attempted_to_load_disk_model = True
 
         logger.debug(
-            "Searching for previous model on disk: {}".format(self._get_model_storage_filename())
+            "Searching for previous model on disk: {}".format(
+                self._get_model_storage_filename()
+            )
         )
 
         try:

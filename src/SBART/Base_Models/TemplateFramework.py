@@ -35,7 +35,10 @@ class TemplateFramework(BASE):
     _default_params = BASE._default_params + DefaultValues()
 
     def __init__(
-        self, mode: str, root_folder_path: UI_PATH, user_configs: Optional[UI_DICT] = None
+        self,
+        mode: str,
+        root_folder_path: UI_PATH,
+        user_configs: Optional[UI_DICT] = None,
     ):
         """
         Parameters
@@ -49,7 +52,8 @@ class TemplateFramework(BASE):
         """
         logger.info("Starting {} Model", self.__class__.model_type)
         super().__init__(
-            needed_folders={"Stellar": "Stellar", "Telluric": "Telluric"}, user_configs=user_configs
+            needed_folders={"Stellar": "Stellar", "Telluric": "Telluric"},
+            user_configs=user_configs,
         )
         self._internalPaths.add_root_path(root_folder_path, "templates")
 
@@ -115,7 +119,9 @@ class TemplateFramework(BASE):
         logger.debug("Starting the creation of {} models!", self.__class__.model_type)
 
         if attempt_to_load:
-            logger.info("Attempting to load previous Templates from disk before creating them")
+            logger.info(
+                "Attempting to load previous Templates from disk before creating them"
+            )
             try:
                 self.load_templates_from_disk()
             except custom_exceptions.TemplateNotExistsError:
@@ -137,7 +143,9 @@ class TemplateFramework(BASE):
             )
 
             self.templates[subInst].generate_root_path(
-                self._internalPaths.get_path_to(self.__class__.model_type, as_posix=False)
+                self._internalPaths.get_path_to(
+                    self.__class__.model_type, as_posix=False
+                )
             )
 
         if store_templates:
@@ -180,7 +188,9 @@ class TemplateFramework(BASE):
             )
 
             try:
-                loaded_temp.load_from_file(root_path=template_path, loading_path=temp_path)
+                loaded_temp.load_from_file(
+                    root_path=template_path, loading_path=temp_path
+                )
             except custom_exceptions.NoDataError:
                 pass
             self.templates[temp_subInst] = loaded_temp
@@ -206,7 +216,9 @@ class TemplateFramework(BASE):
         """
 
         which = which.capitalize()
-        loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
+        loading_path = self._internalPaths.get_path_to(
+            self.__class__.model_type, as_posix=True
+        )
         logger.info(
             "Loading {} template of type {} from disk inside directory",
             self.__class__.model_type,
@@ -237,7 +249,9 @@ class TemplateFramework(BASE):
         clobber : bool
             Whether to delete and re-write over previous outputs
         """
-        storage_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
+        storage_path = self._internalPaths.get_path_to(
+            self.__class__.model_type, as_posix=True
+        )
         logger.info(
             "Storing templates from <{}> under the directory",
             self.__class__.model_type,

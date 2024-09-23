@@ -41,7 +41,10 @@ def target(params, **kwargs):
         )
     )
 
-    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+    (
+        interpolated_template,
+        interpol_errors,
+    ) = StellarTemplate.interpolate_spectrum_to_wavelength(
         order=kwargs["current_order"],
         RV_shift_mode="apply",
         shift_RV_by=tentative_RV_shift,
@@ -62,7 +65,9 @@ def target(params, **kwargs):
     # TODO: maybe do this in each "block" of continuous points, to avoid derivative "explosions"
 
     template_derivative, deriv_error = first_numerical_derivative(
-        wavelengths=current_wavelength, flux=normalized_template, uncertainties=normalized_uncerts
+        wavelengths=current_wavelength,
+        flux=normalized_template,
+        uncertainties=normalized_uncerts,
     )
     weights = (current_wavelength * template_derivative) ** 2 / (
         kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2
@@ -80,7 +85,8 @@ def target(params, **kwargs):
         * np.sum(
             res
             * np.sqrt(
-                weights / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2)
+                weights
+                / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2)
             )
         )
         / np.sum(weights)

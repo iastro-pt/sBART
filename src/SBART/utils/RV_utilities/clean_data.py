@@ -19,7 +19,9 @@ def find_wavelength_limits(
     """
     current_order_wavelength = spectra_order_waves
 
-    blocks = []  # storing the first and last wavelength value of each block, to cut edges afterwards
+    blocks = (
+        []
+    )  # storing the first and last wavelength value of each block, to cut edges afterwards
 
     template_telluric_free_blocks = build_blocks(np.where(template_order_mask))
     for block in template_telluric_free_blocks:  # account for gaps in the template
@@ -42,7 +44,9 @@ def find_wavelength_limits(
         last_value = apply_RVshift(wavelengths_block[-1], lower_limit)
 
         wavelengths_limits = np.where(
-            np.logical_and(spectra_order_waves >= first_value, spectra_order_waves <= last_value)
+            np.logical_and(
+                spectra_order_waves >= first_value, spectra_order_waves <= last_value
+            )
         )
 
         if len(wavelengths_limits[0]) < min_block_size:

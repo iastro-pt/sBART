@@ -30,7 +30,10 @@ def log_prior(theta, param_limits):
 
     """
     for entry_index, param_value in enumerate(theta):
-        if param_limits[entry_index][0] > param_value or param_value > param_limits[entry_index][1]:
+        if (
+            param_limits[entry_index][0] > param_value
+            or param_value > param_limits[entry_index][1]
+        ):
             return -np.inf
     return 0.0
 
@@ -44,7 +47,9 @@ def log_probability(theta, RV_limits, internal_function, target_args):
     return lp + -1 * internal_function(theta, *target_args)
 
 
-def estimate_RV_from_chains(sampler, burn_in: int, mean_list: List[float], std_list: List[float]):
+def estimate_RV_from_chains(
+    sampler, burn_in: int, mean_list: List[float], std_list: List[float]
+):
     chains = sampler.get_chain(discard=burn_in, flat=True)
     mean, std = np.mean(chains), np.std(chains)
     mean_list.append(mean)
@@ -73,11 +78,15 @@ class MCMC_sampler(SbartBaseSampler):
 
     _default_params = SbartBaseSampler._default_params + DefaultValues(
         MAX_ITERATIONS=UserParam(1000, constraint=NumericValue),
-        ensemble_moves=UserParam(None),  # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
+        ensemble_moves=UserParam(
+            None
+        ),  # nwalkers=3, ensemble_moves=emcee.moves.GaussianMove(0.1)
         N_walkers=UserParam(4, constraint=NumericValue),
     )
 
-    def __init__(self, RV_step, rv_prior: list, user_configs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, RV_step, rv_prior: list, user_configs: Optional[Dict[str, Any]] = None
+    ):
         """
         Explore the posterior distribution with MCMC
         """
@@ -102,7 +111,13 @@ class MCMC_sampler(SbartBaseSampler):
 
     def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
         out_pkg = Package(
-            ("RV", "RV_uncertainty", "autocorr_evolution", "RV_evolution", "RV_ERR_evolution")
+            (
+                "RV",
+                "RV_uncertainty",
+                "autocorr_evolution",
+                "RV_evolution",
+                "RV_ERR_evolution",
+            )
         )
 
         params_to_use = self.model_params.get_enabled_params()
@@ -128,7 +143,9 @@ class MCMC_sampler(SbartBaseSampler):
             raise custom_exceptions.InvalidConfiguration(
                 "Sampler mode <> does not exist", self.mode
             )
-        args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
+        args = (
+            (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
+        )
 
         sampler = emcee.EnsembleSampler(
             self._internal_configs["N_walkers"],
@@ -142,11 +159,17 @@ class MCMC_sampler(SbartBaseSampler):
             sampler=sampler, starting_pos=starting_pos, output_pkg=out_pkg
         )
 
-        self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
+        self.store_metrics(
+            sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info
+        )
 
         if self.mode == "epoch-wise":
-            target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
-            target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
+            target_kwargs["run_information"]["target_specific_configs"][
+                "compute_metrics"
+            ] = True
+            target_kwargs["run_information"]["target_specific_configs"][
+                "weighted"
+            ] = True
             model_misspec, log_likelihood, orders = internal_func(
                 out_pkg["RV"].value, target_kwargs
             )
@@ -177,12 +200,16 @@ class MCMC_sampler(SbartBaseSampler):
         reject_obs = False
 
         for _ in sampler.sample(
-            starting_pos, iterations=self._internal_configs["MAX_ITERATIONS"], progress=False
+            starting_pos,
+            iterations=self._internal_configs["MAX_ITERATIONS"],
+            progress=False,
         ):
             # 40 initial samples to have a more robust autocorrelation time estimate
             if sampler.iteration < 50 or sampler.iteration % 10 != 0:
                 continue
-            if not BurnIn_converged:  # searching for stable estimation of autocorrelation time
+            if (
+                not BurnIn_converged
+            ):  # searching for stable estimation of autocorrelation time
                 autocorr = sampler.get_autocorr_time(tol=0)
 
                 # Variation in relation to previous measurement
@@ -215,9 +242,13 @@ class MCMC_sampler(SbartBaseSampler):
 
                 # find oscillations smaller than 2% in regard to last estimate
                 if check_variation_inside_interval(
-                    posterior_mean[-2], posterior_mean[-1], self._RV_var_oscillation_criteria
+                    posterior_mean[-2],
+                    posterior_mean[-1],
+                    self._RV_var_oscillation_criteria,
                 ) and check_variation_inside_interval(
-                    posterior_std[-2], posterior_std[-1], self._RV_var_oscillation_criteria
+                    posterior_std[-2],
+                    posterior_std[-1],
+                    self._RV_var_oscillation_criteria,
                 ):
                     RV_converged = True
                     break
@@ -279,7 +310,9 @@ class MCMC_sampler(SbartBaseSampler):
         #   Build header
         ###
         frameID = target_KWARGS["run_information"]["frameID"]
-        rel_path = "individual_subInst" if not self.is_merged_subInst else "merged_subInst"
+        rel_path = (
+            "individual_subInst" if not self.is_merged_subInst else "merged_subInst"
+        )
         base_path = (
             self._internalPaths.root_storage_path
             / rel_path

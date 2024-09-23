@@ -117,7 +117,9 @@ class ModelComponent(BASE):
             self.generate_prior_from_frameID(frameID)
 
     def generate_prior_from_frameID(self, frameID):
-        self._update_frameID_info(frameID, self._default_init_guess, self._default_limits)
+        self._update_frameID_info(
+            frameID, self._default_init_guess, self._default_limits
+        )
 
     def _update_frameID_info(self, frameID, init_guess, bound, bypass_QC=False):
         if self._default_init_guess is None and init_guess is None:
@@ -176,7 +178,9 @@ class ModelComponent(BASE):
         self.ensure_enabled_param(frameID, allow_disabled=False)
         return self.frameID_information[frameID]["bounds"]
 
-    def get_initial_guess(self, frameID, allow_disabled=False) -> Union[float, RV_measurement]:
+    def get_initial_guess(
+        self, frameID, allow_disabled=False
+    ) -> Union[float, RV_measurement]:
         self.ensure_enabled_param(frameID, allow_disabled)
         return self.frameID_information[frameID]["initial_guess"]
 
@@ -258,7 +262,8 @@ class ModelComponent(BASE):
     def enable_param(self) -> NoReturn:
         if self.is_enabled:
             logger.warning(
-                "Attempting to enable param that is already enabled: {}", self.param_name
+                "Attempting to enable param that is already enabled: {}",
+                self.param_name,
             )
             return
         self._change_enabled_status(True)
@@ -266,7 +271,8 @@ class ModelComponent(BASE):
     def disable_param(self) -> NoReturn:
         if not self.is_enabled:
             logger.warning(
-                "Attempting to disable param that is already disabled: {}", self.param_name
+                "Attempting to disable param that is already disabled: {}",
+                self.param_name,
             )
             return
         if self.is_locked:
@@ -400,7 +406,9 @@ class RV_component(ModelComponent):
 
                 for frameID in DataClassProxy.get_frameIDs_from_subInst(subInst):
                     obs_rv = DataClassProxy.get_KW_from_frameID(self.RV_key, frameID)
-                    self._update_frameID_info(frameID, obs_rv, [RVLowerBound, RVUpperBound])
+                    self._update_frameID_info(
+                        frameID, obs_rv, [RVLowerBound, RVUpperBound]
+                    )
 
     def string_representation(self, indent_level) -> str:
         string_offset = indent_level * "\t"

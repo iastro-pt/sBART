@@ -45,7 +45,9 @@ class BASE:
 
         self._internal_configs.receive_user_inputs(user_configs)
         self._needed_folders = needed_folders
-        self._status = Status(assume_valid=start_with_valid_status)  # BY DEFAULT IT IS A VALID ONE!
+        self._status = Status(
+            assume_valid=start_with_valid_status
+        )  # BY DEFAULT IT IS A VALID ONE!
 
     ###
     #   Data storage

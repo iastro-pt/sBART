@@ -242,7 +242,10 @@ class Status:
             message.append(f"\n" + base_indent + indent_character + "Warning Flags:")
             for flag in self._warnings:
                 message.append(
-                    "\n" + base_indent + 2 * indent_character + f"{flag.name} : {flag.extra_info}"
+                    "\n"
+                    + base_indent
+                    + 2 * indent_character
+                    + f"{flag.name} : {flag.extra_info}"
                 )
 
                 skip_reasons["Warnings"][flag.name] = flag.description
@@ -250,7 +253,9 @@ class Status:
         return message, skip_reasons
 
     def __str__(self) -> str:
-        return f"Flags = {[i.name for i in self._stored_flags]}; valid = {self.is_valid}"
+        return (
+            f"Flags = {[i.name for i in self._stored_flags]}; valid = {self.is_valid}"
+        )
 
     def __repr__(self) -> str:
         return str(self)
@@ -292,7 +297,9 @@ class OrderStatus:
         """
         order_wise_stats = other_status.get_status_from_order(all_orders=True)
         if not other_status.from_frame:
-            raise RuntimeError("We can only mimic the status of a single frame at a time!")
+            raise RuntimeError(
+                "We can only mimic the status of a single frame at a time!"
+            )
 
         for order, order_status in enumerate(order_wise_stats):
             for flag in order_status.all_flags:
@@ -340,7 +347,10 @@ class OrderStatus:
         return max_flag.name, max_count
 
     def get_status_from_order(
-        self, order: Optional[int] = None, frameID: Optional[int] = None, all_orders: bool = False
+        self,
+        order: Optional[int] = None,
+        frameID: Optional[int] = None,
+        all_orders: bool = False,
     ):
         """
         Return the status from a given set of orders for one frame
@@ -365,7 +375,9 @@ class OrderStatus:
 
         elif self._internal_mode == "matrix":
             if frameID is None:
-                raise RuntimeError("When we have multiple observations we need a frameID")
+                raise RuntimeError(
+                    "When we have multiple observations we need a frameID"
+                )
 
             epoch = self._stored_frameIDs.index(frameID)
             if all_orders:
@@ -479,20 +491,28 @@ class OrderStatus:
                 )
 
             if len(warning_flag_dict) != 0:
-                message.append("\n" + base_indent + indent_character + "Order Warnings:")
+                message.append(
+                    "\n" + base_indent + indent_character + "Order Warnings:"
+                )
                 for key, orders in warning_flag_dict.items():
-                    message.append("\n" + base_indent + 2 * indent_character + f"{key}: {orders}")
+                    message.append(
+                        "\n" + base_indent + 2 * indent_character + f"{key}: {orders}"
+                    )
             message.append("\n")
 
         if include_footer:
             message.append("\n\n" + base_indent + "Rejection reasons:")
             for key, descr in skip_reasons["Rejections"].items():
-                message.append("\n" + base_indent + indent_character + f"{key}: {descr}")
+                message.append(
+                    "\n" + base_indent + indent_character + f"{key}: {descr}"
+                )
 
             if len(skip_reasons["Warnings"]) != 0:
                 message.append("\n" + base_indent + "Warnings:")
                 for key, descr in skip_reasons["Warnings"].items():
-                    message.append("\n" + base_indent + indent_character + f"{key}: {descr}")
+                    message.append(
+                        "\n" + base_indent + indent_character + f"{key}: {descr}"
+                    )
         return message, skip_reasons
 
     def __str__(self):
@@ -515,7 +535,9 @@ class OrderStatus:
     def to_json(self):
         out = {
             "general_confs": {
-                "frameIDs": self._stored_frameIDs if self._internal_mode == "matrix" else None,
+                "frameIDs": self._stored_frameIDs
+                if self._internal_mode == "matrix"
+                else None,
                 "N_orders": self._OrderStatus.shape[1],
             }
         }
@@ -577,7 +599,9 @@ MANDATORY_KW_FLAG = Flag("Mandatory KW", "MKW")
 ###########################################################
 
 VALID = Flag("VALID", value="V", fatal_flag=False, is_good_flag=True)
-WARNING = Flag("WARNING", value="W", fatal_flag=False, is_good_flag=False, is_warning=True)
+WARNING = Flag(
+    "WARNING", value="W", fatal_flag=False, is_good_flag=False, is_warning=True
+)
 
 SIGMA_CLIP_REJECTION = Flag("SIGMA CLIP", value="SC")
 USER_BLOCKED = Flag("USER_BLOCKED", value="U")
@@ -608,7 +632,9 @@ LOW_SNR = Flag("LOW_SNR", 5, "SNR under the user-set threshold")
 MASSIVE_RV_PRIOR = Flag(
     "MASSIVE_RV_PRIOR", 4, "Too little spectra left after accountinf for RV window"
 )
-BAD_TEMPLATE = Flag("BAD_TEMPLATE", 3, "Could not create stellar template for given order")
+BAD_TEMPLATE = Flag(
+    "BAD_TEMPLATE", 3, "Could not create stellar template for given order"
+)
 HIGH_CONTAMINATION = Flag(
     "HIGH_CONTAMINATION", 2, "Too many points removed due to masks + tellurics"
 )
@@ -625,7 +651,9 @@ MAX_ITER = Flag("MAX ITERATIONS", -3)
 #
 ###########################################################
 
-QUAL_DATA = Flag("QUAL_DATA", 1, " Qual data different than zero")  # qual data different than zero
+QUAL_DATA = Flag(
+    "QUAL_DATA", 1, " Qual data different than zero"
+)  # qual data different than zero
 ERROR_THRESHOLD = Flag(
     "ERROR_THRESHOLD", 2, "Error over specified threshold"
 )  # error threshold over the selected threshold
@@ -643,7 +671,9 @@ SATURATION = Flag(
     "SATURATION", 64, "Saturated Pixel"
 )  # Saturation of the detector; Only used by HARPS
 NAN_DATA = Flag("NaN_Pixel", 128, "Nan Value")
-ACTIVITY_LINE = Flag("ACTIVITY_INDICATOR", 256)  # this spectral regions belongs to a marked line
+ACTIVITY_LINE = Flag(
+    "ACTIVITY_INDICATOR", 256
+)  # this spectral regions belongs to a marked line
 
 NON_COMMON_WAVELENGTH = Flag(
     "NON_COMMON_WAVELENGTH", 512
@@ -663,7 +693,9 @@ if __name__ == "__main__":
     print("---*-")
     print(
         "".join(
-            y.description(indent_level=1, frameID=1, include_header=False, include_footer=False)[0]
+            y.description(
+                indent_level=1, frameID=1, include_header=False, include_footer=False
+            )[0]
         )
     )
 

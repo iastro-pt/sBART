@@ -39,7 +39,10 @@ class Laplace_approx(SbartBaseSampler):
         user_configs
         """
         super().__init__(
-            mode="order-wise", RV_step=RV_step, RV_window=rv_prior, user_configs=user_configs
+            mode="order-wise",
+            RV_step=RV_step,
+            RV_window=rv_prior,
+            user_configs=user_configs,
         )
 
         self._optimizers_map = {
@@ -164,9 +167,15 @@ class Laplace_approx(SbartBaseSampler):
 
         if optimization_output.success:
             target_interface = (
-                self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
+                self.apply_orderwise
+                if self.mode == "order-wise"
+                else self.apply_epochwise
             )
-            args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
+            args = (
+                (target, target_kwargs)
+                if self.mode == "order-wise"
+                else (target_kwargs,)
+            )
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
                 free_RV_target = lambda RV: target_interface(RV, *args)
@@ -195,7 +204,9 @@ class Laplace_approx(SbartBaseSampler):
                 target_kwargs["run_information"]["target_specific_configs"][
                     "SAVE_DISK_SPACE"
                 ] = self.disk_save_enabled
-                target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "weighted"
+                ] = True
                 min_info = target_interface(optimization_output.x, target_kwargs)
                 for key, val in min_info.items():
                     output_pkg[key] = val

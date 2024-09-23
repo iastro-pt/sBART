@@ -16,7 +16,9 @@ from SBART.utils.types import unitless_data_vector
 
 
 def fit_CCF_gaussian(
-    RV_array: unitless_data_vector, CCF_profile: unitless_data_vector, RV_units: Quantity
+    RV_array: unitless_data_vector,
+    CCF_profile: unitless_data_vector,
+    RV_units: Quantity,
 ) -> Tuple[Quantity, Quantity, Flag]:
     """
     Implements a Gaussian fit to the CCF profile.
@@ -46,7 +48,12 @@ def fit_CCF_gaussian(
     mean = rv_array[np.argmin(ccf_profile)]
     sigma = np.sqrt(sum(np.subtract(rv_array, mean) ** 2.0) / (len(rv_array)))
 
-    guess = [-np.ptp(ccf_profile), mean, sigma, 0.5 * (ccf_profile[0] + ccf_profile[-1])]
+    guess = [
+        -np.ptp(ccf_profile),
+        mean,
+        sigma,
+        0.5 * (ccf_profile[0] + ccf_profile[-1]),
+    ]
 
     try:
         (_, output_rv, _, _), (_, output_err, _, _) = gaussfit(

@@ -29,7 +29,9 @@ def ensure_path_from_input(
         input_path = pathlib.Path(input_path)
 
     if not isinstance(input_path, pathlib.Path):
-        raise InvalidConfiguration("The user-provided path is neither a string nor a pathlib.Path")
+        raise InvalidConfiguration(
+            "The user-provided path is neither a string nor a pathlib.Path"
+        )
 
     if ensure_existence:
         if not input_path.exists():

@@ -6,13 +6,13 @@ from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 import numpy as np
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.data_objects import DataClass
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
 from SBART.utils.custom_exceptions import (
     BadTemplateError,
@@ -24,12 +24,12 @@ from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
+    IterableMustHave,
     NumericValue,
     Positive_Value_Constraint,
     UserParam,
     ValueFromDtype,
     ValueFromList,
-    IterableMustHave,
 )
 from SBART.utils.work_packages import ShutdownPackage
 
@@ -87,7 +87,11 @@ class RV_routine(BASE):
 
     _default_params = BASE._default_params + DefaultValues(
         uncertainty_prop_type=UserParam(
-            "interpolation", constraint=ValueFromList(("interpolation", "propagation"))
+            "interpolation",
+            constraint=ValueFromList(
+                ("interpolation", "propagation"),
+            ),
+            description="Method with which the uncertainty propagation will be done",
         ),
         RV_extraction=UserParam(
             "order-wise", constraint=ValueFromList(("order-wise",))
@@ -206,9 +210,16 @@ class RV_routine(BASE):
         # when comparing metadata this is called. Not sure if I want this or not ....
         logger.info("Loading previous RVoutputs from disk")
         try:
-            self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
-            self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
-        except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
+            self._output_RVcubes = RV_holder.load_from_disk(
+                self._internalPaths.root_storage_path
+            )
+            self._output_RVcubes.update_output_keys(
+                self._internal_configs["output_fmt"]
+            )
+        except (
+            custom_exceptions.NoDataError,
+            custom_exceptions.InvalidConfiguration,
+        ) as exc:
             logger.warning("Couldn't load previous RV outputs")
             raise custom_exceptions.StopComputationError from exc
 
@@ -254,13 +265,17 @@ class RV_routine(BASE):
             try:
                 self.load_previous_RVoutputs()
             except custom_exceptions.NoDataError as exc:
-                logger.critical("Couldn't find previous sBART outputs in the provided path")
+                logger.critical(
+                    "Couldn't find previous sBART outputs in the provided path"
+                )
                 raise custom_exceptions.StopComputationError from exc
 
             bad_subInst = []
             for subInst in self._subInsts_to_use:
                 metaData = dataClass.get_metaData()
-                equal_metadata = metaData.subInstrument_comparison(previous_metadata, subInst)
+                equal_metadata = metaData.subInstrument_comparison(
+                    previous_metadata, subInst
+                )
 
                 if equal_metadata:
                     logger.info(
@@ -285,7 +300,9 @@ class RV_routine(BASE):
                 self._subInsts_to_use.remove(badInst)
 
             if len(self._subInsts_to_use) == 0:
-                raise custom_exceptions.NoDataError("Metadata check removed all subInsts")
+                raise custom_exceptions.NoDataError(
+                    "Metadata check removed all subInsts"
+                )
 
     def run_routine(
         self,
@@ -396,7 +413,9 @@ class RV_routine(BASE):
                     is_merged = self._internal_configs["order_removal_mode"] == "global"
                 else:
                     is_merged = False
-                self._output_RVcubes.add_RV_cube(subInst, RV_cube=output_cube, is_merged=is_merged)
+                self._output_RVcubes.add_RV_cube(
+                    subInst, RV_cube=output_cube, is_merged=is_merged
+                )
 
                 if store_cube_to_disk:
                     self._output_RVcubes.store_computed_RVs_to_disk(
@@ -414,7 +433,9 @@ class RV_routine(BASE):
         self.close_multiprocessing()
 
         if len(self._subInsts_to_use) == 0:
-            logger.warning("No data was processed. {} storing nothing to disk!", self.name)
+            logger.warning(
+                "No data was processed. {} storing nothing to disk!", self.name
+            )
 
         if store_data:
             self.trigger_data_storage(dataClass)
@@ -436,7 +457,7 @@ class RV_routine(BASE):
                 "corrections of the flux dispersion with wavelength",
             ),
             ("was_telluric_corrected", "telluric correction states"),
-            ("is_skysub", "different SkySub states")
+            ("is_skysub", "different SkySub states"),
         )
         messages_to_pass = []
         bad_comparison = False
@@ -463,7 +484,9 @@ class RV_routine(BASE):
         # TO be over-written by the child classes
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
         N_epochs = len(valid_IDS)
-        logger.info("Applying the RV routine to {} observations of {}", N_epochs, subInst)
+        logger.info(
+            "Applying the RV routine to {} observations of {}", N_epochs, subInst
+        )
         init_time = time.time()
         stellar_model = dataClass.get_stellar_model()
 
@@ -475,7 +498,9 @@ class RV_routine(BASE):
         )
 
         try:
-            template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
+            template_bad_orders = list(
+                stellar_model.get_orders_to_skip(subInst=subInst)
+            )
         except BadTemplateError:
             logger.opt(exception=True).warning(
                 "SubInst {} does not have a valid stellar template", subInst
@@ -518,7 +543,9 @@ class RV_routine(BASE):
     def create_extra_plots(self, cube) -> NoReturn:
         pass
 
-    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: list) -> RV_cube:
+    def process_workers_output(
+        self, empty_cube: RV_cube, worker_outputs: list
+    ) -> RV_cube:
         logger.debug("{} processing outputs from the workers", self.name)
         raise NotImplementedError
         return empty_cube
@@ -553,12 +580,16 @@ class RV_routine(BASE):
             "OUTLIER_TOLERANCE": self._internal_configs["sigma_outliers_tolerance"],
             "MAX_ITERATIONS": 100,
             "METRIC_TO_USE": self._internal_configs["outlier_metric"],
-            "remove_OBS_from_template": self._internal_configs["remove_OBS_from_template"],
+            "remove_OBS_from_template": self._internal_configs[
+                "remove_OBS_from_template"
+            ],
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
             "CONTINUUM_FIT_TYPE": self._internal_configs["CONTINUUM_FIT_TYPE"],
-            "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs["CONTINUUM_FIT_POLY_DEGREE"],
+            "CONTINUUM_FIT_POLY_DEGREE": self._internal_configs[
+                "CONTINUUM_FIT_POLY_DEGREE"
+            ],
             "RV_keyword": dataClassProxy.get_stellar_model().RV_keyword,
             "SAVE_DISK_SPACE": self._internal_configs["SAVE_DISK_SPACE"],
         }
@@ -656,11 +687,15 @@ class RV_routine(BASE):
             [description]
         """
         if isinstance(to_skip, (list, tuple)):
-            logger.info("Skipping the same orders across all subInstruments {}", to_skip)
+            logger.info(
+                "Skipping the same orders across all subInstruments {}", to_skip
+            )
             orders_to_skip = {key: set(to_skip) for key in self._subInsts_to_use}
 
         elif isinstance(to_skip, str):
-            logger.info("Loading orders to skip from previous run of SBART: {}", to_skip)
+            logger.info(
+                "Loading orders to skip from previous run of SBART: {}", to_skip
+            )
             self.loaded_from_previous_run = True
             previous_RV_outputs = RV_holder.load_from_disk(to_skip)
             orders_to_skip = {}
@@ -669,7 +704,9 @@ class RV_routine(BASE):
                 if self._internal_configs["order_removal_mode"] == "per_subInstrument":
                     orders_to_skip[key] = previous_RV_outputs.get_orders_to_skip(key)
                 elif self._internal_configs["order_removal_mode"] == "global":
-                    orders_to_skip[key] = previous_RV_outputs.get_orders_to_skip("merged")
+                    orders_to_skip[key] = previous_RV_outputs.get_orders_to_skip(
+                        "merged"
+                    )
 
         elif isinstance(to_skip, dict):
             logger.info("Skipping different orders for each subInstrument:")
@@ -689,7 +726,9 @@ class RV_routine(BASE):
 
     def trigger_data_storage(self, dataClassProxy, store_data: bool = True) -> NoReturn:
         if not store_data:
-            logger.info("Storage of products from {} is temporarily disabled!", self.name)
+            logger.info(
+                "Storage of products from {} is temporarily disabled!", self.name
+            )
             return
         t0 = time.time()
         BASE_path = self._internalPaths.root_storage_path
@@ -742,7 +781,9 @@ class RV_routine(BASE):
 
         self._live_workers -= good + bad
         logger.debug(
-            "There are {} live workers. Sending shutdown signal for all".format(self._live_workers)
+            "There are {} live workers. Sending shutdown signal for all".format(
+                self._live_workers
+            )
         )
         for _ in range(self._live_workers):
             self.package_pool.put(ShutdownPackage())
@@ -799,7 +840,9 @@ class RV_routine(BASE):
             logger.info("Selected OBSERVATION mode, doing nothing")
             return
 
-        spec_analysis_path = self._internalPaths.root_storage_path.parent / "spectral_analysis"
+        spec_analysis_path = (
+            self._internalPaths.root_storage_path.parent / "spectral_analysis"
+        )
         for subInst in dataClass.get_subInstruments_with_valid_frames():
             path = spec_analysis_path / "wavelength_analysis"
 
@@ -833,7 +876,9 @@ class RV_routine(BASE):
 
         for subInst in self._subInsts_to_use:
             frameIDs = DataClassProxy.get_frameIDs_from_subInst(subInst)
-            orders = self.generate_valid_orders(subInst=subInst, dataClass=DataClassProxy)
+            orders = self.generate_valid_orders(
+                subInst=subInst, dataClass=DataClassProxy
+            )
 
             subInst_combined_counters = np.zeros(
                 DataClassProxy.get_instrument_information()["array_size"]

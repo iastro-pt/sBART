@@ -23,7 +23,8 @@ def compute_wavelength_order_overlap(
 
     indexes = np.where(
         np.logical_and(
-            wavelength_array >= region_of_interest[0], wavelength_array <= region_of_interest[1]
+            wavelength_array >= region_of_interest[0],
+            wavelength_array <= region_of_interest[1],
         )
     )
 
@@ -48,6 +49,8 @@ if __name__ == "__main__":
     print(
         "Time per iteration: ",
         timeit.timeit(
-            "compute_wavelength_order_overlap(wave, [7178, 7313])", number=10, globals=globals()
+            "compute_wavelength_order_overlap(wave, [7178, 7313])",
+            number=10,
+            globals=globals(),
         ),
     )

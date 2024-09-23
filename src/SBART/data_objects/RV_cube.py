@@ -28,7 +28,10 @@ from SBART.utils.units import (
     meter_second,
 )
 from SBART.utils.work_packages import Package
-from SBART.utils.expected_precision_interval import optimize_intervals_over_array, convert_to_tab
+from SBART.utils.expected_precision_interval import (
+    optimize_intervals_over_array,
+    convert_to_tab,
+)
 
 
 class RV_cube(BASE):
@@ -158,14 +161,18 @@ class RV_cube(BASE):
             order_flag=ORDER_SKIP("Skiped due to merged mode"),
         )
 
-    def update_skip_reason(self, orders: Union[List[int], Set[int], int], skip_reason) -> None:
+    def update_skip_reason(
+        self, orders: Union[List[int], Set[int], int], skip_reason
+    ) -> None:
         if len(orders) == 0:
             return
 
         if isinstance(orders, set):
             orders = list(orders)
 
-        self._OrderStatus.add_flag_to_order(order=orders, order_flag=skip_reason, all_frames=True)
+        self._OrderStatus.add_flag_to_order(
+            order=orders, order_flag=skip_reason, all_frames=True
+        )
 
     def load_data_from_DataClass(self, DataClassProxy) -> None:
         logger.debug("{} loading frame information from dataclass", self.name)
@@ -174,7 +181,9 @@ class RV_cube(BASE):
                 if key in ["date_folders", "bare_filename"]:
                     continue
 
-                self.cached_info[key].append(DataClassProxy.get_KW_from_frameID(key, frameID))
+                self.cached_info[key].append(
+                    DataClassProxy.get_KW_from_frameID(key, frameID)
+                )
 
             frame = DataClassProxy.get_frame_by_ID(frameID)
             self.cached_info["date_folders"].append(frame.file_path)
@@ -190,7 +199,9 @@ class RV_cube(BASE):
     def update_worker_information(self, worker_info: List):
         self.worker_outputs = worker_info
 
-    def update_computed_precision(self, expected_precision, eniric_precision, eniric_template):
+    def update_computed_precision(
+        self, expected_precision, eniric_precision, eniric_template
+    ):
         """Temporary measure to store the expected precision values. To be replaced by the Frame interface!
 
         Parameters
@@ -223,11 +234,15 @@ class RV_cube(BASE):
         self.TM_RVs_ERR[epoch_index] = epoch_error
         self.TM_RVs[epoch_index] = epoch_rv
 
-    def store_order_data(self, frameID: int, order: int, RV, error, status: Flag) -> None:
+    def store_order_data(
+        self, frameID: int, order: int, RV, error, status: Flag
+    ) -> None:
         epoch = self.frameIDs.index(frameID)
         self._Rv_orderwise[epoch][order] = RV
         self._RvErrors_orderwise[epoch][order] = error
-        self._OrderStatus.add_flag_to_order(order=order, frameID=frameID, order_flag=status)
+        self._OrderStatus.add_flag_to_order(
+            order=order, frameID=frameID, order_flag=status
+        )
 
     # #################################3
     #
@@ -299,7 +314,9 @@ class RV_cube(BASE):
             for i, raw_rv in enumerate(final_RVs):
                 corrected_rv.append(raw_rv - self.cached_info["drift"][i])
                 corrected_err.append(
-                    np.sqrt(final_RVs_ERR[i] ** 2 + self.cached_info["drift_ERR"][i] ** 2)
+                    np.sqrt(
+                        final_RVs_ERR[i] ** 2 + self.cached_info["drift_ERR"][i] ** 2
+                    )
                 )
 
             final_RVs = corrected_rv
@@ -372,7 +389,9 @@ class RV_cube(BASE):
         min_time = 55500  # always use the same reference frame
         logger.info("Setting SA reference frame to BJD = {}", min_time)
 
-        secular_correction = [SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times]
+        secular_correction = [
+            SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times
+        ]
 
         self.cached_info["SA_correction"] = secular_correction
 
@@ -596,10 +615,14 @@ class RV_cube(BASE):
                     len(self.problematic_orders), self._RvErrors_orderwise.shape[1]
                 )
             )
-            file.write("\n\tCommon orders removed:\n{}\n".format(self.problematic_orders))
+            file.write(
+                "\n\tCommon orders removed:\n{}\n".format(self.problematic_orders)
+            )
 
             file.write("\nFrame-Wise analysis:")
-            stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
+            stellar_template = dataClassProxy.get_stellar_template(
+                self._associated_subInst
+            )
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
                 self._associated_subInst, include_invalid=True
             ):  # self.frameIDs:
@@ -626,7 +649,10 @@ class RV_cube(BASE):
                     )
                 else:
                     # Completelly rejected file -> all info exists on the actual Frame Object
-                    lines, frame_orderskip_reasons = current_Frame.OrderStatus.description(
+                    (
+                        lines,
+                        frame_orderskip_reasons,
+                    ) = current_Frame.OrderStatus.description(
                         indent_level=2,
                         frameID=current_frameID,
                         include_footer=False,
@@ -785,7 +811,10 @@ class RV_cube(BASE):
                     )
 
                     ax_full[1].plot(
-                        data[self.problematic_orders], marker="o", linestyle="", alpha=0.3
+                        data[self.problematic_orders],
+                        marker="o",
+                        linestyle="",
+                        alpha=0.3,
                     )
                     ax_full[1].plot(valid_orders, marker="x", linestyle="")
 
@@ -805,7 +834,9 @@ class RV_cube(BASE):
                 ax[1].set_xlim([orders[0] - 1, orders[-1] + 1])
                 ax[1].set_xticks(list(map(int, np.linspace(orders[0], orders[-1], 20))))
 
-            final_path = build_filename(diagnostics_path, "RV_raw_orderwise_errors", "png")
+            final_path = build_filename(
+                diagnostics_path, "RV_raw_orderwise_errors", "png"
+            )
             fig_full.tight_layout()
             fig_full.savefig(final_path)
 
@@ -823,8 +854,12 @@ class RV_cube(BASE):
                 for order_pkg in pkg:
                     frameID = order_pkg["frameID"]
                     order = order_pkg["order"]
-                    empty_array[order, sorted_IDs.index(frameID)] = order_pkg["Total_Flux_Order"]
-            empty_array /= np.max(empty_array, axis=1)[:, None]  # normalize across the orders
+                    empty_array[order, sorted_IDs.index(frameID)] = order_pkg[
+                        "Total_Flux_Order"
+                    ]
+            empty_array /= np.max(empty_array, axis=1)[
+                :, None
+            ]  # normalize across the orders
 
             fig, ax = plt.subplots(figsize=(20, 10), constrained_layout=True)
             figure_list.append(fig)
@@ -839,10 +874,14 @@ class RV_cube(BASE):
 
         try:
             unit = self.get_storage_unit("Indicators")
-            fig, ax = plt.subplots(2, 2, sharey=True, figsize=(20, 10), constrained_layout=True)
+            fig, ax = plt.subplots(
+                2, 2, sharey=True, figsize=(20, 10), constrained_layout=True
+            )
             figure_list.append(fig)
             dlw, err = unit.get_combined_measurements("DLW")
-            contrast = dataClassProxy.collect_KW_observations("CONTRAST", [self.subInst])
+            contrast = dataClassProxy.collect_KW_observations(
+                "CONTRAST", [self.subInst]
+            )
             FWHM = dataClassProxy.collect_KW_observations("FWHM", [self.subInst])
             BIS = dataClassProxy.collect_KW_observations("BIS SPAN", [self.subInst])
             ax[0, 0].errorbar(self.obs_times, dlw, err, ls="", marker="x")
@@ -857,7 +896,9 @@ class RV_cube(BASE):
             final_path = build_filename(diagnostics_path, "DLW_correlations", "png")
             fig.savefig(final_path, dpi=300)
 
-            fig, ax = plt.subplots(1, 1, sharey=True, figsize=(20, 10), constrained_layout=True)
+            fig, ax = plt.subplots(
+                1, 1, sharey=True, figsize=(20, 10), constrained_layout=True
+            )
 
             chroma_val, chroma_err = unit.get_all_orderwise_indicator("DLW")
             for order_info, errors in zip(chroma_val, chroma_err):
@@ -1002,7 +1043,9 @@ class RV_cube(BASE):
             unit.trigger_data_storage()
 
         tf = time.time() - t0
-        logger.info("Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf))
+        logger.info(
+            "Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf)
+        )
 
     def _store_misc_info(self):
         logger.info("Storing misc information")
@@ -1056,7 +1099,11 @@ class RV_cube(BASE):
         orderwiseRvs, orderwiseErrors, _ = self.data
 
         OBS_date, TM_RV, TM_ERR = self.get_RV_timeseries(
-            "SBART", apply_SA_corr=False, apply_drift_corr=False, as_value=True, units=meter_second
+            "SBART",
+            apply_SA_corr=False,
+            apply_drift_corr=False,
+            as_value=True,
+            units=meter_second,
         )
         OBS_date, prev_RV, prev_ERR = self.get_RV_timeseries(
             "DRS",
@@ -1114,9 +1161,13 @@ class RV_cube(BASE):
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         hdu_RVs = fits.ImageHDU(data=orderwiseRvs, header=header, name="ORDERWISE_RV")
-        hdu_ERR = fits.ImageHDU(data=orderwiseErrors, header=header, name="ORDERWISE_ERR")
+        hdu_ERR = fits.ImageHDU(
+            data=orderwiseErrors, header=header, name="ORDERWISE_ERR"
+        )
         hdu_mask = fits.ImageHDU(
-            data=self._OrderStatus.as_boolean().astype(int), header=header, name="GOOD_ORDER_MASK"
+            data=self._OrderStatus.as_boolean().astype(int),
+            header=header,
+            name="GOOD_ORDER_MASK",
         )
 
         hdul = fits.HDUList([hdu, hdu_timeseries, hdu_RVs, hdu_ERR, hdu_mask])
@@ -1231,7 +1282,9 @@ class RV_cube(BASE):
         }
 
         for internal_kw, storage_kw in entries.items():
-            new_cube.cached_info[internal_kw] = convert_to_quantity(timeseries_table[storage_kw])
+            new_cube.cached_info[internal_kw] = convert_to_quantity(
+                timeseries_table[storage_kw]
+            )
 
         try:
             new_cube.cached_info["CONTRAST"] = timeseries_table["CONTRAST"]
@@ -1259,7 +1312,8 @@ class RV_cube(BASE):
             with open(workpackages_filename) as file:
                 work_packages = json.load(file)
             converted_work_packages = [
-                Package.create_from_json(elem) for elem in work_packages["work_packages"]
+                Package.create_from_json(elem)
+                for elem in work_packages["work_packages"]
             ]
             new_cube.update_worker_information(converted_work_packages)
 

@@ -51,7 +51,9 @@ class WindowSampler(SamplerModel):
         for frameID in valid_IDS:
             # open before multiple cores attempt to open it!
             for order in run_info["valid_orders"]:
-                worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+                worker_IN_pkg = self._generate_WorkerIn_Package(
+                    frameID, order, run_info, subInst
+                )
                 package_queue.put(worker_IN_pkg)
                 N_packages += 1
 
@@ -88,7 +90,9 @@ class WindowSampler(SamplerModel):
         while True:
             if current_RV >= RV_window[1]:
                 break
-            metric_profile.append(self.apply_orderwise(current_RV, target, target_kwargs))
+            metric_profile.append(
+                self.apply_orderwise(current_RV, target, target_kwargs)
+            )
             RV_array.append(current_RV)
 
             current_RV = current_RV + self.RV_step

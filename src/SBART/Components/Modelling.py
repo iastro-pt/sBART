@@ -105,9 +105,13 @@ class Spectral_Modelling(BASE):
         self.initialize_modelling_interface()
         try:
             key = "INTERPOL_MODE"
-            self._internal_configs.update_configs_with_values({key: new_properties[key]})
+            self._internal_configs.update_configs_with_values(
+                {key: new_properties[key]}
+            )
             logger.info(
-                "Changing the interpolation mode of {} to {}", self.name, new_properties[key]
+                "Changing the interpolation mode of {} to {}",
+                self.name,
+                new_properties[key],
             )
         except KeyError as e:
             pass
@@ -140,7 +144,10 @@ class Spectral_Modelling(BASE):
         og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
 
         try:
-            new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(
+            (
+                new_flux,
+                new_errors,
+            ) = self.interpolation_interface.interpolate_spectrum_to_wavelength(
                 og_lambda=og_lambda,
                 og_spectra=og_spectra,
                 og_err=og_errs,

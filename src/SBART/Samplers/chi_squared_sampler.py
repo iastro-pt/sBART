@@ -32,7 +32,9 @@ class chi_squared_sampler(SamplerModel):
         )
     )
 
-    def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None
+    ):
         """
 
         Parameters
@@ -44,7 +46,10 @@ class chi_squared_sampler(SamplerModel):
 
         """
         super().__init__(
-            mode="order-wise", RV_step=rv_step, RV_window=rv_prior, user_configs=user_configs
+            mode="order-wise",
+            RV_step=rv_step,
+            RV_window=rv_prior,
+            user_configs=user_configs,
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
@@ -118,7 +123,9 @@ class chi_squared_sampler(SamplerModel):
 
         if apply_parabolic_fit:
             try:
-                rv, rv_err, a, b = self._apply_parabolic_fit(local_rvs, local_curve, rv_step)
+                rv, rv_err, a, b = self._apply_parabolic_fit(
+                    local_rvs, local_curve, rv_step
+                )
             except IndexError:
                 # If the minimum value is not in the middle of the inverval, an error will be raised
                 # This might occur due to:
@@ -146,7 +153,10 @@ class chi_squared_sampler(SamplerModel):
         else:
             new_target_kwargs = {
                 **target_kwargs,
-                **{"get_minimum_information": True, "SAVE_DISK_SPACE": self.disk_save_enabled},
+                **{
+                    "get_minimum_information": True,
+                    "SAVE_DISK_SPACE": self.disk_save_enabled,
+                },
             }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
@@ -177,9 +187,9 @@ class chi_squared_sampler(SamplerModel):
         # If we have an index error, the caller will handle it!
         rv_minimum = rvs[index]
 
-        rv = rv_minimum - 0.5 * rv_step * (chi_squared[index + 1] - chi_squared[index - 1]) / (
-            chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
-        )
+        rv = rv_minimum - 0.5 * rv_step * (
+            chi_squared[index + 1] - chi_squared[index - 1]
+        ) / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
 
         rv_err = (
             2
@@ -187,8 +197,8 @@ class chi_squared_sampler(SamplerModel):
             / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
         )
 
-        a = (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]) / (
-            2 * rv_step**2
-        )
+        a = (
+            chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
+        ) / (2 * rv_step**2)
         b = (chi_squared[index + 1] - chi_squared[index - 1]) / (2 * rv_step)
         return rv, np.sqrt(rv_err), a, b

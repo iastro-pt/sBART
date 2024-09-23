@@ -16,7 +16,9 @@ class OBS_Stellar(StellarTemplate):
 
     method_name = "OBSERVATION"
 
-    def __init__(self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False):
+    def __init__(
+        self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False
+    ):
         super().__init__(subInst=subInst, user_configs=user_configs, loaded=loaded)
 
         self._selected_frameID = None
@@ -37,7 +39,9 @@ class OBS_Stellar(StellarTemplate):
         total_SNR = []
         for frameID in self.frameIDs_to_use:
             total_SNR.append(
-                np.nansum(dataClass.get_KW_from_frameID(KW="orderwise_SNRs", frameID=frameID))
+                np.nansum(
+                    dataClass.get_KW_from_frameID(KW="orderwise_SNRs", frameID=frameID)
+                )
             )
 
         self._selected_frameID = self.frameIDs_to_use[np.argmax(total_SNR)]

@@ -24,12 +24,16 @@ def first_numerical_derivative(wavelengths, flux, uncertainties):
         if index == 0:
             step = wavelengths[index + 1] - wavelengths[index]
             val = (flux[index + 1] - flux[index]) / step
-            prop_err = (uncertainties[index + 1] ** 2 + uncertainties[index] ** 2) / step**2
+            prop_err = (
+                uncertainties[index + 1] ** 2 + uncertainties[index] ** 2
+            ) / step**2
 
         elif index == size - 1:
             step = wavelengths[index] - wavelengths[index - 1]
             val = (flux[index] - flux[index - 1]) / step
-            prop_err = (uncertainties[index - 1] ** 2 + uncertainties[index] ** 2) / step**2
+            prop_err = (
+                uncertainties[index - 1] ** 2 + uncertainties[index] ** 2
+            ) / step**2
 
         else:
             H_front = wavelengths[index + 1] - wavelengths[index]  # h_d
@@ -73,7 +77,11 @@ def compute_non_uni_step_first_derivative(wavelengths, flux, uncertainties):
     for index in range(1, len(flux) - 1):
         step_ratio = steps[index] / steps[index - 1]
         deriva.append(
-            (flux[index + 1] - flux[index - 1] * step_ratio**2 - (1 - step_ratio**2) * flux[index])
+            (
+                flux[index + 1]
+                - flux[index - 1] * step_ratio**2
+                - (1 - step_ratio**2) * flux[index]
+            )
             / (steps[index] * (1 + step_ratio))
         )
         error_deriva.append(

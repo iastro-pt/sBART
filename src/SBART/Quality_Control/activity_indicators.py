@@ -103,8 +103,12 @@ class Indicators:
         _, ind_windows = self.indicator_window
         for indicator_window in ind_windows:
             # The stellar spectra is already corrected from the BERV
-            lower_bound = apply_RVshift(indicator_window[0], stellar_RV.to(kilometer_second).value)
-            upper_bound = apply_RVshift(indicator_window[1], stellar_RV.to(kilometer_second).value)
+            lower_bound = apply_RVshift(
+                indicator_window[0], stellar_RV.to(kilometer_second).value
+            )
+            upper_bound = apply_RVshift(
+                indicator_window[1], stellar_RV.to(kilometer_second).value
+            )
             wavelength_blocks.append((lower_bound, upper_bound))
 
         return wavelength_blocks

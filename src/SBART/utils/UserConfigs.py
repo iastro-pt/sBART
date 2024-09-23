@@ -45,7 +45,9 @@ class Constraint:
 
 class ValueInInterval(Constraint):
     def __init__(self, interval, include_edges: bool = False):
-        super().__init__(const_text=f"Value inside interval <{interval}>; Edges: {include_edges}")
+        super().__init__(
+            const_text=f"Value inside interval <{interval}>; Edges: {include_edges}"
+        )
         self._interval = interval
         self._include_edges = include_edges
 
@@ -181,7 +183,9 @@ class UserParam:
     @property
     def default_value(self) -> Any:
         if self.is_mandatory:
-            raise InvalidConfiguration("Trying to use default value of a mandatory parameter")
+            raise InvalidConfiguration(
+                "Trying to use default value of a mandatory parameter"
+            )
 
         self.apply_constraints_to_value("default_value", self._default_value)
         return self._default_value
@@ -242,7 +246,9 @@ class InternalParameters:
             try:
                 parameter_def_information.apply_constraints_to_value(key, value)
             except InvalidConfiguration as exc:
-                logger.critical("User-given parameter {} does not meet the constraints", key)
+                logger.critical(
+                    "User-given parameter {} does not meet the constraints", key
+                )
                 raise InternalError from exc
 
             self._user_configs[key] = value
@@ -303,7 +309,9 @@ class InternalParameters:
         try:
             parameter_def_information.apply_constraints_to_value(key, value)
         except InvalidConfiguration as exc:
-            logger.critical("User-given parameter {} does not meet the constraints", key)
+            logger.critical(
+                "User-given parameter {} does not meet the constraints", key
+            )
             raise InternalError from exc
         self._user_configs[key] = value
 

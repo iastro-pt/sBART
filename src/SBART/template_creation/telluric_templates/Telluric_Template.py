@@ -479,7 +479,8 @@ class TelluricTemplate(BaseTemplate):
     def for_feature_correction(self) -> bool:
         return self._application_mode == "correction"
 
-    def store_metrics(self): ...
+    def store_metrics(self):
+        ...
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
         try:
@@ -511,9 +512,9 @@ class TelluricTemplate(BaseTemplate):
         header["subInst"] = self._associated_subInst
         header["VERSION"] = __version__
         header["IS_VALID"] = self.is_valid
-        header["HIERARCH APPROX BERV CORRECTION"] = (
-            self.use_approximated_BERV_correction
-        )
+        header[
+            "HIERARCH APPROX BERV CORRECTION"
+        ] = self.use_approximated_BERV_correction
         for key, config_val in self._internal_configs.items():
             if "path" in key or "user_" in key or isinstance(config_val, (list, tuple)):
                 continue

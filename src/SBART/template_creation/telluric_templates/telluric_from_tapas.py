@@ -101,15 +101,20 @@ class TapasTelluric(TelluricTemplate):
 
         temp_path = Path(tapas_dwnl_path)
         if not temp_path.exists():
-            logger.warning("Tapas download path does not exist. Creating new folder from scratch")
+            logger.warning(
+                "Tapas download path does not exist. Creating new folder from scratch"
+            )
             temp_path.mkdir(parents=True, exist_ok=True)
 
         if os.path.isdir(tapas_dwnl_path):
             logger.info("Using individual Transmittance spectra for each subInstrument")
-            tapas_dwnl_path = os.path.join(tapas_dwnl_path, f"{self._associated_subInst}.ipac")
+            tapas_dwnl_path = os.path.join(
+                tapas_dwnl_path, f"{self._associated_subInst}.ipac"
+            )
         else:
             logger.info(
-                "Using common Transmittance spectra for each subInstrument: {}", tapas_dwnl_path
+                "Using common Transmittance spectra for each subInstrument: {}",
+                tapas_dwnl_path,
             )
 
             if (
@@ -129,7 +134,8 @@ class TapasTelluric(TelluricTemplate):
         download = True
 
         if (
-            os.path.isfile(tapas_dwnl_path) and not self._internal_configs["force_download"]
+            os.path.isfile(tapas_dwnl_path)
+            and not self._internal_configs["force_download"]
         ):  # direct path to the file!
             logger.info("TAPAS file already exists. Skipping download")
             download = False
@@ -182,7 +188,9 @@ class TapasTelluric(TelluricTemplate):
 
     # TODO: fix the input args of this template!
     @custom_exceptions.ensure_invalid_template
-    def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
+    def create_telluric_template(
+        self, dataClass, custom_frameID: Optional[int] = None
+    ) -> None:
         """
         Create a telluric template from TAPAS transmission spectra [1], that was created for
         the date in which the reference observation was made.
@@ -242,7 +250,9 @@ class TapasTelluric(TelluricTemplate):
                     logger.critical(msg)
                     raise Exception(msg)
 
-        logger.info("Tapas template over-riding BERV associated with the reference wavelengths")
+        logger.info(
+            "Tapas template over-riding BERV associated with the reference wavelengths"
+        )
         self._associated_BERV = tapas_BERV
 
         # Tapas spectra comes BERV-corrected

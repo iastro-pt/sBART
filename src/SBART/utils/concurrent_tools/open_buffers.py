@@ -33,7 +33,9 @@ def open_buffer(buffer_info: dict, open_type: str, buffers: list):
 
     except Exception as e:
         print(f"Opening buffers failed in  {array_name=}  due to {e}")
-        print("Available buffers: ", buffer_info.keys(), "worker_outputs" in buffer_info)
+        print(
+            "Available buffers: ", buffer_info.keys(), "worker_outputs" in buffer_info
+        )
         for buff in buffers:
             buff.close()
         raise Exception

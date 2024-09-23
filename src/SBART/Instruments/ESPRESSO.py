@@ -81,7 +81,9 @@ class ESPRESSO(ESO_PIPELINE):
 
         self.instrument_properties["wavelength_coverage"] = coverage
         self.instrument_properties["resolution"] = 140_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("Cerro Paranal")
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+            "Cerro Paranal"
+        )
         self.instrument_properties["is_drift_corrected"] = True
 
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
@@ -91,7 +93,9 @@ class ESPRESSO(ESO_PIPELINE):
         # Find the UT number and load the airmass
         for i in range(1, 5):
             try:
-                self.observation_info["airmass"] = header[f"HIERARCH ESO TEL{i} AIRM START"]
+                self.observation_info["airmass"] = header[
+                    f"HIERARCH ESO TEL{i} AIRM START"
+                ]
                 self.UT_number = i
                 break
             except KeyError as e:
@@ -107,7 +111,9 @@ class ESPRESSO(ESO_PIPELINE):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = float(header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"])
+            self.observation_info[name] = float(
+                header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"]
+            )
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"

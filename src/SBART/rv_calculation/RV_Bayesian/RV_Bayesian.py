@@ -160,7 +160,9 @@ class RV_Bayesian(RV_routine):
         except Exception as e:
             logger.opt(exception=True).critical("Found unknown error")
 
-    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def process_workers_output(
+        self, empty_cube: RV_cube, worker_outputs: List[list]
+    ) -> RV_cube:
         """Load information from the worker outputs and store it in the desired format
         inside a RV cube
 
@@ -190,7 +192,9 @@ class RV_Bayesian(RV_routine):
             storage_path=cube._internalPaths.get_path_to("plots", as_posix=False),
         )
 
-    def _orderwise_processment(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def _orderwise_processment(
+        self, empty_cube: RV_cube, worker_outputs: List[list]
+    ) -> RV_cube:
         """Process the list of outputs from the worker and store the relevant information into the
         RV cubes. This function caters to data from the order-wise application of sBART
 
@@ -233,7 +237,9 @@ class RV_Bayesian(RV_routine):
         empty_cube.update_computed_RVS(final_rv, final_error)
         return empty_cube
 
-    def _epochwise_processment(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def _epochwise_processment(
+        self, empty_cube: RV_cube, worker_outputs: List[list]
+    ) -> RV_cube:
 
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
@@ -253,7 +259,7 @@ class RV_Bayesian(RV_routine):
                 uncert = epoch_pkg["RV_uncertainty"]
 
                 empty_cube.store_final_RV(frameID, RV, uncert)
-                
+
                 if order_status.is_good_flag:
                     for order, dlw, err in zip(
                         epoch_pkg["order"],
@@ -267,7 +273,6 @@ class RV_Bayesian(RV_routine):
                             ind_value=dlw,
                             ind_err=err,
                         )
-     
 
         # Compute the combined DLW value
         ind, errs = data_unit_act.get_all_orderwise_indicator("DLW")
@@ -311,11 +316,15 @@ class RV_Bayesian(RV_routine):
                     epoch_metric[package["frameID"]] = {}  # epoch : dict
 
                 if package["status"] != SUCCESS:
-                    logger.warning("FrameID {} did not converge.".format(package["frameID"]))
+                    logger.warning(
+                        "FrameID {} did not converge.".format(package["frameID"])
+                    )
                     continue
                 # it is a list of numpy arrays! in the epoch-wise mode
                 if self._internal_configs["RV_extraction"] == "order-wise":
-                    full_model_misspec = package["FluxModel_misspecification_from_order"]
+                    full_model_misspec = package[
+                        "FluxModel_misspecification_from_order"
+                    ]
                 else:
                     full_model_misspec = []
                     for entry in package["FluxModel_misspecification_from_order"]:
@@ -326,8 +335,12 @@ class RV_Bayesian(RV_routine):
                 )  # differences larger than 2 sigma
                 all_metric__values.extend(full_model_misspec)
 
-                epoch_metric[package["frameID"]]["number_outliers"] = len(OrderOutliers[0])
-                epoch_metric[package["frameID"]]["valid_points"] = len(full_model_misspec)
+                epoch_metric[package["frameID"]]["number_outliers"] = len(
+                    OrderOutliers[0]
+                )
+                epoch_metric[package["frameID"]]["valid_points"] = len(
+                    full_model_misspec
+                )
                 epoch_metric[package["frameID"]]["percentage_outliers"] = (
                     epoch_metric[package["frameID"]]["number_outliers"]
                     / epoch_metric[package["frameID"]]["valid_points"]
@@ -355,7 +368,12 @@ class RV_Bayesian(RV_routine):
             plt.xlabel("Sigma distance to model (template)")
             plt.ylabel("Density of pixels")
             [
-                plt.axvline(i, color="red", linestyle="--", label=r"2$\sigma$" if i == -2 else None)
+                plt.axvline(
+                    i,
+                    color="red",
+                    linestyle="--",
+                    label=r"2$\sigma$" if i == -2 else None,
+                )
                 for i in [-2, 2]
             ]
             [
@@ -374,7 +392,9 @@ class RV_Bayesian(RV_routine):
 
             if self._internal_configs["RV_extraction"] == "order-wise":
                 # TODO: ensure that this KW actually exists
-                fname = "model_Flux_missspecification_order{}.png".format(package["order"])
+                fname = "model_Flux_missspecification_order{}.png".format(
+                    package["order"]
+                )
             elif self._internal_configs["RV_extraction"] == "epoch-wise":
                 fname = "model_Flux_missspecification.png"
 
@@ -395,7 +415,9 @@ class RV_Bayesian(RV_routine):
             self.RV_cube.store_single_RV(epoch, data["RV"], data["RV_uncertainty"])
 
             # order-wise likelihood at the optimal RV
-            self._execution_metrics[epoch]["likelihood"] = data["detailed_RV_likelihood"]
+            self._execution_metrics[epoch]["likelihood"] = data[
+                "detailed_RV_likelihood"
+            ]
 
             for key in ["jitter", "jitter_uncertainty", "opt_status", "opt_message"]:
                 self._execution_metrics[epoch][key] = data[key]
@@ -403,10 +425,14 @@ class RV_Bayesian(RV_routine):
     def _open_shared_memory(self, inst_info: dict) -> None:
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
         if self._internal_configs["RV_extraction"] == "epoch-wise":
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=bool))
+            buffer_info, _ = create_shared_array(
+                np.zeros(inst_info["array_size"], dtype=bool)
+            )
             self._shared_mem_buffers["mask_cache"] = buffer_info
 
-            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"][0], dtype=bool))
+            buffer_info, _ = create_shared_array(
+                np.zeros(inst_info["array_size"][0], dtype=bool)
+            )
             self._shared_mem_buffers["cached_orders"] = buffer_info
 
             self.sampler.store_shared_buffer(self._shared_mem_buffers)

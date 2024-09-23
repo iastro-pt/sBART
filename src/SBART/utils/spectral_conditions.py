@@ -199,7 +199,9 @@ class KEYWORD_condition(ConditionModel):
         self._standardize_bounds()
         for bound_entry in bounds_to_check:
             if bound_entry[0] > bound_entry[1]:
-                raise InvalidConfiguration("The lower bound must be larger than the upper one")
+                raise InvalidConfiguration(
+                    "The lower bound must be larger than the upper one"
+                )
 
     def _standardize_bounds(self):
         new_bounds = []
@@ -238,7 +240,9 @@ class KEYWORD_condition(ConditionModel):
 
         message = "KW {} inside the boundary {}".format(self.KW, self.bounds)
         if not keep:
-            message = "KW {} outside the boundary {} : {}".format(self.KW, self.bounds, KW_val)
+            message = "KW {} outside the boundary {} : {}".format(
+                self.KW, self.bounds, KW_val
+            )
 
         flag = VALID if keep else USER_BLOCKED(message)
 
@@ -355,17 +359,24 @@ class FNAME_condition(ConditionModel):
     """
 
     def __init__(
-        self, filename_list: list, only_keep_filenames=False, load_from_file: bool = False
+        self,
+        filename_list: list,
+        only_keep_filenames=False,
+        load_from_file: bool = False,
     ):
         self._load_from_file = load_from_file
         if self._load_from_file:
-            logger.info(f"Loading files to 'condition' from a disk file: {filename_list}")
+            logger.info(
+                f"Loading files to 'condition' from a disk file: {filename_list}"
+            )
             files_to_reject = []
             for entry in filename_list:
                 if not isinstance(entry, Path):
                     entry = Path(entry)
                 if not entry.name.endswith("txt"):
-                    raise custom_exceptions.InvalidConfiguration("File to load must be txt")
+                    raise custom_exceptions.InvalidConfiguration(
+                        "File to load must be txt"
+                    )
                 with open(entry) as file:
                     files_to_reject.extend(file.readlines())
 
@@ -419,7 +430,11 @@ class SNR_condition(ConditionModel):
         KW = np.asarray(frame.get_KW_value("orderwise_snrs"))
         valid_orders = list(frame.valid_orders())
         message = f"Did not pass SNR cutoff: {self.minimum_SNR:}"
-        flag = VALID if np.any(KW[valid_orders] < self.minimum_SNR) else USER_BLOCKED(message)
+        flag = (
+            VALID
+            if np.any(KW[valid_orders] < self.minimum_SNR)
+            else USER_BLOCKED(message)
+        )
         return flag
 
     @property

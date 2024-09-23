@@ -168,7 +168,9 @@ class TelfitTelluric(TelluricTemplate):
         loaded: bool = False,
     ):
         if MISSING_TELFIT:
-            raise custom_exceptions.InvalidConfiguration("Telfit is not currently installed")
+            raise custom_exceptions.InvalidConfiguration(
+                "Telfit is not currently installed"
+            )
         super().__init__(
             subInst=subInst,
             extension_mode=extension_mode,
@@ -187,17 +189,26 @@ class TelfitTelluric(TelluricTemplate):
 
         model_components.append(
             ModelComponent(
-                name="temperature", initial_guess=100, bounds=[0, None], default_enabled=True
+                name="temperature",
+                initial_guess=100,
+                bounds=[0, None],
+                default_enabled=True,
             )
         )
         model_components.append(
             ModelComponent(
-                name="pressure", initial_guess=100, bounds=[0, None], default_enabled=True
+                name="pressure",
+                initial_guess=100,
+                bounds=[0, None],
+                default_enabled=True,
             )
         )
         model_components.append(
             ModelComponent(
-                name="humidity", initial_guess=100, bounds=[0, None], default_enabled=True
+                name="humidity",
+                initial_guess=100,
+                bounds=[0, None],
+                default_enabled=True,
             )
         )
 
@@ -226,9 +237,13 @@ class TelfitTelluric(TelluricTemplate):
         if self._internal_configs["atmosphere_profile"] == "GDAS":
             # logger.debug("GDAS data load mode set to download")
             logger.info("Launching GDAS profile downloader")
-            instrument, date = selected_frame.inst_name, selected_frame.get_KW_value("ISO-DATE")
+            instrument, date = selected_frame.inst_name, selected_frame.get_KW_value(
+                "ISO-DATE"
+            )
 
-            logger.warning("Iterating over other possible frames to search for a working reference")
+            logger.warning(
+                "Iterating over other possible frames to search for a working reference"
+            )
             failed_tests = [self._reference_frameID]
             for kw in ["relative_humidity", "airmass"]:
                 metric_to_select, frameIDs = dataClass.collect_KW_observations(
@@ -239,7 +254,9 @@ class TelfitTelluric(TelluricTemplate):
                     return_frameIDs=True,
                 )
                 metric_to_select = np.asarray(metric_to_select, dtype=float)
-                metric_to_select = list(i if i is not None else np.nan for i in metric_to_select)
+                metric_to_select = list(
+                    i if i is not None else np.nan for i in metric_to_select
+                )
                 if not any(np.isfinite(metric_to_select)):
                     logger.warning(
                         f"Metric {kw} is not finite. Can't use it to select observatioons"
@@ -274,7 +291,9 @@ class TelfitTelluric(TelluricTemplate):
                     pass
 
                 try:
-                    with get_atmospheric_profile(instrument, date, resources_folder) as gdas:
+                    with get_atmospheric_profile(
+                        instrument, date, resources_folder
+                    ) as gdas:
                         data = np.loadtxt(gdas).copy()
                     self._reference_frameID = selected_ID
                     self._associated_BERV = dataClass.get_KW_from_frameID(
@@ -319,7 +338,9 @@ class TelfitTelluric(TelluricTemplate):
         """
         selected_frame = dataclass.get_frame_by_ID(self._reference_frameID)
         logger.info("Configuring the Telfit modeler for {}", selected_frame)
-        data = self._prepare_GDAS_data(dataClass=dataclass, selected_frame=selected_frame)
+        data = self._prepare_GDAS_data(
+            dataClass=dataclass, selected_frame=selected_frame
+        )
 
         # hPa       m     K       %
         Pres, height, Temp, _ = data.T
@@ -390,7 +411,9 @@ class TelfitTelluric(TelluricTemplate):
         Tuple[np.ndarray, np.ndarray]
             Wavelengths and transmittance arrays
         """
-        control_dict = {i: j for i, j in zip(self._fitModel.get_enabled_params(), model_parameters)}
+        control_dict = {
+            i: j for i, j in zip(self._fitModel.get_enabled_params(), model_parameters)
+        }
         if fixed_params is not None:
             control_dict = {**control_dict, **fixed_params}
 
@@ -417,7 +440,9 @@ class TelfitTelluric(TelluricTemplate):
         return m.x, m.y
 
     @custom_exceptions.ensure_invalid_template
-    def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
+    def create_telluric_template(
+        self, dataClass, custom_frameID: Optional[int] = None
+    ) -> None:
         """
         Create a telluric template from a TelFit transmission spectra [1], that
         was created for the date in which the reference observation was made.
@@ -453,7 +478,11 @@ class TelfitTelluric(TelluricTemplate):
         self.configure_modeler(dataClass)
 
         OBS_properties = {
-            **{"airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID)},
+            **{
+                "airmass": dataClass.get_KW_from_frameID(
+                    "airmass", self._reference_frameID
+                )
+            },
             **dataClass.get_instrument_information(),
         }
 
@@ -472,7 +501,10 @@ class TelfitTelluric(TelluricTemplate):
             fixed_params=dict(zip(names, parameter_values)),
         )
 
-        self.transmittance_wavelengths, self.transmittance_spectra = wavelengths, tell_spectra
+        self.transmittance_wavelengths, self.transmittance_spectra = (
+            wavelengths,
+            tell_spectra,
+        )
         logger.info("Telfit model is complete.")
 
         # ! no median filtering (might still be needed in the future)
@@ -511,8 +543,14 @@ class TelfitTelluric(TelluricTemplate):
                     initial_guess["humidity"],
                 )
 
-            if 0 <= self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"] < initial_guess["humidity"]:
-                initial_guess["humidity"] = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
+            if (
+                0
+                <= self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
+                < initial_guess["humidity"]
+            ):
+                initial_guess["humidity"] = self._internal_configs[
+                    "TELFIT_HUMIDITY_THRESHOLD"
+                ]
                 user_cap = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
                 curr_val = initial_guess["humidity"]
                 logger.warning(
@@ -535,11 +573,17 @@ class TelfitTelluric(TelluricTemplate):
                     comps.get_initial_guess(frameID, True)
                     for comps in self._fitModel.get_enabled_components()
                 ]
-                self._fitModel.store_frameID_results(frameID, finals, result_flag=SUCCESS)
+                self._fitModel.store_frameID_results(
+                    frameID, finals, result_flag=SUCCESS
+                )
 
         for param_name in self._fitModel.get_enabled_params():
             if param_name not in self._internal_configs["PARAMS_TO_FIT"]:
-                logger.info("{} not fitting {}. Fixing it to initial guess", self.name, param_name)
+                logger.info(
+                    "{} not fitting {}. Fixing it to initial guess",
+                    self.name,
+                    param_name,
+                )
                 self._fitModel.disable_param(param_name)
 
     def store_metrics(self):

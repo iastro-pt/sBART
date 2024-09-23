@@ -318,9 +318,9 @@ class ESO_PIPELINE(Frame):
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
                 corr_model = np.polyval(coeff, hdulist[5].data)
 
-                corr_model[flux_corr == 1] = (
-                    1  # orders where the CORR FACTOR are 1 do not have correction!
-                )
+                corr_model[
+                    flux_corr == 1
+                ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
                 self.spectra = (
                     self.spectra / corr_model
                 )  # correct from chromatic variations

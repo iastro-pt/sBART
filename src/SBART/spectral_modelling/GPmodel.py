@@ -57,7 +57,9 @@ class GPSpecModel(ModellingBase):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
-        GP_KERNEL=UserParam("Matern-5_2", constraint=ValueFromList(["Matern-5_2", "Matern-3_2"])),
+        GP_KERNEL=UserParam(
+            "Matern-5_2", constraint=ValueFromList(["Matern-5_2", "Matern-3_2"])
+        ),
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
         POSTERIOR_CHARACTERIZATION=UserParam(
             "minimize", constraint=ValueFromList(["minimize", "MCMC"])
@@ -67,11 +69,17 @@ class GPSpecModel(ModellingBase):
 
     def __init__(self, obj_info, user_configs):
         possible_folders = {}
-        for kern in self._default_params["GP_KERNEL"].existing_constraints.available_options:
-            possible_folders[f"modelling_information_{kern}"] = f"_SpecModelParams/{kern}"
+        for kern in self._default_params[
+            "GP_KERNEL"
+        ].existing_constraints.available_options:
+            possible_folders[
+                f"modelling_information_{kern}"
+            ] = f"_SpecModelParams/{kern}"
 
         super().__init__(
-            obj_info=obj_info, user_configs=user_configs, needed_folders=possible_folders
+            obj_info=obj_info,
+            user_configs=user_configs,
+            needed_folders=possible_folders,
         )
 
         # Going to treat the orders as frameIDs to use the Model class!
@@ -90,7 +98,10 @@ class GPSpecModel(ModellingBase):
                 default_enabled=True,
             ),
             JaxComponent(
-                "log_mean", initial_guess=jnp.log(1), bounds=[None, None], default_enabled=True
+                "log_mean",
+                initial_guess=jnp.log(1),
+                bounds=[None, None],
+                default_enabled=True,
             ),
         ]
         for parameter in params_of_model:
@@ -101,7 +112,9 @@ class GPSpecModel(ModellingBase):
 
     def _check_dependencies(self):
         if MISSING_TINYGP:
-            raise custom_exceptions.InternalError("Missing the custom tinygp installation for GP")
+            raise custom_exceptions.InternalError(
+                "Missing the custom tinygp installation for GP"
+            )
 
     def _get_model_storage_filename(self) -> str:
         """
@@ -113,7 +126,8 @@ class GPSpecModel(ModellingBase):
         filename_start = super()._get_model_storage_filename()
 
         output_folder = self._internalPaths.get_path_to(
-            f"modelling_information_{self._internal_configs['GP_KERNEL']}", as_posix=False
+            f"modelling_information_{self._internal_configs['GP_KERNEL']}",
+            as_posix=False,
         )
         full_fname = build_filename(output_folder, f"{filename_start}_GP_model", "json")
         return full_fname
@@ -159,9 +173,13 @@ class GPSpecModel(ModellingBase):
             )
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
-            solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
+            solution_array = [
+                np.nan for _ in self._modelling_parameters.get_enabled_params()
+            ]
 
-            raise custom_exceptions.StopComputationError("Unknown error encounterd") from e
+            raise custom_exceptions.StopComputationError(
+                "Unknown error encounterd"
+            ) from e
 
         self._modelling_parameters.store_frameID_results(
             order, result_vector=solution_array, result_flag=result_flag
@@ -203,7 +221,9 @@ class GPSpecModel(ModellingBase):
         t0 = time.time()
 
         t1 = time.time()
-        self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
+        self.generate_model_from_order(
+            og_lambda, og_spectra, og_err, new_wavelengths, order
+        )
 
         kern_type = self._internal_configs["GP_KERNEL"]
 
@@ -259,7 +279,10 @@ class GPSpecModel(ModellingBase):
         if self._internal_configs["POSTERIOR_CHARACTERIZATION"] == "minimize":
             solver = jaxopt.ScipyMinimize(
                 fun=loss_opt,
-                options={"maxiter": self._internal_configs["OPTIMIZATION_MAX_ITER"], "disp": True},
+                options={
+                    "maxiter": self._internal_configs["OPTIMIZATION_MAX_ITER"],
+                    "disp": True,
+                },
                 method="BFGS",
                 tol=1e-10,
             )
