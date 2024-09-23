@@ -13,4 +13,3 @@ bump2version ~= 1.0.1
 pytest ~= 7.1.2
 Cython ~= 0.29.2
 mypy ~= 1.8.0
-ruff ~= 0.2.1
