@@ -1,5 +1,15 @@
-from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String, Table, create_engine, select)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    create_engine,
+    select,
+)
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()

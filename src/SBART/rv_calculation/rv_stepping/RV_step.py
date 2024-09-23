@@ -9,8 +9,7 @@ from SBART.DataUnits import Classical_Unit, RV_Precision_Unit
 from SBART.utils import custom_exceptions, meter_second
 from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.expected_precision_interval import RVprecUnit_optimization
-from SBART.utils.RV_utilities.orderwiseRVcombination import \
-    orderwise_combination
+from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
 from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit

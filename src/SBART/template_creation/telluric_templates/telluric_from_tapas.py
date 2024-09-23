@@ -12,8 +12,13 @@ from scipy.ndimage import median_filter
 
 from SBART.utils import custom_exceptions, get_TAPAS_data
 from SBART.utils.shift_spectra import remove_BERV_correction
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
-                                     Positive_Value_Constraint, UserParam)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    PathValue,
+    Positive_Value_Constraint,
+    UserParam,
+)
 
 from .Telluric_Template import TelluricTemplate
 

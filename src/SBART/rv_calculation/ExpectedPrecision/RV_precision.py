@@ -6,11 +6,15 @@ from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits import RV_Precision_Unit
 from SBART.utils import custom_exceptions, meter_second
-from SBART.utils.RV_utilities.orderwiseRVcombination import \
-    orderwise_combination
+from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.types import UI_PATH
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
-                                     UserParam, ValueFromList)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    PathValue,
+    UserParam,
+    ValueFromList,
+)
 
 from .target_function import target
 

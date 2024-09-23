@@ -1,8 +1,7 @@
 import os
 from datetime import datetime
 
-from dateutil.relativedelta import \
-    relativedelta  # $ pip install python-dateutil
+from dateutil.relativedelta import relativedelta  # $ pip install python-dateutil
 
 
 def file_older_than(file: str, days: int) -> bool:

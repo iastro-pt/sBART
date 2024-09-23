@@ -19,12 +19,18 @@ from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
 from SBART.utils.expected_precision_interval import (
-    convert_to_tab, optimize_intervals_over_array)
+    convert_to_tab,
+    optimize_intervals_over_array,
+)
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
-from SBART.utils.units import (centimeter_second, convert_data,
-                               kilometer_second, meter_second)
+from SBART.utils.units import (
+    centimeter_second,
+    convert_data,
+    kilometer_second,
+    meter_second,
+)
 from SBART.utils.work_packages import Package
 
 

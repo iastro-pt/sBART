@@ -17,11 +17,15 @@ from SBART.utils import build_filename, custom_exceptions
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils.status_codes import (HIGH_CONTAMINATION, MISSING_DATA,
-                                      OrderStatus)
+from SBART.utils.status_codes import HIGH_CONTAMINATION, MISSING_DATA, OrderStatus
 from SBART.utils.units import convert_data, kilometer_second
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, IntegerValue,
-                                     Positive_Value_Constraint, UserParam)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    IntegerValue,
+    Positive_Value_Constraint,
+    UserParam,
+)
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):

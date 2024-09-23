@@ -5,9 +5,12 @@ from pathlib import Path
 import yaml
 
 from SBART.outside_tools.run_SBART_from_config_dict import run_target
-from SBART.utils.spectral_conditions import (Empty_condition, FNAME_condition,
-                                             KEYWORD_condition,
-                                             SubInstrument_condition)
+from SBART.utils.spectral_conditions import (
+    Empty_condition,
+    FNAME_condition,
+    KEYWORD_condition,
+    SubInstrument_condition,
+)
 from SBART.utils.units import kilometer_second, meter_second
 
 

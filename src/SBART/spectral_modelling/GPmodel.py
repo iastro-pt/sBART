@@ -26,9 +26,13 @@ except ImportError:
 from SBART.ModelParameters import Model
 from SBART.spectral_modelling.modelling_base import ModellingBase
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues,
-                                     Positive_Value_Constraint, UserParam,
-                                     ValueFromList)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    Positive_Value_Constraint,
+    UserParam,
+    ValueFromList,
+)
 
 
 class GPSpecModel(ModellingBase):

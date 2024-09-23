@@ -7,8 +7,11 @@ from loguru import logger
 
 from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
 from SBART.utils.BASE import BASE
-from SBART.utils.custom_exceptions import (DeadWorkerError, FrameError,
-                                           InvalidConfiguration)
+from SBART.utils.custom_exceptions import (
+    DeadWorkerError,
+    FrameError,
+    InvalidConfiguration,
+)
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
 from SBART.utils.types import UI_DICT
 from SBART.utils.units import meter_second

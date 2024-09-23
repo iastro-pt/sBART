@@ -5,8 +5,12 @@ from loguru import logger
 
 from SBART.Components import Spectrum
 from SBART.utils import custom_exceptions
-from SBART.utils.status_codes import (CREATING_MODEL, FAILED_MODEL_CREATION,
-                                      MISSING_DATA, SUCCESS)
+from SBART.utils.status_codes import (
+    CREATING_MODEL,
+    FAILED_MODEL_CREATION,
+    MISSING_DATA,
+    SUCCESS,
+)
 from SBART.utils.UserConfigs import DefaultValues
 
 

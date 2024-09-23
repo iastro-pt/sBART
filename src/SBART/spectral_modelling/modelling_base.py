@@ -5,8 +5,13 @@ from loguru import logger
 from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, IntegerValue,
-                                     Positive_Value_Constraint, UserParam)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    IntegerValue,
+    Positive_Value_Constraint,
+    UserParam,
+)
 
 
 class ModellingBase(BASE):

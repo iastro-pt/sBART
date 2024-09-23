@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Dict, Iterable, List, NoReturn, Optional, Tuple, Type,
-                    Union)
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple, Type, Union
 
 import numpy as np
 import ujson as json
@@ -20,12 +19,16 @@ from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.custom_exceptions import (FrameError, InvalidConfiguration,
-                                           NoDataError)
+from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
-    ACTIVITY_LINE, KW_WARNING, SIGMA_CLIP_REJECTION, TELLURIC, Status)
+    ACTIVITY_LINE,
+    KW_WARNING,
+    SIGMA_CLIP_REJECTION,
+    TELLURIC,
+    Status,
+)
 from SBART.utils.types import UI_PATH
 from SBART.utils.units import kilometer_second, meter_second
 

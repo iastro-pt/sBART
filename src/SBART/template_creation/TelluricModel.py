@@ -5,8 +5,7 @@ from loguru import logger
 
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Base_Models.TemplateFramework import TemplateFramework
-from SBART.utils.custom_exceptions import (InvalidConfiguration,
-                                           TemplateNotExistsError)
+from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
 from SBART.utils.types import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 

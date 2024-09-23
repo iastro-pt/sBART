@@ -6,8 +6,7 @@ from matplotlib import pyplot as plt
 
 from SBART.Base_Models import Frame
 from SBART.utils import build_blocks
-from SBART.utils.math_tools.numerical_derivatives import \
-    first_numerical_derivative
+from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
 
 
 def find_lines_indexes(

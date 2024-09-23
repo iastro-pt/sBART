@@ -13,8 +13,13 @@ from SBART.utils.custom_exceptions import BadTemplateError, NoDataError
 from SBART.utils.spectral_conditions import ConditionModel, Empty_condition
 from SBART.utils.status_codes import INTERNAL_ERROR
 from SBART.utils.types import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, UserParam,
-                                     ValueFromDtype, ValueFromList)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    UserParam,
+    ValueFromDtype,
+    ValueFromList,
+)
 
 from .stellar_templates.OBS_stellar import OBS_Stellar
 from .stellar_templates.sum_stellar import SumStellar

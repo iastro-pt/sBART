@@ -10,8 +10,13 @@ from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
-                                     UserParam, ValueFromList)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    PathValue,
+    UserParam,
+    ValueFromList,
+)
 
 
 class Spectral_Normalization(BASE):

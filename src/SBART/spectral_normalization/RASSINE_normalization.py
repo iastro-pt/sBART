@@ -12,8 +12,7 @@ from scipy.interpolate import CubicSpline
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, PathValue,
-                                     UserParam)
+from SBART.utils.UserConfigs import BooleanValue, DefaultValues, PathValue, UserParam
 
 
 class RASSINE_normalization(NormalizationBase):

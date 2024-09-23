@@ -12,12 +12,16 @@ from SBART.utils import custom_exceptions
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.math_tools.weighted_mean import weighted_mean
-from SBART.utils.RV_utilities.orderwiseRVcombination import \
-    orderwise_combination
+from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.status_codes import SUCCESS
 from SBART.utils.units import meter_second
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, IntegerValue,
-                                     UserParam, ValueFromList)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    IntegerValue,
+    UserParam,
+    ValueFromList,
+)
 
 from .target_function import SBART_target
 

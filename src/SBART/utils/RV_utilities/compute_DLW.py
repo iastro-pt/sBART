@@ -5,8 +5,9 @@ import scipy.optimize as sc
 from loguru import logger
 from matplotlib import pyplot as plt
 
-from SBART.utils.math_tools.numerical_derivatives import \
-    compute_non_uni_step_first_derivative
+from SBART.utils.math_tools.numerical_derivatives import (
+    compute_non_uni_step_first_derivative,
+)
 from SBART.utils.shift_spectra import SPEED_OF_LIGHT
 
 

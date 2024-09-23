@@ -9,7 +9,10 @@ from SBART.utils import custom_exceptions
 
 try:
     from SBART.utils.cython_codes.cubic_interpolation import (
-        partial_derivative, second_derivative, tridiagonal_inverter)
+        partial_derivative,
+        second_derivative,
+        tridiagonal_inverter,
+    )
 
     CYTHON_UNAVAILABLE = False
 except ImportError:

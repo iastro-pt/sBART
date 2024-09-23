@@ -19,15 +19,20 @@ from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
-from SBART.utils.shift_spectra import (apply_approximated_BERV_correction,
-                                       apply_BERV_correction)
+from SBART.utils.shift_spectra import (
+    apply_approximated_BERV_correction,
+    apply_BERV_correction,
+)
 from SBART.utils.spectral_conditions import Empty_condition, KEYWORD_condition
 from SBART.utils.status_codes import DISK_LOADED_DATA, MISSING_DATA, SUCCESS
-from SBART.utils.telluric_utilities.compute_overlaps_blocks import \
-    find_overlaps
+from SBART.utils.telluric_utilities.compute_overlaps_blocks import find_overlaps
 from SBART.utils.units import kilometer_second
-from SBART.utils.UserConfigs import (BooleanValue, DefaultValues, UserParam,
-                                     ValueInInterval)
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    UserParam,
+    ValueInInterval,
+)
 
 
 class TelluricTemplate(BaseTemplate):
