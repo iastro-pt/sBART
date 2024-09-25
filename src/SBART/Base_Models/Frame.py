@@ -136,7 +136,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ),
         MAX_ORDER_REJECTION=UserParam(
             50,
-            constraint=ValueInInterval(0, 100),
+            constraint=ValueInInterval((0, 100)),
             description="Maximum number of orders that a Frame can reject before being considered invalid",
         ),
         bypass_ST_designation=UserParam(
