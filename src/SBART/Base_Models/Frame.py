@@ -296,6 +296,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "DET_BINX": None,
             "DET_BINY": None,
             "seeing": None,
+            "MOON PHASE": 0,
+            "MOON DISTANCE": 0,
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
@@ -500,7 +502,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             self.wavelengths_to_keep = {}
         self.wavelengths_to_keep[order] = wavelength_blocks
 
-    def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> NoReturn:
+    def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> None:
         """
         Called for all Instruments, even those that do not need an external data load.
         Checks if the non-fatal Flag "LOADING_EXTERNAL_DATA" exists in the Status. If so, add the fatal Flag
