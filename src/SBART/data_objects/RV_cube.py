@@ -1247,7 +1247,7 @@ class RV_cube(BASE):
             instrument_properties=instrument_info,
             has_orderwise_rvs=has_orderwise_rvs,
             # for backwards compatibility:
-            is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", True),
+            is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
         )
 
         logger.debug("Loading misc Info:")

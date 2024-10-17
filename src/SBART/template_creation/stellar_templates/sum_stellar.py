@@ -259,9 +259,9 @@ class SumStellar(StellarTemplate):
                     raise BadTemplateError("Template creation failed")
 
                 frameID, order, rejection = comm_out
-                self.rejection_array[
-                    self.frameIDs_to_use.index(frameID), order
-                ] = rejection
+                self.rejection_array[self.frameIDs_to_use.index(frameID), order] = (
+                    rejection
+                )
                 received += 1
             logger.debug(f"Frame took {time.time() - t :0f} seconds")
 
