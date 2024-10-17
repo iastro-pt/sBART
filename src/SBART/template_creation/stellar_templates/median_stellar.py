@@ -164,7 +164,7 @@ class MedianStellar(StellarTemplate):
         # TODO: Avoid error ir we launch this after the template is already in shared memory!
         buffer_sizes = (
             self.wavelengths.shape[0],
-            self.frameIDs_to_use,
+            len(self.frameIDs_to_use),
             self.wavelengths.shape[1],
         )
         shr_wave, shr_tmp, shr_uncert, shr_counts = self.convert_to_shared_mem(
@@ -351,11 +351,10 @@ class MedianStellar(StellarTemplate):
                     except Exception as e:
                         logger.critical("Interpolation failed due to: {}", e)
                         raise e
-
-                    stellar_template[frame_count][order][
+                    stellar_template[order][frame_count][
                         wavelengths_to_interpolate
                     ] += interp_ord
-                    stellar_template_errors[frame_count][order][
+                    stellar_template_errors[order][frame_count][
                         wavelengths_to_interpolate
                     ] += (interp_err**2)
                     a = counts[order]
