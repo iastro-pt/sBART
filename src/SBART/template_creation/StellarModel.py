@@ -23,6 +23,7 @@ from SBART.utils.UserConfigs import (
 
 from .stellar_templates.OBS_stellar import OBS_Stellar
 from .stellar_templates.sum_stellar import SumStellar
+from .stellar_templates.median_stellar import MedianStellar
 
 
 class StellarModel(TemplateFramework):
@@ -55,22 +56,16 @@ class StellarModel(TemplateFramework):
 
     model_type = "Stellar"
 
-    template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar}
+    template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar, "Median": MedianStellar}
 
     _default_params = TemplateFramework._default_params + DefaultValues(
-        CREATION_MODE=UserParam(
-            "Sum", constraint=ValueFromList(list(template_map.keys()))
-        ),
-        ALIGNEMENT_RV_SOURCE=UserParam(
-            "DRS", constraint=ValueFromList(["DRS", "SBART"])
-        ),
+        CREATION_MODE=UserParam("Sum", constraint=ValueFromList(list(template_map.keys()))),
+        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam("", constraint=ValueFromDtype((str, Path))),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),
     )
 
-    def __init__(
-        self, root_folder_path: UI_PATH, user_configs: Optional[UI_DICT] = None
-    ):
+    def __init__(self, root_folder_path: UI_PATH, user_configs: Optional[UI_DICT] = None):
         """
         Instantiation of the object:
 
@@ -81,9 +76,7 @@ class StellarModel(TemplateFramework):
         user_configs: Optional[Dict[str, Any]]
             Dictionary with the keys and values of the user parameters that have been described above
         """
-        super().__init__(
-            mode="", root_folder_path=root_folder_path, user_configs=user_configs
-        )
+        super().__init__(mode="", root_folder_path=root_folder_path, user_configs=user_configs)
 
         self._creation_conditions = Empty_condition()
         self.iteration_number = 0
@@ -149,9 +142,7 @@ class StellarModel(TemplateFramework):
                         continue
                     self.iteration_number = iter_number
 
-                    self.RV_source = Path(
-                        self._internal_configs["PREVIOUS_SBART_PATH"]
-                    ).parent.stem
+                    self.RV_source = Path(self._internal_configs["PREVIOUS_SBART_PATH"]).parent.stem
                     break
                 else:
                     msg = "Couldn't find iteration number from user-provided previous sbart path"
@@ -168,14 +159,10 @@ class StellarModel(TemplateFramework):
 
             except custom_exceptions.InvalidConfiguration as e:
                 self.add_to_status(INTERNAL_ERROR)
-                logger.exception(
-                    "SBART RV loading routine failed. Stopping template creation"
-                )
+                logger.exception("SBART RV loading routine failed. Stopping template creation")
                 raise e
         else:
-            logger.info(
-                "Using CCF RVs as the basis for the creation of the stellar models"
-            )
+            logger.info("Using CCF RVs as the basis for the creation of the stellar models")
 
         self.add_relative_path("Stellar", f"Stellar/Iteration_{self.iteration_number}")
 
@@ -211,9 +198,7 @@ class StellarModel(TemplateFramework):
                 f"Key <{key}> from Stellar Model over-riding the one from the template configs"
             )
         user_configs[key] = self._internal_configs[key]
-        stellar_template = chosen_template(
-            subInst=subInstrument, user_configs=user_configs
-        )
+        stellar_template = chosen_template(subInst=subInstrument, user_configs=user_configs)
 
         try:
             stellar_template.create_stellar_template(
@@ -232,9 +217,7 @@ class StellarModel(TemplateFramework):
             bad_orders = set()
             for temp in self.templates.values():
                 if not temp.is_valid:
-                    logger.critical(
-                        "Invalid template <{}> does not have orders to skip", temp
-                    )
+                    logger.critical("Invalid template <{}> does not have orders to skip", temp)
                     continue
                 bad_orders.union(temp.bad_orders)
         else:
