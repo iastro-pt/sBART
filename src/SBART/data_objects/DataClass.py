@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
 import ujson as json
@@ -53,6 +64,8 @@ class DataClass(BASE):
 
         This *data_object* has all the functions that the DataClass object implements!
     """
+
+    extra_loading_functions: Dict[str, Callable] = {}
 
     def __init__(
         self,
@@ -163,6 +176,8 @@ class DataClass(BASE):
     ########################
     #    Operate on Data   #
     ########################
+    def get_extra_loading_functions(self):
+        return self.extra_loading_functions
 
     def load_previous_SBART_results(
         self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
@@ -1010,10 +1025,9 @@ class DataClass(BASE):
         See if the given instrument is one of the ones that has extra information to load.
         If so, then
         """
-        info_load_map = {"CARMENES": self.load_CARMENES_extra_information}
 
         logger.info("Checking if the instrument has extra data to load")
-        for key, load_func in info_load_map.items():
+        for key, load_func in self.get_extra_loading_functions().items():
             if self.has_instrument_data(key):
                 logger.info(
                     f"Dataclass has {key} data. Extra loading is being triggered"
@@ -1025,108 +1039,17 @@ class DataClass(BASE):
             "Current instrument does not need to load anything from the outside"
         )
 
-    def load_CARMENES_extra_information(self) -> None:
-        """CARMENES pipeline does not give RVs, we have to do an external load of the information
+    @classmethod
+    def add_extra_loading_information(cls, name: str, loader: Callable) -> None:
+        """Add a new loader function to run after the Instrument loads its data
 
-        Parameters
-        ----------
-        shaq_folder : str
-            Path to the main folder of shaq-outputs. where all the KOBE-*** targets live
+        Args:
+            name (str): Instrument name
+            loader (Callable): function to run afterwards
         """
-
-        name_to_search = self.Target.true_name
-
-        if self.observations[0]._internal_configs["is_KOBE_data"]:
-            if "KOBE-" not in name_to_search:
-                name_to_search = (
-                    "KOBE-" + name_to_search
-                )  # temporary fix for naming problem!
-        else:
-            logger.info(
-                f"Not loading KOBE data, searching for {name_to_search} dat file with Rvs"
-            )
-
-        shaq_folder = Path(self.observations[0]._internal_configs["shaq_output_folder"])
-        override_BERV = self.observations[0]._internal_configs["override_BERV"]
-
-        if shaq_folder.name.endswith("dat"):
-            logger.info("Received the previous RV file, not searching for outputs")
-            shaqfile = shaq_folder
-        else:
-            logger.info("Searching for outputs of previous RV extraction")
-            shaqfile = shaq_folder / name_to_search / f"{name_to_search}_RVs.dat"
-
-        if shaqfile.exists():
-            logger.info("Loading extra CARMENES data from {}", shaqfile)
-        else:
-            logger.critical(f"RV file does not exist on {shaqfile}")
-            raise custom_exceptions.InvalidConfiguration("Missing RV file for data")
-
-        number_loads = 0
-        locs = []
-        loaded_BJDs = [frame.get_KW_value("BJD") for frame in self.observations]
-        with open(shaqfile) as file:
-            for line in file:
-                if "#" in line:  # header or other "BAD" files
-                    continue
-                # TODO: implement a more thorough check in here, to mark the "bad" frames as invalid!
-                ll = line.strip().split()
-                if len(ll) == 0:
-                    logger.warning(f"shaq RV from {name_to_search} has empty line")
-                    continue
-                bjd = round(float(ll[1]) - 2400000.0, 7)  # we have the full bjd date
-
-                try:
-                    index = loaded_BJDs.index(
-                        bjd
-                    )  # to make sure that everything is loaded in the same order
-                    locs.append(index)
-                except ValueError:
-                    logger.warning(
-                        "RV shaq has entry that does not exist in the S2D files"
-                    )
-                    continue
-
-                self.observations[index].import_KW_from_outside(
-                    "DRS_RV", float(ll[5]) * kilometer_second, optional=False
-                )
-                self.observations[index].import_KW_from_outside(
-                    "DRS_RV_ERR", float(ll[3]) * kilometer_second, optional=False
-                )
-                if override_BERV:
-                    self.observations[index].import_KW_from_outside(
-                        "BERV", float(ll[10]) * kilometer_second, optional=False
-                    )
-
-                self.observations[index].import_KW_from_outside(
-                    "FWHM", float(ll[11]), optional=True
-                )
-                self.observations[index].import_KW_from_outside(
-                    "BIS SPAN", float(ll[13]), optional=True
-                )
-
-                drift_val = np.nan_to_num(float(ll[7])) * meter_second
-                drift_err = np.nan_to_num(float(ll[8])) * meter_second
-                drift_flag = float(ll[9])
-                if drift_flag > 1:
-                    self.observations[index].add_to_status(
-                        KW_WARNING(f"Drift flag of KOBE is greater than 1")
-                    )
-
-                self.observations[index].import_KW_from_outside(
-                    "drift", drift_val, optional=False
-                )
-                self.observations[index].import_KW_from_outside(
-                    "drift_ERR", drift_err, optional=False
-                )
-
-                number_loads += 1
-                self.observations[index].finalized_external_data_load()
-
-        if number_loads < len(self.observations):
-            msg = f"RV shaq outputs does not have value for all S2D files of {name_to_search} ({number_loads}/{len(self.observations)})"
-
-            logger.critical(msg)
+        if name in cls.extra_loading_functions:
+            logger.warning(f"Overloading extra-loading information from {name}")
+        cls.extra_loading_functions[name] = loader
 
     def __repr__(self):
         return (
