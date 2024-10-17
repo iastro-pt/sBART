@@ -611,7 +611,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.shm["template"] = buffer_info
         template = shared_temp
 
-        buffer_info, shared_wave = create_shared_array(self.wavelengths)
+
+        buffer_info, shared_wave = create_shared_array(np.zeros(self.wavelengths.shape))
         self.shm["template_counts"] = buffer_info
         counts = shared_wave
 
