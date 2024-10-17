@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, NoReturn, Optional, Union
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
 
 import numpy as np
 import ujson as json
@@ -590,7 +590,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             setattr(self, key, value)
 
     # Handle shared memory
-    def convert_to_shared_mem(self):
+    def convert_to_shared_mem(self, custom_size: Optional[Iterable[float]] = None):
         if self._in_shared_mem:
             # Avoid opening multiple arrays!
             logger.info(f"{self.__class__.name} already in shared memory")
@@ -598,7 +598,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         logger.info("Putting the stellar template in shared memory")
         self._in_shared_mem = True
 
-        array_of_zeros = np.zeros(self.wavelengths.shape)
+        if custom_size is None:
+            array_of_zeros = np.zeros(self.wavelengths.shape)
+        else:
+            array_of_zeros = np.zeros(custom_size)
+
         buffer_info, shared_uncerts = create_shared_array(array_of_zeros)
         self.shm["template_errors"] = buffer_info
         uncertainties = shared_uncerts
@@ -607,7 +611,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.shm["template"] = buffer_info
         template = shared_temp
 
-        buffer_info, shared_wave = create_shared_array(array_of_zeros)
+        buffer_info, shared_wave = create_shared_array(self.wavelengths)
         self.shm["template_counts"] = buffer_info
         counts = shared_wave
 
