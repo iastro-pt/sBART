@@ -22,28 +22,19 @@ def find_latest_version(path, enable_logs: bool = True) -> str:
     version_sum = []
 
     for filename in os.listdir(path):
-        if (
-            os.path.isdir(os.path.join(path, filename))
-            or "_" not in filename
-            or filename.startswith(".")
-        ):
+        if os.path.isdir(os.path.join(path, filename)) or "_" not in filename or filename.startswith("."):
             continue
 
         available_cubes.append(filename)
         cube_ver = filename.split("_")[-1].split(".")[0]
         versions_full.append(cube_ver)
-        version_sum.append(
-            sum([i * j for i, j in zip([100, 10, 1], map(int, cube_ver.split("-")))])
-        )
+        version_sum.append(sum([i * j for i, j in zip([100, 10, 1], map(int, cube_ver.split("-")))]))
     try:
         highest_ver = max(version_sum)
     except ValueError as exc:  # no version number in the list
         raise FileNotFoundError(f"There are no SBART outputs in {path}") from exc
 
-    if (
-        highest_ver != sum([i * j for i, j in zip([100, 10, 1], __version_info__)])
-        and enable_logs
-    ):
+    if highest_ver != sum([i * j for i, j in zip([100, 10, 1], __version_info__)]) and enable_logs:
         logger.warning(
             "\tRV cube is not the most recently installed version ({}). Using data from {}".format(
                 __version__, versions_full[version_sum.index(highest_ver)]
@@ -54,8 +45,4 @@ def find_latest_version(path, enable_logs: bool = True) -> str:
 
 
 if __name__ == "__main__":
-    print(
-        find_latest_version(
-            "/home/amiguel/seminar/validate_SBART/outputs/ESPRESSO/Suite_Small/RV_step"
-        )
-    )
+    print(find_latest_version("/home/amiguel/seminar/validate_SBART/outputs/ESPRESSO/Suite_Small/RV_step"))

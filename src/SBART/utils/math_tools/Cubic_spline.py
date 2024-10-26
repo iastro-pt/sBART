@@ -16,9 +16,7 @@ try:
 
     CYTHON_UNAVAILABLE = False
 except ImportError:
-    logger.critical(
-        "Cython interface is not found, please make sure that the installation went smoothly"
-    )
+    logger.critical("Cython interface is not found, please make sure that the installation went smoothly")
     CYTHON_UNAVAILABLE = True
 
 # np.seterr(all='raise')
@@ -45,10 +43,7 @@ class CustomCubicSpline:
         if ignore_covariances:
             self.cov_matrix = original_errors**2
         else:
-            self.cov_matrix = (
-                np.zeros((original_data.size, original_data.size))
-                + original_errors**2
-            )
+            self.cov_matrix = np.zeros((original_data.size, original_data.size)) + original_errors**2
 
         self._cached_h = False
         self._inv_h = []
@@ -57,9 +52,7 @@ class CustomCubicSpline:
         self.inv_delta_wave = 1 / np.diff(old_wavelengths)
 
         # using memory layout C as the "second index" is the one that changes fastest
-        self.cached_ones = np.ones(
-            (self.data_size - 2, self.data_size - 2), dtype=np.float64, order="C"
-        )
+        self.cached_ones = np.ones((self.data_size - 2, self.data_size - 2), dtype=np.float64, order="C")
 
     def compute_h_matrix(self):
         """
@@ -108,9 +101,7 @@ class CustomCubicSpline:
         partials[0] = 0
         partials[-1] = 0
 
-        partial_derivative(
-            inv_h_matrix, self.inv_delta_wave, index_i, partials, self.n_threads
-        )
+        partial_derivative(inv_h_matrix, self.inv_delta_wave, index_i, partials, self.n_threads)
 
         # avoid underflows
         partials[np.where(np.abs(partials) < 1e-100)] = 0
@@ -229,10 +220,7 @@ class CustomCubicSpline:
                     found_exact_match = True
                     break
                 try:
-                    if (
-                        old_wavelengths[index] < new_wave_position
-                        and old_wavelengths[index + 1] >= new_wave_position
-                    ):
+                    if old_wavelengths[index] < new_wave_position and old_wavelengths[index + 1] >= new_wave_position:
                         index_0 = index
                         index_1 = index + 1
                         # wavelengths are sorted; can start searching after the i

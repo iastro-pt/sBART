@@ -1,6 +1,7 @@
 """
 Responsible for common operations for the RV extraction
 """
+
 from .AirtoVac import airtovac
 from .CCF_errors import RVerror
 from .clean_data import find_wavelength_limits

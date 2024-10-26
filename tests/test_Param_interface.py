@@ -2,16 +2,18 @@ import numpy as np
 import pytest
 
 from SBART.ModelParameters import ModelComponent
-from SBART.ModelParameters import  RV_component
+from SBART.ModelParameters import RV_component
 from SBART.ModelParameters import Model, RV_Model
 
 from SBART.utils import custom_exceptions
 from SBART.utils.units import meter_second
 
+
 def test_Model_component_init():
-    comp = ModelComponent(name="teste",
-                          default_enabled=False,
-                          )
+    comp = ModelComponent(
+        name="teste",
+        default_enabled=False,
+    )
 
     assert comp.is_enabled is False
     assert comp.is_locked is False
@@ -37,37 +39,27 @@ def test_Model_component_prior_genesis():
     """
     Can't test the RV genesis on the RVparameter as we need to pass it a dataclass object to load info
     """
-    comp = ModelComponent(name="teste",
-                          default_enabled=True,
-                          bounds=[1, 2]
-                          )
+    comp = ModelComponent(name="teste", default_enabled=True, bounds=[1, 2])
 
     with pytest.raises(custom_exceptions.InvalidConfiguration):
         comp.generate_prior_from_frameID(0)
 
-    comp = ModelComponent(name="teste",
-                          default_enabled=True,
-                          bounds=[1, 2],
-                          initial_guess=1
-                          )
+    comp = ModelComponent(name="teste", default_enabled=True, bounds=[1, 2], initial_guess=1)
 
     comp.generate_prior_from_frameID(1)
 
     for bad_val in [0, 3]:
         with pytest.raises(custom_exceptions.InvalidConfiguration):
-            _ = ModelComponent(name="teste",
-                               default_enabled=True,
-                               bounds=[1, 2],
-                               initial_guess=bad_val
-                               ).generate_prior_from_frameID(0)
+            _ = ModelComponent(
+                name="teste", default_enabled=True, bounds=[1, 2], initial_guess=bad_val
+            ).generate_prior_from_frameID(0)
 
 
-def test_Model_component_lock():
-    ...
+def test_Model_component_lock(): ...
 
 
 def test_RVModel():
-    RV_comp = RV_component([1*meter_second, 1*meter_second], RV_keyword="SBART", user_configs={})
+    RV_comp = RV_component([1 * meter_second, 1 * meter_second], RV_keyword="SBART", user_configs={})
 
     comp = ModelComponent(name="teste")
 
@@ -90,9 +82,7 @@ def test_RVModel():
 
 
 def test_Model_grouping():
-    comp_map = {"group_A": 2,
-                "group_B": 3
-                }
+    comp_map = {"group_A": 2, "group_B": 3}
     param_list = []
     for name, number in comp_map.items():
         for i in range(number):

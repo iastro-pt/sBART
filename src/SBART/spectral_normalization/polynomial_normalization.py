@@ -44,18 +44,12 @@ class Polynomial_normalization(NormalizationBase):
 
         optim_result = {"param_vector": out}
         return (
-            *self._apply_orderwise_normalization(
-                wavelengths, flux, uncertainties, param_vector=out
-            ),
+            *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, param_vector=out),
             optim_result,
         )
 
-    def _apply_orderwise_normalization(
-        self, wavelengths, flux, uncertainties, **kwargs
-    ):
-        super()._apply_orderwise_normalization(
-            wavelengths, flux, uncertainties, **kwargs
-        )
+    def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
+        super()._apply_orderwise_normalization(wavelengths, flux, uncertainties, **kwargs)
         poly = np.poly1d(kwargs["param_vector"])
         model = poly(wavelengths)
         return flux / model, uncertainties / model

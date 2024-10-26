@@ -101,9 +101,7 @@ class Spectral_Modelling(BASE):
         self.initialize_modelling_interface()
         try:
             key = "INTERPOL_MODE"
-            self._internal_configs.update_configs_with_values(
-                {key: new_properties[key]}
-            )
+            self._internal_configs.update_configs_with_values({key: new_properties[key]})
             logger.info(
                 "Changing the interpolation mode of {} to {}",
                 self.name,
@@ -119,9 +117,7 @@ class Spectral_Modelling(BASE):
     ):
         self.initialize_modelling_interface()
 
-        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(
-            order, include_invalid
-        )
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
         desired_inds = ~mask
 
         og_lambda, og_spectra, og_errs = (

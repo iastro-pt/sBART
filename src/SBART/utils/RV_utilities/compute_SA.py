@@ -30,9 +30,7 @@ def build_query(star):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
     aSimbad = Simbad()
-    aSimbad.add_votable_fields(
-        "rv_value", "pm", "pmdec", "pmra", "plx", "ra(d)", "dec(d)"
-    )
+    aSimbad.add_votable_fields("rv_value", "pm", "pmdec", "pmra", "plx", "ra(d)", "dec(d)")
 
     r = aSimbad.query_object(star)
     if r is None:

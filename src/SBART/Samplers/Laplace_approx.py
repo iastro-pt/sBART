@@ -111,9 +111,7 @@ class Laplace_approx(SbartBaseSampler):
         out_pkg["status"] = order_status
         return out_pkg, order_status
 
-    def process_posterior(
-        self, optimization_output, target, target_kwargs, output_pkg
-    ) -> Tuple[Package, Flag]:
+    def process_posterior(self, optimization_output, target, target_kwargs, output_pkg) -> Tuple[Package, Flag]:
         """
         Process the results of the application of the Laplace Approximation
 
@@ -166,24 +164,14 @@ class Laplace_approx(SbartBaseSampler):
                 output_pkg[key] = np.nan * meter_second
 
         if optimization_output.success:
-            target_interface = (
-                self.apply_orderwise
-                if self.mode == "order-wise"
-                else self.apply_epochwise
-            )
-            args = (
-                (target, target_kwargs)
-                if self.mode == "order-wise"
-                else (target_kwargs,)
-            )
+            target_interface = self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
+            args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
                 free_RV_target = lambda RV: target_interface(RV, *args)
             else:
                 # Fix all parameters to MAP estimate and compute the 2nd derivative on RV
-                free_RV_target = lambda RV: target_interface(
-                    [RV, *optimization_output.x[1:]], *args
-                )
+                free_RV_target = lambda RV: target_interface([RV, *optimization_output.x[1:]], *args)
 
             RV_variance = 1 / derivative(
                 free_RV_target,
@@ -198,15 +186,9 @@ class Laplace_approx(SbartBaseSampler):
             logger.info("Computing post-RV metrics for mode {}".format(self.mode))
 
             if self.mode == "epoch-wise":
-                target_kwargs["run_information"]["target_specific_configs"][
-                    "compute_metrics"
-                ] = True
-                target_kwargs["run_information"]["target_specific_configs"][
-                    "SAVE_DISK_SPACE"
-                ] = self.disk_save_enabled
-                target_kwargs["run_information"]["target_specific_configs"][
-                    "weighted"
-                ] = True
+                target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
+                target_kwargs["run_information"]["target_specific_configs"]["SAVE_DISK_SPACE"] = self.disk_save_enabled
+                target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
                 min_info = target_interface(optimization_output.x, target_kwargs)
                 for key, val in min_info.items():
                     output_pkg[key] = val
@@ -214,9 +196,7 @@ class Laplace_approx(SbartBaseSampler):
                 target_kwargs["compute_metrics"] = True
                 target_kwargs["weighted"] = True
                 target_kwargs["SAVE_DISK_SPACE"] = self.disk_save_enabled
-                min_info = target_interface(
-                    optimization_output.x, target, target_kwargs
-                )
+                min_info = target_interface(optimization_output.x, target, target_kwargs)
 
                 for key, val in min_info.items():
                     output_pkg[key] = val

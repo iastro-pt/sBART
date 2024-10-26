@@ -10,16 +10,12 @@ class Paths:
         root_level_path: Optional[Union[str, Path]] = None,
         preconfigured_paths: Optional[Dict[str, str]] = None,
     ):
-        self._folder_mappings = (
-            preconfigured_paths if preconfigured_paths is not None else {}
-        )
+        self._folder_mappings = preconfigured_paths if preconfigured_paths is not None else {}
 
         if isinstance(root_level_path, str):
             root_level_path = Path(root_level_path)
 
-        self._root_path: Optional[Path] = (
-            root_level_path if root_level_path is not None else None
-        )
+        self._root_path: Optional[Path] = root_level_path if root_level_path is not None else None
 
         # For lazy creation of the folders and to avoid multiple creation attempts
         self._constructed_folders = set()
@@ -38,13 +34,9 @@ class Paths:
         """
         self._folder_mappings[folder_KW] = rel_path
 
-    def get_path_to(
-        self, folder_tag: str, absolute: bool = True, as_posix: bool = True
-    ) -> Union[str, Path]:
+    def get_path_to(self, folder_tag: str, absolute: bool = True, as_posix: bool = True) -> Union[str, Path]:
         if self._root_path is None:
-            raise custom_exceptions.MissingRootPath(
-                "Must provide the root level path before asking for other paths"
-            )
+            raise custom_exceptions.MissingRootPath("Must provide the root level path before asking for other paths")
 
         if folder_tag == "ROOT":
             out_path = self._root_path.absolute()
@@ -63,9 +55,7 @@ class Paths:
 
         return out_path
 
-    def add_root_path(
-        self, path: Union[str, Path], current_folder_name: Optional[str] = None
-    ):
+    def add_root_path(self, path: Union[str, Path], current_folder_name: Optional[str] = None):
         if isinstance(path, str):
             path = Path(path)
 

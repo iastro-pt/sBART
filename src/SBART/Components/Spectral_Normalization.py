@@ -53,9 +53,7 @@ class Spectral_Normalization(BASE):
     )
 
     def __init__(self, **kwargs):
-        self._default_params = (
-            self._default_params + Spectral_Normalization._default_params
-        )
+        self._default_params = self._default_params + Spectral_Normalization._default_params
         self.has_normalization_component = True
         super().__init__(**kwargs)
 
@@ -100,9 +98,7 @@ class Spectral_Normalization(BASE):
             )
             self.generate_root_path(Path("."))
 
-        self._normalization_interfaces[key].generate_root_path(
-            self._internalPaths.root_storage_path
-        )
+        self._normalization_interfaces[key].generate_root_path(self._internalPaths.root_storage_path)
 
         current_frame_name = self.fname.split(".fits")[0]
         try:  # Generate class to store the normalization parameters
@@ -117,9 +113,7 @@ class Spectral_Normalization(BASE):
                 frame_name=current_frame_name,
                 algo_name=self._internal_configs["NORMALIZATION_MODE"],
             )
-            self._normalization_information.generate_root_path(
-                self._internalPaths.root_storage_path
-            )
+            self._normalization_information.generate_root_path(self._internalPaths.root_storage_path)
 
     def normalize_spectra(self):
         """
@@ -138,9 +132,7 @@ class Spectral_Normalization(BASE):
             return
         self.initialize_normalization_interface()
 
-        norm_interface = self._normalization_interfaces[
-            self._internal_configs["NORMALIZATION_MODE"]
-        ]
+        norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
         if norm_interface.orderwise_application:
             self.trigger_orderwise_method(norm_interface)
         else:
@@ -178,14 +170,10 @@ class Spectral_Normalization(BASE):
     def trigger_orderwise_method(self, norm_interface):
         # TODO: see if we want to parallelize this!
         for order in range(self.N_orders):
-            wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(
-                order, include_invalid=True
-            )
+            wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(order, include_invalid=True)
 
             mask_to_use = ~mask
-            loaded_info = self._normalization_information.get_norm_info_from_order(
-                order
-            )
+            loaded_info = self._normalization_information.get_norm_info_from_order(order)
 
             (
                 new_flux,

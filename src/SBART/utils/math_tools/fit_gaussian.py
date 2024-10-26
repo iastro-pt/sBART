@@ -56,9 +56,7 @@ def fit_CCF_gaussian(
     ]
 
     try:
-        (_, output_rv, _, _), (_, output_err, _, _) = gaussfit(
-            x=rv_array, y=ccf_profile, p0=guess, return_errors=True
-        )
+        (_, output_rv, _, _), (_, output_err, _, _) = gaussfit(x=rv_array, y=ccf_profile, p0=guess, return_errors=True)
     except:
         logger.opt(exception=True).critical("CCF gaussian fit failed")
         fit_status = CONVERGENCE_FAIL

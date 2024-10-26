@@ -139,9 +139,7 @@ class Spectrum(BASE):
             return
         berv = BERV_value.to(kilometer_second).value
         berv_func = (
-            apply_approximated_BERV_correction
-            if self.use_approximated_BERV_correction
-            else apply_BERV_correction
+            apply_approximated_BERV_correction if self.use_approximated_BERV_correction else apply_BERV_correction
         )
         self.wavelengths = berv_func(self.wavelengths, berv)
         self.is_BERV_corrected = True
@@ -162,9 +160,7 @@ class Spectrum(BASE):
             return
         berv = BERV_value.to(kilometer_second).value
         berv_func = (
-            remove_approximated_BERV_correction
-            if self.use_approximated_BERV_correction
-            else remove_BERV_correction
+            remove_approximated_BERV_correction if self.use_approximated_BERV_correction else remove_BERV_correction
         )
 
         self.wavelengths = berv_func(self.wavelengths, berv)
@@ -187,9 +183,7 @@ class Spectrum(BASE):
 
         """
         if self.was_telluric_corrected:
-            logger.warning(
-                "Attempting to correct telluric features of previously corrected data. Doing nothing"
-            )
+            logger.warning("Attempting to correct telluric features of previously corrected data. Doing nothing")
             return
 
         if model.shape != self.spectra.shape:
@@ -211,9 +205,7 @@ class Spectrum(BASE):
         -------
 
         """
-        raise NotImplementedError(
-            "{} does not have a BLAZE computation tool".format(self.name)
-        )
+        raise NotImplementedError("{} does not have a BLAZE computation tool".format(self.name))
 
     def get_BLAZE_function(self):
         """
@@ -312,9 +304,7 @@ class Spectrum(BASE):
         """
         logger.info("Setting up frame as a Zscore!")
         for order in range(self.N_orders):
-            _, flux, _, mask = self.get_data_from_spectral_order(
-                order=order, include_invalid=True
-            )
+            _, flux, _, mask = self.get_data_from_spectral_order(order=order, include_invalid=True)
             valid_mask = ~mask
             mean, std = np.mean(flux[valid_mask]), np.std(flux[valid_mask])
             self.spectra = (self.spectra - mean) / std

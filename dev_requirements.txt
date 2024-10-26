@@ -1,6 +1,5 @@
 pre-commit ~= 2.18.1
-isort 
-black 
+ruff 
 Sphinx ~= 5.0.0
 sphinx-autodoc-typehints ~= 1.18.1
 nbsphinx ~= 0.8.8

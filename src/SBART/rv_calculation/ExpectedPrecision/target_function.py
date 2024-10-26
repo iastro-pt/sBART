@@ -81,13 +81,7 @@ def target(params, **kwargs):
     res = spectra[indexes] - normalized_template
     pred_velocity = (
         SPEED_OF_LIGHT
-        * np.sum(
-            res
-            * np.sqrt(
-                weights
-                / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2)
-            )
-        )
+        * np.sum(res * np.sqrt(weights / (kwargs["squared_spectra_uncerts"][indexes] + normalized_uncerts**2)))
         / np.sum(weights)
     )
     if kwargs["current_order"] == 100:

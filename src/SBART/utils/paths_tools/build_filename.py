@@ -4,9 +4,7 @@ from typing import Optional
 from SBART import __version__
 
 
-def build_filename(
-    og_path: Path, filename, fmt, SBART_version: Optional[str] = None
-) -> str:
+def build_filename(og_path: Path, filename, fmt, SBART_version: Optional[str] = None) -> str:
     """
     Standardize the filenames of sBART outputs
 

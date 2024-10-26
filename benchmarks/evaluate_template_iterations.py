@@ -10,13 +10,9 @@ from pathlib import Path
 
 curr_folder = Path(__file__).parent.parent.absolute()
 
-storage_folder_nominal = (
-    curr_folder / "benchmarks_results" / "template_iterations" / "nominal"
-)
+storage_folder_nominal = curr_folder / "benchmarks_results" / "template_iterations" / "nominal"
 
-storage_folder_blind = (
-    curr_folder / "benchmarks_results" / "template_iterations" / "blindRVs"
-)
+storage_folder_blind = curr_folder / "benchmarks_results" / "template_iterations" / "blindRVs"
 
 data_to_test = ""
 
@@ -46,9 +42,7 @@ for const_rv_guess, storage_folder in [
         confs = {
             "STELLAR_MODEL_CONFIGS": {
                 "ALIGNEMENT_RV_SOURCE": "SBART",
-                "PREVIOUS_SBART_PATH": storage_folder
-                / f"Iteration_{iteration}"
-                / rv_method,
+                "PREVIOUS_SBART_PATH": storage_folder / f"Iteration_{iteration}" / rv_method,
             }
         }
 

@@ -108,9 +108,7 @@ class HARPS(ESO_PIPELINE):
             KW_map = {}
 
         if user_configs["use_old_pipeline"]:
-            file_path, self.ccf_path, self.BIS_file, search_status = self.find_files(
-                file_path
-            )
+            file_path, self.ccf_path, self.BIS_file, search_status = self.find_files(file_path)
 
         super().__init__(
             inst_name="HARPS",
@@ -135,9 +133,7 @@ class HARPS(ESO_PIPELINE):
             self.is_BERV_corrected = False
 
         self.instrument_properties["resolution"] = 115_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-            "La Silla Observatory"
-        )
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("La Silla Observatory")
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
@@ -168,18 +164,14 @@ class HARPS(ESO_PIPELINE):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = header[
-                f"HIERARCH {self.KW_identifier} TEL AMBI {endKW}"
-            ]
+            self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} TEL AMBI {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
 
         if self.observation_info["relative_humidity"] == 255:
-            logger.warning(
-                f"{self.name} has an invalid value in the humidity sensor..."
-            )
+            logger.warning(f"{self.name} has an invalid value in the humidity sensor...")
             self.observation_info["relative_humidity"] = np.nan
 
         self.observation_info["airmass"] = header["HIERARCH ESO TEL AIRM START"]
@@ -199,15 +191,9 @@ class HARPS(ESO_PIPELINE):
             # search for e2ds file
             folder_name = file_name
 
-            e2ds_files = glob.glob(
-                os.path.join(folder_name, "*e2ds_A.fits"), recursive=True
-            )
-            ccf_files = glob.glob(
-                os.path.join(folder_name, "*ccf*A.fits"), recursive=True
-            )
-            bis_files = glob.glob(
-                os.path.join(folder_name, "*bis*A.fits"), recursive=True
-            )
+            e2ds_files = glob.glob(os.path.join(folder_name, "*e2ds_A.fits"), recursive=True)
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
+            bis_files = glob.glob(os.path.join(folder_name, "*bis*A.fits"), recursive=True)
 
             for name, elems in [
                 ("e2ds_A", e2ds_files),
@@ -231,21 +217,15 @@ class HARPS(ESO_PIPELINE):
             bis_path = bis_files[0]
             search_status = SUCCESS("Found all input files")
         else:
-            logger.debug(
-                "Received path of E2DS file; searching for CCF with matching name"
-            )
+            logger.debug("Received path of E2DS file; searching for CCF with matching name")
             folder_name = os.path.dirname(file_name)
             e2ds_path = file_name
             file_start, *_ = os.path.basename(file_name).split("_")
 
             found_CCF = False
             found_BIS = False
-            ccf_files = glob.glob(
-                os.path.join(folder_name, "*ccf*A.fits"), recursive=True
-            )
-            bis_files = glob.glob(
-                os.path.join(folder_name, "*bis*A.fits"), recursive=True
-            )
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
+            bis_files = glob.glob(os.path.join(folder_name, "*bis*A.fits"), recursive=True)
             for file in ccf_files:
                 if file_start in file:
                     ccf_path = file
@@ -259,9 +239,7 @@ class HARPS(ESO_PIPELINE):
                 logger.info("Found CCF file: {}".format(ccf_path))
                 search_status = SUCCESS("Found CCF file")
             else:
-                logger.critical(
-                    "Was not able to find CCF file. Marking frame as invalid"
-                )
+                logger.critical("Was not able to find CCF file. Marking frame as invalid")
                 ccf_path = ""
 
             if not found_BIS:
@@ -299,10 +277,7 @@ class HARPS(ESO_PIPELINE):
         # axis 1: all coefficients for the given order
 
         A = np.reshape(
-            [
-                hdr["HIERARCH ESO DRS CAL TH COEFF LL" + str(i)]
-                for i in range(omax * (d + 1))
-            ],
+            [hdr["HIERARCH ESO DRS CAL TH COEFF LL" + str(i)] for i in range(omax * (d + 1))],
             (omax, d + 1),
         )  # slow 30 ms
 
@@ -314,16 +289,10 @@ class HARPS(ESO_PIPELINE):
 
     def _load_old_DRS_KWs(self, header):
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from old pipeline without the config"
-            )
+            raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
 
-        self.observation_info["MAX_BERV"] = (
-            header["HIERARCH ESO DRS BERVMX"] * kilometer_second
-        )
-        self.observation_info["BERV"] = (
-            header["HIERARCH ESO DRS BERV"] * kilometer_second
-        )
+        self.observation_info["MAX_BERV"] = header["HIERARCH ESO DRS BERVMX"] * kilometer_second
+        self.observation_info["BERV"] = header["HIERARCH ESO DRS BERV"] * kilometer_second
 
         # Environmental KWs for telfit (also needs airmassm previously loaded)
         ambi_KWs = {
@@ -339,9 +308,7 @@ class HARPS(ESO_PIPELINE):
                 )
 
         for order in range(self.N_orders):
-            self.observation_info["orderwise_SNRs"].append(
-                header[f"HIERARCH ESO DRS SPE EXT SN{order}"]
-            )
+            self.observation_info["orderwise_SNRs"].append(header[f"HIERARCH ESO DRS SPE EXT SN{order}"])
 
         self.observation_info["airmass"] = header["HIERARCH ESO TEL AIRM START"]
 
@@ -362,9 +329,7 @@ class HARPS(ESO_PIPELINE):
             logger.warning("DRIFT KW does not exist")
 
         if bad_drift:
-            logger.warning(
-                "Due to previous drift-related problems, setting it to zero [m/s]"
-            )
+            logger.warning("Due to previous drift-related problems, setting it to zero [m/s]")
             drift = 0 * meter_second
             drift_err = 0 * meter_second
 
@@ -379,9 +344,7 @@ class HARPS(ESO_PIPELINE):
         logger.debug("Loading data from the ccf file")
         header = fits.getheader(self.ccf_path)
 
-        self.observation_info["DRS_RV"] = (
-            header["HIERARCH ESO DRS CCF RV"] * kilometer_second
-        )
+        self.observation_info["DRS_RV"] = header["HIERARCH ESO DRS CCF RV"] * kilometer_second
         self.observation_info["SPEC_TYPE"] = header["HIERARCH ESO DRS CCF MASK"]
 
         RV_err = np.sqrt(

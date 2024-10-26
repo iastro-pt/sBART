@@ -9,9 +9,7 @@ from SBART.utils import build_blocks
 from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
 
 
-def find_lines_indexes(
-    frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False
-):
+def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False):
     """
     Find regions where the spectrum is in a line
     Parameters
@@ -34,9 +32,7 @@ def find_lines_indexes(
         if make_plot:
             fig, axis = plt.subplots(2, sharex=True)
 
-        wave, flux, uncert, mask = frame.get_data_from_spectral_order(
-            order, include_invalid=include_invalid
-        )
+        wave, flux, uncert, mask = frame.get_data_from_spectral_order(order, include_invalid=include_invalid)
         first_derivative, errors = first_numerical_derivative(wave, flux, uncert)
         first_derivative = np.asarray(first_derivative)
         derivative_regions = np.where(
@@ -52,18 +48,12 @@ def find_lines_indexes(
             pixel_jumps.append(blocks[b_index + 1][0] - blocks[b_index][-1])
         marked_regions = []
         new_block = True
-        for jump_index, jump in enumerate(
-            pixel_jumps
-        ):  # TODO: missing the last block if it is not merged!
+        for jump_index, jump in enumerate(pixel_jumps):  # TODO: missing the last block if it is not merged!
             if new_block:
                 start = blocks[jump_index][0]
                 end = blocks[jump_index][-1]
 
-            if (
-                jump < 10
-                and jump_index < len(pixel_jumps) - 1
-                and (end + 1 - start) >= 2
-            ):
+            if jump < 10 and jump_index < len(pixel_jumps) - 1 and (end + 1 - start) >= 2:
                 end = blocks[jump_index + 1][-1]
                 new_block = False
             else:
@@ -103,8 +93,6 @@ if __name__ == "__main__":
 
     from SBART.Instruments import ESPRESSO
 
-    frame = ESPRESSO(
-        path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={}
-    )
+    frame = ESPRESSO(path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={})
 
     find_lines_indexes(frame, list(range(0, 100)))

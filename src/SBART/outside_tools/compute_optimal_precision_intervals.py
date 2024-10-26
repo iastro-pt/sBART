@@ -19,9 +19,7 @@ def compute_interval_value(data, start, end):
     return 1 / np.sqrt(np.sum(1 / data[:, start : end + 1] ** 2, axis=1))
 
 
-def generate_all_possible_combinations(
-    available_orders, N_intervals=4, min_interval_size=10
-):
+def generate_all_possible_combinations(available_orders, N_intervals=4, min_interval_size=10):
     """Generate all possible combinations of all elements
 
     Args:
@@ -39,15 +37,11 @@ def generate_all_possible_combinations(
     # |---0---|---1---|
     for lvl in range(N_intervals - 1):
         # Max index at which a level can end
-        max_index_end = len(available_orders) - min_interval_size * (
-            N_intervals - lvl - 2
-        )
+        max_index_end = len(available_orders) - min_interval_size * (N_intervals - lvl - 2)
         levels.append(max_index_end)
 
     first_interval_end = list(range(min_interval_size, levels[0] + 1))
-    print(
-        f"Generated {levels=}, assuming {len(available_orders)=}, {min_interval_size=}, and {N_intervals=}"
-    )
+    print(f"Generated {levels=}, assuming {len(available_orders)=}, {min_interval_size=}, and {N_intervals=}")
     combinations = [[(0, i)] for i in first_interval_end]
     level_index = 1
     for level in range(N_intervals - 1):
@@ -57,9 +51,7 @@ def generate_all_possible_combinations(
                 # Last loop, go from last value up to end of interval
                 new_comb.append([*item, [item[-1][1], levels[-1]]])
             else:
-                for end in range(
-                    item[-1][1] + min_interval_size, levels[level_index], 1
-                ):
+                for end in range(item[-1][1] + min_interval_size, levels[level_index], 1):
                     new_comb.append([*item, [item[-1][1], end]])
         combinations = new_comb
         level_index += 1
@@ -107,9 +99,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
                     wavelength=wave[~mask],
                     flux=flux[~mask],
                 )
-                empty_storage[id_index, ordeR_index] = convert_data(
-                    precision, as_value=True
-                )
+                empty_storage[id_index, ordeR_index] = convert_data(precision, as_value=True)
 
         intervals = generate_all_possible_combinations(
             list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size
@@ -118,14 +108,9 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
         for combination in intervals:
             precisions = []
             for interval in combination:
-                precisions.append(
-                    np.mean(compute_interval_value(empty_storage, *interval))
-                )
+                precisions.append(np.mean(compute_interval_value(empty_storage, *interval)))
 
-            metric = (
-                np.sum([np.sum(np.divide(i, precisions)) for i in precisions])
-                - N_intervals**2
-            )
+            metric = np.sum([np.sum(np.divide(i, precisions)) for i in precisions]) - N_intervals**2
             result.append(metric)
 
         sort_indexes = np.argsort(result)
@@ -135,9 +120,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
         for index in sort_indexes[:6]:
             precisions = []
             for interval in intervals[index]:
-                precisions.append(
-                    np.mean(compute_interval_value(empty_storage, *interval))
-                )
+                precisions.append(np.mean(compute_interval_value(empty_storage, *interval)))
 
             row = [intervals[index], result[index], precisions]
             tab.add_row(row)
@@ -154,9 +137,7 @@ if __name__ == "__main__":
 
     combinations = generate_all_possible_combinations(available_orders=available_orders)
 
-    paths = Path(
-        "/home/amiguel/phd/spectra_collection/ESPRESSO/HD10700_2series1night"
-    ).glob("*S2D_A*")
+    paths = Path("/home/amiguel/phd/spectra_collection/ESPRESSO/HD10700_2series1night").glob("*S2D_A*")
     d = DataClass(
         input_files=list(paths)[::10],
         instrument=ESPRESSO,

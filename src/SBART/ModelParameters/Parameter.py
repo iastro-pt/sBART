@@ -67,14 +67,10 @@ class ModelComponent(BASE):
         )
 
         if not isinstance(bounds, (list, tuple, np.ndarray)):
-            raise custom_exceptions.InvalidConfiguration(
-                "Bounds of a parameter must be an iterable"
-            )
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must be an iterable")
 
         if len(bounds) != 2:
-            raise custom_exceptions.InvalidConfiguration(
-                "Bounds of a parameter must have two elements"
-            )
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must have two elements")
 
         if isinstance(bounds, tuple):
             bounds = list(bounds)
@@ -117,18 +113,14 @@ class ModelComponent(BASE):
             self.generate_prior_from_frameID(frameID)
 
     def generate_prior_from_frameID(self, frameID):
-        self._update_frameID_info(
-            frameID, self._default_init_guess, self._default_limits
-        )
+        self._update_frameID_info(frameID, self._default_init_guess, self._default_limits)
 
     def _update_frameID_info(self, frameID, init_guess, bound, bypass_QC=False):
         if self._default_init_guess is None and init_guess is None:
             if "RV_component" in self.name:
                 msg = "RV component has a non-valid initial guess"
                 raise custom_exceptions.InternalError(msg)
-            raise custom_exceptions.InvalidConfiguration(
-                "Model component must have an initial guess"
-            )
+            raise custom_exceptions.InvalidConfiguration("Model component must have an initial guess")
 
         if self.is_locked:
             logger.debug("Can't update the values of a locked parameter")
@@ -178,9 +170,7 @@ class ModelComponent(BASE):
         self.ensure_enabled_param(frameID, allow_disabled=False)
         return self.frameID_information[frameID]["bounds"]
 
-    def get_initial_guess(
-        self, frameID, allow_disabled=False
-    ) -> Union[float, RV_measurement]:
+    def get_initial_guess(self, frameID, allow_disabled=False) -> Union[float, RV_measurement]:
         self.ensure_enabled_param(frameID, allow_disabled)
         return self.frameID_information[frameID]["initial_guess"]
 
@@ -205,16 +195,12 @@ class ModelComponent(BASE):
             bad_param = True
 
         if bad_param:
-            msg = "Attempting to use parameter ({}) that did not generate the prior information".format(
-                self.param_name
-            )
+            msg = "Attempting to use parameter ({}) that did not generate the prior information".format(self.param_name)
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
 
         if not self.is_enabled and not allow_disabled:
-            msg = "Attempting to get information from disabled parameter: {}".format(
-                self.param_name
-            )
+            msg = "Attempting to get information from disabled parameter: {}".format(self.param_name)
             logger.critical(msg)
             raise custom_exceptions.InternalError(msg)
 
@@ -361,15 +347,11 @@ class RV_component(ModelComponent):
         self.RV_key = RV_keyword
         # RVwindow is only passed to take advantage of sanity checks in the parent class
 
-        super().__init__(
-            name="RV", bounds=RVwindow, user_configs=user_configs, default_enabled=True
-        )
+        super().__init__(name="RV", bounds=RVwindow, user_configs=user_configs, default_enabled=True)
 
         for edge in RVwindow:
             if not isinstance(edge, RV_measurement):
-                raise custom_exceptions.InvalidConfiguration(
-                    "RV window edge must be astropy quantity"
-                )
+                raise custom_exceptions.InvalidConfiguration("RV window edge must be astropy quantity")
 
     def generate_priors(self, DataClassProxy):
         RV_default_window = self.RVwindow
@@ -406,16 +388,11 @@ class RV_component(ModelComponent):
 
                 for frameID in DataClassProxy.get_frameIDs_from_subInst(subInst):
                     obs_rv = DataClassProxy.get_KW_from_frameID(self.RV_key, frameID)
-                    self._update_frameID_info(
-                        frameID, obs_rv, [RVLowerBound, RVUpperBound]
-                    )
+                    self._update_frameID_info(frameID, obs_rv, [RVLowerBound, RVUpperBound])
 
     def string_representation(self, indent_level) -> str:
         string_offset = indent_level * "\t"
-        return (
-            super().string_representation(indent_level)
-            + f"\n{string_offset}\tRV window:{self.RVwindow}"
-        )
+        return super().string_representation(indent_level) + f"\n{string_offset}\tRV window:{self.RVwindow}"
 
     def disable_param(self) -> NoReturn:
         msg = "Attempting to disable the RV parameter"
@@ -483,12 +460,9 @@ class JaxComponent(ModelComponent):
 
         for frame, info in json_info["frameID_information"].items():
             info["initial_guess"] = jnp.float64(info["initial_guess"])
-        comp.frameID_information = {
-            int(i): val for i, val in json_info["frameID_information"].items()
-        }
+        comp.frameID_information = {int(i): val for i, val in json_info["frameID_information"].items()}
         comp.frameID_results = {
-            int(frameID): jnp.float64(value)
-            for frameID, value in json_info["frameID_results"].items()
+            int(frameID): jnp.float64(value) for frameID, value in json_info["frameID_results"].items()
         }
 
         if json_info["_locked"]:

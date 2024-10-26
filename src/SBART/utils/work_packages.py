@@ -144,9 +144,7 @@ class WorkerInput(Package):
 
         for key in self.extra_keys:
             if key in self.params:
-                print(
-                    f"Key {key} is among the default ones. Can't be overwritten in class instantiation"
-                )
+                print(f"Key {key} is among the default ones. Can't be overwritten in class instantiation")
 
             self.params[key] = None
 
@@ -159,9 +157,7 @@ class WorkerOutput(Package):
 
         for key in self.extra_keys:
             if key in self.params:
-                print(
-                    f"Key {key} is among the default ones. Can't be overwritten in class instantiation"
-                )
+                print(f"Key {key} is among the default ones. Can't be overwritten in class instantiation")
 
             self.params[key] = None
 

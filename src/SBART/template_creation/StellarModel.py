@@ -148,9 +148,7 @@ class StellarModel(TemplateFramework):
                     msg = "Couldn't find iteration number from user-provided previous sbart path"
                     logger.critical(msg)
                     raise custom_exceptions.InvalidConfiguration(msg)
-                logger.info(
-                    f"Found data from previous sBART runs, starting Iteration {iter_number}"
-                )
+                logger.info(f"Found data from previous sBART runs, starting Iteration {iter_number}")
 
                 dataClass.load_previous_SBART_results(
                     self._internal_configs["PREVIOUS_SBART_PATH"],
@@ -194,16 +192,12 @@ class StellarModel(TemplateFramework):
         chosen_template = self.template_map[self._internal_configs["CREATION_MODE"]]
         key = "ALIGNEMENT_RV_SOURCE"
         if key in user_configs:
-            logger.warning(
-                f"Key <{key}> from Stellar Model over-riding the one from the template configs"
-            )
+            logger.warning(f"Key <{key}> from Stellar Model over-riding the one from the template configs")
         user_configs[key] = self._internal_configs[key]
         stellar_template = chosen_template(subInst=subInstrument, user_configs=user_configs)
 
         try:
-            stellar_template.create_stellar_template(
-                dataClass=data, conditions=self._creation_conditions
-            )
+            stellar_template.create_stellar_template(dataClass=data, conditions=self._creation_conditions)
         except NoDataError as exc:
             logger.info(
                 "{} has no available data. The template will be created as an array of zeros",

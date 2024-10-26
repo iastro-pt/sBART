@@ -1,6 +1,4 @@
-"""
-
-"""
+""" """
 
 import numpy as np
 
@@ -74,9 +72,7 @@ def SBART_target(params, **kwargs):
         # plt.plot(current_wavelength[indexes], spectra[indexes], color = 'black')
         path = "/home/amiguel/work/automated_runs/ESPRESSO/SBART_OUT_data/GJ54.1/"
         temp_name = kwargs["name"]
-        np.savetxt(
-            path + "spectra.npy", np.c_[current_wavelength[indexes], spectra[indexes]]
-        )
+        np.savetxt(path + "spectra.npy", np.c_[current_wavelength[indexes], spectra[indexes]])
         np.savetxt(
             path + temp_name + ".npy",
             np.c_[current_wavelength[indexes], interpolated_template],
@@ -97,11 +93,7 @@ def SBART_target(params, **kwargs):
     # error propagation from the template and spectra
     # template not assumed to be noise free
 
-    diag = (
-        kwargs["squared_spectra_uncerts"][indexes]
-        + interpol_errors**2
-        + squared_jitter
-    ) / interpolated_template**2
+    diag = (kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter) / interpolated_template**2
 
     # Build H matrix
     H = np.ones((2, N))
@@ -122,11 +114,7 @@ def SBART_target(params, **kwargs):
     # Build the different terms of the marginal likelihood
     first_term = -0.5 * np.sum(np.square(data) / diag)
     order_value = (
-        first_term
-        + second_value
-        - 0.5 * np.sum(np.log(diag))
-        - 0.5 * np.log(det_A)
-        - 0.5 * (N - m) * np.log(2 * np.pi)
+        first_term + second_value - 0.5 * np.sum(np.log(diag)) - 0.5 * np.log(det_A) - 0.5 * (N - m) * np.log(2 * np.pi)
     )
 
     weight = 1 if not kwargs["weighted"] else interpolated_template.size
@@ -134,18 +122,7 @@ def SBART_target(params, **kwargs):
     if kwargs["weighted"] and 0:
         # COmputation of the expected information. Ignore for now !
         expected_info[order] = (
-            np.sum(
-                0.5
-                * (
-                    1
-                    + np.log(
-                        2
-                        * np.pi
-                        * (uncerts_trimmed[indexes] / interpolated_template) ** 2
-                    )
-                )
-            )
-            / weight
+            np.sum(0.5 * (1 + np.log(2 * np.pi * (uncerts_trimmed[indexes] / interpolated_template) ** 2))) / weight
         )
 
     if kwargs["compute_metrics"]:
@@ -169,9 +146,7 @@ def SBART_target(params, **kwargs):
 
         if not kwargs.get("SAVE_DISK_SPACE", False):
             misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
-                kwargs["squared_spectra_uncerts"][indexes]
-                + interpol_errors**2
-                + squared_jitter
+                kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
             )
         else:
             misspec_metric = np.asarray([0])

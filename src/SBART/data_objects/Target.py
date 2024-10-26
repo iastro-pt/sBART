@@ -22,9 +22,7 @@ class Target:
     - [ ] Improve docs and interfaces of the class
     """
 
-    def __init__(
-        self, target_list, original_name: str = None, target_dictionary_path=None
-    ):
+    def __init__(self, target_list, original_name: str = None, target_dictionary_path=None):
         """
 
         Parameters
@@ -64,9 +62,7 @@ class Target:
                     simbad_resolvable = combination[1]
                     self.KOBE_alias[KOBE_key] = simbad_resolvable
         else:
-            logger.warning(
-                "Target dictionary not found in <{}>".format(target_dictionary_path)
-            )
+            logger.warning("Target dictionary not found in <{}>".format(target_dictionary_path))
 
         target_list = self.clean_targ_list(target_list)
         self.validate_target_list(target_list)
@@ -116,18 +112,12 @@ class Target:
         """
 
         if self._simbad_error:
-            logger.warning(
-                "\tWARNING: Failed connection to SIMBAD!!!!!! SA OF 0 BEING RETURNED"
-            )
+            logger.warning("\tWARNING: Failed connection to SIMBAD!!!!!! SA OF 0 BEING RETURNED")
             self._SA = 0 * meter_second
 
         if np.isnan(self._SA):
             try:
-                logger.info(
-                    "Querying simbad for {}".format(
-                        self.searchable_name(self.true_name)
-                    )
-                )
+                logger.info("Querying simbad for {}".format(self.searchable_name(self.true_name)))
                 self._SA = secular_acceleration(self.searchable_name(self.true_name))
             except Exception as e:
                 logger.opt(exception=True).critical(

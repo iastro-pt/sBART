@@ -18,10 +18,8 @@ showcontent = true
 [build-system]
 requires = ["setuptools", "wheel", "Cython", "numpy"]
 
+[tool.ruff.lint]
+select = ["ALL"]
 
-[tool.isort]
-profile="black"
-combine_as_imports=true
-
-[tool.black]
-line-lenght=100
+[tool.ruff]
+line-length = 120

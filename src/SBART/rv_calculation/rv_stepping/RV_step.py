@@ -18,8 +18,7 @@ from .target_function import target
 
 
 class RV_step(RV_routine):
-    """
-    Classical template matching approach.
+    """Classical template matching approach.
 
     When computing RVs, it automatically uses both "modes" of the *order_removal_mode* user-parameter. This introduces no extra computational cost,
     as it is simply a change in which orders we use for the computation of the weighted mean.
@@ -49,9 +48,7 @@ class RV_step(RV_routine):
     _name = "RV_step"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        )
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction")))
     )
     _default_params.update(
         "CONTINUUM_FIT_TYPE",
@@ -59,7 +56,7 @@ class RV_step(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
+        """Main class for RV_step RV extraction
         Parameters
         ----------------
         processes: int
@@ -109,9 +106,7 @@ class RV_step(RV_routine):
                 store_cube_to_disk=store_cube_to_disk,
             )
         except custom_exceptions.NoDataError:
-            logger.opt(exception=True).info(
-                "No data to process after checking metadata"
-            )
+            logger.opt(exception=True).info("No data to process after checking metadata")
             return
 
         except Exception as e:
@@ -126,9 +121,7 @@ class RV_step(RV_routine):
             return
 
         if len(valid_subInst) == 1:
-            logger.debug(
-                "No real need to compute the merged set of valid orders when there is only 1 valid subINst"
-            )
+            logger.debug("No real need to compute the merged set of valid orders when there is only 1 valid subINst")
 
         stellar_model = dataClass.get_stellar_model()
 
@@ -163,9 +156,7 @@ class RV_step(RV_routine):
             cube.load_data_from(original_cube)
             cube.set_merged_mode(list(problem_orders))
 
-            final_rv, final_error = orderwise_combination(
-                cube, self._internal_configs["RV_variance_estimator"]
-            )
+            final_rv, final_error = orderwise_combination(cube, self._internal_configs["RV_variance_estimator"])
             final_rv = [i * meter_second for i in final_rv]
             final_error = [i * meter_second for i in final_error]
             cube.update_computed_RVS(final_rv, final_error)
@@ -207,9 +198,7 @@ class RV_step(RV_routine):
 
         self.trigger_data_storage(dataClass)
 
-    def process_workers_output(
-        self, empty_cube: RV_cube, worker_outputs: List[list]
-    ) -> RV_cube:
+    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         data_unit = Classical_Unit()
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
@@ -251,9 +240,7 @@ class RV_step(RV_routine):
                     )
         empty_cube.update_worker_information(worker_outputs)
 
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]

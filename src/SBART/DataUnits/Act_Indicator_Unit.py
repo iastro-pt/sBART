@@ -32,20 +32,12 @@ class ActIndicators_Unit(UnitModel):
         self._list_of_fIDs = list_of_fIDS
 
         if not load_from_disk:
-            self.combined_holder = {
-                i: [np.nan for _ in list_of_fIDS] for i in available_inds
-            }
-            self.combined_error_holder = {
-                i: [np.nan for _ in list_of_fIDS] for i in available_inds
-            }
+            self.combined_holder = {i: [np.nan for _ in list_of_fIDS] for i in available_inds}
+            self.combined_error_holder = {i: [np.nan for _ in list_of_fIDS] for i in available_inds}
 
-            self.indicators_holder = {
-                i: np.zeros((number_OBS, tot_number_orders)) + np.nan
-                for i in available_inds
-            }
+            self.indicators_holder = {i: np.zeros((number_OBS, tot_number_orders)) + np.nan for i in available_inds}
             self.indicators_errors_holder = {
-                i: np.zeros((number_OBS, tot_number_orders)) + np.nan
-                for i in available_inds
+                i: np.zeros((number_OBS, tot_number_orders)) + np.nan for i in available_inds
             }
         else:
             self.combined_holder = {}
@@ -133,15 +125,11 @@ class ActIndicators_Unit(UnitModel):
         -------
         """
         super().load_from_disk(rv_cube_fpath)
-        new_unit = ActIndicators_Unit(
-            available_inds=[], load_from_disk=True, number_OBS=0, tot_number_orders=0
-        )
+        new_unit = ActIndicators_Unit(available_inds=[], load_from_disk=True, number_OBS=0, tot_number_orders=0)
         new_unit.generate_root_path(rv_cube_fpath)
         try:
             logger.info("Searching for combined measurements")
-            with open(
-                new_unit._internalPaths.root_storage_path / f"combined_measurments.json"
-            ) as handle:
+            with open(new_unit._internalPaths.root_storage_path / f"combined_measurments.json") as handle:
                 combined_measures = json.load(handle)
 
                 for item, data in combined_measures.items():
@@ -150,9 +138,7 @@ class ActIndicators_Unit(UnitModel):
                     else:
                         new_unit.combined_error_holder[item] = data
         except FileNotFoundError:
-            logger.critical(
-                f"Couldn't find the .json file on {new_unit._internalPaths.root_storage_path}"
-            )
+            logger.critical(f"Couldn't find the .json file on {new_unit._internalPaths.root_storage_path}")
 
         logger.info("Searching for order-wise data")
         npy_files = rv_cube_fpath.glob("*.npy")

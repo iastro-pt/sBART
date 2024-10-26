@@ -21,9 +21,7 @@ class ModellingBase(BASE):
     # Otherwise, the user values will never reach here!
     _default_params = BASE._default_params + DefaultValues(
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
-        NUMBER_WORKERS=UserParam(
-            2, constraint=Positive_Value_Constraint + IntegerValue
-        ),
+        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue),
     )
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
@@ -51,24 +49,17 @@ class ModellingBase(BASE):
         if not self._internal_configs["FORCE_MODEL_GENERATION"]:
             try:
                 if not self._attempted_to_load_disk_model:
-                    self.load_previous_model_results_from_disk(
-                        model_component_in_use=ModelComponent
-                    )
+                    self.load_previous_model_results_from_disk(model_component_in_use=ModelComponent)
             except custom_exceptions.NoDataError:
                 logger.warning("No information found on disk from previous modelling.")
         else:
-            logger.info(
-                "Forcing model generation. Skipping disk-searches of previous outputs"
-            )
+            logger.info("Forcing model generation. Skipping disk-searches of previous outputs")
 
         if self._modelling_parameters.has_valid_identifier_results(order):
             # logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
             raise custom_exceptions.AlreadyLoaded
 
-    def interpolate_spectrum_to_wavelength(
-        self, og_lambda, og_spectra, og_err, new_wavelengths
-    ):
-        ...
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths): ...
 
     def set_interpolation_properties(self, new_properties) -> NoReturn:
         self._internal_configs.update_configs_with_values(new_properties)
@@ -79,11 +70,7 @@ class ModellingBase(BASE):
 
         self._attempted_to_load_disk_model = True
 
-        logger.debug(
-            "Searching for previous model on disk: {}".format(
-                self._get_model_storage_filename()
-            )
-        )
+        logger.debug("Searching for previous model on disk: {}".format(self._get_model_storage_filename()))
 
         try:
             storage_name = self._get_model_storage_filename()
@@ -92,9 +79,7 @@ class ModellingBase(BASE):
             raise custom_exceptions.NoDataError
 
         try:
-            loaded_model = Model.load_from_json(
-                storage_name, component_to_use=model_component_in_use
-            )
+            loaded_model = Model.load_from_json(storage_name, component_to_use=model_component_in_use)
             self._loaded_disk_model = True
             self._modelling_parameters = loaded_model
         except FileNotFoundError:

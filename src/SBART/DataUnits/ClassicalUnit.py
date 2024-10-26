@@ -38,25 +38,19 @@ class Classical_Unit(UnitModel):
         try:
             return self.chi_squared_profile[frameID]
         except KeyError as exc:
-            raise custom_exceptions.NoDataError(
-                f"There is no information from {frameID=}"
-            )
+            raise custom_exceptions.NoDataError(f"There is no information from {frameID=}")
 
     def get_ChiSquared_order_information(self, frameID, order):
         try:
             return self.get_ChiSquared_frameID_information(frameID)[order]
         except KeyError as exc:
-            raise custom_exceptions.NoDataError(
-                f"There is no information order {order=}"
-            )
+            raise custom_exceptions.NoDataError(f"There is no information order {order=}")
 
     def plot_ChiSquared(self, frameID, order, show_plot=True):
         if frameID == "all":
             frames = list(self.chi_squared_profile.keys())
             if len(frames) == 0:
-                raise custom_exceptions.NoDataError(
-                    "There is no chi squared value stored in this dataUnit"
-                )
+                raise custom_exceptions.NoDataError("There is no chi squared value stored in this dataUnit")
         else:
             frames = [frameID]
 
@@ -121,9 +115,7 @@ class Classical_Unit(UnitModel):
                     profile[int(str_key)] = {int(j): k for j, k in info.items()}
                 new_unit.chi_squared_profile = profile
         except FileNotFoundError:
-            logger.critical(
-                f"Couldn't find the .json file on {new_unit.get_storage_filename()}"
-            )
+            logger.critical(f"Couldn't find the .json file on {new_unit.get_storage_filename()}")
 
         return new_unit
 

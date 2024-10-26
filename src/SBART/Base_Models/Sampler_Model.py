@@ -55,9 +55,7 @@ class SamplerModel(BASE):
             default_value="OBSERVATION",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
         ),
-        STARTING_RV_PIPELINE=UserParam(
-            "DRS", constraint=ValueFromList(("DRS", "SBART"))
-        ),
+        STARTING_RV_PIPELINE=UserParam("DRS", constraint=ValueFromList(("DRS", "SBART"))),
     )
 
     def __init__(
@@ -84,9 +82,7 @@ class SamplerModel(BASE):
         RV_param = RV_component(
             RVwindow=RV_window,
             RV_keyword=self.RV_keyword,
-            user_configs={
-                "GENERATION_MODE": self._internal_configs["WINDOW_GENERATION_MODE"]
-            },
+            user_configs={"GENERATION_MODE": self._internal_configs["WINDOW_GENERATION_MODE"]},
         )
 
         model_components = [RV_param]
@@ -170,9 +166,7 @@ class SamplerModel(BASE):
     #    RV computation interface   #
     #################################
 
-    def apply_orderwise(
-        self, optimizer_estimate: Union[float, list], target, target_kwargs
-    ):
+    def apply_orderwise(self, optimizer_estimate: Union[float, list], target, target_kwargs):
         """
         Minimize the target function for the data of a single order. As the models might have multiple
         free-parameters, we ensure that the target **always** receives a list of elements.
@@ -263,9 +257,7 @@ class SamplerModel(BASE):
             )
             package_queue.put(worker_IN_pkg)
 
-        outputs = self._receive_data_workers(
-            len(run_info["valid_orders"]), output_pool, quiet=True
-        )
+        outputs = self._receive_data_workers(len(run_info["valid_orders"]), output_pool, quiet=True)
 
         if run_info["target_specific_configs"]["compute_metrics"]:
             return self.process_epochwise_metrics(outputs)
@@ -340,23 +332,15 @@ class SamplerModel(BASE):
         }
 
         if len(valid_orders) == 0:
-            raise InvalidConfiguration(
-                "{} has no valid order for which it can compute RVs".format(self.name)
-            )
+            raise InvalidConfiguration("{} has no valid order for which it can compute RVs".format(self.name))
 
         if self.mode == "order-wise":
-            return self._orderwise_manager(
-                dataClass, subInst, run_information, package_queue, output_pool
-            )
+            return self._orderwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
         elif self.mode == "epoch-wise":
-            return self._epochwise_manager(
-                dataClass, subInst, run_information, package_queue, output_pool
-            )
+            return self._epochwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
         raise InvalidConfiguration(f"{self.name} does not support mode <{self.mode}>")
 
-    def _orderwise_manager(
-        self, dataClass, subInst: str, run_info: dict, package_queue, output_pool
-    ) -> list:
+    def _orderwise_manager(self, dataClass, subInst: str, run_info: dict, package_queue, output_pool) -> list:
         """
         Handle communication with the workers, when computing order-wise RVs.
         If the memory saving mode is enabled, the S2D arrays of the frames are closed afterwards
@@ -367,9 +351,7 @@ class SamplerModel(BASE):
         logger.debug("Running frameIDs : {}", valid_IDS)
         worker_prods = []
         if self.mem_save_enabled:
-            logger.info(
-                "Memory saving mode is enabled. Using optimal RAM-saving strategy"
-            )
+            logger.info("Memory saving mode is enabled. Using optimal RAM-saving strategy")
             for frameID in valid_IDS:
                 # open before multiple cores attempt to open it!
                 try:
@@ -377,49 +359,31 @@ class SamplerModel(BASE):
                 except FrameError:
                     logger.warning("RunTimeRejection of frameID = {}", frameID)
                     continue
-                logger.debug(
-                    f"Using RV window of: {self.model_params.get_RV_bounds(frameID)}"
-                )
+                logger.debug(f"Using RV window of: {self.model_params.get_RV_bounds(frameID)}")
                 N_packages = 0
 
                 for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(
-                        frameID, order, run_info, subInst
-                    )
+                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
 
                     package_queue.put(worker_IN_pkg)
                     N_packages += 1
 
-                worker_prods.append(
-                    self._receive_data_workers(
-                        N_packages=N_packages, output_pool=output_pool
-                    )
-                )
+                worker_prods.append(self._receive_data_workers(N_packages=N_packages, output_pool=output_pool))
                 if self.mem_save_enabled:
                     dataClass.close_frame_by_ID(frameID)
         else:
-            logger.info(
-                "Memory saving mode is disabled. Using optimal sampling strategy"
-            )
+            logger.info("Memory saving mode is disabled. Using optimal sampling strategy")
             _ = dataClass.load_all_from_subInst(subInst)
             N_packages = 0
             for frameID in valid_IDS:
                 for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(
-                        frameID, order, run_info, subInst
-                    )
+                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
                     package_queue.put(worker_IN_pkg)
                     N_packages += 1
-            worker_prods.append(
-                self._receive_data_workers(
-                    N_packages=N_packages, output_pool=output_pool
-                )
-            )
+            worker_prods.append(self._receive_data_workers(N_packages=N_packages, output_pool=output_pool))
         return worker_prods
 
-    def _epochwise_manager(
-        self, dataClass, subInst: str, run_info, package_queue, output_pool
-    ) -> List[List[Package]]:
+    def _epochwise_manager(self, dataClass, subInst: str, run_info, package_queue, output_pool) -> List[List[Package]]:
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
 
         worker_prods = []
@@ -450,9 +414,7 @@ class SamplerModel(BASE):
             }
 
             # for the epoch-wise application, the target is resolved inside the self.optimize function
-            out_pkg, status = self.optimize_epochwise(
-                target=None, target_kwargs=target_kwargs
-            )
+            out_pkg, status = self.optimize_epochwise(target=None, target_kwargs=target_kwargs)
 
             if status != SUCCESS:
                 logger.warning(
@@ -468,9 +430,7 @@ class SamplerModel(BASE):
 
         return worker_prods
 
-    def _receive_data_workers(
-        self, N_packages: int, output_pool, quiet: bool = False
-    ) -> list:
+    def _receive_data_workers(self, N_packages: int, output_pool, quiet: bool = False) -> list:
         """
         Wait for the workers to populate the output_pool with the results.
         This will wait for exactly N_packages, without having any kind of timeout
@@ -552,9 +512,7 @@ class SamplerModel(BASE):
     def disable_disk_savings(self) -> NoReturn:
         self.disk_save_enabled = False
 
-    def _generate_WorkerIn_Package(
-        self, frameID, order, run_info, subInst, **kwargs
-    ) -> WorkerInput:
+    def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
         worker_IN_pkg = WorkerInput()
         worker_IN_pkg["frameID"] = frameID
         worker_IN_pkg["order"] = order
@@ -605,9 +563,7 @@ class SamplerModel(BASE):
         -------
 
         """
-        raise NotImplementedError(
-            "The children classes must override the epoch-wise combination"
-        )
+        raise NotImplementedError("The children classes must override the epoch-wise combination")
 
 
 if __name__ == "__main__":

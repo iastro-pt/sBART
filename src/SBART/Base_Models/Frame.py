@@ -125,9 +125,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             description="Use air wavelengths, instead of the vacuum ones",
         ),
         apply_FluxBalance_Norm=UserParam(False, constraint=ValueFromList((False,))),
-        reject_order_percentage=UserParam(
-            0.25, constraint=ValueInInterval((0, 1), include_edges=True)
-        ),
+        reject_order_percentage=UserParam(0.25, constraint=ValueInInterval((0, 1), include_edges=True)),
         # If the SNR is smaller, discard the order:
         minimum_order_SNR=UserParam(
             5,
@@ -139,9 +137,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             constraint=ValueInInterval((0, 100)),
             description="Maximum number of orders that a Frame can reject before being considered invalid",
         ),
-        bypass_ST_designation=UserParam(
-            default_value=None, constraint=ValueFromList((None, "S2D", "S1D"))
-        ),
+        bypass_ST_designation=UserParam(default_value=None, constraint=ValueFromList((None, "S2D", "S1D"))),
         IS_SA_CORRECTED=UserParam(
             False,
             constraint=BooleanValue,
@@ -249,15 +245,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             self.spectral_format = user_configs["bypass_ST_designation"]
         else:
             self.spectral_format = self.get_spectral_type()
-        self.instrument_properties["array_size"] = self.instrument_properties[
-            "array_sizes"
-        ][self.spectral_format]
+        self.instrument_properties["array_size"] = self.instrument_properties["array_sizes"][self.spectral_format]
         self.array_size = self.instrument_properties["array_size"]
         super().__init__(user_configs=user_configs, quiet_user_params=quiet_user_params)
 
-        self.use_approximated_BERV_correction = self._internal_configs[
-            "USE_APPROX_BERV_CORRECTION"
-        ]
+        self.use_approximated_BERV_correction = self._internal_configs["USE_APPROX_BERV_CORRECTION"]
 
         # stores the information loaded from the header of the S2D files. THis dict will be the default values in case
         # the instrument does not support them!
@@ -339,9 +331,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         elif "s1d" in name_lowercase:
             return "S1D"
         else:
-            raise custom_exceptions.InternalError(
-                f"{self.name} can't recognize the file that it received!"
-            )
+            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
     def copy_into_S2D(self, new_S2D_size: Optional[Tuple[int, int]] = None):
         """
@@ -358,16 +348,10 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         if self.is_S2D:
-            raise custom_exceptions.InvalidConfiguration(
-                "Can't transform S2D file into S2D file"
-            )
+            raise custom_exceptions.InvalidConfiguration("Can't transform S2D file into S2D file")
         logger.warning("Creating a copy of a S1D Frame for transformation into S2D")
 
-        og_shape = (
-            self.instrument_properties["array_sizes"]["S2D"]
-            if new_S2D_size is None
-            else new_S2D_size
-        )
+        og_shape = self.instrument_properties["array_sizes"]["S2D"] if new_S2D_size is None else new_S2D_size
 
         reconstructed_S2D = np.zeros(og_shape)
         reconstructed_wavelengths = np.zeros(og_shape)
@@ -439,9 +423,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         new_frame.array_size = new_S2D_size
         new_frame.sub_instrument = self.sub_instrument
         new_frame.is_blaze_corrected = self.is_blaze_corrected
-        new_frame.observation_info["orderwise_SNRs"] = [
-            1 for _ in range(new_S2D_size[0])
-        ]
+        new_frame.observation_info["orderwise_SNRs"] = [1 for _ in range(new_S2D_size[0])]
         new_frame.regenerate_order_status()
         return new_frame
 
@@ -475,17 +457,13 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         Flag a wavelength region from  an order to be marked as invalid during the creation of the stellar mask
         """
         if not isinstance(region, (Iterable,)):
-            raise custom_exceptions.InvalidConfiguration(
-                "The rejection region must be a list of lists"
-            )
+            raise custom_exceptions.InvalidConfiguration("The rejection region must be a list of lists")
 
         if self._orderwise_wavelength_rejection is None:
             self._orderwise_wavelength_rejection = {}
         self._orderwise_wavelength_rejection[order] = region
 
-    def mark_wavelength_region(
-        self, reason: Flag, wavelength_blocks: List[List[int]]
-    ) -> None:
+    def mark_wavelength_region(self, reason: Flag, wavelength_blocks: List[List[int]]) -> None:
         """Add wavelength regions to be removed whenever the S2D file is opened
 
         Parameters
@@ -513,9 +491,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         if self._status.has_flag(LOADING_EXTERNAL_DATA):
-            logger.critical(
-                f"Frame {self.name} did not load the external data that it needed!"
-            )
+            logger.critical(f"Frame {self.name} did not load the external data that it needed!")
 
             self._status.delete_flag(LOADING_EXTERNAL_DATA)
             if bad_flag is None:
@@ -532,9 +508,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         NoReturn
         """
         if not self.is_valid:
-            logger.warning(
-                "Finalizing external data loading for Frame that was already rejected."
-            )
+            logger.warning("Finalizing external data loading for Frame that was already rejected.")
         else:
             self._status.delete_flag(LOADING_EXTERNAL_DATA)
 
@@ -569,9 +543,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     #          Cleaning data          #
     ###################################
 
-    def build_mask(
-        self, bypass_QualCheck: bool = False, assess_bad_orders: bool = True
-    ) -> None:
+    def build_mask(self, bypass_QualCheck: bool = False, assess_bad_orders: bool = True) -> None:
         """Build a spectral mask based on the S2D data
 
         Parameters
@@ -579,35 +551,20 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         bypass_QualCheck : bool, optional
             Do not check the QUAL_DATA array for non-zero values, by default False
         """
-        self.spectral_mask = Mask(
-            initial_mask=np.zeros(
-                self.instrument_properties["array_size"], dtype=np.uint16
-            )
-        )
+        self.spectral_mask = Mask(initial_mask=np.zeros(self.instrument_properties["array_size"], dtype=np.uint16))
         if not bypass_QualCheck:
             zero_indexes = np.where(self.qual_data != 0)
             self.spectral_mask.add_indexes_to_mask(zero_indexes, QUAL_DATA)
 
-        self.spectral_mask.add_indexes_to_mask(
-            np.where(np.isnan(self.spectra)), MISSING_DATA
-        )
-        self.spectral_mask.add_indexes_to_mask(
-            np.where(self.spectra == 0), MISSING_DATA
-        )
+        self.spectral_mask.add_indexes_to_mask(np.where(np.isnan(self.spectra)), MISSING_DATA)
+        self.spectral_mask.add_indexes_to_mask(np.where(self.spectra == 0), MISSING_DATA)
 
         if self._internal_configs["REJECT_NEGATIVE_FLUXES"]:
-            self.spectral_mask.add_indexes_to_mask(
-                np.where(self.spectra < 0), MISSING_DATA
-            )
+            self.spectral_mask.add_indexes_to_mask(np.where(self.spectra < 0), MISSING_DATA)
 
-        self.spectral_mask.add_indexes_to_mask(
-            np.where(np.isnan(self.uncertainties)), MISSING_DATA
-        )
+        self.spectral_mask.add_indexes_to_mask(np.where(np.isnan(self.uncertainties)), MISSING_DATA)
 
-        order_map = {
-            i: (np.min(self.wavelengths[i]), np.max(self.wavelengths[i]))
-            for i in range(self.N_orders)
-        }
+        order_map = {i: (np.min(self.wavelengths[i]), np.max(self.wavelengths[i])) for i in range(self.N_orders)}
         removal_reasons = [i.name for i in self.wavelengths_to_remove.keys()]
         N_point_removed = []
         time_took = []
@@ -628,9 +585,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                                 self.wavelengths[order] <= wave_pair[1],
                             )
                         )
-                        self.spectral_mask.add_indexes_to_mask_order(
-                            order, indexes, removal_reason
-                        )
+                        self.spectral_mask.add_indexes_to_mask_order(order, indexes, removal_reason)
             time_took.append(time.time() - start_time)
         logger.debug(
             "Removed {} regions ({})",
@@ -639,17 +594,12 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         )
 
         if self._internal_configs["SIGMA_CLIP_FLUX_VALUES"] > 0:
-            logger.info(
-                "Sigma-clipping on flux is activated. Running rejection procedure"
-            )
+            logger.info("Sigma-clipping on flux is activated. Running rejection procedure")
             median_level = np.median(self.spectra, axis=1)
             threshold = (
-                self._internal_configs["SIGMA_CLIP_FLUX_VALUES"] * self.uncertainties
-                + median_level[:, np.newaxis]
+                self._internal_configs["SIGMA_CLIP_FLUX_VALUES"] * self.uncertainties + median_level[:, np.newaxis]
             )
-            self.spectral_mask.add_indexes_to_mask(
-                np.where(self.spectra > threshold), MISSING_DATA
-            )
+            self.spectral_mask.add_indexes_to_mask(np.where(self.spectra > threshold), MISSING_DATA)
 
         if self._orderwise_wavelength_rejection is not None:
             logger.info("Rejecting spectral chunks from individual orders")
@@ -661,34 +611,24 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                             self.wavelengths[order] <= subregion[1],
                         )
                     )
-                    self.spectral_mask.add_indexes_to_mask_order(
-                        order, indexes, NON_COMMON_WAVELENGTH
-                    )
+                    self.spectral_mask.add_indexes_to_mask_order(order, indexes, NON_COMMON_WAVELENGTH)
 
         logger.debug("Ensuring that we have increasing wavelengths")
 
         diffs = np.where(np.diff(self.wavelengths, axis=1) < 0)
         if diffs[0].size > 0:
             logger.warning("Found non-increasing wavelengths on {}", self.name)
-            self.spectral_mask.add_indexes_to_mask(
-                diffs, QUAL_DATA("Non-increasing wavelengths")
-            )
-        logger.debug(
-            "Took {} seconds ({})", sum(time_took), " + ".join(map(str, time_took))
-        )
+            self.spectral_mask.add_indexes_to_mask(diffs, QUAL_DATA("Non-increasing wavelengths"))
+        logger.debug("Took {} seconds ({})", sum(time_took), " + ".join(map(str, time_took)))
 
         if assess_bad_orders:
             self.assess_bad_orders()
 
         if self.wavelengths_to_keep is not None:
-            logger.info(
-                "Provided desired wavelength region. Rejecting regions outside it"
-            )
+            logger.info("Provided desired wavelength region. Rejecting regions outside it")
             for order in range(self.N_orders):
                 good_regions = self.wavelengths_to_keep[order]
-                if (
-                    len(good_regions) == 0
-                ):  # TODO: ensure that the order is also rejected
+                if len(good_regions) == 0:  # TODO: ensure that the order is also rejected
                     continue
 
                 inds = np.zeros(self.wavelengths[order].size, dtype=bool)
@@ -700,9 +640,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                         )
                     )
                     inds[wavelengths_to_keep] = True
-                self.spectral_mask.add_indexes_to_mask_order(
-                    order, np.where(~inds), NON_COMMON_WAVELENGTH
-                )
+                self.spectral_mask.add_indexes_to_mask_order(order, np.where(~inds), NON_COMMON_WAVELENGTH)
 
     def assess_bad_orders(self) -> None:
         """Evaluate the masked points to find those that can always be discarded!"""
@@ -715,9 +653,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             # 1 - reject_order-percentage of the entire order
             perc = self._internal_configs["reject_order_percentage"]
             if np.sum(value) > (1 - perc) * self.pixels_per_order:
-                self._OrderStatus.add_flag_to_order(
-                    order, HIGH_CONTAMINATION("Rejection threshold met in order")
-                )
+                self._OrderStatus.add_flag_to_order(order, HIGH_CONTAMINATION("Rejection threshold met in order"))
 
         if len(self.bad_orders) > 0:
             logger.info(
@@ -733,9 +669,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             SNRS = self.get_KW_value("orderwise_SNRs")
             for order in range(self.N_orders):
                 if SNRS[order] < self._internal_configs["minimum_order_SNR"]:
-                    self._OrderStatus.add_flag_to_order(
-                        order, LOW_SNR("Minimum SNR not met in order")
-                    )
+                    self._OrderStatus.add_flag_to_order(order, LOW_SNR("Minimum SNR not met in order"))
                     bad_SNR.append(order)
 
             if len(bad_SNR) > 0:
@@ -750,10 +684,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         if len(self.bad_orders) == self.N_orders:
             logger.critical("All spectral orders of Frame {} have been rejected", self)
             self.add_to_status(NO_VALID_ORDERS(" Rejected all spectral orders"))
-        elif (
-            len(self.bad_orders)
-            >= self._internal_configs["MAX_ORDER_REJECTION"] * self.N_orders
-        ):
+        elif len(self.bad_orders) >= self._internal_configs["MAX_ORDER_REJECTION"] * self.N_orders:
             logger.warning(
                 "Frame {} is rejecting more than {} % of the spectral orders",
                 self,
@@ -872,9 +803,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         """
         return
 
-    def store_previous_SBART_result(
-        self, RV: RV_measurement, RV_err: RV_measurement
-    ) -> NoReturn:
+    def store_previous_SBART_result(self, RV: RV_measurement, RV_err: RV_measurement) -> NoReturn:
         """
         Store, from the outside, RV and uncertainty from a previous SBART application
 
@@ -888,9 +817,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         """
         if not isinstance(RV, RV_measurement) or not isinstance(RV_err, RV_measurement):
-            raise custom_exceptions.InvalidConfiguration(
-                "The previous SBART RVs must be astropy quantities!"
-            )
+            raise custom_exceptions.InvalidConfiguration("The previous SBART RVs must be astropy quantities!")
 
         self.observation_info["previous_SBART_RV"] = RV
         self.observation_info["previous_SBART_RV_ERR"] = RV_err

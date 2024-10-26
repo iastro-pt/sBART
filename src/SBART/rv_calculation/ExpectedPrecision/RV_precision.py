@@ -45,9 +45,7 @@ class RV_precision(RV_routine):
     _name = "RV_precision"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        ),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
         RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam(default_value=None, constraint=PathValue),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),
@@ -100,9 +98,7 @@ class RV_precision(RV_routine):
         if self._internal_configs["RV_SOURCE"] == "SBART":
             logger.info("Triggering load of the previous SBART results")
             if self._internal_configs["PREVIOUS_SBART_PATH"] is None:
-                raise custom_exceptions.InvalidConfiguration(
-                    "Can't use the SBART RV source without providing path"
-                )
+                raise custom_exceptions.InvalidConfiguration("Can't use the SBART RV source without providing path")
             dataClass.load_previous_SBART_results(
                 self._internal_configs["PREVIOUS_SBART_PATH"],
                 use_merged_cube=self._internal_configs["USE_MERGED_RVS"],
@@ -117,9 +113,7 @@ class RV_precision(RV_routine):
             store_cube_to_disk,
         )
 
-    def process_workers_output(
-        self, empty_cube: RV_cube, worker_outputs: List[list]
-    ) -> RV_cube:
+    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         data_unit = RV_Precision_Unit()
         for pkg in worker_outputs:
             for order_pkg in pkg:
@@ -145,9 +139,7 @@ class RV_precision(RV_routine):
 
         empty_cube.update_worker_information(worker_outputs)
 
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]

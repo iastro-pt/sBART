@@ -27,14 +27,10 @@ class chi_squared_sampler(SamplerModel):
 
     _name = "chi_squared"
     _default_params = SamplerModel._default_params + DefaultValues(
-        RV_ESTIMATION_MODE=UserParam(
-            "NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False
-        )
+        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False)
     )
 
-    def __init__(
-        self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
         """
 
         Parameters
@@ -95,9 +91,7 @@ class chi_squared_sampler(SamplerModel):
                 minimum_value = optimization_output.x
                 order_status = SUCCESS
 
-                local_rvs = np.arange(
-                    minimum_value - 5 * rv_step, minimum_value + 5.1 * rv_step, rv_step
-                )
+                local_rvs = np.arange(minimum_value - 5 * rv_step, minimum_value + 5.1 * rv_step, rv_step)
                 if local_rvs[0] < rv_bounds[0][0] or local_rvs[-1] > rv_bounds[0][1]:
                     bad_order = True
                     msg = "Optimal RV less than 5 RV_step away from the edges of the window"
@@ -110,22 +104,16 @@ class chi_squared_sampler(SamplerModel):
         elif RV_estimation_mode == "DRS-LIKE":
             local_rvs = np.arange(rv_bounds[0][0], rv_bounds[0][1], rv_step)
 
-            local_curve = list(
-                map(lambda x: self.apply_orderwise(x, target, target_kwargs), local_rvs)
-            )
+            local_curve = list(map(lambda x: self.apply_orderwise(x, target, target_kwargs), local_rvs))
             apply_parabolic_fit = True
             order_status = SUCCESS
 
         else:
-            raise NotImplementedError(
-                f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}"
-            )
+            raise NotImplementedError(f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}")
 
         if apply_parabolic_fit:
             try:
-                rv, rv_err, a, b = self._apply_parabolic_fit(
-                    local_rvs, local_curve, rv_step
-                )
+                rv, rv_err, a, b = self._apply_parabolic_fit(local_rvs, local_curve, rv_step)
             except IndexError:
                 # If the minimum value is not in the middle of the inverval, an error will be raised
                 # This might occur due to:
@@ -177,9 +165,7 @@ class chi_squared_sampler(SamplerModel):
         """
         index = np.argmin(chi_squared)
         if len(chi_squared) == 3 and index != 1:
-            raise Exception(
-                f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}"
-            )
+            raise Exception(f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}")
 
         if index - 1 < 0:
             raise IndexError()
@@ -187,18 +173,12 @@ class chi_squared_sampler(SamplerModel):
         # If we have an index error, the caller will handle it!
         rv_minimum = rvs[index]
 
-        rv = rv_minimum - 0.5 * rv_step * (
-            chi_squared[index + 1] - chi_squared[index - 1]
-        ) / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
-
-        rv_err = (
-            2
-            * (rv_step**2)
-            / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
+        rv = rv_minimum - 0.5 * rv_step * (chi_squared[index + 1] - chi_squared[index - 1]) / (
+            chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
         )
 
-        a = (
-            chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
-        ) / (2 * rv_step**2)
+        rv_err = 2 * (rv_step**2) / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
+
+        a = (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]) / (2 * rv_step**2)
         b = (chi_squared[index + 1] - chi_squared[index - 1]) / (2 * rv_step)
         return rv, np.sqrt(rv_err), a, b

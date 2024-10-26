@@ -88,9 +88,7 @@ class TapasTelluric(TelluricTemplate):
 
     def fit_telluric_model_to_frame(self, frame):
         super().fit_telluric_model_to_frame(frame)
-        raise NotImplementedError(
-            "Tapas template does not implement a correction model for tellurics"
-        )
+        raise NotImplementedError("Tapas template does not implement a correction model for tellurics")
 
     def _prepare_TAPAS_download(self, dataClass):
         user, password = self._internal_configs["user_info"]
@@ -101,16 +99,12 @@ class TapasTelluric(TelluricTemplate):
 
         temp_path = Path(tapas_dwnl_path)
         if not temp_path.exists():
-            logger.warning(
-                "Tapas download path does not exist. Creating new folder from scratch"
-            )
+            logger.warning("Tapas download path does not exist. Creating new folder from scratch")
             temp_path.mkdir(parents=True, exist_ok=True)
 
         if os.path.isdir(tapas_dwnl_path):
             logger.info("Using individual Transmittance spectra for each subInstrument")
-            tapas_dwnl_path = os.path.join(
-                tapas_dwnl_path, f"{self._associated_subInst}.ipac"
-            )
+            tapas_dwnl_path = os.path.join(tapas_dwnl_path, f"{self._associated_subInst}.ipac")
         else:
             logger.info(
                 "Using common Transmittance spectra for each subInstrument: {}",
@@ -133,18 +127,12 @@ class TapasTelluric(TelluricTemplate):
 
         download = True
 
-        if (
-            os.path.isfile(tapas_dwnl_path)
-            and not self._internal_configs["force_download"]
-        ):  # direct path to the file!
+        if os.path.isfile(tapas_dwnl_path) and not self._internal_configs["force_download"]:  # direct path to the file!
             logger.info("TAPAS file already exists. Skipping download")
             download = False
 
         if download or self._internal_configs["force_download"]:
-            if (
-                not self._internal_configs["download_tapas"]
-                and not self._internal_configs["force_download"]
-            ):
+            if not self._internal_configs["download_tapas"] and not self._internal_configs["force_download"]:
                 # Check if the download flag is disabled and if we don't want to force it to go through
                 raise Exception("TAPAS download is disabled")
             if len(user) == 0:
@@ -170,9 +158,7 @@ class TapasTelluric(TelluricTemplate):
             ref_info["DEC"] = string_DEC.split(".")[0].replace("+", "")
 
             ref_info["instrument"] = dataClass.get_instrument_information()["name"]
-            ref_info["spectralRange"] = dataClass.get_instrument_information()[
-                "wavelength_coverage"
-            ]
+            ref_info["spectralRange"] = dataClass.get_instrument_information()["wavelength_coverage"]
 
             logger.info("Preparing to get TAPAS data")
             tapas_path = get_TAPAS_data(
@@ -188,9 +174,7 @@ class TapasTelluric(TelluricTemplate):
 
     # TODO: fix the input args of this template!
     @custom_exceptions.ensure_invalid_template
-    def create_telluric_template(
-        self, dataClass, custom_frameID: Optional[int] = None
-    ) -> None:
+    def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
         """
         Create a telluric template from TAPAS transmission spectra [1], that was created for
         the date in which the reference observation was made.
@@ -250,15 +234,11 @@ class TapasTelluric(TelluricTemplate):
                     logger.critical(msg)
                     raise Exception(msg)
 
-        logger.info(
-            "Tapas template over-riding BERV associated with the reference wavelengths"
-        )
+        logger.info("Tapas template over-riding BERV associated with the reference wavelengths")
         self._associated_BERV = tapas_BERV
 
         # Tapas spectra comes BERV-corrected
-        self.transmittance_wavelengths = remove_BERV_correction(
-            self.transmittance_wavelengths, self._associated_BERV
-        )
+        self.transmittance_wavelengths = remove_BERV_correction(self.transmittance_wavelengths, self._associated_BERV)
 
         ###
         # Compute the binary template

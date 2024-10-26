@@ -14,15 +14,11 @@ from SBART.utils.shift_spectra import SPEED_OF_LIGHT
 def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
     # Compute second derivation of the template
 
-    derivative, errors = compute_non_uni_step_first_derivative(
-        spec_wave, temp_flux, np.sqrt(temp_variance)
-    )
+    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
     deriv_1 = derivative
     # plt.plot(spec_wave[1:-1], deriv_1)
 
-    derivative, errors = compute_non_uni_step_first_derivative(
-        spec_wave, derivative, errors
-    )
+    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
     derivative = np.asarray(derivative)
     errors = np.asarray(errors)
 
@@ -52,10 +48,7 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
         squared_weights
         * squared_derivative
         * squared_residuals
-        * (
-            squared_derivative_errors / squared_derivative
-            + res_variance / squared_residuals
-        )
+        * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals)
     )
     sigma_B = np.sum(squared_weights * (2 * derivative * errors) ** 2)
 

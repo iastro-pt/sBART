@@ -12,15 +12,12 @@ def weighted_mean(orders_RV, squared_uncertainties, RV_variance_estimator="simpl
     sum_weights = np.nansum(weights, axis=1)
     final_RV = np.nansum(np.multiply(weights, orders_RV), axis=1) / sum_weights
 
-    No = squared_uncertainties.shape[1] - np.sum(
-        np.isnan(squared_uncertainties), axis=1
-    )
+    No = squared_uncertainties.shape[1] - np.sum(np.isnan(squared_uncertainties), axis=1)
     if RV_variance_estimator == "simple":
         final_error = np.sqrt(1 / (sum_weights))
     elif RV_variance_estimator == "with_correction":
         final_error = np.sqrt(
-            np.nansum(weights * (orders_RV - final_RV[:, np.newaxis]) ** 2, axis=1)
-            / (sum_weights * (No - 1))
+            np.nansum(weights * (orders_RV - final_RV[:, np.newaxis]) ** 2, axis=1) / (sum_weights * (No - 1))
         )
 
     return final_RV, final_error

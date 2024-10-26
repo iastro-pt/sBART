@@ -20,9 +20,7 @@ def compute_interval_value(data, start, end):
     return 1 / np.sqrt(np.sum(1 / data[:, start : end + 1] ** 2, axis=1))
 
 
-def generate_all_possible_combinations(
-    available_orders, N_intervals=4, min_interval_size=10
-):
+def generate_all_possible_combinations(available_orders, N_intervals=4, min_interval_size=10):
     """Generate all possible combinations of all elements
 
     Args:
@@ -40,9 +38,7 @@ def generate_all_possible_combinations(
     # |---0---|---1---|
     for lvl in range(N_intervals - 1):
         # Max index at which a level can end
-        max_index_end = len(available_orders) - min_interval_size * (
-            N_intervals - lvl - 2
-        )
+        max_index_end = len(available_orders) - min_interval_size * (N_intervals - lvl - 2)
         levels.append(max_index_end)
 
     first_interval_end = list(range(min_interval_size, levels[0] + 1))
@@ -56,9 +52,7 @@ def generate_all_possible_combinations(
                 # Last loop, go from last value up to end of interval
                 new_comb.append([*item, [item[-1][1], levels[-1]]])
             else:
-                for end in range(
-                    item[-1][1] + min_interval_size, levels[level_index], 1
-                ):
+                for end in range(item[-1][1] + min_interval_size, levels[level_index], 1):
                     new_comb.append([*item, [item[-1][1], end]])
         combinations = new_comb
         level_index += 1
@@ -106,9 +100,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
                     wavelength=wave[~mask],
                     flux=flux[~mask],
                 )
-                empty_storage[id_index, ordeR_index] = convert_data(
-                    precision, as_value=True
-                )
+                empty_storage[id_index, ordeR_index] = convert_data(precision, as_value=True)
 
         result, intervals = optimize_intervals_over_array(
             list_of_orders=list_of_orders,
@@ -120,9 +112,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
         return convert_to_tab(list_of_orders, result, intervals, empty_storage)
 
 
-def RVprecUnit_optimization(
-    frameIDs, list_of_orders, RVprec_unit, N_intervals, min_interval_size
-):
+def RVprecUnit_optimization(frameIDs, list_of_orders, RVprec_unit, N_intervals, min_interval_size):
     precision_array = np.zeros((len(frameIDs), len(list_of_orders)))
     for f_index, frameID in enumerate(frameIDs):
         frame_info = RVprec_unit.get_RVcontent_frameID_information(frameID)
@@ -145,9 +135,7 @@ def convert_to_tab(orders_to_run, result, intervals, precision_array):
     for index in sort_indexes[:6]:
         precisions = []
         for interval in intervals[index]:
-            precisions.append(
-                np.mean(compute_interval_value(precision_array, *interval))
-            )
+            precisions.append(np.mean(compute_interval_value(precision_array, *interval)))
 
         int_to_write = []
         for element in intervals[index]:
@@ -162,9 +150,7 @@ def convert_to_tab(orders_to_run, result, intervals, precision_array):
     return tab
 
 
-def optimize_intervals_over_array(
-    list_of_orders, array_of_precisions, N_intervals, min_interval_size
-):
+def optimize_intervals_over_array(list_of_orders, array_of_precisions, N_intervals, min_interval_size):
     if len(list_of_orders) != array_of_precisions.shape[1]:
         raise Exception("Something went wrong")
 
@@ -181,22 +167,13 @@ def optimize_intervals_over_array(
     for combination in intervals:
         precisions = []
         for interval in combination:
-            precisions.append(
-                np.mean(compute_interval_value(array_of_precisions, *interval))
-            )
+            precisions.append(np.mean(compute_interval_value(array_of_precisions, *interval)))
 
-        metric = (
-            np.sum([np.sum(np.divide(i, precisions)) for i in precisions])
-            - N_intervals**2
-        )
+        metric = np.sum([np.sum(np.divide(i, precisions)) for i in precisions]) - N_intervals**2
         result.append(metric)
 
     return result, intervals
 
 
 if __name__ == "__main__":
-    print(
-        generate_all_possible_combinations(
-            [1, 2, 3], N_intervals=3, min_interval_size=4
-        )
-    )
+    print(generate_all_possible_combinations([1, 2, 3], N_intervals=3, min_interval_size=4))

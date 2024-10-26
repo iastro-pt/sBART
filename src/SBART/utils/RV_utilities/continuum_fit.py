@@ -49,22 +49,16 @@ def fit_continuum_level(
     if continuum_type == "paper":
         spectral_ratio = (spectra * offset) / (template * offset)
         yy_data = spectral_ratio
-        coeffs, coefs_cov = optimize.curve_fit(
-            polynomial_continuum_model, xx_data, yy_data, p0=p0
-        )
+        coeffs, coefs_cov = optimize.curve_fit(polynomial_continuum_model, xx_data, yy_data, p0=p0)
         continuum_model = lambda x, coeffs: polynomial_continuum_model(x, *coeffs)
     elif continuum_type == "stretch":
         Matrice1 = np.array([template, xx_data, np.ones(len(xx_data))]).transpose()
         spectral_ratio = 0
         res1 = optimize.lsq_linear(Matrice1, spectra, verbose=0)
         coeffs, coefs_cov = res1.x, [0 for _ in res1.x]
-        continuum_model = lambda x, coeffs: stretch_continuum_nodel(
-            x, template, *coeffs
-        )
+        continuum_model = lambda x, coeffs: stretch_continuum_nodel(x, template, *coeffs)
     else:
-        raise custom_exceptions.InternalError(
-            "Passed wrong keyword {} for the continuum type!", continuum_type
-        )
+        raise custom_exceptions.InternalError("Passed wrong keyword {} for the continuum type!", continuum_type)
     return coeffs, coefs_cov, spectral_ratio, continuum_model
 
 

@@ -2,7 +2,9 @@ from SBART.Instruments import ESPRESSO
 
 
 def test_data_transform():
-    frame = ESPRESSO(file_path="/home/amiguel/phd/spectra_collection/ESPRESSO/TauCeti/r.ESPRE.2022-07-06T09:22:31.285_S1D_A.fits")
+    frame = ESPRESSO(
+        file_path="/home/amiguel/phd/spectra_collection/ESPRESSO/TauCeti/r.ESPRE.2022-07-06T09:22:31.285_S1D_A.fits"
+    )
 
     new_frame = frame.copy_into_S2D()
 

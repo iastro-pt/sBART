@@ -55,14 +55,10 @@ class RV_Bayesian(RV_routine):
 
     _default_params = RV_routine._default_params + DefaultValues(
         include_jitter=UserParam(False, constraint=BooleanValue),
-        chromatic_trend=UserParam(
-            "none", ValueFromList(("none", "OrderWise"))
-        ),  # This does nothing
+        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))),  # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
         # only used if we compute order-wise RVs
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        ),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
         PLOT_MODEL_MISSPECIFICATION=UserParam(True, constraint=BooleanValue),
     )
     # Bayesian only accepts linear fit to continuum
@@ -121,9 +117,7 @@ class RV_Bayesian(RV_routine):
                 # degree N polynomial -> N parameters since we don't want the constant term
                 # Assume that it will be small (and ideally don't exist)
                 param_name = f"trend::{k}"
-                self.sampler.add_extra_param(
-                    ModelComponent(param_name, initial_guess=0, bounds=(None, None))
-                )
+                self.sampler.add_extra_param(ModelComponent(param_name, initial_guess=0, bounds=(None, None)))
                 self.sampler.enable_param(param_name)
                 raise NotImplementedError("Chromatic trend is currently unavailable")
 
@@ -161,9 +155,7 @@ class RV_Bayesian(RV_routine):
         except Exception as e:
             logger.opt(exception=True).critical("Found unknown error")
 
-    def process_workers_output(
-        self, empty_cube: RV_cube, worker_outputs: List[list]
-    ) -> RV_cube:
+    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         """Load information from the worker outputs and store it in the desired format
         inside a RV cube
 
@@ -193,9 +185,7 @@ class RV_Bayesian(RV_routine):
             storage_path=cube._internalPaths.get_path_to("plots", as_posix=False),
         )
 
-    def _orderwise_processment(
-        self, empty_cube: RV_cube, worker_outputs: List[list]
-    ) -> RV_cube:
+    def _orderwise_processment(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         """Process the list of outputs from the worker and store the relevant information into the
         RV cubes. This function caters to data from the order-wise application of sBART
 
@@ -228,9 +218,7 @@ class RV_Bayesian(RV_routine):
                 )
 
         empty_cube.update_worker_information(worker_outputs)
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]
@@ -238,10 +226,7 @@ class RV_Bayesian(RV_routine):
         empty_cube.update_computed_RVS(final_rv, final_error)
         return empty_cube
 
-    def _epochwise_processment(
-        self, empty_cube: RV_cube, worker_outputs: List[list]
-    ) -> RV_cube:
-
+    def _epochwise_processment(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
             tot_number_orders=empty_cube.N_orders,
@@ -317,31 +302,21 @@ class RV_Bayesian(RV_routine):
                     epoch_metric[package["frameID"]] = {}  # epoch : dict
 
                 if package["status"] != SUCCESS:
-                    logger.warning(
-                        "FrameID {} did not converge.".format(package["frameID"])
-                    )
+                    logger.warning("FrameID {} did not converge.".format(package["frameID"]))
                     continue
                 # it is a list of numpy arrays! in the epoch-wise mode
                 if self._internal_configs["RV_extraction"] == "order-wise":
-                    full_model_misspec = package[
-                        "FluxModel_misspecification_from_order"
-                    ]
+                    full_model_misspec = package["FluxModel_misspecification_from_order"]
                 else:
                     full_model_misspec = []
                     for entry in package["FluxModel_misspecification_from_order"]:
                         full_model_misspec.extend(entry)
 
-                OrderOutliers = np.where(
-                    np.abs(full_model_misspec) > 2
-                )  # differences larger than 2 sigma
+                OrderOutliers = np.where(np.abs(full_model_misspec) > 2)  # differences larger than 2 sigma
                 all_metric__values.extend(full_model_misspec)
 
-                epoch_metric[package["frameID"]]["number_outliers"] = len(
-                    OrderOutliers[0]
-                )
-                epoch_metric[package["frameID"]]["valid_points"] = len(
-                    full_model_misspec
-                )
+                epoch_metric[package["frameID"]]["number_outliers"] = len(OrderOutliers[0])
+                epoch_metric[package["frameID"]]["valid_points"] = len(full_model_misspec)
                 epoch_metric[package["frameID"]]["percentage_outliers"] = (
                     epoch_metric[package["frameID"]]["number_outliers"]
                     / epoch_metric[package["frameID"]]["valid_points"]
@@ -393,9 +368,7 @@ class RV_Bayesian(RV_routine):
 
             if self._internal_configs["RV_extraction"] == "order-wise":
                 # TODO: ensure that this KW actually exists
-                fname = "model_Flux_missspecification_order{}.png".format(
-                    package["order"]
-                )
+                fname = "model_Flux_missspecification_order{}.png".format(package["order"])
             elif self._internal_configs["RV_extraction"] == "epoch-wise":
                 fname = "model_Flux_missspecification.png"
 
@@ -416,9 +389,7 @@ class RV_Bayesian(RV_routine):
             self.RV_cube.store_single_RV(epoch, data["RV"], data["RV_uncertainty"])
 
             # order-wise likelihood at the optimal RV
-            self._execution_metrics[epoch]["likelihood"] = data[
-                "detailed_RV_likelihood"
-            ]
+            self._execution_metrics[epoch]["likelihood"] = data["detailed_RV_likelihood"]
 
             for key in ["jitter", "jitter_uncertainty", "opt_status", "opt_message"]:
                 self._execution_metrics[epoch][key] = data[key]
@@ -426,14 +397,10 @@ class RV_Bayesian(RV_routine):
     def _open_shared_memory(self, inst_info: dict) -> None:
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
         if self._internal_configs["RV_extraction"] == "epoch-wise":
-            buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"], dtype=bool)
-            )
+            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=bool))
             self._shared_mem_buffers["mask_cache"] = buffer_info
 
-            buffer_info, _ = create_shared_array(
-                np.zeros(inst_info["array_size"][0], dtype=bool)
-            )
+            buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"][0], dtype=bool))
             self._shared_mem_buffers["cached_orders"] = buffer_info
 
             self.sampler.store_shared_buffer(self._shared_mem_buffers)

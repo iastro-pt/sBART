@@ -18,11 +18,7 @@ def run_SBART_from_yaml(target_config_file, main_run_output_path, only_run=()):
     configs = import_target_configs(target_config_file)
 
     for run_name, run_configs in configs:
-        run_output_path = (
-            main_run_output_path
-            / run_configs.get("sub_group_name", "baseline_TM")
-            / run_name
-        )
+        run_output_path = main_run_output_path / run_configs.get("sub_group_name", "baseline_TM") / run_name
         run_output_path.mkdir(exist_ok=True, parents=True)
 
         # Launch TM algorithm here !!!!!
@@ -35,10 +31,7 @@ def run_SBART_from_yaml(target_config_file, main_run_output_path, only_run=()):
 
         input_files = run_configs["DATA_FILE"].as_posix()
 
-        if (
-            not os.path.exists(input_files)
-            and len(run_configs["LOAD_ALL_FROM_FOLDER"]) == 0
-        ):
+        if not os.path.exists(input_files) and len(run_configs["LOAD_ALL_FROM_FOLDER"]) == 0:
             print("Missing input text file for ")
             raise Exception
 
@@ -84,14 +77,10 @@ def update_keyword_pair(config_dict, keyword, value):
     return config_dict
 
 
-def handle_template_extra_conditions(
-    current_config_dict, filename, multi_input_mode, modifier_dict
-):
+def handle_template_extra_conditions(current_config_dict, filename, multi_input_mode, modifier_dict):
     general_key = "ExtraStellarTemplateConditions"
     try:
-        current_config_dict = update_keyword_pair(
-            current_config_dict, general_key, modifier_dict[general_key]
-        )
+        current_config_dict = update_keyword_pair(current_config_dict, general_key, modifier_dict[general_key])
         del current_config_dict[general_key]
     except KeyError:
         pass
@@ -101,9 +90,7 @@ def handle_template_extra_conditions(
         multi_input_key = "ExtraNightlyStellarTemplateConditions"
         extra_conditions = modifier_dict.get(multi_input_key, {})
         if input_name in extra_conditions:
-            current_config_dict = update_keyword_pair(
-                current_config_dict, general_key, extra_conditions[input_name]
-            )
+            current_config_dict = update_keyword_pair(current_config_dict, general_key, extra_conditions[input_name])
 
     return current_config_dict
 
@@ -135,15 +122,11 @@ def import_target_configs(config_path):
                 break
             run_conf = deepcopy(Baseline_conf)
             filename = Path(file_path)
-            run_conf = update_keyword_pair(
-                run_conf, "ORDER_SKIP", run_conf["ORDER_SKIP"]
-            )
+            run_conf = update_keyword_pair(run_conf, "ORDER_SKIP", run_conf["ORDER_SKIP"])
             run_conf = update_keyword_pair(run_conf, "DATA_FILE", filename)
 
             try:
-                run_conf = update_keyword_pair(
-                    run_conf, "ORDER_SKIP_RANGE", run_conf["ORDER_SKIP_RANGE"]
-                )
+                run_conf = update_keyword_pair(run_conf, "ORDER_SKIP_RANGE", run_conf["ORDER_SKIP_RANGE"])
             except KeyError as e:
                 pass
 
@@ -159,9 +142,7 @@ def import_target_configs(config_path):
             except KeyError:
                 run_conf["StellarTemplateConfigs"] = Empty_condition()
 
-            run_conf = handle_template_extra_conditions(
-                run_conf, filename, multi_input_mode, run_conf
-            )
+            run_conf = handle_template_extra_conditions(run_conf, filename, multi_input_mode, run_conf)
             if run_configs is not None:
                 try:
                     key = "StellarTemplateConditions"
@@ -172,9 +153,7 @@ def import_target_configs(config_path):
                 try:
                     updated_data_file = run_configs["DATA_FILE"]
                     if not isinstance(updated_data_file, (str, Path)):
-                        raise Exception(
-                            "Multiple datafiles must be defined in the baseline!"
-                        )
+                        raise Exception("Multiple datafiles must be defined in the baseline!")
                     overloaded_paths = True
                     run_configs["DATA_FILE"] = Path(updated_data_file)
                 except KeyError:
@@ -186,9 +165,7 @@ def import_target_configs(config_path):
 
                     run_conf = update_keyword_pair(run_conf, param, value)
 
-                run_conf = handle_template_extra_conditions(
-                    run_conf, filename, multi_input_mode, run_configs
-                )
+                run_conf = handle_template_extra_conditions(run_conf, filename, multi_input_mode, run_configs)
             runs_definitions.append((actual_run_name, run_conf))
 
     return runs_definitions

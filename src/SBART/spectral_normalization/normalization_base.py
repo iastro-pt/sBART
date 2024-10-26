@@ -51,28 +51,21 @@ class NormalizationBase(BASE):
         self._spec_info = obj_info
         self._ran_normalization_fit: bool = False
 
-    def launch_epochwise_normalization(
-        self, wavelengths, flux, uncertainties, loaded_info
-    ):
+    def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         self._ensure_epochwise_normalizer()
         if len(loaded_info) != 0:
             return (
-                *self._apply_epoch_normalization(
-                    wavelengths, flux, uncertainties, **loaded_info
-                ),
+                *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **loaded_info),
                 loaded_info,
             )
         return self._fit_epochwise_normalization(wavelengths, flux, uncertainties)
 
-    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
-        ...
+    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs): ...
 
     def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
         self._ran_normalization_fit = True
 
-    def launch_orderwise_normalization(
-        self, wavelengths, flux, uncertainties, loaded_info
-    ):
+    def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         """
         Launch a normalizer that will be applied to each spectral order (does not need to know order).
         This will:
@@ -95,9 +88,7 @@ class NormalizationBase(BASE):
 
         if len(loaded_info) != 0:
             return (
-                *self._apply_orderwise_normalization(
-                    wavelengths, flux, uncertainties, **loaded_info
-                ),
+                *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, **loaded_info),
                 loaded_info,
             )
         return self._fit_orderwise_normalization(wavelengths, flux, uncertainties)
@@ -105,9 +96,7 @@ class NormalizationBase(BASE):
     def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
         self._ensure_orderwise_normalizer()
 
-    def _apply_orderwise_normalization(
-        self, wavelengths, flux, uncertainties, **kwargs
-    ):
+    def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         self._ensure_orderwise_normalizer()
 
     def trigger_data_storage(self, *args, **kwargs) -> NoReturn:
@@ -126,9 +115,7 @@ class NormalizationBase(BASE):
 
         """
         if not self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(
-                f"Can't ask for order-wise normalization on {self.name}"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for order-wise normalization on {self.name}")
 
     def _ensure_epochwise_normalizer(self):
         """
@@ -138,6 +125,4 @@ class NormalizationBase(BASE):
 
         """
         if self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(
-                f"Can't ask for epoch-wise normalization on {self.name}"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for epoch-wise normalization on {self.name}")

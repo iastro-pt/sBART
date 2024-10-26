@@ -54,24 +54,16 @@ class GPSpecModel(ModellingBase):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
-        GP_KERNEL=UserParam(
-            "Matern-5_2", constraint=ValueFromList(["Matern-5_2", "Matern-3_2"])
-        ),
+        GP_KERNEL=UserParam("Matern-5_2", constraint=ValueFromList(["Matern-5_2", "Matern-3_2"])),
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
-        POSTERIOR_CHARACTERIZATION=UserParam(
-            "minimize", constraint=ValueFromList(["minimize", "MCMC"])
-        ),
+        POSTERIOR_CHARACTERIZATION=UserParam("minimize", constraint=ValueFromList(["minimize", "MCMC"])),
         OPTIMIZATION_MAX_ITER=UserParam(1000, constraint=Positive_Value_Constraint),
     )
 
     def __init__(self, obj_info, user_configs):
         possible_folders = {}
-        for kern in self._default_params[
-            "GP_KERNEL"
-        ].existing_constraints.available_options:
-            possible_folders[
-                f"modelling_information_{kern}"
-            ] = f"_SpecModelParams/{kern}"
+        for kern in self._default_params["GP_KERNEL"].existing_constraints.available_options:
+            possible_folders[f"modelling_information_{kern}"] = f"_SpecModelParams/{kern}"
 
         super().__init__(
             obj_info=obj_info,
@@ -109,9 +101,7 @@ class GPSpecModel(ModellingBase):
 
     def _check_dependencies(self):
         if MISSING_TINYGP:
-            raise custom_exceptions.InternalError(
-                "Missing the custom tinygp installation for GP"
-            )
+            raise custom_exceptions.InternalError("Missing the custom tinygp installation for GP")
 
     def _get_model_storage_filename(self) -> str:
         """
@@ -134,9 +124,7 @@ class GPSpecModel(ModellingBase):
         # TODO: ensure that loaded information is in accordance with the current parameters!
         return super().load_previous_model_results_from_disk(model_component_in_use)
 
-    def generate_model_from_order(
-        self, og_lambda, og_spectra, og_err, new_wavelengths, order
-    ) -> NoReturn:
+    def generate_model_from_order(self, og_lambda, og_spectra, og_err, new_wavelengths, order) -> NoReturn:
         """
         Fit the stellar spectrum from a given order. If it has already been recomputed (or if it has previously failed)
         does nothing
@@ -161,34 +149,24 @@ class GPSpecModel(ModellingBase):
             return
 
         try:
-            solution_array, result_flag = self._launch_GP_fit(
-                og_lambda, og_spectra, og_err, new_wavelengths, order
-            )
+            solution_array, result_flag = self._launch_GP_fit(og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
             msg = "Unknown error found when fitting GP to order {}: {}".format(
                 order, traceback.print_tb(e.__traceback__)
             )
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
-            solution_array = [
-                np.nan for _ in self._modelling_parameters.get_enabled_params()
-            ]
+            solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
 
-            raise custom_exceptions.StopComputationError(
-                "Unknown error encounterd"
-            ) from e
+            raise custom_exceptions.StopComputationError("Unknown error encounterd") from e
 
-        self._modelling_parameters.store_frameID_results(
-            order, result_vector=solution_array, result_flag=result_flag
-        )
+        self._modelling_parameters.store_frameID_results(order, result_vector=solution_array, result_flag=result_flag)
 
     def _store_model_to_disk(self) -> NoReturn:
         # TODO: store information related with the GP parameters!
         return super()._store_model_to_disk()
 
-    def interpolate_spectrum_to_wavelength(
-        self, og_lambda, og_spectra, og_err, new_wavelengths, order
-    ):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
         """
         Interpolate the order of this spectrum to a given wavelength, using a GP. If the GP fit is yet to be done,
         then it is done beforehand.
@@ -218,18 +196,14 @@ class GPSpecModel(ModellingBase):
         t0 = time.time()
 
         t1 = time.time()
-        self.generate_model_from_order(
-            og_lambda, og_spectra, og_err, new_wavelengths, order
-        )
+        self.generate_model_from_order(og_lambda, og_spectra, og_err, new_wavelengths, order)
 
         kern_type = self._internal_configs["GP_KERNEL"]
 
         try:
             fit_results = self._modelling_parameters.get_fit_results_from_frameID(order)
         except custom_exceptions.NoConvergenceError as exc:
-            logger.critical(
-                "Can't interpolate wavelengths from order that has not achieved convergence"
-            )
+            logger.critical("Can't interpolate wavelengths from order that has not achieved convergence")
             raise exc
 
         param_names = self._modelling_parameters.get_enabled_params()
@@ -250,9 +224,7 @@ class GPSpecModel(ModellingBase):
         return mu, std
 
     def _launch_GP_fit(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
-        initial_params, bounds = self._modelling_parameters.generate_optimizer_inputs(
-            order, rv_units=None
-        )
+        initial_params, bounds = self._modelling_parameters.generate_optimizer_inputs(order, rv_units=None)
         param_names = self._modelling_parameters.get_enabled_params()
 
         result_flag = SUCCESS

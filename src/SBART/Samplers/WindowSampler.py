@@ -33,13 +33,9 @@ class WindowSampler(SamplerModel):
         if self._fixed_window:
             self.model_params.lock_param("RV")
 
-    def _orderwise_manager(
-        self, dataClass, subInst: str, run_info: dict, package_queue, output_pool
-    ) -> list:
+    def _orderwise_manager(self, dataClass, subInst: str, run_info: dict, package_queue, output_pool) -> list:
         if self.mem_save_enabled:
-            return super()._orderwise_manager(
-                dataClass, subInst, run_info, package_queue, output_pool
-            )
+            return super()._orderwise_manager(dataClass, subInst, run_info, package_queue, output_pool)
 
         logger.info("Memory saving mode is disabled. Using optimal sampling strategy")
 
@@ -51,15 +47,11 @@ class WindowSampler(SamplerModel):
         for frameID in valid_IDS:
             # open before multiple cores attempt to open it!
             for order in run_info["valid_orders"]:
-                worker_IN_pkg = self._generate_WorkerIn_Package(
-                    frameID, order, run_info, subInst
-                )
+                worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
                 package_queue.put(worker_IN_pkg)
                 N_packages += 1
 
-        worker_prods.append(
-            self._receive_data_workers(N_packages=N_packages, output_pool=output_pool)
-        )
+        worker_prods.append(self._receive_data_workers(N_packages=N_packages, output_pool=output_pool))
         return worker_prods
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
@@ -90,9 +82,7 @@ class WindowSampler(SamplerModel):
         while True:
             if current_RV >= RV_window[1]:
                 break
-            metric_profile.append(
-                self.apply_orderwise(current_RV, target, target_kwargs)
-            )
+            metric_profile.append(self.apply_orderwise(current_RV, target, target_kwargs))
             RV_array.append(current_RV)
 
             current_RV = current_RV + self.RV_step

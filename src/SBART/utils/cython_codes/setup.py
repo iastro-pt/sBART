@@ -22,8 +22,4 @@ if __name__ == "__main__":
         )
         for key, value in targets.items()
     ]
-    setup(
-        ext_modules=cythonize(
-            ext_modules, compiler_directives={"language_level": "3"}, annotate=True
-        )
-    )
+    setup(ext_modules=cythonize(ext_modules, compiler_directives={"language_level": "3"}, annotate=True))

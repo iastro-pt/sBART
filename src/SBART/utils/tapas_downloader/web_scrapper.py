@@ -89,22 +89,18 @@ def update_request(template, new_values):
         "HARPS": r"ESO%20La%20Silla%20Chile",
         "CARMENES": r"Calar%20Alto%20German-Spanish%20Ast.%20Center%20Spain",
     }
-    template["requests"][0]["observation"]["observatory"]["name"] = inst_names[
-        new_values["instrument"]
-    ]
+    template["requests"][0]["observation"]["observatory"]["name"] = inst_names[new_values["instrument"]]
 
-    template["requests"][0]["observation"]["instrument"][
-        "spectralRange"
-    ] = "{}%20{}".format(*new_values["spectralRange"])
+    template["requests"][0]["observation"]["instrument"]["spectralRange"] = "{}%20{}".format(
+        *new_values["spectralRange"]
+    )
 
     new_values["mjd_time"].format = "fits"
 
     return template
 
 
-def get_TAPAS_data(
-    user, password, request_data, storing_destination, timeout=5, request_interval=60
-):
+def get_TAPAS_data(user, password, request_data, storing_destination, timeout=5, request_interval=60):
     """
 
     timeout:
@@ -128,10 +124,9 @@ def get_TAPAS_data(
         standard_headers = json.load(json_data)
 
     headers = update_request(standard_headers, request_data)
-    request_url = (
-        "http://cds-espri.ipsl.fr/tapas/data?methodName=createUserRequest&jsonTapas="
-        + json.dumps(headers).replace('"', "%22")
-    )
+    request_url = "http://cds-espri.ipsl.fr/tapas/data?methodName=createUserRequest&jsonTapas=" + json.dumps(
+        headers
+    ).replace('"', "%22")
     logger.debug("Sending the TAPAS request... {}", headers)
     outputs = requests.get(request_url, cookies=cookies)
     logger.debug("Sent the request. Output: {}", outputs.text)
@@ -173,9 +168,7 @@ def get_TAPAS_data(
         errors_msg = "No folder was added"
     if not error_flag:
         # Download the data from the ftp link
-        storing_path = download_IPAC_file(
-            tapas_ftp, tapas_template_name, storing_destination
-        )
+        storing_path = download_IPAC_file(tapas_ftp, tapas_template_name, storing_destination)
 
     # close connection
     tapas_ftp.quit()

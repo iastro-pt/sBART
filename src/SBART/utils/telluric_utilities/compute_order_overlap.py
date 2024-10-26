@@ -3,9 +3,7 @@ from typing import Iterable
 import numpy as np
 
 
-def compute_wavelength_order_overlap(
-    wavelength_array: np.ndarray, region_of_interest: Iterable[int]
-):
+def compute_wavelength_order_overlap(wavelength_array: np.ndarray, region_of_interest: Iterable[int]):
     """
     Find the orders in which there is a wavelength overlap
     Parameters

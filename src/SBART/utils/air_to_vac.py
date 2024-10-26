@@ -49,9 +49,7 @@ def airtovac(wave_air):
         for _ in range(2):
             sigma2 = np.divide(1e4, wave_vac) ** 2.0  # Convert to wavenumber squared
             # Compute conversion factor
-            fact = (
-                1.0 + 5.792105e-2 / (238.0185 - sigma2) + 1.67917e-3 / (57.362 - sigma2)
-            )
+            fact = 1.0 + 5.792105e-2 / (238.0185 - sigma2) + 1.67917e-3 / (57.362 - sigma2)
             wave_vac = wave_air * fact  # Convert Wavelength
 
     return wave_vac

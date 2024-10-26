@@ -48,9 +48,7 @@ class Mask:
 
         if self.mask_type == "binary":
             if len(exclude) != 0:
-                self.logger.critical(
-                    f"Binary mask does not allow to remove flags. {exclude=}"
-                )
+                self.logger.critical(f"Binary mask does not allow to remove flags. {exclude=}")
             return self._internal_mask
 
         if not exclude and not self._outdated_cache:
@@ -61,9 +59,7 @@ class Mask:
             try:
                 flag_name = exclusion if isinstance(exclusion, str) else exclusion.name
 
-                if (
-                    flag_name == MULTIPLE_REASONS.name
-                ):  # always block the points that are marked by multiple reasons
+                if flag_name == MULTIPLE_REASONS.name:  # always block the points that are marked by multiple reasons
                     continue
 
                 non_interest_points.append(self._current_types[flag_name])
@@ -72,9 +68,7 @@ class Mask:
 
         custom_mask = np.zeros(self._internal_mask.shape, dtype=bool)
 
-        custom_mask[
-            np.where(np.isin(self._internal_mask, non_interest_points) == 0)
-        ] = True
+        custom_mask[np.where(np.isin(self._internal_mask, non_interest_points) == 0)] = True
         custom_mask.flags.writeable = False
 
         if len(exclude) == 0:
@@ -133,9 +127,7 @@ class Mask:
         interest_points = []
         for to_clean in type_to_clean:
             interest_points.append(self._current_types[to_clean])
-        self._internal_mask[
-            np.where(np.isin(self._internal_mask, interest_points) == 0)
-        ] = 0
+        self._internal_mask[np.where(np.isin(self._internal_mask, interest_points) == 0)] = 0
 
     def compute_statistics(self, detailed=False):
         if self.mask_type == "binary":
@@ -218,9 +210,7 @@ class Mask:
                     global_points.append(number_masked)
 
             logger.info("\n\tGlobal Summary:\n")
-            logger.info(
-                "\tMinimum epoch \t\t Maximum epoch \t \t Median points per epoch\n"
-            )
+            logger.info("\tMinimum epoch \t\t Maximum epoch \t \t Median points per epoch\n")
             string = "\t(epoch {}): {}\t (epoch {}): {} \t {}\n"
             argmin = np.argmin(global_points)
             argmax = np.argmax(global_points)

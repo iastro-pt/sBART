@@ -94,15 +94,11 @@ class RASSINE_normalization(NormalizationBase):
             },
         )
         if obj_info["is_S2D"] and "S1D_folder" not in user_configs:
-            raise custom_exceptions.InvalidConfiguration(
-                "Must provide the S1D folder when using S2D files"
-            )
+            raise custom_exceptions.InvalidConfiguration("Must provide the S1D folder when using S2D files")
 
     def _get_S1D_data(self, wavelengths, flux, uncertainties):
         if self._spec_info["is_S2D"]:
-            S1D_path = (
-                self._internal_configs["S1D_folder"] / self._spec_info["S1D_name"]
-            )
+            S1D_path = self._internal_configs["S1D_folder"] / self._spec_info["S1D_name"]
             temp_configs = deepcopy(self._internal_configs.get_user_configs())
             temp_configs["spectra_format"] = "S1D"
             # open a temporary frame to retrieve the S1D data!
@@ -126,9 +122,7 @@ class RASSINE_normalization(NormalizationBase):
     def _prepare_Rassine_run(self, wavelengths, flux, uncertainties):
         logger.info("Preparing text files for RASSINE application")
 
-        wavelengths, flux, uncertainties = self._get_S1D_data(
-            wavelengths, flux, uncertainties
-        )
+        wavelengths, flux, uncertainties = self._get_S1D_data(wavelengths, flux, uncertainties)
 
         # Concatenate the arrays for RASSINE
         arr = np.c_[wavelengths, flux]
@@ -241,9 +235,7 @@ config = {'spectrum_name':spectrum_name,
           'speedup':1}                     
         """
         )
-        with open(
-            Path(self._internal_configs["RASSINE_path"]) / "Rassine_config.py", mode="w"
-        ) as file:
+        with open(Path(self._internal_configs["RASSINE_path"]) / "Rassine_config.py", mode="w") as file:
             file.write(rassine_config)
 
     def run_RASSINE(self, wavelengths, flux, uncertainties):
@@ -251,9 +243,7 @@ config = {'spectrum_name':spectrum_name,
         # TODO: check the commands to launch RASSINE
         logger.info("Launching RASSINE")
 
-        subprocess.run(
-            ["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"]
-        )
+        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"])
 
         logger.info("RASSINE has finished running")
 
@@ -263,18 +253,13 @@ config = {'spectrum_name':spectrum_name,
         self.run_RASSINE(wavelengths, flux, uncertainties)
         filename = self._spec_info["S1D_name"].replace(".fits", "")
 
-        output_path = (
-            self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False)
-            / f"RASSINE_{filename}.p"
-        )
+        output_path = self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / f"RASSINE_{filename}.p"
 
         # TODO: missing the parameters that will be cached!
         params_to_store = {"RASSINE_OUT_FOLDER": output_path.as_posix()}
 
         return (
-            *self._apply_epoch_normalization(
-                wavelengths, flux, uncertainties, **params_to_store
-            ),
+            *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **params_to_store),
             params_to_store,
         )
 
@@ -283,9 +268,7 @@ config = {'spectrum_name':spectrum_name,
         logger.info(f"Applying normalization to epoch!")
         og_shape = wavelengths.shape
 
-        wavelengths, flux, uncertainties = self._get_S1D_data(
-            wavelengths, flux, uncertainties
-        )
+        wavelengths, flux, uncertainties = self._get_S1D_data(wavelengths, flux, uncertainties)
 
         # TODO: think about SNR problems that might arise within SBART if this goes through without adding an offset
 
@@ -307,18 +290,14 @@ config = {'spectrum_name':spectrum_name,
                 wavelengths > rass_products["wave"][-1],
             )
         ] = np.nan
-        self.plot_rassine_products(
-            wavelengths, flux, uncertainties, rass_products, cont_solution
-        )
+        self.plot_rassine_products(wavelengths, flux, uncertainties, rass_products, cont_solution)
 
         flux /= cont_solution
         uncertainties /= cont_solution
 
         return wavelengths, flux, uncertainties
 
-    def plot_rassine_products(
-        self, wavelength, flux, uncert, rass_products, interpolated_cont
-    ) -> NoReturn:
+    def plot_rassine_products(self, wavelength, flux, uncert, rass_products, interpolated_cont) -> NoReturn:
         """
         Plot the end result of the continuum normalization
 
@@ -352,9 +331,7 @@ config = {'spectrum_name':spectrum_name,
         axis[1].set_ylabel("Normalized flux")
 
         filename = self._spec_info["S1D_name"].replace(".fits", ".png")
-        fig.savefig(
-            self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / filename
-        )
+        fig.savefig(self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / filename)
         for fig in figs_to_close:
             plt.close(fig)
 

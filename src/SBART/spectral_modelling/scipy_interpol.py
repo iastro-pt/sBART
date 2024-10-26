@@ -67,9 +67,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         """
         return
 
-    def interpolate_spectrum_to_wavelength(
-        self, og_lambda, og_spectra, og_err, new_wavelengths, order
-    ):
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
         """
         Interpolate the order of this spectrum to a given wavelength, using a spline.
         Parameters
@@ -101,9 +99,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         if propagate_interpol_errors == "propagation":
             # Custom Cubic spline routine!
             if self._internal_configs["SPLINE_TYPE"] != "cubic":
-                raise custom_exceptions.InvalidConfiguration(
-                    "Can't use non cubic-splines with propagation"
-                )
+                raise custom_exceptions.InvalidConfiguration("Can't use non cubic-splines with propagation")
             CSplineInterpolator = CustomCubicSpline(
                 og_lambda,
                 og_spectra,
@@ -117,21 +113,19 @@ class ScipyInterpolSpecModel(ModellingBase):
                 extra = {"bc_type": "natural"}
             else:
                 extra = {}
-            CSplineInterpolator = interpolator_map[
-                self._internal_configs["SPLINE_TYPE"]
-            ](og_lambda, og_spectra, **extra)
+            CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
+                og_lambda, og_spectra, **extra
+            )
             new_data = CSplineInterpolator(new_wavelengths)
 
             if propagate_interpol_errors == "none":
                 new_errors = np.zeros(new_data.shape)
             else:
-                CSplineInterpolator = interpolator_map[
-                    self._internal_configs["SPLINE_TYPE"]
-                ](og_lambda, og_err, **extra)
+                CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
+                    og_lambda, og_err, **extra
+                )
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:
-            raise custom_exceptions.InvalidConfiguration(
-                f"How did we get {propagate_interpol_errors=}?"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"How did we get {propagate_interpol_errors=}?")
 
         return new_data, new_errors

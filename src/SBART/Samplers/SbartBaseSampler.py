@@ -93,30 +93,20 @@ class SbartBaseSampler(SamplerModel):
                 for key, item in pkg.items():
                     processed_package[key].append(item)
         if len(set(processed_package["frameID"])) != 1:
-            raise FrameError(
-                f"Mixing multiple frameIDs {set(processed_package['frameID'])}"
-            )
+            raise FrameError(f"Mixing multiple frameIDs {set(processed_package['frameID'])}")
         processed_package["frameID"] = processed_package["frameID"][0]
 
         return processed_package
 
     def compute_epochwise_combination(self, outputs):
-        return np.sum(
-            [
-                pkg["log_likelihood_from_order"]
-                for pkg in outputs
-                if pkg["status"] == SUCCESS
-            ]
-        )
+        return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
 
     def show_posterior(self, mean_value, variance, RVs):
         """
         Plot the approximated (Gaussian) posterior
         """
         std = np.sqrt(variance)
-        gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (
-            std * np.sqrt(2 * np.pi)
-        )
+        gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (std * np.sqrt(2 * np.pi))
 
         plt.scatter(RVs, gaussian(RVs, mean_value, std))
 

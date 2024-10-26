@@ -119,9 +119,7 @@ class TemplateFramework(BASE):
         logger.debug("Starting the creation of {} models!", self.__class__.model_type)
 
         if attempt_to_load:
-            logger.info(
-                "Attempting to load previous Templates from disk before creating them"
-            )
+            logger.info("Attempting to load previous Templates from disk before creating them")
             try:
                 self.load_templates_from_disk()
             except custom_exceptions.TemplateNotExistsError:
@@ -143,9 +141,7 @@ class TemplateFramework(BASE):
             )
 
             self.templates[subInst].generate_root_path(
-                self._internalPaths.get_path_to(
-                    self.__class__.model_type, as_posix=False
-                )
+                self._internalPaths.get_path_to(self.__class__.model_type, as_posix=False)
             )
 
         if store_templates:
@@ -183,14 +179,10 @@ class TemplateFramework(BASE):
             if self.is_type("Telluric"):
                 config_dict["download_path"] = ""
 
-            loaded_temp = self.__class__.template_map[temp_name](
-                temp_subInst, loaded=True, user_configs=config_dict
-            )
+            loaded_temp = self.__class__.template_map[temp_name](temp_subInst, loaded=True, user_configs=config_dict)
 
             try:
-                loaded_temp.load_from_file(
-                    root_path=template_path, loading_path=temp_path
-                )
+                loaded_temp.load_from_file(root_path=template_path, loading_path=temp_path)
             except custom_exceptions.NoDataError:
                 pass
             self.templates[temp_subInst] = loaded_temp
@@ -216,18 +208,14 @@ class TemplateFramework(BASE):
         """
 
         which = which.capitalize()
-        loading_path = self._internalPaths.get_path_to(
-            self.__class__.model_type, as_posix=True
-        )
+        loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
         logger.info(
             "Loading {} template of type {} from disk inside directory",
             self.__class__.model_type,
             which,
         )
         logger.info("\t" + loading_path)
-        available_templates = [
-            i for i in os.listdir(loading_path) if which in i and i.endswith("fits")
-        ]
+        available_templates = [i for i in os.listdir(loading_path) if which in i and i.endswith("fits")]
         logger.info(
             "Found {} available templates: {} of type {}",
             len(available_templates),
@@ -249,9 +237,7 @@ class TemplateFramework(BASE):
         clobber : bool
             Whether to delete and re-write over previous outputs
         """
-        storage_path = self._internalPaths.get_path_to(
-            self.__class__.model_type, as_posix=True
-        )
+        storage_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
         logger.info(
             "Storing templates from <{}> under the directory",
             self.__class__.model_type,

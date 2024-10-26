@@ -3,9 +3,7 @@ import numpy as np
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 
 
-def clean_wings_order(
-    current_order_wavelengths, telluric_bin_temp, template_base_berv, BERV_window
-):
+def clean_wings_order(current_order_wavelengths, telluric_bin_temp, template_base_berv, BERV_window):
     """Around each telluric feature, remove a window that spans the entire BERV motion over the year.
 
     Parameters
@@ -36,16 +34,8 @@ def clean_wings_order(
 
         # removes the previous BERV correction and calculates the edges based on the MAXBERV window!
         # The template was created for the
-        lowest_wavelength = (
-            current_order_wavelengths[start]
-            * (c - BERV_window)
-            / (c + template_base_berv)
-        )
-        highest_wavelength = (
-            current_order_wavelengths[end]
-            * (c + BERV_window)
-            / (c + template_base_berv)
-        )
+        lowest_wavelength = current_order_wavelengths[start] * (c - BERV_window) / (c + template_base_berv)
+        highest_wavelength = current_order_wavelengths[end] * (c + BERV_window) / (c + template_base_berv)
         telluric_bin_temp[
             np.where(
                 np.logical_and(

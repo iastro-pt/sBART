@@ -32,29 +32,22 @@ class BASE:
         start_with_valid_status: bool = True,
         quiet_user_params: bool = False,
     ):
-        self._internal_configs = InternalParameters(
-            self.name, self._default_params, no_logs=quiet_user_params
-        )
+        self._internal_configs = InternalParameters(self.name, self._default_params, no_logs=quiet_user_params)
 
         if user_configs is None:
             user_configs = {}
 
-        self._internalPaths = Paths(
-            root_level_path=root_level_path, preconfigured_paths=needed_folders
-        )
+        self._internalPaths = Paths(root_level_path=root_level_path, preconfigured_paths=needed_folders)
 
         self._internal_configs.receive_user_inputs(user_configs)
         self._needed_folders = needed_folders
-        self._status = Status(
-            assume_valid=start_with_valid_status
-        )  # BY DEFAULT IT IS A VALID ONE!
+        self._status = Status(assume_valid=start_with_valid_status)  # BY DEFAULT IT IS A VALID ONE!
 
     ###
     #   Data storage
     ###
 
-    def trigger_data_storage(self, *args, **kwargs):
-        ...
+    def trigger_data_storage(self, *args, **kwargs): ...
 
     def json_ready(self) -> Dict[str, Any]:
         """
@@ -98,9 +91,7 @@ class BASE:
         if not self.is_valid:
             raise custom_exceptions.InvalidConfiguration(
                 "Attempting to access data from sBART object that is not "
-                "valid. Check previous log messages for further information: {}".format(
-                    self._status
-                )
+                "valid. Check previous log messages for further information: {}".format(self._status)
             )
 
     def load_from_file(self, root_path, loading_path: str) -> None:

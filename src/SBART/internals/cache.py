@@ -42,11 +42,7 @@ class DB_connection:
 
     def get_GDAS_profile(self, gdas_filename: str):
         with self.sessionmaker() as session:
-            chosen_target = (
-                session.query(GDAS_profile)
-                .filter_by(gdas_filename=gdas_filename)
-                .first()
-            )
+            chosen_target = session.query(GDAS_profile).filter_by(gdas_filename=gdas_filename).first()
         if chosen_target is None:
             raise FileNotFoundError("GDAS profile does not exist")
 
@@ -58,9 +54,7 @@ class DB_connection:
             chosen_target = session.query(Target).filter_by(name=star_name).first()
 
         if chosen_target is None:
-            raise FileNotFoundError(
-                f"Target {star_name} does not have cached information"
-            )
+            raise FileNotFoundError(f"Target {star_name} does not have cached information")
 
         return chosen_target.params
 

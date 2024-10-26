@@ -129,11 +129,7 @@ class ESO_PIPELINE(Frame):
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
-            available_indicators=(
-                available_indicators
-                if override_indicators is None
-                else override_indicators
-            ),
+            available_indicators=(available_indicators if override_indicators is None else override_indicators),
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
@@ -160,9 +156,7 @@ class ESO_PIPELINE(Frame):
         version = drs_version.split("/")[-1]
 
         # TODO: Check the number of the DRS version that has this fixed
-        version_sum = lambda a: sum(
-            a * 10**b for a, b in zip(map(int, a.split(".")[::-1]), range(3))
-        )
+        version_sum = lambda a: sum(a * 10**b for a, b in zip(map(int, a.split(".")[::-1]), range(3)))
 
         if version_sum(version) < version_sum("3.2.1"):
             # For older versions we always need to use the
@@ -239,18 +233,14 @@ class ESO_PIPELINE(Frame):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = header[
-                f"HIERARCH {self.KW_identifier} METEO {endKW}"
-            ]
+            self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} METEO {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
                 )
 
         if self.observation_info["relative_humidity"] == 255:
-            logger.warning(
-                f"{self.name} has an invalid value in the humidity sensor..."
-            )
+            logger.warning(f"{self.name} has an invalid value in the humidity sensor...")
             self.observation_info["relative_humidity"] = np.nan
 
         self.observation_info["airmass"] = header["AIRMASS"]
@@ -262,16 +252,10 @@ class ESO_PIPELINE(Frame):
             )
 
         # Load BERV info + previous RV
-        self.observation_info["MAX_BERV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
-        )
-        self.observation_info["BERV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
-        )
+        self.observation_info["MAX_BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
+        self.observation_info["BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
 
-        self.observation_info["DRS_RV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
-        )
+        self.observation_info["DRS_RV"] = header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
         self.observation_info["DRS_RV_ERR"] = (
             header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
         )
@@ -297,15 +281,11 @@ class ESO_PIPELINE(Frame):
             self.wavelengths = hdulist["WAVEDATA_VAC_BARY"].data
             self.qual_data = hdulist["QUALDATA"].data
 
-            SCIDATA_KEY = (
-                "SCIDATA" if overload_SCIDATA_key is None else overload_SCIDATA_key
-            )
+            SCIDATA_KEY = "SCIDATA" if overload_SCIDATA_key is None else overload_SCIDATA_key
             ERRDATA_KEY = "ERRDATA"
 
             if self._internal_configs["Telluric_Corrected"]:
-                logger.info(
-                    "Loading S2D file from a non-DRS source (telluric corrected file)"
-                )
+                logger.info("Loading S2D file from a non-DRS source (telluric corrected file)")
                 SCIDATA_KEY += "_CORR"
                 ERRDATA_KEY += "_CORR"
 
@@ -315,12 +295,7 @@ class ESO_PIPELINE(Frame):
             if self._internal_configs["apply_FluxCorr"]:
                 logger.debug("Starting chromatic flux correction")
                 keyword = f"HIERARCH {self.KW_identifier} QC ORDER%d FLUX CORR"
-                flux_corr = np.array(
-                    [
-                        hdulist[0].header[keyword % o]
-                        for o in range(1, self.N_orders + 1)
-                    ]
-                )
+                flux_corr = np.array([hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)])
                 fit_nb = (flux_corr != 1.0).sum()
 
                 ignore = self.N_orders - fit_nb
@@ -334,12 +309,8 @@ class ESO_PIPELINE(Frame):
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
                 corr_model = np.polyval(coeff, hdulist[5].data)
 
-                corr_model[flux_corr == 1] = (
-                    1  # orders where the CORR FACTOR are 1 do not have correction!
-                )
-                self.spectra = (
-                    self.spectra / corr_model
-                )  # correct from chromatic variations
+                corr_model[flux_corr == 1] = 1  # orders where the CORR FACTOR are 1 do not have correction!
+                self.spectra = self.spectra / corr_model  # correct from chromatic variations
                 self.flux_atmos_balance_corrected = True
                 # TODO: understand if we want to include the factor in uncertainties or not!
                 # self.uncertainties = self.uncertainties / corr_model # maintain the SNR in the corrected spectrum
@@ -351,9 +322,7 @@ class ESO_PIPELINE(Frame):
                 # / corr_model
 
             if self._internal_configs["apply_FluxBalance_Norm"]:
-                logger.info(
-                    "Normalizing the flux balance distribution due to dispersion"
-                )
+                logger.info("Normalizing the flux balance distribution due to dispersion")
                 # The physical sizes of the pixels (on the CCD) are the same
                 # The flux that reaches eeach pixel is different, due to dispersion
                 # The spectra will have a trend, even after removing the instrumental effect
@@ -383,12 +352,8 @@ class ESO_PIPELINE(Frame):
             logger.warning("SBART using air wavelengths!")
 
         self.wavelengths = full_data[wave_kw].reshape((1, self.array_size[1]))
-        self.spectra = (
-            full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
-        )
-        self.uncertainties = (
-            full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
-        )
+        self.spectra = full_data["flux"].reshape((1, self.array_size[1])).astype(np.float64)
+        self.uncertainties = full_data["error"].reshape((1, self.array_size[1])).astype(np.float64)
         self.qual_data = full_data["quality"].reshape((1, self.array_size[1]))
         self.build_mask(bypass_QualCheck=False)
 
@@ -423,8 +388,7 @@ class ESO_PIPELINE(Frame):
         if not self.is_skysub:
             extra_checks = {
                 f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
-                f"HIERARCH {self.KW_identifier}"
-                + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
                 f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
             }
             nonfatal_QC_flags = {**nonfatal_QC_flags, **extra_checks}
@@ -452,9 +416,7 @@ class ESO_PIPELINE(Frame):
                 self._status.store_warning(KW_WARNING(msg))
 
         if self._status.number_warnings > 0:
-            logger.warning(
-                "Found {} warning flags in the header KWs", self._status.number_warnings
-            )
+            logger.warning("Found {} warning flags in the header KWs", self._status.number_warnings)
 
     @property
     def bare_fname(self) -> str:
