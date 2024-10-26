@@ -68,10 +68,7 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_packages(
-    where="src",
-    # include=["SBART.*"]
-)
+all_packages = setuptools.find_packages(where="src", include=["SBART*"])
 
 requ_path = Path(__file__).parent
 with open(requ_path / "requirements.txt") as f:
