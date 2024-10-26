@@ -1,14 +1,15 @@
 import os
 from pathlib import Path
 
-import numpy
 import setuptools
+from setuptools import Extension
+
+import numpy
 
 curr_file = Path(__file__).parent.absolute()
 
-from setuptools import Extension
 
-version = "0.6.0"
+version = "0.6.1"
 
 USE_CYTHON = True  # command line option, try-import, ...
 
