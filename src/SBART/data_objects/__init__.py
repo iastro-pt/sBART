@@ -1,5 +1,4 @@
-"""
-Classes that handle input/output data.
+"""Classes that handle input/output data.
 
 """
 

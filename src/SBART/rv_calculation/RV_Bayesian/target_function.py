@@ -37,7 +37,6 @@ def SBART_target(params, **kwargs):
         # TODO: apply the PixelWise computation here
         polynomial_contribution = 0
         print("there is no PixelWise trend!!!!!!!!!!!!")
-        pass
     elif kwargs["chromatic_trend"] == "OrderWise":
         polynomial_contribution = evaluate_polynomial(poly_params, central_wavelength)
     else:
@@ -54,7 +53,7 @@ def SBART_target(params, **kwargs):
         np.logical_and(
             current_wavelength >= wave_spectra_starframe[0],
             current_wavelength <= wave_spectra_starframe[-1],
-        )
+        ),
     )
 
     (
@@ -146,7 +145,7 @@ def SBART_target(params, **kwargs):
 
         if not kwargs.get("SAVE_DISK_SPACE", False):
             misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
-                kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
+                kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter,
             )
         else:
             misspec_metric = np.asarray([0])

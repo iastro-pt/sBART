@@ -32,8 +32,7 @@ from .Stellar_Template import StellarTemplate
 
 
 class SumStellar(StellarTemplate):
-    """
-    This is the usual stellar template, that is constructed by shifting all observations to a common, rest,
+    """This is the usual stellar template, that is constructed by shifting all observations to a common, rest,
     frame (i.e. by removing their stellar RVs) and computing a mean of all observations. Uncertainties can be
     propagated either through an analytical formula or by interpolating the original uncertainties of each
     observation.
@@ -63,15 +62,14 @@ class SumStellar(StellarTemplate):
             if self._internal_configs["MEMORY_SAVE_MODE"]:
                 logger.warning(
                     "Stellar template creation will save RAM usage. This will result in multiple open/close "
-                    "operations across the entire SBART pipeline! "
+                    "operations across the entire SBART pipeline! ",
                 )
 
             self._found_error = False
 
     @custom_exceptions.ensure_invalid_template
     def create_stellar_template(self, dataClass, conditions=None) -> None:
-        """
-        Creating the stellar template
+        """Creating the stellar template
         """
         # removal may change the first common wavelength; make sure
         try:
@@ -121,7 +119,7 @@ class SumStellar(StellarTemplate):
                     "Worst SNR",
                     "Worst epoch",
                     "TEMPLATE (median SNR)",
-                ]
+                ],
             )
             table.set_decimal_places(2)
 
@@ -140,7 +138,7 @@ class SumStellar(StellarTemplate):
                         worst[order],
                         np.argmin(snrs, axis=0)[order],
                         np.median(snr),
-                    ]
+                    ],
                 )
 
             logger.info(f"SNR analysis:{table}")
@@ -334,7 +332,7 @@ class SumStellar(StellarTemplate):
                     np.logical_and(
                         self.wavelengths[order] >= start,
                         self.wavelengths[order] <= end,
-                    )
+                    ),
                 )
                 wavelengths_to_interpolate[interpolation_indexes] = True
 
@@ -367,10 +365,8 @@ class SumStellar(StellarTemplate):
         self.spectra /= len(self.used_fpaths)
 
     def perform_calculations(self, in_queue, out_queue, buffer_info, **kwargs):
+        """Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!
         """
-        Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!
-        """
-
         current_subInst = kwargs["subInst"]
         DataClassProxy = kwargs["dataClass"]
         frame_RV_map = kwargs["frame_RV_map"]
@@ -391,10 +387,9 @@ class SumStellar(StellarTemplate):
                 continue_computation = True
                 if not isinstance(data_in, (list, tuple)):
                     if not np.isfinite(data_in):
-                        return
-                    else:
-                        logger.critical("Wrong data format in the communication queue")
-                        raise InvalidConfiguration
+                        return None
+                    logger.critical("Wrong data format in the communication queue")
+                    raise InvalidConfiguration
 
                 frameID, order = data_in
 
@@ -423,7 +418,7 @@ class SumStellar(StellarTemplate):
                             np.logical_and(
                                 stellar_template_wavelengths[order] >= start,
                                 stellar_template_wavelengths[order] <= end,
-                            )
+                            ),
                         )
                         wavelengths_to_interpolate[interpolation_indexes] = True
 

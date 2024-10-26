@@ -34,8 +34,7 @@ class Model:
         self.components.append(new_param)
 
     def generate_optimizer_inputs(self, frameID, rv_units) -> Tuple[List, List]:
-        """
-        Generate the information needed for the optimization:
+        """Generate the information needed for the optimization:
             - list with the initial guesses
             - list with the bounds of each parameter (for bounded optimization). The format is:
                 [[start, end], [start, None], [None, end], ...]
@@ -116,11 +115,10 @@ class Model:
                         component.enable_param()
                     elif mode == "lock":
                         component.lock_param()
-                else:
-                    if mode == "enable":
-                        component.disable_param()
-                    elif mode == "lock":
-                        component.unlock_param()
+                elif mode == "enable":
+                    component.disable_param()
+                elif mode == "lock":
+                    component.unlock_param()
 
         if not found:
             raise custom_exceptions.InvalidConfiguration("Param {} does not exist", param_name)
@@ -194,7 +192,7 @@ class Model:
     def __str__(self):
         out = "Model:"
         for comp in self.components:
-            out += "\n\t{} - Enabled: {}".format(comp.param_name, comp.is_enabled)
+            out += f"\n\t{comp.param_name} - Enabled: {comp.is_enabled}"
         return out
 
     #####

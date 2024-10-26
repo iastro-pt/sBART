@@ -4,8 +4,8 @@ import numpy as np
 
 
 def compute_wavelength_order_overlap(wavelength_array: np.ndarray, region_of_interest: Iterable[int]):
-    """
-    Find the orders in which there is a wavelength overlap
+    """Find the orders in which there is a wavelength overlap
+
     Parameters
     ----------
     wavelength_array:
@@ -17,13 +17,13 @@ def compute_wavelength_order_overlap(wavelength_array: np.ndarray, region_of_int
     Returns
     -------
     orders: Set of the orders in which there is an overlap
-    """
 
+    """
     indexes = np.where(
         np.logical_and(
             wavelength_array >= region_of_interest[0],
             wavelength_array <= region_of_interest[1],
-        )
+        ),
     )
 
     return set(indexes[0])
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     from astropy.io import fits
 
     with fits.open(
-        "/home/amiguel/seminar/data_files/ESPRESSO/TauCet/data/r.ESPRE.2021-10-03T06:13:37.519_S2D_BLAZE_A.fits"
+        "/home/amiguel/seminar/data_files/ESPRESSO/TauCet/data/r.ESPRE.2021-10-03T06:13:37.519_S2D_BLAZE_A.fits",
     ) as hdu:
         wave = hdu[4].data
     print(compute_wavelength_order_overlap(wave, [7178, 7313]))

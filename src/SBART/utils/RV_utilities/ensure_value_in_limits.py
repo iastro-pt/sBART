@@ -18,8 +18,9 @@ def ensure_valid_RV(tentative_RV: float, effective_RV_limits: Iterable[float]):
     ------
     Exception
         If the RV is outside the window, raises error
+
     """
     if not effective_RV_limits[0] <= tentative_RV <= effective_RV_limits[1]:
-        msg = "Using RV value outside the effective limit: {} / {}".format(tentative_RV, effective_RV_limits)
+        msg = f"Using RV value outside the effective limit: {tentative_RV} / {effective_RV_limits}"
         logger.critical(msg)
         raise Exception(msg)

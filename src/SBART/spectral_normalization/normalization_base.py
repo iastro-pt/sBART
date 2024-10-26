@@ -1,12 +1,8 @@
 from typing import Any, Dict, NoReturn
 
-from loguru import logger
-
-from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.UserConfigs import (
-    BooleanValue,
     DefaultValues,
     IntegerValue,
     Positive_Value_Constraint,
@@ -15,8 +11,7 @@ from SBART.utils.UserConfigs import (
 
 
 class NormalizationBase(BASE):
-    """
-    **Description:**
+    """**Description:**
 
     Extend a Spectrum object to allow to normalize the fluxes of S1D and S2D spectra.
     This functionality is extended  by allowing to fit & normalize the continuum levels and can be:
@@ -35,7 +30,7 @@ class NormalizationBase(BASE):
 
     _name = "SpecNormBase"
     _default_params = BASE._default_params + DefaultValues(
-        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue)
+        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue),
     )
 
     # If True, we will optimize the model for each spectral order! Otherwise, the NORMALIZER will receive
@@ -66,8 +61,7 @@ class NormalizationBase(BASE):
         self._ran_normalization_fit = True
 
     def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
-        """
-        Launch a normalizer that will be applied to each spectral order (does not need to know order).
+        """Launch a normalizer that will be applied to each spectral order (does not need to know order).
         This will:
         i) Directly apply the normalization from the loaded config values
         ii) Fit the model if it wasn't previously computed!
@@ -108,8 +102,8 @@ class NormalizationBase(BASE):
             raise custom_exceptions.InvalidConfiguration("Can't normalize S1D spectra")
 
     def _ensure_orderwise_normalizer(self):
-        """
-        For internal usage. To call whenever we call a method to fit/apply normalization
+        """For internal usage. To call whenever we call a method to fit/apply normalization
+
         Returns
         -------
 
@@ -118,8 +112,8 @@ class NormalizationBase(BASE):
             raise custom_exceptions.InvalidConfiguration(f"Can't ask for order-wise normalization on {self.name}")
 
     def _ensure_epochwise_normalizer(self):
-        """
-        For internal usage. To call whenever we call a method to fit/apply normalization
+        """For internal usage. To call whenever we call a method to fit/apply normalization
+
         Returns
         -------
 

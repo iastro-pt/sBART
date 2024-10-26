@@ -5,10 +5,9 @@ from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
-from SBART.DataUnits import Classical_Unit, RV_Precision_Unit
+from SBART.DataUnits import Classical_Unit
 from SBART.utils import custom_exceptions, meter_second
 from SBART.utils.custom_exceptions import BadTemplateError
-from SBART.utils.expected_precision_interval import RVprecUnit_optimization
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
@@ -48,7 +47,7 @@ class RV_step(RV_routine):
     _name = "RV_step"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction")))
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
     )
     _default_params.update(
         "CONTINUUM_FIT_TYPE",
@@ -57,8 +56,9 @@ class RV_step(RV_routine):
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
         """Main class for RV_step RV extraction
+
         Parameters
-        ----------------
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -69,11 +69,11 @@ class RV_step(RV_routine):
             One of the :py:mod:`~SBART.Samplers` that is accepted by this routine.
 
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
-        """
 
+        """
         # TODO: careful, make this pretty!
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
@@ -109,7 +109,7 @@ class RV_step(RV_routine):
             logger.opt(exception=True).info("No data to process after checking metadata")
             return
 
-        except Exception as e:
+        except Exception:
             logger.opt(exception=True).critical("Found unknown error")
             return
 
@@ -185,7 +185,7 @@ class RV_step(RV_routine):
 
             for index, frameID in enumerate(cube.frameIDs):
                 data_unit_act.store_combined_indicators(
-                    frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                    frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
                 )
 
             cube.add_extra_storage_unit(data_unit_act)
@@ -261,7 +261,7 @@ class RV_step(RV_routine):
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
             )
 
         logger.info("Computing optimal precision bins for cromatic division")

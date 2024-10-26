@@ -8,6 +8,6 @@ class DataClassManager(BaseManager):
     ----------
     BaseManager : [type]
         [description]
+
     """
 
-    pass

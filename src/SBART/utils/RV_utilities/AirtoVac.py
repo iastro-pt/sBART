@@ -2,8 +2,7 @@ import numpy as np
 
 
 def airtovac(wave_air):
-    """
-    taken from idl astrolib
+    """Taken from idl astrolib
     ;+
     ; NAME:
     ;       AIRTOVAC
@@ -42,7 +41,6 @@ def airtovac(wave_air):
     ;       Iterate for better precision W.L./D. Schlegel  Mar 2011
     ;-
     """
-
     wave_vac = wave_air * 1.0
     g = wave_vac > 2000  # Only modify above 2000 A
 

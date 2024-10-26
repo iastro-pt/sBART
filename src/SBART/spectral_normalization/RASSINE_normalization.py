@@ -6,18 +6,16 @@ from typing import NoReturn
 
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.units.format import fits
 from loguru import logger
 from scipy.interpolate import CubicSpline
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import BooleanValue, DefaultValues, PathValue, UserParam
+from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam
 
 
 class RASSINE_normalization(NormalizationBase):
-    """
-    Uses RASSINE to normalize the stellar spectra.
+    """Uses RASSINE to normalize the stellar spectra.
 
     **Description:**
 
@@ -130,7 +128,7 @@ class RASSINE_normalization(NormalizationBase):
         filename = self._spec_info["S1D_name"]
         filename = filename.replace("fits", "csv")
         logger.debug(
-            f'Storing RASSINE input data to {self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename}'
+            f'Storing RASSINE input data to {self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename}',
         )
         # Ensure the format that is expected by RASSINE
         np.savetxt(
@@ -243,7 +241,7 @@ config = {'spectrum_name':spectrum_name,
         # TODO: check the commands to launch RASSINE
         logger.info("Launching RASSINE")
 
-        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"])
+        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"], check=False)
 
         logger.info("RASSINE has finished running")
 
@@ -265,7 +263,7 @@ config = {'spectrum_name':spectrum_name,
 
     def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         super()._apply_epoch_normalization(wavelengths, flux, uncertainties, **kwargs)
-        logger.info(f"Applying normalization to epoch!")
+        logger.info("Applying normalization to epoch!")
         og_shape = wavelengths.shape
 
         wavelengths, flux, uncertainties = self._get_S1D_data(wavelengths, flux, uncertainties)
@@ -298,8 +296,7 @@ config = {'spectrum_name':spectrum_name,
         return wavelengths, flux, uncertainties
 
     def plot_rassine_products(self, wavelength, flux, uncert, rass_products, interpolated_cont) -> NoReturn:
-        """
-        Plot the end result of the continuum normalization
+        """Plot the end result of the continuum normalization
 
         Parameters
         ----------

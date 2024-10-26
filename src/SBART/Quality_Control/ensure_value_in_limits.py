@@ -20,8 +20,9 @@ def ensure_value_in_window(tentative_value: float, desired_interval: Iterable[fl
     ------
     Exception
         If the RV is outside the window, raises error
+
     """
     if not desired_interval[0] <= tentative_value <= desired_interval[1]:
-        msg = "Using value outside the effective limit: {} / {}".format(tentative_value, desired_interval)
+        msg = f"Using value outside the effective limit: {tentative_value} / {desired_interval}"
         logger.critical(msg)
         raise custom_exceptions.InvalidConfiguration(msg)

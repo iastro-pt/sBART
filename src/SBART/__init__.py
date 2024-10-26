@@ -1,5 +1,4 @@
-"""
-SBART library.
+"""SBART library.
 """
 
 version = "0.6.0"

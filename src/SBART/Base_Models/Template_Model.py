@@ -15,8 +15,7 @@ from SBART.utils.UserConfigs import DefaultValues
 
 
 class BaseTemplate(Spectrum):
-    """
-    Base Class for all Templates (both telluric and stellar). Implements validity checks, base routines for data storage and "outside"
+    """Base Class for all Templates (both telluric and stellar). Implements validity checks, base routines for data storage and "outside"
     interface to request data
 
     **User parameters:**
@@ -35,8 +34,7 @@ class BaseTemplate(Spectrum):
     _default_params = Spectrum._default_params + DefaultValues()
 
     def __init__(self, subInst: str, user_configs: Union[None, dict], loaded=False):
-        """
-        Parameters
+        """Parameters
         ----------
         subInst
             sub-Instrument for which the template is going to be created
@@ -44,8 +42,8 @@ class BaseTemplate(Spectrum):
             Dictionary with the keys and values of the user parameters that have been described above
         loaded
             True if the template was loaded from disk.
-        """
 
+        """
         # The .name property needs the subInstrument to be defined ASAP
         self._associated_subInst = subInst
 
@@ -67,8 +65,7 @@ class BaseTemplate(Spectrum):
         self.add_to_status(CREATING_MODEL)
 
     def trigger_data_storage(self, clobber: bool):
-        """
-        Check for validity of the template and, afterwards, trigger the data storage routine
+        """Check for validity of the template and, afterwards, trigger the data storage routine
 
         Parameters
         ----------
@@ -79,6 +76,7 @@ class BaseTemplate(Spectrum):
         ------
         FailedStorage
             If the template was either loaded or not created
+
         """
         super().trigger_data_storage(clobber)
 
@@ -102,8 +100,7 @@ class BaseTemplate(Spectrum):
             raise custom_exceptions.StopComputationError
 
     def store_template(self, clobber: bool) -> None:
-        """
-        Handle deletion of old disk files + apply checks to see if we want to store data to disk
+        """Handle deletion of old disk files + apply checks to see if we want to store data to disk
 
         Parameters
         ----------
@@ -113,12 +110,12 @@ class BaseTemplate(Spectrum):
         -------
 
         Raises
-        -------
+        ------
         FailedStorage
             If we attempt to remove the previous version of the template and it was not found on disk.
             TODO: is this a good idea? I would bet that it isn't.....
-        """
 
+        """
         logger.info("Storing {} to disk", self.name)
 
         if clobber:
@@ -141,8 +138,7 @@ class BaseTemplate(Spectrum):
             raise custom_exceptions.FailedStorage("Template is not valid. Not storing data to disk")
 
     def load_from_file(self, root_path, loading_path: str) -> None:
-        """
-        Interface to load a template from disk
+        """Interface to load a template from disk
 
         TODO: we don't really need the loading path... the root_path is enough for what we want to do...
 
@@ -160,6 +156,7 @@ class BaseTemplate(Spectrum):
         ------
         NoDataError
             If we attempt to load from a path that does not exist
+
         """
         logger.info("Loading {} template from disk file:", self.__class__.template_type)
         logger.info("\t" + os.path.basename(loading_path))
@@ -177,11 +174,10 @@ class BaseTemplate(Spectrum):
         self._loaded = True
 
     def _finish_template_creation(self):
-        self.add_to_status(SUCCESS("Created {} template".format(self.template_type)))
+        self.add_to_status(SUCCESS(f"Created {self.template_type} template"))
 
     def is_type(self, type_to_test: str) -> bool:
-        """
-        Parameters
+        """Parameters
         ----------
         type_to_test
             Check if the template is of a given type (i.e. Stellar or Telluric)
@@ -190,12 +186,13 @@ class BaseTemplate(Spectrum):
         -------
         result: bool
             True if the types match.
+
         """
         return self.__class__.template_type == type_to_test
 
     def mark_as_invalid(self) -> NoReturn:
-        """
-        Change the status of the template into a Failed State. This will make all of the future validity tests fail!
+        """Change the status of the template into a Failed State. This will make all of the future validity tests fail!
+
         Returns
         -------
 
@@ -204,12 +201,11 @@ class BaseTemplate(Spectrum):
 
     @property
     def was_loaded(self) -> bool:
-        """
-
-        Returns
+        """Returns
         -------
         result: bool
             True if the template was loaded
+
         """
         return self._loaded
 
@@ -220,7 +216,7 @@ class BaseTemplate(Spectrum):
     @property
     def spectrum_information(self):
         return {
-            **{"subInstrument": self.sub_instrument},
+            "subInstrument": self.sub_instrument,
             **super().spectrum_information,
         }
 

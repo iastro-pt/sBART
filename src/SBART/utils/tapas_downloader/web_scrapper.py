@@ -63,8 +63,7 @@ def download_IPAC_file(tapas_ftp, folder_name, destination):
 
 
 def update_request(template, new_values):
-    """
-    For now only download data from ESPRESSO
+    """For now only download data from ESPRESSO
 
     template:
         header file present in the .json file
@@ -74,7 +73,6 @@ def update_request(template, new_values):
             - DEC: declination J2000
             - date: astropy.time date to request
     """
-
     template["requests"][0]["observation"]["los"]["raJ2000"] = new_values["RA"]
     template["requests"][0]["observation"]["los"]["decJ2000"] = new_values["DEC"]
     # standard_headers['requests'][0]['observation']['observatory']['name'] =
@@ -92,7 +90,7 @@ def update_request(template, new_values):
     template["requests"][0]["observation"]["observatory"]["name"] = inst_names[new_values["instrument"]]
 
     template["requests"][0]["observation"]["instrument"]["spectralRange"] = "{}%20{}".format(
-        *new_values["spectralRange"]
+        *new_values["spectralRange"],
     )
 
     new_values["mjd_time"].format = "fits"
@@ -101,14 +99,11 @@ def update_request(template, new_values):
 
 
 def get_TAPAS_data(user, password, request_data, storing_destination, timeout=5, request_interval=60):
-    """
-
-    timeout:
+    """timeout:
         Maximum number of minutes to wait for Tapas to answer
     request_interval:
         Number of seconds to wait before sending next request to TAPAS
     """
-
     # Login to ftp server and to the web-interface
     cookies = login(user, password)
     tapas_ftp = Tapas_login(user)
@@ -125,7 +120,7 @@ def get_TAPAS_data(user, password, request_data, storing_destination, timeout=5,
 
     headers = update_request(standard_headers, request_data)
     request_url = "http://cds-espri.ipsl.fr/tapas/data?methodName=createUserRequest&jsonTapas=" + json.dumps(
-        headers
+        headers,
     ).replace('"', "%22")
     logger.debug("Sending the TAPAS request... {}", headers)
     outputs = requests.get(request_url, cookies=cookies)
@@ -151,11 +146,11 @@ def get_TAPAS_data(user, password, request_data, storing_destination, timeout=5,
             tapas_template_name = list(new_folder)[0]
             logger.debug("Found a new file; Preparing to download")
             break
-        elif len(new_folder) > 1:
+        if len(new_folder) > 1:
             error_flag = True
             errors_msg = "More than one new TAPAS template; problems"
             break
-        elif len(new_folder) < 0:
+        if len(new_folder) < 0:
             error_flag = True
             errors_msg = "Less folders now than at the start ... "
             break
@@ -176,5 +171,4 @@ def get_TAPAS_data(user, password, request_data, storing_destination, timeout=5,
     if error_flag:
         raise Exception(errors_msg)
 
-    else:
-        return storing_path
+    return storing_path

@@ -1,4 +1,4 @@
-from typing import List, NoReturn
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,8 +29,7 @@ plt.rcParams.update({"font.size": 16})
 
 
 class RV_Bayesian(RV_routine):
-    """
-    Class that implements the s-BART algorithm. The default user-parameters represent the algorithm that is described in the paper
+    """Class that implements the s-BART algorithm. The default user-parameters represent the algorithm that is described in the paper
 
     .. warning::
         The current implementation of this class makes use of the outputs from :py:class:`~SBART.rv_calculation.rv_stepping.RV_step`
@@ -73,9 +72,8 @@ class RV_Bayesian(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
-        Parameters
-        ----------------
+        """Parameters
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -85,10 +83,12 @@ class RV_Bayesian(RV_routine):
             avoid all error propagation (i.e. return zeros)
         compare_metadata: boolean
             If there is a previous result of ROAST compare to see if the input data and ROAST version is the same. If it is, then the computation is halted
+
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
+
         """
         super().__init__(
             N_jobs=processes,
@@ -135,7 +135,7 @@ class RV_Bayesian(RV_routine):
     ) -> None:
         if not isinstance(orders_to_skip, str):
             logger.critical(
-                "{} can only use the orders that were skipped by the \chi^2 methodology.",
+                r"{} can only use the orders that were skipped by the \chi^2 methodology.",
                 self.name,
             )
             raise InvalidConfiguration
@@ -152,7 +152,7 @@ class RV_Bayesian(RV_routine):
             logger.exception("No data to process after checking metadata")
         except custom_exceptions.StopComputationError:
             logger.exception("Computation was halted")
-        except Exception as e:
+        except Exception:
             logger.opt(exception=True).critical("Found unknown error")
 
     def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
@@ -170,6 +170,7 @@ class RV_Bayesian(RV_routine):
         -------
         RV_cube
             RV cube filled with all of the information
+
         """
         if self._internal_configs["RV_extraction"] == "order-wise":
             cube = self._orderwise_processment(empty_cube, worker_outputs)
@@ -200,6 +201,7 @@ class RV_Bayesian(RV_routine):
         -------
         RV_cube
             [description]
+
         """
         for pkg in worker_outputs:
             for order_pkg in pkg:
@@ -272,7 +274,7 @@ class RV_Bayesian(RV_routine):
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
             )
 
         empty_cube.add_extra_storage_unit(data_unit_act)
@@ -326,9 +328,7 @@ class RV_Bayesian(RV_routine):
                 total_valid += epoch_metric[package["frameID"]]["valid_points"]
 
         logger.info(
-            "Outlier [> 2 sigma] percentage : {:.4f} [{}/{} pixels]".format(
-                100 * total_outliers / total_valid, total_outliers, total_valid
-            )
+            f"Outlier [> 2 sigma] percentage : {100 * total_outliers / total_valid:.4f} [{total_outliers}/{total_valid} pixels]",
         )
 
         if self._internal_configs["PLOT_MODEL_MISSPECIFICATION"]:
@@ -381,8 +381,7 @@ class RV_Bayesian(RV_routine):
             logger.warning("Skipping the plot of the model missspecification")
 
     def calculate_rvs(self, output):
-        """
-        Store the final RV as computed by the Bayesian method
+        """Store the final RV as computed by the Bayesian method
         """
         # TODO: re-work this function!
         for epoch, data in enumerate(output):

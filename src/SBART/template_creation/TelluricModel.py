@@ -16,8 +16,7 @@ from .telluric_templates.Telluric_Template import TelluricTemplate
 
 class TelluricModel(TemplateFramework):
     # noinspection LongLine
-    """
-    The TelluricModel is responsible for the creation of the telluric template for each sub-Instrument. This object
+    """The TelluricModel is responsible for the creation of the telluric template for each sub-Instrument. This object
     supports the following user parameters:
 
     **User parameters:**
@@ -60,8 +59,7 @@ class TelluricModel(TemplateFramework):
     )
 
     def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):
-        """
-        Instantiation of the object:
+        """Instantiation of the object:
 
         Parameters
         ----------
@@ -72,6 +70,7 @@ class TelluricModel(TemplateFramework):
             Path to the folder inside which SBART will store its outputs
         user_configs: Optional[Dict[str, Any]]
             Dictionary with the keys and values of the user parameters that have been described above
+
         """
         super().__init__(mode="", root_folder_path=root_folder_path, user_configs=user_configs)
 
@@ -82,8 +81,8 @@ class TelluricModel(TemplateFramework):
         self._usage_mode = usage_mode
 
     def request_template(self, subInstrument: str) -> Type[BaseTemplate]:
-        """
-        Returns the template for a given sub-Instrument.
+        """Returns the template for a given sub-Instrument.
+
         Parameters
         ----------
         subInstrument: str
@@ -92,8 +91,8 @@ class TelluricModel(TemplateFramework):
         Returns
         -------
             Requested telluric Template
-        """
 
+        """
         logger.debug("Serving {} template to subInstrument {}", self._usage_mode, subInstrument)
         if self._usage_mode == "":
             return self.templates["merged"]
@@ -108,8 +107,7 @@ class TelluricModel(TemplateFramework):
         force_computation: bool = False,
         store_templates: bool = True,
     ) -> None:
-        """
-        Generate a telluric model for all subInstruments with data, as defined in the parent implementation. Afterwards,
+        """Generate a telluric model for all subInstruments with data, as defined in the parent implementation. Afterwards,
         allow to combine the telluric model of all sub-Instruments into a single telluric binary model which will
         then be used for all available observations.
 
@@ -125,8 +123,8 @@ class TelluricModel(TemplateFramework):
         force_computation : bool
             If False, it will attempt to lead the telluric template from disk before trying to compute them. If True,
             always compute telluric template, even if it exists
-        """
 
+        """
         super().Generate_Model(
             dataClass=dataClass,
             template_configs=telluric_configs,
@@ -142,13 +140,13 @@ class TelluricModel(TemplateFramework):
             self.store_templates_to_disk()
 
     def merge_templates(self) -> None:
-        """
-        Merge the telluric template of all sub-Instruments to create a master telluric binary template
+        """Merge the telluric template of all sub-Instruments to create a master telluric binary template
 
         Raises
-        -------
+        ------
         NotImplementedError
             The method is yet to be implemented
+
         """
         logger.info("Merging templates to create a global one")
         raise NotImplementedError
@@ -164,7 +162,7 @@ class TelluricModel(TemplateFramework):
 
         available_templates = []
         if not os.path.exists(loading_path):
-            logger.warning("Could not find template to load in {}".format(loading_path))
+            logger.warning(f"Could not find template to load in {loading_path}")
             raise TemplateNotExistsError()
 
         for fname in os.listdir(loading_path):
@@ -212,21 +210,20 @@ class TelluricModel(TemplateFramework):
 
     @property
     def is_for_removal(self) -> bool:
-        """
-        Returns
+        """Returns
         -------
         bool
             True if the template will be used to remove telluric features
+
         """
         return self._internal_configs["APPLICATION_MODE"] == "removal"
 
     @property
     def is_for_correction(self) -> bool:
-        """
-
-        Returns
+        """Returns
         -------
         bool
             True if the template will be used to correct telluric features
+
         """
         return self._internal_configs["APPLICATION_MODE"] == "correction"

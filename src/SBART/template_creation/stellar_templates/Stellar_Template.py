@@ -29,8 +29,7 @@ from SBART.utils.UserConfigs import (
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):
-    """
-    This object is the parent class of all StellarTemplates, implementing a common set of user configurations, data storage
+    """This object is the parent class of all StellarTemplates, implementing a common set of user configurations, data storage
     operations, among others.
 
     **User parameters:**
@@ -104,8 +103,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     #################################
 
     def create_stellar_template(self, dataClass, conditions) -> None:
-        """
-        Trigger the start of the creatoin of the stellar template
+        """Trigger the start of the creatoin of the stellar template
 
         Parameters
         ----------
@@ -132,13 +130,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         try:
             self.frameIDs_to_use = dataClass.get_frameIDs_from_subInst(self._associated_subInst)
-        except NoDataError as exc:
+        except NoDataError:
             logger.critical(
                 "{} has no valid observations. Not computing {} template",
                 self._associated_subInst,
                 self.__class__.template_type,
             )
-            self.add_to_status(MISSING_DATA("No valid observations from {}".format(self._associated_subInst)))
+            self.add_to_status(MISSING_DATA(f"No valid observations from {self._associated_subInst}"))
 
         self._base_checks_for_template_creation()
 
@@ -191,9 +189,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             self.add_to_status(
                 MISSING_DATA(
                     "Can't create stellar template with less than {} observations".format(
-                        self._internal_configs["MINIMUM_NUMBER_OBS"]
-                    )
-                )
+                        self._internal_configs["MINIMUM_NUMBER_OBS"],
+                    ),
+                ),
             )
 
         self._base_checks_for_template_creation()
@@ -206,12 +204,12 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.is_BERV_corrected = first_frame.check_if_data_correction_enabled("is_BERV_corrected")
         self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
         self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled(
-            "flux_dispersion_balance_corrected"
+            "flux_dispersion_balance_corrected",
         )
 
         if self._internal_configs["CONSTANT_RV_GUESS"]:
             logger.warning(
-                "Setting initial guess for template alignement to zero! Thread carefully in those uncharted areas"
+                "Setting initial guess for template alignement to zero! Thread carefully in those uncharted areas",
             )
             self.sourceRVs = [0 * kilometer_second for _ in self.frameIDs_to_use]
         else:
@@ -225,8 +223,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             )
 
     def add_new_frame_to_template(self, frame: Frame):
-        """
-        Allow to inject a new observation into a pre-existing model. This base function checks for
+        """Allow to inject a new observation into a pre-existing model. This base function checks for
         a match on the different flux corrections and ensures that the loaded Flag is set to False,
         so that it is possible to update the disk products afterwards.
 
@@ -239,12 +236,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         -------
 
         Raises
-        -------
+        ------
         custom_exceptions.InvalidConfiguration:
             If the flux corrections of the Frame do not match those from the stellar template
 
         """
-
         logger.info("Adding new frame to pre-existing stellar template. Updating model!")
         self._loaded = False
 
@@ -307,8 +303,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     #################################
 
     def check_if_used_frameID(self, frameID: int) -> bool:
-        """
-        Parameters
+        """Parameters
         ----------
         frameID:
             ID of a given observations
@@ -361,6 +356,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         Returns:
             Dict[str, Any]: Dictonary with key, value information (in json-compatible format) to be stored
+
         """
         return {
             "frameIDs_to_use": self.frameIDs_to_use,
@@ -387,7 +383,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         header["VERSION"] = __version__
 
         for key, config_val in self._internal_configs.items():
-            header["HIERARCH {}".format(key)] = config_val
+            header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         hdus_cubes = [hdu]
@@ -417,13 +413,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
             to_write.write(self._internal_configs.text_pretty_description(indent_level=0))
 
-            to_write.write("\n\nRejected files (N = {})".format(len(self._rejection_flags_map)))
+            to_write.write(f"\n\nRejected files (N = {len(self._rejection_flags_map)})")
             for filepath, flags in self._rejection_flags_map.items():
-                to_write.write("\n\t{}:".format(filepath))
+                to_write.write(f"\n\t{filepath}:")
                 for flag in flags:
                     to_write.write(f"\n\t\t{flag}")
 
-            to_write.write("\n\nEpochs in use (Total = {}): \n".format(len(self.frameIDs_to_use)))
+            to_write.write(f"\n\nEpochs in use (Total = {len(self.frameIDs_to_use)}): \n")
             for path in self.used_fpaths:
                 to_write.write(f"\n{path}")
 
@@ -545,7 +541,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         if self._in_shared_mem:
             # Avoid opening multiple arrays!
             logger.info(f"{self.__class__.name} already in shared memory")
-            return
+            return None
         logger.info("Putting the stellar template in shared memory")
         self._in_shared_mem = True
 
@@ -606,9 +602,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     @property
     def storage_name(self) -> str:
-        """
-        Return the storage name for the stellar templates, which will include the name of the method,
+        """Return the storage name for the stellar templates, which will include the name of the method,
         the RV source for the aligmenet
+
         Returns
         -------
 
@@ -630,8 +626,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         remove_OB: Optional[Frame] = None,
         include_invalid=False,
     ):
-        """
-        Override of the interpolation algorithm to allow the rejection of OBs
+        """Override of the interpolation algorithm to allow the rejection of OBs
+
         Parameters
         ----------
         order

@@ -20,6 +20,7 @@ def build_blocks(indexes):
     -------
     [type]cd
         [description]
+
     """
     diffs = np.diff(indexes)
 

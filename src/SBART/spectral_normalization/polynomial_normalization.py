@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from loguru import logger
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils import custom_exceptions
@@ -8,8 +6,7 @@ from SBART.utils.UserConfigs import DefaultValues
 
 
 class Polynomial_normalization(NormalizationBase):
-    """
-    Order by order fit (inverse variance weights) of the blaze-corrected S2D spectra using a first degree polynomial. This does
+    """Order by order fit (inverse variance weights) of the blaze-corrected S2D spectra using a first degree polynomial. This does
     not iterate multiple times to remove outliers, leading to a **very** sub-optimal continuum model!
 
     Name of the normalizer: Poly-Norm
@@ -65,5 +62,5 @@ class Polynomial_normalization(NormalizationBase):
         for key, value in keys.items():
             if not self._spec_info[key]:
                 raise custom_exceptions.InvalidConfiguration(
-                    f"{self.name} can't normalize spectra that was not {value}"
+                    f"{self.name} can't normalize spectra that was not {value}",
                 )

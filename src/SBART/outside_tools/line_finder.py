@@ -10,8 +10,8 @@ from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivat
 
 
 def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False):
-    """
-    Find regions where the spectrum is in a line
+    """Find regions where the spectrum is in a line
+
     Parameters
     ----------
     frame
@@ -39,7 +39,7 @@ def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, inc
             np.logical_or(
                 np.subtract(first_derivative, 2 * np.asarray(errors)) >= 0,
                 np.subtract(first_derivative, -2 * np.asarray(errors)) <= 0,
-            )
+            ),
         )
 
         blocks = build_blocks(derivative_regions)
@@ -95,4 +95,4 @@ if __name__ == "__main__":
 
     frame = ESPRESSO(path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={})
 
-    find_lines_indexes(frame, list(range(0, 100)))
+    find_lines_indexes(frame, list(range(100)))

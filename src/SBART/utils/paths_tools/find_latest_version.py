@@ -6,8 +6,7 @@ from SBART import __version__, __version_info__
 
 
 def find_latest_version(path, enable_logs: bool = True) -> str:
-    """
-    Search, inside a directory, for all files with SBART versions. Returns the latest version found on disk
+    """Search, inside a directory, for all files with SBART versions. Returns the latest version found on disk
 
     Parameters
     ----------
@@ -36,9 +35,7 @@ def find_latest_version(path, enable_logs: bool = True) -> str:
 
     if highest_ver != sum([i * j for i, j in zip([100, 10, 1], __version_info__)]) and enable_logs:
         logger.warning(
-            "\tRV cube is not the most recently installed version ({}). Using data from {}".format(
-                __version__, versions_full[version_sum.index(highest_ver)]
-            )
+            f"\tRV cube is not the most recently installed version ({__version__}). Using data from {versions_full[version_sum.index(highest_ver)]}",
         )
 
     return versions_full[version_sum.index(highest_ver)]

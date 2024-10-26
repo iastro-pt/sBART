@@ -6,8 +6,7 @@ from loguru import logger
 
 
 class Flag:
-    """
-    Used to represent a "state" of operation. The majority of them represents failures and/or warnings.
+    """Used to represent a "state" of operation. The majority of them represents failures and/or warnings.
     """
 
     __slots__ = (
@@ -77,11 +76,11 @@ class Flag:
         return new_flag
 
     def to_json(self) -> Dict[str, Any]:
-        """
-        Returns
+        """Returns
         -------
         Dict[str, Any]
             Flag converted to a json entry, for disk storage purposes
+
         """
         return dict(
             name=self.name,
@@ -95,8 +94,7 @@ class Flag:
 
     @classmethod
     def create_from_json(cls, json_info: Dict[str, Any]):
-        """
-        Create a new Flag object from a json representation
+        """Create a new Flag object from a json representation
 
         Parameters
         ----------
@@ -107,6 +105,7 @@ class Flag:
         -------
         flag:
             The new flag
+
         """
         return Flag(**json_info)
 
@@ -133,7 +132,7 @@ class Status:
         try:
             self._stored_flags.remove(flag)
         except KeyError:
-            logger.warning(f"Trying to remove flag that doesn't exist (flag)")
+            logger.warning("Trying to remove flag that doesn't exist (flag)")
 
     ###
     #   Adding new flags
@@ -206,8 +205,8 @@ class Status:
         return rejection
 
     def description(self, indent_level: int = 0) -> Tuple[List[str], Dict]:
-        """
-        string to directly place on a txt file
+        """String to directly place on a txt file
+
         Returns
         -------
 
@@ -219,7 +218,7 @@ class Status:
 
         message = [base_indent + f"Current Status - valid = {self.is_valid}"]
 
-        message.append(f"\n" + base_indent + indent_character + "Rejection Flags:")
+        message.append("\n" + base_indent + indent_character + "Rejection Flags:")
         if not self.is_valid:
             for flag in self._stored_flags:
                 if not flag.is_good_flag:
@@ -227,10 +226,10 @@ class Status:
 
                     skip_reasons["Rejections"][flag.name] = flag.description
         else:
-            message.append(f"\n" + base_indent + 2 * indent_character + "No Rejection")
+            message.append("\n" + base_indent + 2 * indent_character + "No Rejection")
 
         if self.has_warnings:
-            message.append(f"\n" + base_indent + indent_character + "Warning Flags:")
+            message.append("\n" + base_indent + indent_character + "Warning Flags:")
             for flag in self._warnings:
                 message.append("\n" + base_indent + 2 * indent_character + f"{flag.name} : {flag.extra_info}")
 
@@ -268,8 +267,8 @@ class OrderStatus:
         self._OrderStatus += VALID
 
     def mimic_status(self, frameID: int, other_status) -> NoReturn:
-        """
-        WARNING: this does not copy the warnings!
+        """WARNING: this does not copy the warnings!
+
         Parameters
         ----------
         frameID
@@ -328,8 +327,7 @@ class OrderStatus:
         frameID: Optional[int] = None,
         all_orders: bool = False,
     ):
-        """
-        Return the status from a given set of orders for one frame
+        """Return the status from a given set of orders for one frame
 
         Parameters
         ----------
@@ -349,15 +347,14 @@ class OrderStatus:
                 return self._OrderStatus[0]
             return self._OrderStatus[0, order]
 
-        elif self._internal_mode == "matrix":
+        if self._internal_mode == "matrix":
             if frameID is None:
                 raise RuntimeError("When we have multiple observations we need a frameID")
 
             epoch = self._stored_frameIDs.index(frameID)
             if all_orders:
                 return self._OrderStatus[epoch, :]
-            else:
-                return self._OrderStatus[epoch, order]
+            return self._OrderStatus[epoch, order]
 
     @property
     def from_frame(self) -> bool:
@@ -375,8 +372,8 @@ class OrderStatus:
 
     @property
     def common_bad_orders(self):
-        """
-        Find the common set of spectral orders that is rejected in all epochs
+        """Find the common set of spectral orders that is rejected in all epochs
+
         Returns
         -------
 
@@ -447,7 +444,7 @@ class OrderStatus:
                 "\n"
                 + base_indent
                 + indent_character
-                + "Order Rejections (Worst - {} -> N = {}):".format(*self.worst_rejection_flag_from_frameID(frameID))
+                + "Order Rejections (Worst - {} -> N = {}):".format(*self.worst_rejection_flag_from_frameID(frameID)),
             )
 
             for key, orders in fatal_flag_dict.items():
@@ -474,8 +471,8 @@ class OrderStatus:
         return str(self._OrderStatus)
 
     def store_as_json(self, storage_path):
-        """
-        Directly stores to a single file all information inside this class
+        """Directly stores to a single file all information inside this class
+
         Parameters
         ----------
         storage_path
@@ -492,7 +489,7 @@ class OrderStatus:
             "general_confs": {
                 "frameIDs": self._stored_frameIDs if self._internal_mode == "matrix" else None,
                 "N_orders": self._OrderStatus.shape[1],
-            }
+            },
         }
 
         for epoch in range(self._OrderStatus.shape[0]):
@@ -598,13 +595,13 @@ MAX_ITER = Flag("MAX ITERATIONS", -3)
 
 QUAL_DATA = Flag("QUAL_DATA", 1, " Qual data different than zero")  # qual data different than zero
 ERROR_THRESHOLD = Flag(
-    "ERROR_THRESHOLD", 2, "Error over specified threshold"
+    "ERROR_THRESHOLD", 2, "Error over specified threshold",
 )  # error threshold over the selected threshold
 INTERPOLATION = Flag("INTERPOLATION", 4, "Removed due to interpolation")  # removed due to interpolation constraints
 TELLURIC = Flag("TELLURIC", 8, "Telluric feature")  # classified as telluric feature,
 MISSING_DATA = Flag("MISSING_DATA", 16, "Missing spectral data in the pixel")  # data is missing in the given points,
 SPECTRAL_MISMATCH = Flag(
-    "SPECTRAL_MISMATCH", 32, "Removed due to outlier routine"
+    "SPECTRAL_MISMATCH", 32, "Removed due to outlier routine",
 )  # mismatch between the template and the spectra
 SATURATION = Flag("SATURATION", 64, "Saturated Pixel")  # Saturation of the detector; Only used by HARPS
 NAN_DATA = Flag("NaN_Pixel", 128, "Nan Value")

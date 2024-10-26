@@ -1,5 +1,4 @@
-"""
-Data loading interfaces for data from different spectrographs. Each spectrograph is represented as a different class,
+"""Data loading interfaces for data from different spectrographs. Each spectrograph is represented as a different class,
 with all providing the same user-interface (after they load all the necessary information from disk).
 
 .. note::

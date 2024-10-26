@@ -12,9 +12,7 @@ from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
 
 class Spectral_Modelling(BASE):
-    """
-
-    Introduces, in a given object, the functionality to model and interpolate the stellar orders.
+    """Introduces, in a given object, the functionality to model and interpolate the stellar orders.
     In order to inherit from this class, it must also be a children of :class:`SBART.Components.SpectrumComponent.Spectrum`
 
     **User parameters:**
@@ -63,7 +61,7 @@ class Spectral_Modelling(BASE):
 
         self.initialized_interface = False
 
-        self._modelling_interfaces: Dict[str, "ModellingBase"] = {}
+        self._modelling_interfaces: Dict[str, ModellingBase] = {}
 
     def initialize_modelling_interface(self):
         if self.initialized_interface:
@@ -72,16 +70,16 @@ class Spectral_Modelling(BASE):
             "obj_info": self.spectrum_information,
             "user_configs": self._internal_configs.get_user_configs(),
         }
-        self._modelling_interfaces: Dict[str, "ModellingBase"] = {
+        self._modelling_interfaces: Dict[str, ModellingBase] = {
             "GP": GPSpecModel(**interface_init),
             "splines": ScipyInterpolSpecModel(**interface_init),
         }
 
         if self._internalPaths.root_storage_path is None:
             logger.critical(
-                "{self.name} launching modelling interface without a root path. Fallback to current directory"
+                "{self.name} launching modelling interface without a root path. Fallback to current directory",
             )
-            self.generate_root_path(Path("."))
+            self.generate_root_path(Path())
 
         for comp in self._modelling_interfaces.values():
             comp.generate_root_path(self._internalPaths.root_storage_path)
@@ -107,13 +105,13 @@ class Spectral_Modelling(BASE):
                 self.name,
                 new_properties[key],
             )
-        except KeyError as e:
+        except KeyError:
             pass
 
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
     def interpolate_spectrum_to_wavelength(
-        self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False
+        self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False,
     ):
         self.initialize_modelling_interface()
 

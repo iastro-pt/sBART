@@ -36,7 +36,7 @@ def worker(
         # open shared memory array to store the computed mask
         # to avoid multiple re-computations of outliers!
         mask_cache, cached_orders, shared_buffers = open_buffer(
-            sampler.shared_buffers, open_type="BayesianCache", buffers=[]
+            sampler.shared_buffers, open_type="BayesianCache", buffers=[],
         )
     else:
         shared_buffers = {}
@@ -142,7 +142,7 @@ def worker(
                     current_order_mask = mask_cache[current_order]
 
                 if current_order in [35, 37, 40, 41, 42] and 0:
-                    plt.title("Order: {}".format(current_order))
+                    plt.title(f"Order: {current_order}")
                     print(
                         len(np.where(~spec_mask == 1)[0]),
                         len(np.where(current_order_mask)[0]),
@@ -168,7 +168,7 @@ def worker(
                     order_status = MASSIVE_RV_PRIOR
                 elif spec_wave[current_order_mask].size < worker_configs["min_pixel_in_order"]:
                     order_status = HIGH_CONTAMINATION(
-                        f"Less than pixels {worker_configs['min_pixel_in_order']} on order"
+                        f"Less than pixels {worker_configs['min_pixel_in_order']} on order",
                     )
                 else:
                     # Apply the sampler for this spectral order
@@ -222,7 +222,7 @@ def worker(
                         optimization_output, order_status = None, SUCCESS
                         if sampler is None:
                             raise InvalidConfiguration(
-                                "When performing order-wise optimization we must provide a sampler"
+                                "When performing order-wise optimization we must provide a sampler",
                             )
 
                         try:
@@ -241,7 +241,7 @@ def worker(
                             logger.critical(f"{temp[template_order_mask]}")
 
                             raise StopComputationError(
-                                f"RV optimization failed on {current_epochID=}, {current_order=}"
+                                f"RV optimization failed on {current_epochID=}, {current_order=}",
                             ) from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
@@ -269,7 +269,7 @@ def worker(
                 output_package["N_spectral_pixels"] = np.nan
             output_package["status"] = order_status
             out_queue.put(output_package)
-    except Exception as e:
+    except Exception:
         # guarantee that the shared buffers are closed from the worker side
         logger.opt(exception=True).critical("Worker is dead")
     finally:

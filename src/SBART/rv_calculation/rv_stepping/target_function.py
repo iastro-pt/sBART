@@ -1,14 +1,12 @@
 import numpy as np
 
-from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
 from SBART.utils.RV_utilities import compute_DLW, ensure_valid_RV
 from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
-from SBART.utils.shift_spectra import SPEED_OF_LIGHT, apply_RVshift
+from SBART.utils.shift_spectra import apply_RVshift
 
 
 def target(params, **kwargs):
-    """
-    Metric function for the chi-squared minimization.
+    """Metric function for the chi-squared minimization.
 
     Parameters
     ----------
@@ -37,7 +35,7 @@ def target(params, **kwargs):
         np.logical_and(
             current_wavelength >= wave_spectra_starframe[0],
             current_wavelength <= wave_spectra_starframe[-1],
-        )
+        ),
     )
 
     (

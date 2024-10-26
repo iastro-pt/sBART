@@ -2,7 +2,7 @@ import math
 import os
 from pathlib import Path
 
-from SBART.data_objects import DataClass, DataClassManager
+from SBART.data_objects import DataClassManager
 from SBART.Instruments import instrument_dict as instrument_name_map
 from SBART.outside_tools.create_logger import setup_SBART_logger
 from SBART.Quality_Control.activity_indicators import Indicators
@@ -41,7 +41,7 @@ def run_target(
 ):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
-            raise Exception("Trying to use a template that does not exist ({})".format(path))
+            raise Exception(f"Trying to use a template that does not exist ({path})")
 
     instrument = instrument_name_map[instrument_name]
     RVstep = user_configs["RVstep"]

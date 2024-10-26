@@ -55,12 +55,13 @@ def construct_gdas_filename(instrument, datetime):
 
     Returns:
         _type_: _description_
+
     """
     try:
         coords = atmospheric_profiles_coords_dict[instrument]
     except KeyError as exc:
         raise custom_exceptions.InvalidConfiguration(
-            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}"
+            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}",
         ) from exc
 
     date, time = datetime.split("T")
@@ -84,7 +85,7 @@ def get_atmospheric_profile(instrument, datetime, storage_folder):
         coords = atmospheric_profiles_coords_dict[instrument]
     except KeyError as exc:
         raise custom_exceptions.InvalidConfiguration(
-            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}"
+            f"Telfit template does not support {instrument}. Available instruments: {list(atmospheric_profiles_coords_dict.keys())}",
         ) from exc
 
     archive_name = f"gdas_profiles_C{coords}.tar.gz"
@@ -114,8 +115,7 @@ def get_atmospheric_profile(instrument, datetime, storage_folder):
 
 
 class TelfitTelluric(TelluricTemplate):
-    """
-    Create Earth's transmittance spectra from TelFit, configured with the night with the highest
+    """Create Earth's transmittance spectra from TelFit, configured with the night with the highest
     relative humidity.
 
     Atmosphere profiles are downloaded to ensure that we get the best model possible
@@ -187,7 +187,7 @@ class TelfitTelluric(TelluricTemplate):
                 initial_guess=100,
                 bounds=[0, None],
                 default_enabled=True,
-            )
+            ),
         )
         model_components.append(
             ModelComponent(
@@ -195,7 +195,7 @@ class TelfitTelluric(TelluricTemplate):
                 initial_guess=100,
                 bounds=[0, None],
                 default_enabled=True,
-            )
+            ),
         )
         model_components.append(
             ModelComponent(
@@ -203,7 +203,7 @@ class TelfitTelluric(TelluricTemplate):
                 initial_guess=100,
                 bounds=[0, None],
                 default_enabled=True,
-            )
+            ),
         )
 
         for name, value in default_molecule_dict.items():
@@ -259,7 +259,7 @@ class TelfitTelluric(TelluricTemplate):
             max_search_iterations = min(10, len(frameIDs))
             logger.info("Starting loop to retrive GDAS profile")
 
-            for attempt_nb in range(max_search_iterations):  # todo: add here the search for a new reference!
+            for attempt_nb in range(max_search_iterations):  # TODO: add here the search for a new reference!
                 selected_ID = frames_to_search[0]
 
                 date = dataClass.get_KW_from_frameID(frameID=selected_ID, KW="ISO-DATE")
@@ -281,7 +281,7 @@ class TelfitTelluric(TelluricTemplate):
                     break  # If we found it, no need to continue
                 except KeyError:
                     logger.info(
-                        f"{date=} failed to find GDAS profile (Iter: {attempt_nb + 1} / {max_search_iterations})"
+                        f"{date=} failed to find GDAS profile (Iter: {attempt_nb + 1} / {max_search_iterations})",
                     )
                     failed_tests.append(selected_ID)
                     frames_to_search = frames_to_search[1:]
@@ -297,7 +297,7 @@ class TelfitTelluric(TelluricTemplate):
             data = np.loadtxt(atmos_profile_file)
 
         elif os.path.exists(self._internal_configs["atmosphere_profile"]) and not len(
-            self._internal_configs["atmosphere_profile"] == 0
+            self._internal_configs["atmosphere_profile"] == 0,
         ):
             # what does this do???
             atmos_profile_file = self._internal_configs["atmosphere_profile"]
@@ -307,8 +307,7 @@ class TelfitTelluric(TelluricTemplate):
         return data
 
     def configure_modeler(self, dataclass) -> None:
-        """
-        see https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas
+        """See https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas
         """
         selected_frame = dataclass.get_frame_by_ID(self._reference_frameID)
         logger.info("Configuring the Telfit modeler for {}", selected_frame)
@@ -369,7 +368,7 @@ class TelfitTelluric(TelluricTemplate):
         logger.info("Finished configurating the modeler")
 
     def _generate_telluric_model(
-        self, model_parameters, OBS_properties, fixed_params=None, grid=None
+        self, model_parameters, OBS_properties, fixed_params=None, grid=None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """COmpute the transmittance spectra using tellfit
 
@@ -382,6 +381,7 @@ class TelfitTelluric(TelluricTemplate):
         -------
         Tuple[np.ndarray, np.ndarray]
             Wavelengths and transmittance arrays
+
         """
         control_dict = {i: j for i, j in zip(self._fitModel.get_enabled_params(), model_parameters)}
         if fixed_params is not None:
@@ -411,8 +411,7 @@ class TelfitTelluric(TelluricTemplate):
 
     @custom_exceptions.ensure_invalid_template
     def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
-        """
-        Create a telluric template from a TelFit transmission spectra [1], that
+        """Create a telluric template from a TelFit transmission spectra [1], that
         was created for the date in which the reference observation was made.
 
         It estimates the continuum level and classifies each point that shows a
@@ -434,10 +433,10 @@ class TelfitTelluric(TelluricTemplate):
             array
 
         Notes
-        -----------
+        -----
         [1] https://github.com/kgullikson88/Telluric-Fitter
-        """
 
+        """
         try:
             super().create_telluric_template(dataClass, custom_frameID=custom_frameID)
         except custom_exceptions.StopComputationError:
@@ -446,7 +445,7 @@ class TelfitTelluric(TelluricTemplate):
         self.configure_modeler(dataClass)
 
         OBS_properties = {
-            **{"airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID)},
+            "airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID),
             **dataClass.get_instrument_information(),
         }
 
@@ -454,7 +453,7 @@ class TelfitTelluric(TelluricTemplate):
         #    Later on, if needed, this can be easily changed to fit before removing!
 
         parameter_values = self._fitModel.get_fit_results_from_frameID(
-            frameID=self._reference_frameID, allow_disabled=True
+            frameID=self._reference_frameID, allow_disabled=True,
         )
         names = self._fitModel.get_component_names(include_disabled=True)
         logger.debug(f"Parameters in use: {names}")
@@ -478,8 +477,8 @@ class TelfitTelluric(TelluricTemplate):
         self._finish_template_creation()
 
     def _generate_model_parameters(self, dataClass):
-        """
-        Custom generation of the priors for the humidity, temperature and pressure
+        """Custom generation of the priors for the humidity, temperature and pressure
+
         Parameters
         ----------
         dataClass
@@ -510,7 +509,7 @@ class TelfitTelluric(TelluricTemplate):
                 user_cap = self._internal_configs["TELFIT_HUMIDITY_THRESHOLD"]
                 curr_val = initial_guess["humidity"]
                 logger.warning(
-                    f"Relative humidity ({curr_val}) is above the user-provided threshold ({user_cap}). Falling back to it"
+                    f"Relative humidity ({curr_val}) is above the user-provided threshold ({user_cap}). Falling back to it",
                 )
 
             if not np.isfinite(initial_guess["temperature"]):
@@ -539,7 +538,7 @@ class TelfitTelluric(TelluricTemplate):
         super().store_metrics()
         metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
         parameter_values = self._fitModel.get_fit_results_from_frameID(
-            frameID=self._reference_frameID, allow_disabled=True
+            frameID=self._reference_frameID, allow_disabled=True,
         )
         names = self._fitModel.get_component_names(include_disabled=True)
 

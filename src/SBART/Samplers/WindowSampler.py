@@ -1,17 +1,13 @@
-"""
-This sampler is used mainly for debug purposes.
+"""This sampler is used mainly for debug purposes.
 It will evaluate the "metric" of a given RV_routine in a pre-determined set of points
 """
 
 from typing import Tuple
 
-import numpy as np
 from loguru import logger
-from scipy.optimize import minimize_scalar
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
-from SBART.utils.units import meter_second
+from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.work_packages import Package
 
 
@@ -72,6 +68,7 @@ class WindowSampler(SamplerModel):
         -------
         [type]
             [description]
+
         """
         out_pkg = Package(("RV_array", "metric_evaluations"))
 

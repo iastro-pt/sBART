@@ -21,8 +21,8 @@ class Paths:
         self._constructed_folders = set()
 
     def add_relative_path(self, folder_KW: str, rel_path: str) -> NoReturn:
-        """
-        Add a relative (to self._root_path) folder, associated with a given Keyword
+        """Add a relative (to self._root_path) folder, associated with a given Keyword
+
         Parameters
         ----------
         folder_KW

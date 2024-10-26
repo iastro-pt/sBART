@@ -1,5 +1,4 @@
-"""
-Implements posterior characterization with MCMC algorithm
+"""Implements posterior characterization with MCMC algorithm
 """
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -18,8 +17,8 @@ from .SbartBaseSampler import SbartBaseSampler
 
 
 def log_prior(theta, param_limits):
-    """
-    Uniform priors, with the limits passed by the Sampler
+    """Uniform priors, with the limits passed by the Sampler
+
     Parameters
     ----------
     theta
@@ -53,8 +52,7 @@ def estimate_RV_from_chains(sampler, burn_in: int, mean_list: List[float], std_l
 
 
 class MCMC_sampler(SbartBaseSampler):
-    """
-    Explore the semi-Bayesian model posterior distribution with an MCMC routine (using emcee)
+    """Explore the semi-Bayesian model posterior distribution with an MCMC routine (using emcee)
 
     **User parameters:**
 
@@ -78,8 +76,7 @@ class MCMC_sampler(SbartBaseSampler):
     )
 
     def __init__(self, RV_step, rv_prior: list, user_configs: Optional[Dict[str, Any]] = None):
-        """
-        Explore the posterior distribution with MCMC
+        """Explore the posterior distribution with MCMC
         """
         super().__init__(
             mode="epoch-wise",
@@ -108,14 +105,14 @@ class MCMC_sampler(SbartBaseSampler):
                 "autocorr_evolution",
                 "RV_evolution",
                 "RV_ERR_evolution",
-            )
+            ),
         )
 
         params_to_use = self.model_params.get_enabled_params()
         ndim = len(params_to_use)
 
         initial_guesses, bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second
+            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second,
         )
 
         # TODO: validate this
@@ -141,7 +138,7 @@ class MCMC_sampler(SbartBaseSampler):
         )
 
         sampler, order_status, out_pkg, header_info = self.apply_MCMC(
-            sampler=sampler, starting_pos=starting_pos, output_pkg=out_pkg
+            sampler=sampler, starting_pos=starting_pos, output_pkg=out_pkg,
         )
 
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
@@ -212,7 +209,7 @@ class MCMC_sampler(SbartBaseSampler):
                 )
 
                 logger.info(
-                    f"\tEvaluating state of posterior - iter : {sampler.iteration} - mean: {mean} - std : {std}"
+                    f"\tEvaluating state of posterior - iter : {sampler.iteration} - mean: {mean} - std : {std}",
                 )
 
                 # find oscillations smaller than 2% in regard to last estimate

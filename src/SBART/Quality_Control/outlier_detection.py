@@ -21,10 +21,10 @@ def compute_outliers(
     order,
     epoch=None,
 ):
-    """
-    Find outliers for the spectra of one order of one observation!
+    """Find outliers for the spectra of one order of one observation!
+
     Parameters
-    =====================
+    ----------
     obs_rv: float
         RV of the given observation
     spectra_wavelengths:
@@ -39,13 +39,14 @@ def compute_outliers(
         To be multiplied by the median difference to use as a threshold. If equal to or below zero, nothing is done
 
     Returns
-    ========================
+    -------
     new_mask : np.ndarray
         Points to be considered, i.e. mask with 1 in places to keep. It is an extension of the spectra_mask input array!
     found: bool
         Convergence achieved
     iterations:  int
         Number of iterations needed for convergence
+
     """
     tell_tolerance = worker_configs["OUTLIER_TOLERANCE"]
 
@@ -90,7 +91,7 @@ def compute_outliers(
                 np.logical_and(
                     spectra_wave >= wavelengths_block[0],
                     spectra_wave <= wavelengths_block[1],
-                )
+                ),
             )
             interpolate_wave_indexes[wavelengths_limits] = True
 
@@ -121,17 +122,17 @@ def compute_outliers(
 
         if worker_configs["METRIC_TO_USE"] == "MAD":
             metric = (spectra_flux[interpolate_wave_indexes] - new_template) / np.sqrt(
-                interpol_errors**2 + spectra_uncert[interpolate_wave_indexes] ** 2
+                interpol_errors**2 + spectra_uncert[interpolate_wave_indexes] ** 2,
             )
 
             metric = (metric - np.median(metric)) / median_abs_deviation(metric, scale="normal")
             threshold = tell_tolerance
             # np.in1d returns a boolean array with the locations of the selected points
             mismatch_full_point = np.where(
-                np.in1d(
+                np.isin(
                     spectra_wavelengths,
                     spectra_wave[interpolate_wave_indexes][np.where(np.abs(metric) >= threshold)],
-                )
+                ),
             )
         else:
             metric = np.log(np.abs(spectra_flux[interpolate_wave_indexes] / new_template))
@@ -139,17 +140,17 @@ def compute_outliers(
             threshold = tell_tolerance * np.std(metric)
             # np.in1d returns a boolean array with the locations of the selected points
             mismatch_full_point = np.where(
-                np.in1d(
+                np.isin(
                     spectra_wavelengths,
                     spectra_wave[interpolate_wave_indexes][
                         np.where(
                             np.logical_or(
                                 metric >= median + threshold,
                                 metric <= median - threshold,
-                            )
+                            ),
                         )
                     ],
-                )
+                ),
             )
 
         if len(mismatch_full_point[0]) == 0:
@@ -236,7 +237,7 @@ def compute_outliers(
         for y_dir, waves in enumerate([[6091, 6094], [6103, 6105]]):
             # axis[0, y_dir].set_title(order)
             norm = np.mean(
-                spectra_flux[np.where(np.logical_and(spectra_wave > waves[0] - 0.2, spectra_wave < waves[1] + 0.2))]
+                spectra_flux[np.where(np.logical_and(spectra_wave > waves[0] - 0.2, spectra_wave < waves[1] + 0.2))],
             )
             axis[0, y_dir].plot(spectra_wave, spectra_flux / norm, color="black", label="Spectra")
             axis[0, y_dir].plot(

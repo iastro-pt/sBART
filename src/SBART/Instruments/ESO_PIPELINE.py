@@ -13,8 +13,7 @@ from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
 
 
 class ESO_PIPELINE(Frame):
-    """
-    Interface to handle data products (S2D and S1D) of the ESO pipeline (DRS 3.0)
+    """Interface to handle data products (S2D and S1D) of the ESO pipeline (DRS 3.0)
 
     **User parameters:**
 
@@ -81,9 +80,7 @@ class ESO_PIPELINE(Frame):
         override_KW_map=None,
         override_indicators=None,
     ):
-        """
-
-        Parameters
+        """Parameters
         ----------
         file_path
             Path to the S2D (or S1D) file.
@@ -93,6 +90,7 @@ class ESO_PIPELINE(Frame):
             Iterable of subInstruments to fully reject
         frameID
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
+
         """
         # Wavelength coverage
 
@@ -169,14 +167,13 @@ class ESO_PIPELINE(Frame):
     def load_S2D_data(self):
         if self.is_open:
             logger.debug("{} has already been opened", self.__str__())
-            return
+            return None
         super().load_S2D_data()
 
         if self._internal_configs["use_old_pipeline"]:
             # The return is to ensure that we don't do anything after this point!
             return self.load_old_DRS_S2D()
-        else:
-            self.load_ESO_DRS_S2D_data()
+        self.load_ESO_DRS_S2D_data()
 
     def load_S1D_data(self):
         super().load_S1D_data()
@@ -184,8 +181,7 @@ class ESO_PIPELINE(Frame):
         if self._internal_configs["use_old_pipeline"]:
             # The return is to ensure that we don't do anything after this point!
             return self.load_old_DRS_S1D()
-        else:
-            self.load_ESO_DRS_S1D_data()
+        self.load_ESO_DRS_S1D_data()
 
     def check_header_QC(self, header: fits.header.Header):
         super().check_header_QC(header)
@@ -210,8 +206,7 @@ class ESO_PIPELINE(Frame):
 
     # Load common information to the ESO DRS version across different spectrographs
     def load_telemetry_info(self, header):
-        """
-        Loads (at least) the following keywords:
+        """Loads (at least) the following keywords:
 
         - relative humidity
         - ambient temperature, in Celsius
@@ -226,7 +221,6 @@ class ESO_PIPELINE(Frame):
         -------
 
         """
-
         ambi_KWs = {
             "relative_humidity": "HUMIDITY",
             "ambient_temperature": "TEMP10M",
@@ -236,7 +230,7 @@ class ESO_PIPELINE(Frame):
             self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} METEO {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin",
                 )
 
         if self.observation_info["relative_humidity"] == 255:
@@ -248,7 +242,7 @@ class ESO_PIPELINE(Frame):
     def _load_ESO_DRS_KWs(self, header):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         # Load BERV info + previous RV
@@ -262,7 +256,7 @@ class ESO_PIPELINE(Frame):
 
         for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
             self.observation_info["orderwise_SNRs"].append(
-                header[f"HIERARCH {self.KW_identifier} QC ORDER{order + 1} SNR"]
+                header[f"HIERARCH {self.KW_identifier} QC ORDER{order + 1} SNR"],
             )
 
         # Chosen activity indicators
@@ -274,7 +268,7 @@ class ESO_PIPELINE(Frame):
     def load_ESO_DRS_S2D_data(self, overload_SCIDATA_key=None):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         with fits.open(self.file_path) as hdulist:
@@ -303,7 +297,7 @@ class ESO_PIPELINE(Frame):
 
                 # ? see espdr_scince:espdr_correct_flux
                 poly_deg = round(8 * fit_nb / self.N_orders)
-                logger.debug("Fitting polynomial (n={})".format(poly_deg))
+                logger.debug(f"Fitting polynomial (n={poly_deg})")
                 llc = hdulist[5].data[:, self.array_size[1] // 2]
                 coeff = np.polyfit(llc[ignore:], flux_corr[ignore:], poly_deg - 1)
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
@@ -340,7 +334,7 @@ class ESO_PIPELINE(Frame):
     def load_ESO_DRS_S1D_data(self):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         with fits.open(self.file_path) as hdulist:
@@ -358,8 +352,8 @@ class ESO_PIPELINE(Frame):
         self.build_mask(bypass_QualCheck=False)
 
     def _compute_BLAZE(self):
-        """
-        Assume that S2D and S2D_BLAZE live within the same folder (should be true for most cases)
+        """Assume that S2D and S2D_BLAZE live within the same folder (should be true for most cases)
+
         Returns
         -------
 

@@ -35,8 +35,7 @@ def build_query(star):
     r = aSimbad.query_object(star)
     if r is None:
         raise ValueError(f"star {star} not found in Simbad")
-    else:
-        r = r[0]
+    r = r[0]
     query = f"""SELECT TOP 1 * FROM gaiadr2.gaia_source \
     WHERE CONTAINS(
                 POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),

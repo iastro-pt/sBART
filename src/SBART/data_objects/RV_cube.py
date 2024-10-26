@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from pathlib import Path
-from typing import List, NoReturn, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,8 +35,7 @@ from SBART.utils.work_packages import Package
 
 
 class RV_cube(BASE):
-    """
-    The RV cube stores the result of a SBART run of a given sub-Instrument. It is also responsible for:
+    """The RV cube stores the result of a SBART run of a given sub-Instrument. It is also responsible for:
 
     - Provide a way of accessing SBART and /or CCF results
     - Apply RV corrections (drift, SA)
@@ -53,18 +52,17 @@ class RV_cube(BASE):
         has_orderwise_rvs,
         is_SA_corrected: bool,
     ):
-        """
-        It contains:
+        """It contains:
             - the SA correction value (and applies it)
             - THe (single) drift correction (And applies it)
             - The orderwise RVs, errors and Status
             - The final RV and errors (both raw and corrected)
 
-        TODO:
+        Todo:
             - [ ] add check to see if we actually have data in the order-wise arrays!
             - [ ] Implement eniric interface
-        """
 
+        """
         self.is_SA_corrected = is_SA_corrected
         self._associated_subInst = subInst
 
@@ -139,6 +137,7 @@ class RV_cube(BASE):
         ----------
         other : RV_cube
             [description]
+
         """
         logger.info("RV cube making copy of {}", other.name)
         self.cached_info = other.cached_info
@@ -202,6 +201,7 @@ class RV_cube(BASE):
             [description]
         eniric_precision : [type]
             [description]
+
         """
         for epoch in range(self._RvErrors_orderwise.shape[0]):
             self.eniric_RV_precision.append(eniric_precision[epoch])
@@ -273,6 +273,7 @@ class RV_cube(BASE):
             [description]
         InvalidConfiguration
             [description]
+
         """
         if not self._loaded_inst_info:
             msg = "RV cube did not load the information from the instrument!"
@@ -350,6 +351,7 @@ class RV_cube(BASE):
         -------
         [type]
             [description]
+
         """
         times, rvs, uncerts = self.get_RV_timeseries(
             which=which,
@@ -400,8 +402,8 @@ class RV_cube(BASE):
         return self.cached_info["DRS_RV"], self.cached_info["DRS_RV_ERR"]
 
     def get_TM_activity_indicator(self, act_name):
-        """
-        Get the DLW measurements if they exist.Otherwise return array of nans
+        """Get the DLW measurements if they exist.Otherwise return array of nans
+
         Parameters
         ----------
         act_name
@@ -412,8 +414,8 @@ class RV_cube(BASE):
             Values
         list
             Uncertainties
-        """
 
+        """
         nan_list = [np.nan for _ in self.frameIDs]
         try:
             unit = self.get_storage_unit("Indicators")
@@ -439,11 +441,9 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        """
-        Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
+        """Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
         returns the BJD
         """
-
         if self.time_key is None:
             found_key = False
 
@@ -476,7 +476,7 @@ class RV_cube(BASE):
 
     @property
     def name(self) -> str:
-        return "RV cube from {}".format(self._associated_subInst)
+        return f"RV cube from {self._associated_subInst}"
 
     @property
     def data(self):
@@ -489,10 +489,12 @@ class RV_cube(BASE):
     @property
     def problematic_orders(self) -> set:
         """Get the orders that should be discarded when computing RVs
+
         Returns
         -------
         [type]
             [description]
+
         """
         return self._OrderStatus.common_bad_orders
 
@@ -546,8 +548,8 @@ class RV_cube(BASE):
             Path to the "base" folder of the outputs
         savefile : bool, optional
             Store to disk if True. By default True
-        """
 
+        """
         rv_table = Table(["Method", "std [m/s]", "wstd [m/s]", "median err [m/s]"])
         rv_table.set_decimal_places(5)
 
@@ -585,7 +587,7 @@ class RV_cube(BASE):
     def export_skip_reasons(self, dataClassProxy) -> None:
         final_path = build_filename(
             self._internalPaths.get_path_to("metrics", as_posix=False),
-            "DataRejectionSummary_{}_{}".format(self._associated_subInst, self._mode),
+            f"DataRejectionSummary_{self._associated_subInst}_{self._mode}",
             "txt",
         )
 
@@ -596,22 +598,20 @@ class RV_cube(BASE):
             file.write("Summary of data rejection:")
 
             file.write(
-                "\n\tRejected {} out of {} available orders:".format(
-                    len(self.problematic_orders), self._RvErrors_orderwise.shape[1]
-                )
+                f"\n\tRejected {len(self.problematic_orders)} out of {self._RvErrors_orderwise.shape[1]} available orders:",
             )
-            file.write("\n\tCommon orders removed:\n{}\n".format(self.problematic_orders))
+            file.write(f"\n\tCommon orders removed:\n{self.problematic_orders}\n")
 
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                self._associated_subInst, include_invalid=True
+                self._associated_subInst, include_invalid=True,
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(f"\n\tFrame {fpath} ({dataClassProxy.get_KW_from_frameID('ISO-DATE', current_frameID)}):\n")
                 if not stellar_template.was_loaded:
                     file.write(
-                        f"\n\t\tIn Stellar Template: {stellar_template.check_if_used_frameID(current_frameID)}\n"
+                        f"\n\t\tIn Stellar Template: {stellar_template.check_if_used_frameID(current_frameID)}\n",
                     )
 
                 current_Frame = dataClassProxy.get_frame_by_ID(current_frameID)
@@ -654,7 +654,7 @@ class RV_cube(BASE):
             ]:
                 file.write(f"\n\t{skip_name}:")
                 for master_key in ["Rejections", "Warnings"]:
-                    file.write("\n\t\t{}:".format(master_key))
+                    file.write(f"\n\t\t{master_key}:")
                     for flag, description in master_dict[master_key].items():
                         file.write(f"\n\t\t\t{flag}:{description}")
 
@@ -691,8 +691,8 @@ class RV_cube(BASE):
         ----------
         storage_path : str
             Main storage path
-        """
 
+        """
         diagnostics_path = self._internalPaths.get_path_to("plots", as_posix=False)
 
         fig, ax = plt.subplots(3, 1, sharex=True)
@@ -893,12 +893,12 @@ class RV_cube(BASE):
             Avoid creating a header [with the description of each collumn] in the stored file, by default False
         detailed_table : bool, optional
             write a detailed table with all of the information of the different corrections, by default True
-        """
 
+        """
         data_blocks = self.build_datablock()
         final_path = build_filename(
             self._internalPaths.root_storage_path,
-            "RVs_{}_{}".format(self._associated_subInst, self._mode),
+            f"RVs_{self._associated_subInst}_{self._mode}",
             "txt",
         )
 
@@ -919,7 +919,7 @@ class RV_cube(BASE):
 
         final_path = build_filename(
             self._internalPaths.root_storage_path,
-            "{}_{}_{}".format(star_name, self._associated_subInst, self._mode),
+            f"{star_name}_{self._associated_subInst}_{self._mode}",
             "rdb",
         )
         mode = "a" if append else "w"
@@ -951,6 +951,7 @@ class RV_cube(BASE):
 
         Returns:
             Table/None: tabletexifier.Table with the results if everything went well. Otherwise, defaults to a None
+
         """
         precision_array = self._RvErrors_orderwise
         problem_orders = self.problematic_orders
@@ -1008,7 +1009,7 @@ class RV_cube(BASE):
             unit.trigger_data_storage()
 
         tf = time.time() - t0
-        logger.info("Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf))
+        logger.info(f"Finished export of {self.name} to disk. Took {tf:.2f} seconds")
 
     def _store_misc_info(self):
         logger.info("Storing misc information")
@@ -1242,7 +1243,7 @@ class RV_cube(BASE):
             new_cube.cached_info["BIS SPAN"] = timeseries_table["BIS SPAN"]
         except:
             logger.warning(
-                "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version"
+                "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
             )
 
         new_cube.TM_RVs = convert_to_quantity(timeseries_table["TM_raw"])

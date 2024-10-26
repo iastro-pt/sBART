@@ -6,8 +6,7 @@ check_if_overlap = (
 
 
 def find_overlaps(input_blocks: List[List[float]]) -> List[List[float]]:
-    """
-    Loop over a list with 1D regions and find intersections among them
+    """Loop over a list with 1D regions and find intersections among them
     Used to decrease the number of "standalone" blocks in the telluric template
 
     E.g:
@@ -34,7 +33,6 @@ def find_overlaps(input_blocks: List[List[float]]) -> List[List[float]]:
     - [ ] See if there is a need of porting this function to cython
 
     """
-
     found_overlap = False
     new_blocks = []
     found_matches = set()

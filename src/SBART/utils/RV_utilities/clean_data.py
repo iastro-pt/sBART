@@ -15,8 +15,7 @@ def find_wavelength_limits(
     min_block_size,
     order=None,
 ):
-    """
-    Find the actual wavelength limits
+    """Find the actual wavelength limits
     """
     current_order_wavelength = spectra_order_waves
 
@@ -30,7 +29,7 @@ def find_wavelength_limits(
             (
                 template_order_wavelengths[block[0]],
                 template_order_wavelengths[block[-1]],
-            )
+            ),
         )
     valid_wave_positions = np.zeros(current_order_wavelength.shape, dtype=bool)
     for wavelengths_block in blocks:
@@ -41,7 +40,7 @@ def find_wavelength_limits(
         last_value = apply_RVshift(wavelengths_block[-1], lower_limit)
 
         wavelengths_limits = np.where(
-            np.logical_and(spectra_order_waves >= first_value, spectra_order_waves <= last_value)
+            np.logical_and(spectra_order_waves >= first_value, spectra_order_waves <= last_value),
         )
 
         if len(wavelengths_limits[0]) < min_block_size:

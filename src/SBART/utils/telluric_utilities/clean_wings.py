@@ -21,8 +21,8 @@ def clean_wings_order(current_order_wavelengths, telluric_bin_temp, template_bas
     -------
     np.ndarray
         Binary template with the increased span
-    """
 
+    """
     telluric_positions = np.where(telluric_bin_temp == 1)
 
     blocks = build_blocks(telluric_positions)
@@ -41,7 +41,7 @@ def clean_wings_order(current_order_wavelengths, telluric_bin_temp, template_bas
                 np.logical_and(
                     current_order_wavelengths >= lowest_wavelength,
                     current_order_wavelengths <= highest_wavelength,
-                )
+                ),
             )
         ] = 1
 

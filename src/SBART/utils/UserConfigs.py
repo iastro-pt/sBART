@@ -54,17 +54,16 @@ class ValueInInterval(Constraint):
             if self._include_edges:
                 if self._interval[0] <= value <= self._interval[1]:
                     good_value = True
-            else:
-                if self._interval[0] < value < self._interval[1]:
-                    good_value = True
+            elif self._interval[0] < value < self._interval[1]:
+                good_value = True
         except TypeError:
             raise InvalidConfiguration(
-                f"Config ({param_name}) value can't be compared with the the interval: {type(value)} vs {self._interval}"
+                f"Config ({param_name}) value can't be compared with the the interval: {type(value)} vs {self._interval}",
             )
 
         if not good_value:
             raise InvalidConfiguration(
-                f"Config ({param_name}) value not inside the interval: {value} vs {self._interval}"
+                f"Config ({param_name}) value not inside the interval: {value} vs {self._interval}",
             )
 
 
@@ -76,7 +75,7 @@ class ValueFromDtype(Constraint):
     def evaluate(self, param_name: str, value: Any) -> NoReturn:
         if not isinstance(value, self.valid_dtypes):
             raise InvalidConfiguration(
-                f"Config ({param_name}) value ({value}) not from the valid dtypes: {type(value)} vs {self.valid_dtypes}"
+                f"Config ({param_name}) value ({value}) not from the valid dtypes: {type(value)} vs {self.valid_dtypes}",
             )
 
 
@@ -92,13 +91,12 @@ class ValueFromList(Constraint):
                 if element not in self.available_options:
                     bad_value = True
                     break
-        else:
-            if value not in self.available_options:
-                bad_value = True
+        elif value not in self.available_options:
+            bad_value = True
 
         if bad_value:
             raise InvalidConfiguration(
-                f"Config ({param_name})  value not one of the valid ones: {value} vs {self.available_options}"
+                f"Config ({param_name})  value not one of the valid ones: {value} vs {self.available_options}",
             )
 
 
@@ -126,7 +124,7 @@ class IterableMustHave(Constraint):
 
         if not good_value:
             raise InvalidConfiguration(
-                f"Config ({param_name}) value {value} does not have {self.mode} of {self.available_options}"
+                f"Config ({param_name}) value {value} does not have {self.mode} of {self.available_options}",
             )
 
 
@@ -196,6 +194,7 @@ class UserParam:
 
         Returns:
             str: Formatted message with the Description, mandatory status, default value and constraints
+
         """
         offset = indent_level * "\t"
         message = ""
@@ -322,16 +321,14 @@ class InternalParameters:
 
 
 class DefaultValues:
-    """
-    Holds all of the user parameters that SBART has available for any given object.
+    """Holds all of the user parameters that SBART has available for any given object.
     """
 
     def __init__(self, **kwargs):
         self.default_mapping = kwargs
 
     def update(self, item: str, new_value: Any):
-        """
-        Update the default value of a stored parameter, if it exists. Otherwise, raises an Exception
+        """Update the default value of a stored parameter, if it exists. Otherwise, raises an Exception
 
         Parameters
         ----------
@@ -360,7 +357,7 @@ class DefaultValues:
         return self.__repr__()
 
     def __repr__(self) -> str:
-        representation = f"Configurations:\n\n"
+        representation = "Configurations:\n\n"
 
         for key, value in self.default_mapping.items():
             representation += f"Name:: {key}\n{value.get_terminal_output()} \n"

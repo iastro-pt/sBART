@@ -1,5 +1,4 @@
-"""
-Introduce extra functionalities in Classes.
+"""Introduce extra functionalities in Classes.
 
 A class that inherits from the Components will have new functionalities.
 

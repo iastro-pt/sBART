@@ -7,9 +7,7 @@ SPEED_OF_LIGHT = 299792.458
 
 
 def apply_RVshift(wave: np.ndarray, stellar_RV: float) -> np.ndarray:
-    """
-
-    Parameters
+    """Parameters
     ----------
     wave : np.ndarray
         [description]
@@ -22,14 +20,13 @@ def apply_RVshift(wave: np.ndarray, stellar_RV: float) -> np.ndarray:
     -------
     np.ndarray
         [description]
+
     """
     return np.multiply(wave, (1 + stellar_RV / SPEED_OF_LIGHT))
 
 
 def remove_RVshift(wave: np.ndarray, stellar_RV: float, BERV: float = 0) -> np.ndarray:
-    """
-
-    Parameters
+    """Parameters
     ----------
     wave : np.ndarray
         [description]
@@ -42,6 +39,7 @@ def remove_RVshift(wave: np.ndarray, stellar_RV: float, BERV: float = 0) -> np.n
     -------
     np.ndarray
         [description]
+
     """
     return wave / (1 + stellar_RV / SPEED_OF_LIGHT)
 
@@ -55,6 +53,7 @@ def apply_approximated_BERV_correction(wave, BERV: float):
 
     Returns:
         _type_: _description_
+
     """
     # Addint the new term that we found in the ESPRESSO DRS. Source of this is unclear.....
     return wave * (1 + 1.55e-8) * (1 + BERV / SPEED_OF_LIGHT)
@@ -69,6 +68,7 @@ def remove_approximated_BERV_correction(wave, BERV: float):
 
     Returns:
         _type_: _description_
+
     """
     return wave / ((1 + 1.55e-8) * (1 + BERV / SPEED_OF_LIGHT))
 
@@ -98,6 +98,7 @@ def shift_to_spectrograph_frame(wave: np.ndarray, stellar_RV: float, BERV: float
     -------
     np.ndarray
         [description]
+
     """
     return wave * (SPEED_OF_LIGHT + stellar_RV) / (SPEED_OF_LIGHT + BERV)
 
@@ -150,6 +151,7 @@ def interpolate_data(
     ------
     Exception
         [description]
+
     """
     if indexes is None:
         valid_indexes = np.where(np.logical_and(new_lambda >= lower_limit, new_lambda <= upper_limit))
@@ -184,8 +186,7 @@ def interpolate_data(
 
 
 def apply_wavelength_shift(wave, direction, stellar_RV, BERV):
-    """
-    We are subtracting the stellar RV for convenience. Instead of working with the redshit we are
+    """We are subtracting the stellar RV for convenience. Instead of working with the redshit we are
     working with blueshit to avoid adding minus everytime we call this function
     """
     c = 299792.458  # km/s

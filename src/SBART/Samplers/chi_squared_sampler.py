@@ -1,5 +1,4 @@
-"""
-Chi-squared minimization, for a classical template matching approach.
+"""Chi-squared minimization, for a classical template matching approach.
 """
 
 from typing import Any, Dict, Optional, Tuple
@@ -16,8 +15,7 @@ from SBART.utils.work_packages import Package
 
 
 class chi_squared_sampler(SamplerModel):
-    """
-    The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
+    """The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
 
     This metric is defined in the RV_step worker. After finding the optimal value, fit a parabola to estimate the
     true minimum value and the RV that would be associated with it. It also uses the curvature of the chi squared
@@ -27,13 +25,11 @@ class chi_squared_sampler(SamplerModel):
 
     _name = "chi_squared"
     _default_params = SamplerModel._default_params + DefaultValues(
-        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False)
+        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False),
     )
 
     def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
-        """
-
-        Parameters
+        """Parameters
         ----------
         rv_step: RV_measurement
             Step to use when computing the numerical derivatives of the metric function (for the parabolic fit)
@@ -49,8 +45,7 @@ class chi_squared_sampler(SamplerModel):
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Compute the RV for an entire order, followed by a parabolic fit to estimate
+        """Compute the RV for an entire order, followed by a parabolic fit to estimate
         uncertainty and better adjust chosen RV
 
         Parameters
@@ -67,10 +62,11 @@ class chi_squared_sampler(SamplerModel):
         -------
         [type]
             [description]
+
         """
         out_pkg = Package(("RV", "RV_uncertainty"))
         init_guess, rv_bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["current_frameID"], rv_units=meter_second
+            frameID=target_kwargs["current_frameID"], rv_units=meter_second,
         )
         apply_parabolic_fit = False
         rv_step = self.RV_step.to(meter_second).value
@@ -141,10 +137,10 @@ class chi_squared_sampler(SamplerModel):
         else:
             new_target_kwargs = {
                 **target_kwargs,
-                **{
+
                     "get_minimum_information": True,
-                    "SAVE_DISK_SPACE": self.disk_save_enabled,
-                },
+                    "SAVE_DISK_SPACE": self.disk_save_enabled
+                ,
             }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
@@ -160,15 +156,14 @@ class chi_squared_sampler(SamplerModel):
         return out_pkg, order_status
 
     def _apply_parabolic_fit(self, rvs, chi_squared, rv_step):
-        """
-        Apply the parabolic fit to the chi-square curve to estimate RV and error
+        """Apply the parabolic fit to the chi-square curve to estimate RV and error
         """
         index = np.argmin(chi_squared)
         if len(chi_squared) == 3 and index != 1:
             raise Exception(f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}")
 
         if index - 1 < 0:
-            raise IndexError()
+            raise IndexError
 
         # If we have an index error, the caller will handle it!
         rv_minimum = rvs[index]

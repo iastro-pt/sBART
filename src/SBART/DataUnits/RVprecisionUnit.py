@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Any, Dict, List, NoReturn, Optional
+from typing import Any, Dict, List, NoReturn
 
-import numpy as np
 import ujson as json
 from loguru import logger
 from tabletexifier import Table
@@ -17,9 +16,9 @@ class RV_Precision_Unit(UnitModel):
     _name = UnitModel._name + _content_name
 
     def __init__(self):
-        """
-        Parameters
+        """Parameters
         ----------
+
         """
         super().__init__(0, 0)
         self._optim_table: List[Table] = []
@@ -43,6 +42,7 @@ class RV_Precision_Unit(UnitModel):
             pred_err (float): Expected precision, km/s
             quality (float): Qaulity factor
             pix_sum_in_template (int): number of pixels in the template
+
         """
         if frameID not in self.RVcontent_info:
             self.RVcontent_info[frameID] = {}
@@ -66,6 +66,7 @@ class RV_Precision_Unit(UnitModel):
         Returns:
             Dict[str, List[Any]]: RV information from each order (keys), each providing a dictionary with the following keys:
             "pix_sum_in_template", "quality", "pred_rv", "pred_err"
+
         """
         try:
             return self.RVcontent_info[frameID]
@@ -85,6 +86,7 @@ class RV_Precision_Unit(UnitModel):
         Returns:
             Dict[str, Any]: Dictionary with the following keys:
             "pix_sum_in_template", "quality", "pred_rv", "pred_err"
+
         """
         try:
             return self.get_RVcontent_frameID_information(frameID)[order]
@@ -100,7 +102,7 @@ class RV_Precision_Unit(UnitModel):
     def get_storage_filename(self):
         return build_filename(
             og_path=self._internalPaths.root_storage_path,
-            filename=f"RVcontent_metrics",
+            filename="RVcontent_metrics",
             fmt="json",
         )
 
@@ -118,7 +120,7 @@ class RV_Precision_Unit(UnitModel):
 
         tab_tame = build_filename(
             og_path=self._internalPaths.root_storage_path,
-            filename=f"optimal_bins",
+            filename="optimal_bins",
             fmt="txt",
         )
         if not self._optim_table:
@@ -131,12 +133,13 @@ class RV_Precision_Unit(UnitModel):
 
     @classmethod
     def load_from_disk(cls, rv_cube_fpath: Path):
-        """
-        Parameters
+        """Parameters
         ----------
         rv_cube_fpath: path to the RV cube folder. Internally append the folder name from the corresponding data unit
+
         Returns
         -------
+
         """
         super().load_from_disk(rv_cube_fpath)
         new_unit = RV_Precision_Unit()

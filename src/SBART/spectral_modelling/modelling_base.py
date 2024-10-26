@@ -70,7 +70,7 @@ class ModellingBase(BASE):
 
         self._attempted_to_load_disk_model = True
 
-        logger.debug("Searching for previous model on disk: {}".format(self._get_model_storage_filename()))
+        logger.debug(f"Searching for previous model on disk: {self._get_model_storage_filename()}")
 
         try:
             storage_name = self._get_model_storage_filename()
@@ -88,8 +88,7 @@ class ModellingBase(BASE):
             raise custom_exceptions.NoDataError
 
     def _store_model_to_disk(self):
-        """
-        Store the fit parameters to disk, to avoid multiple computations in the future
+        """Store the fit parameters to disk, to avoid multiple computations in the future
 
         Returns
         -------
@@ -114,7 +113,7 @@ class ModellingBase(BASE):
             filename_start = f"Template_{self.object_info['subInstrument']}"
         else:
             raise custom_exceptions.InvalidConfiguration(
-                "Spectral modelling can't save results for {}", self._object_type
+                "Spectral modelling can't save results for {}", self._object_type,
             )
 
         return filename_start

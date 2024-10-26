@@ -1,24 +1,17 @@
-"""
-Provides previous SBART values to compute the expected RV precision on the "effective" wavelength regions
+"""Provides previous SBART values to compute the expected RV precision on the "effective" wavelength regions
 of the stellar template
 """
 
-from pathlib import Path
 from typing import Tuple
 
-import numpy as np
-from loguru import logger
-from scipy.optimize import minimize_scalar
-
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
+from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.units import kilometer_second
 from SBART.utils.work_packages import Package
 
 
 class RVcontent_sampler(SamplerModel):
-    """
-    The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
+    """The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
 
     This metric is defined in the RV_step worker. After finding the optimal value, fit a parabola to estimate the
     true minimum value and the RV that would be associated with it. It also uses the curvature of the chi squared
@@ -29,9 +22,7 @@ class RVcontent_sampler(SamplerModel):
     _name = "RVcontent"
 
     def __init__(self, rv_step, rv_prior):
-        """
-
-        Parameters
+        """Parameters
         ----------
         rv_step: RV_measurement
             Step to use when computing the numerical derivatives of the metric function (for the parabolic fit)
@@ -46,8 +37,7 @@ class RVcontent_sampler(SamplerModel):
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Compute the RV for an entire order, followed by a parabolic fit to estimate
+        """Compute the RV for an entire order, followed by a parabolic fit to estimate
         uncertainty and better adjust chosen RV
 
         Parameters
@@ -64,8 +54,8 @@ class RVcontent_sampler(SamplerModel):
         -------
         [type]
             [description]
-        """
 
+        """
         # TODO: have this from the target_kwargs:
         # "current_order": current_order,
         # "current_frameID": current_epochID,

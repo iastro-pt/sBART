@@ -59,13 +59,12 @@ class Package:
         ----------
         other : Package
             Package with the data that will be copied over
+
         """
         for key in other.extra_keys:
             if key in self.params:
                 Warning(
-                    "Trying to override key {} during package ingestion. The two packages share the same extra key, skipping over this key".format(
-                        key
-                    )
+                    f"Trying to override key {key} during package ingestion. The two packages share the same extra key, skipping over this key",
                 )
                 continue
             # print(self.params)
@@ -119,7 +118,7 @@ class BayesianPackage(Package):
             "tentative_rv",
             "extra_skip",
             "weigthed",
-            "rv_prior" "central_wavelength",
+            "rv_priorcentral_wavelength",
             "poly_params",
             "compute_FluxModel_misspecification",
         ]
@@ -131,15 +130,15 @@ class WorkerInput(Package):
 
         self.params = {
             **self.params,
-            **{
+
                 "frameID": np.nan,
                 "order": np.nan,
                 "target_function": None,
                 "tentative_RV": None,
                 "subInst": None,
                 "RVprior_params": [],
-                "target_specific_configs": {},
-            },
+                "target_specific_configs": {}
+            ,
         }
 
         for key in self.extra_keys:

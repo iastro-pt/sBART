@@ -41,8 +41,7 @@ from SBART.utils.UserConfigs import (
 
 
 class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
-    """
-    Base Class for the different :ref:`Instruments<InstrumentsDescription>`, providing a shared interface to spectral data and
+    """Base Class for the different :ref:`Instruments<InstrumentsDescription>`, providing a shared interface to spectral data and
     header information.
 
     This class defines a set of Keywords, consistent for all s-BART supported Instruments, which can be accessed through the
@@ -177,8 +176,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         init_log: bool = True,
         quiet_user_params: bool = True,
     ):
-        """
-        The Frame object is initialized with the following set of Keywords:
+        """The Frame object is initialized with the following set of Keywords:
 
         Parameters
         ----------
@@ -207,8 +205,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             If True create a log entry with the filename
         quiet_user_params
             If True, there are no logs for the generation of the user parameters of each Frame
-        """
 
+        """
         self.instrument_properties = {
             "name": inst_name,
             "array_sizes": array_size,
@@ -231,7 +229,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         self.file_path: Path = file_path
         if init_log:
-            logger.info("Creating frame from: {}".format(self.file_path))
+            logger.info(f"Creating frame from: {self.file_path}")
         self.inst_name = inst_name
 
         self.sub_instrument = None
@@ -319,8 +317,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             self.is_skysub = True
 
     def get_spectral_type(self) -> str:
-        """
-        Check the filename to see if we are using an S1D or S2D file
+        """Check the filename to see if we are using an S1D or S2D file
+
         Returns
         -------
 
@@ -328,17 +326,15 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         name_lowercase = self.file_path.stem.lower()
         if "s2d" in name_lowercase or "e2ds" in name_lowercase:
             return "S2D"
-        elif "s1d" in name_lowercase:
+        if "s1d" in name_lowercase:
             return "S1D"
-        else:
-            raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
+        raise custom_exceptions.InternalError(f"{self.name} can't recognize the file that it received!")
 
     def copy_into_S2D(self, new_S2D_size: Optional[Tuple[int, int]] = None):
-        """
-        Return a new object which contains the S1D that that has been converted into a S2D
+        """Return a new object which contains the S1D that that has been converted into a S2D
 
         Parameters
-        -----------
+        ----------
         new_S2D_size: Optional[Tuple[int, int]]
             Size of the new S2D size, should be a tuple with two elements: (number orders, pixel in order).
             If it is None, then uses the standard size of S2D files of this instrument. **Default:** None
@@ -428,9 +424,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         return new_frame
 
     def import_KW_from_outside(self, KW, value, optional: bool):
-        """
-        Allow to manually override frame parameters from the outside
-        """
+        """Allow to manually override frame parameters from the outside"""
         if KW not in self.observation_info:
             logger.critical(
                 "Keyword <{}> is not supported by the Frames. Couldn't load it from the outside",
@@ -453,9 +447,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.observation_info[KW] = value
 
     def reject_wavelength_region_from_order(self, order, region):
-        """
-        Flag a wavelength region from  an order to be marked as invalid during the creation of the stellar mask
-        """
+        """Flag a wavelength region from  an order to be marked as invalid during the creation of the stellar mask"""
         if not isinstance(region, (Iterable,)):
             raise custom_exceptions.InvalidConfiguration("The rejection region must be a list of lists")
 
@@ -472,6 +464,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             Flag for the removal type
         wavelength_blocks : List[list]
             List with lists of wavelength limits. [[lambda_0, lambda_1], [lambda_2, lambda_3]]
+
         """
         self.wavelengths_to_remove[reason] = wavelength_blocks
 
@@ -481,8 +474,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.wavelengths_to_keep[order] = wavelength_blocks
 
     def finalize_data_load(self, bad_flag: Optional[Flag] = None) -> None:
-        """
-        Called for all Instruments, even those that do not need an external data load.
+        """Called for all Instruments, even those that do not need an external data load.
         Checks if the non-fatal Flag "LOADING_EXTERNAL_DATA" exists in the Status. If so, add the fatal Flag
         "MISSING_EXTERNAL_DATA". Otherwise, does nothing
 
@@ -503,9 +495,11 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         """Tuns an invalid CARMENES::KOBE frame into a valid one (assuming that the only problem is missing the SHAQ loads)
 
         If the status of the frame is different than MISSING_SHAQ_DATA (meaning that something went bad with the data load)
+
         Returns
         -------
         NoReturn
+
         """
         if not self.is_valid:
             logger.warning("Finalizing external data loading for Frame that was already rejected.")
@@ -527,8 +521,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     @property
     def status(self) -> Status:
-        """
-        Return the Status of the entire Frame
+        """Return the Status of the entire Frame
+
         Returns
         -------
 
@@ -550,6 +544,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ----------
         bypass_QualCheck : bool, optional
             Do not check the QUAL_DATA array for non-zero values, by default False
+
         """
         self.spectral_mask = Mask(initial_mask=np.zeros(self.instrument_properties["array_size"], dtype=np.uint16))
         if not bypass_QualCheck:
@@ -569,7 +564,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         N_point_removed = []
         time_took = []
 
-        logger.debug("Cleaning wavelength regions from {}".format(removal_reasons))
+        logger.debug(f"Cleaning wavelength regions from {removal_reasons}")
 
         for removal_reason, wavelengths in self.wavelengths_to_remove.items():
             start_time = time.time()
@@ -583,7 +578,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                             np.logical_and(
                                 self.wavelengths[order] >= wave_pair[0],
                                 self.wavelengths[order] <= wave_pair[1],
-                            )
+                            ),
                         )
                         self.spectral_mask.add_indexes_to_mask_order(order, indexes, removal_reason)
             time_took.append(time.time() - start_time)
@@ -609,7 +604,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                         np.logical_and(
                             self.wavelengths[order] >= subregion[0],
                             self.wavelengths[order] <= subregion[1],
-                        )
+                        ),
                     )
                     self.spectral_mask.add_indexes_to_mask_order(order, indexes, NON_COMMON_WAVELENGTH)
 
@@ -637,7 +632,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                         np.logical_and(
                             self.wavelengths[order] >= region[0],
                             self.wavelengths[order] <= region[1],
-                        )
+                        ),
                     )
                     inds[wavelengths_to_keep] = True
                 self.spectral_mask.add_indexes_to_mask_order(order, np.where(~inds), NON_COMMON_WAVELENGTH)
@@ -692,8 +687,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             )
             self.add_to_status(
                 NO_VALID_ORDERS(
-                    f" Rejected more than {self._internal_configs['MAX_ORDER_REJECTION']} % of spectral orders"
-                )
+                    f" Rejected more than {self._internal_configs['MAX_ORDER_REJECTION']} % of spectral orders",
+                ),
             )
 
     ####################################
@@ -723,7 +718,6 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         ```
         """
         logger.debug("Validating header KeyWords")
-        pass
 
     def find_instrument_type(self):
         obs_date = self.get_KW_value("ISO-DATE")
@@ -741,8 +735,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     #      Handle data management      #
     ####################################
     def get_S1D_name(self) -> str:
-        """
-        Build the S1D name that should be associated with this Frame.
+        """Build the S1D name that should be associated with this Frame.
         If it is already a S1D, returns the actual name.
         If it is not, remove "blaze" from the filename and replaces "S2D" with "S1D"
 
@@ -796,16 +789,17 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     def load_instrument_specific_KWs(self, header):
         """Load the KW values that can not be loaded in a general fashion (e.g. needs UT number or units)
         To be overriden by the different instruments
+
         Parameters
         ----------
         header : [type]
             [description]
+
         """
         return
 
     def store_previous_SBART_result(self, RV: RV_measurement, RV_err: RV_measurement) -> NoReturn:
-        """
-        Store, from the outside, RV and uncertainty from a previous SBART application
+        """Store, from the outside, RV and uncertainty from a previous SBART application
 
         Parameters
         ----------
@@ -855,6 +849,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
         Returns:
             _type_: _description_
+
         """
         if self._header is None:
             self._header = fits.getheader(self.file_path)
@@ -891,6 +886,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         -------
         [type]
             Results from the comparison
+
         """
         return self.sub_instrument == sub_instrument
 
@@ -900,15 +896,14 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
 
     @property
     def bare_fname(self) -> str:
-        """
-        Returns the file name without the _S2D (and similar) parts
+        """Returns the file name without the _S2D (and similar) parts
 
         The children classes must overload this property. Otherwise, returns the full filename
+
         Returns
         -------
 
         """
-
         return self.fname
 
     @property
@@ -922,12 +917,10 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
     @property
     def spectrum_information(self):
         return {
-            **{
-                "subInstrument": self.sub_instrument,
-                "filename": self.bare_fname,
-                "is_S2D": self.is_S2D,
-                "is_S1D": self.is_S1D,
-            },
+            "subInstrument": self.sub_instrument,
+            "filename": self.bare_fname,
+            "is_S2D": self.is_S2D,
+            "is_S1D": self.is_S1D,
             **super().spectrum_information,
         }
 

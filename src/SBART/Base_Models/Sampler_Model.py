@@ -1,7 +1,6 @@
 import time
 from typing import Iterable, List, NoReturn, Optional, Tuple, Union
 
-import numpy as np
 from astropy.units import Quantity
 from loguru import logger
 
@@ -20,8 +19,7 @@ from SBART.utils.work_packages import Package, WorkerInput
 
 
 class SamplerModel(BASE):
-    """
-    Base Class for all SBART samplers.
+    """Base Class for all SBART samplers.
 
     The samplers allow for the instantiation of a RV model, using the :py:mod:`~SBART.ModelParameters.RV_Model` which contain
     multiple  :py:mod:`~SBART.ModelParameters.Parameter` representing the different free-parameters of the full RV model. By default,
@@ -101,8 +99,7 @@ class SamplerModel(BASE):
         self.shared_buffers = {**self.shared_buffers, **buffer}
 
     def set_mode(self, mode: str) -> None:
-        """
-        Set the sampler to one of its two working modes:
+        """Set the sampler to one of its two working modes:
 
         - order-wise
         - epoch-wise
@@ -113,7 +110,7 @@ class SamplerModel(BASE):
             The mode for the sampler
 
         Raises
-        -------
+        ------
         InvalidConfiguration
             If the mode is not one of the valid options
 
@@ -141,8 +138,7 @@ class SamplerModel(BASE):
         self.model_params.add_extra_param(parameter)
 
     def enable_param(self, param_name: str) -> NoReturn:
-        """
-        External activation of the parameters of the model
+        """External activation of the parameters of the model
 
         Parameters
         ----------
@@ -167,8 +163,7 @@ class SamplerModel(BASE):
     #################################
 
     def apply_orderwise(self, optimizer_estimate: Union[float, list], target, target_kwargs):
-        """
-        Minimize the target function for the data of a single order. As the models might have multiple
+        """Minimize the target function for the data of a single order. As the models might have multiple
         free-parameters, we ensure that the target **always** receives a list of elements.
 
         Parameters
@@ -182,13 +177,13 @@ class SamplerModel(BASE):
                 - dataClassProxy,
                 - frameID
                 - order
+
         Returns
         -------
         func_output
             Evaluation of
 
         """
-
         params = None
         if isinstance(optimizer_estimate, Quantity):
             optimizer_estimate = optimizer_estimate.to(meter_second).value
@@ -201,8 +196,7 @@ class SamplerModel(BASE):
         return target(*params, **target_kwargs)
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Optimization over the functions that implements the orde-rwise application. This must be implemented
+        """Optimization over the functions that implements the orde-rwise application. This must be implemented
         by the children classes, as each model will use a different optimization strategy
 
         Parameters
@@ -219,14 +213,14 @@ class SamplerModel(BASE):
         -------
         [type]
             [description]
+
         """
         if self.mode == "epoch-wise":
             raise InvalidConfiguration
         raise NotImplementedError(f"{self.name} does not support orderwise application")
 
     def apply_epochwise(self, optimizer_estimate, config_dict):
-        """
-        Application of the model's parameters to all spectral orders at the same time. The children classes
+        """Application of the model's parameters to all spectral orders at the same time. The children classes
         must implement this on their own, as the application stratagies will end up being different for each
 
         Parameters
@@ -241,7 +235,7 @@ class SamplerModel(BASE):
 
         """
         if self.mode != "epoch-wise":
-            raise InvalidConfiguration(f"Sampler is not in the epoch-wise mode")
+            raise InvalidConfiguration("Sampler is not in the epoch-wise mode")
 
         run_info = config_dict["run_information"]
         package_queue = config_dict["pkg_queue"]
@@ -261,8 +255,7 @@ class SamplerModel(BASE):
 
         if run_info["target_specific_configs"]["compute_metrics"]:
             return self.process_epochwise_metrics(outputs)
-        else:
-            return self.compute_epochwise_combination(outputs)
+        return self.compute_epochwise_combination(outputs)
 
     ######################################
     #  Comms interface with the workers  #
@@ -314,11 +307,11 @@ class SamplerModel(BASE):
             TODO: confirm/update this type hint
 
         Raises
-        ----------
+        ------
         InvalidConfiguration
             If there are no valid orders for the calculation of RVs
-        """
 
+        """
         logger.debug(
             "{} managing the RV calculation of {} in <{}> mode",
             self.name,
@@ -332,20 +325,18 @@ class SamplerModel(BASE):
         }
 
         if len(valid_orders) == 0:
-            raise InvalidConfiguration("{} has no valid order for which it can compute RVs".format(self.name))
+            raise InvalidConfiguration(f"{self.name} has no valid order for which it can compute RVs")
 
         if self.mode == "order-wise":
             return self._orderwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
-        elif self.mode == "epoch-wise":
+        if self.mode == "epoch-wise":
             return self._epochwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
         raise InvalidConfiguration(f"{self.name} does not support mode <{self.mode}>")
 
     def _orderwise_manager(self, dataClass, subInst: str, run_info: dict, package_queue, output_pool) -> list:
-        """
-        Handle communication with the workers, when computing order-wise RVs.
+        """Handle communication with the workers, when computing order-wise RVs.
         If the memory saving mode is enabled, the S2D arrays of the frames are closed afterwards
         """
-
         logger.debug("Starting orderWise manager")
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
         logger.debug("Running frameIDs : {}", valid_IDS)
@@ -431,8 +422,7 @@ class SamplerModel(BASE):
         return worker_prods
 
     def _receive_data_workers(self, N_packages: int, output_pool, quiet: bool = False) -> list:
-        """
-        Wait for the workers to populate the output_pool with the results.
+        """Wait for the workers to populate the output_pool with the results.
         This will wait for exactly N_packages, without having any kind of timeout
 
         Parameters
@@ -444,8 +434,8 @@ class SamplerModel(BASE):
         -------
         list
             List with the collected packages
-        """
 
+        """
         received = 0
         outputs = []
         if not quiet:
@@ -465,18 +455,16 @@ class SamplerModel(BASE):
 
     @property
     def N_model_params(self) -> int:
-        """
-
-        Returns
+        """Returns
         -------
         number_params:
             Number of free-parameters that are currently enabled in our model
+
         """
         return len(self.model_params.get_enabled_params())
 
     def is_sampler(self, sampler_type: str) -> bool:
-        """
-        Check if the sampler is of a given type
+        """Check if the sampler is of a given type
 
         Parameters
         ----------
@@ -500,9 +488,9 @@ class SamplerModel(BASE):
         self.mem_save_enabled = False
 
     def enable_disk_savings(self) -> NoReturn:
-        """
-        Save, as much as possible, disk space when saving the worker outputs. Each target function will
+        """Save, as much as possible, disk space when saving the worker outputs. Each target function will
         decide on the details of such "savings"
+
         Returns
         -------
 
@@ -537,8 +525,7 @@ class SamplerModel(BASE):
         return RV_KW_start
 
     def process_epochwise_metrics(self, outputs):
-        """
-        Each children class must implement this, as it will be used to parse the outputs when
+        """Each children class must implement this, as it will be used to parse the outputs when
         the optimal RV is provided to the target!
 
         Parameters
@@ -552,9 +539,9 @@ class SamplerModel(BASE):
         return [], []
 
     def compute_epochwise_combination(self, outputs):
-        """
-        Each children class must implement this to combine the order-wise metrics into a "global" value for the
+        """Each children class must implement this to combine the order-wise metrics into a "global" value for the
         optimization process
+
         Parameters
         ----------
         outputs

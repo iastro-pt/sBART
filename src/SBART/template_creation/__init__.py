@@ -1,5 +1,4 @@
-"""
-Controls the creation of both stellar and telluric templates.
+"""Controls the creation of both stellar and telluric templates.
 """
 
 from .Loaded_Template import LoadedTemplate

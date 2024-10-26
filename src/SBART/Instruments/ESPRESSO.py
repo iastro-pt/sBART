@@ -5,15 +5,13 @@ import numpy as np
 from astropy.coordinates import EarthLocation
 from loguru import logger
 from scipy.constants import convert_temperature
-from sqlalchemy import Boolean
 
 from SBART.Instruments.ESO_PIPELINE import ESO_PIPELINE
 from SBART.utils.status_codes import ERROR_THRESHOLD, KW_WARNING
 
 
 class ESPRESSO(ESO_PIPELINE):
-    """
-    Interface to handle ESPRESSO observations (S2D and S1D).
+    """Interface to handle ESPRESSO observations (S2D and S1D).
 
     With ESPRESSO data we are considering 3 sub-Instruments:
 
@@ -51,8 +49,7 @@ class ESPRESSO(ESO_PIPELINE):
         frameID: Optional[int] = None,
         quiet_user_params: bool = True,
     ):
-        """
-
+        """ESPRESSO interface
         Parameters
         ----------
         file_path
@@ -63,6 +60,7 @@ class ESPRESSO(ESO_PIPELINE):
             Iterable of subInstruments to fully reject
         frameID
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
+
         """
         # Wavelength coverage
 
@@ -110,7 +108,9 @@ class ESPRESSO(ESO_PIPELINE):
             self.observation_info[name] = float(header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"])
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                    self.observation_info[name],
+                    old_scale="Celsius",
+                    new_scale="Kelvin",
                 )
 
         self.observation_info["DET_BINX"] = header["HIERARCH ESO DET BINX"]

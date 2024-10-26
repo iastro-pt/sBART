@@ -1,5 +1,4 @@
-"""
-Utilies for SBART application
+"""Utilies for SBART application
 """
 
 from loguru import logger

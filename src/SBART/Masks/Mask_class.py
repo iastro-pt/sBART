@@ -1,9 +1,7 @@
-from multiprocessing import shared_memory
 
 import numpy as np
 from loguru import logger
 
-from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.status_codes import MULTIPLE_REASONS
 
 
@@ -22,10 +20,8 @@ class Mask:
         self._internal_mask = new_mask
 
     def get_submask(self, include):
+        """Only returns one of the masked reasons
         """
-        Only returns one of the masked reasons
-        """
-
         exclude = list(self._current_types.keys())
         try:
             exclude.remove(include.name)
@@ -35,17 +31,16 @@ class Mask:
         return self.get_custom_mask(exclude)
 
     def get_custom_mask(self, exclude=()):
-        """
-        Retrives a binary mask where the reasons in "exclude" are not acocunted for
+        """Retrives a binary mask where the reasons in "exclude" are not acocunted for
         The masked points are set as True
 
-        PARAMETERS
-        ===============
+        Parameters
+        ----------
         exclude: list
             List of objects from Flag type or names of flags. If a given flag (or name) does not exist, a warning is self.logger.infoed and
             the process continues
-        """
 
+        """
         if self.mask_type == "binary":
             if len(exclude) != 0:
                 self.logger.critical(f"Binary mask does not allow to remove flags. {exclude=}")
@@ -77,8 +72,7 @@ class Mask:
         return custom_mask
 
     def add_to_mask(self, epoch, new_masked, mask_type):
-        """
-        Adds the True points from new_masked to the existing mask
+        """Adds the True points from new_masked to the existing mask
 
         Parameters
         ----------
@@ -86,8 +80,8 @@ class Mask:
             [description]
         new_masked : [type]
             [description]
-        """
 
+        """
         self._outdated_cache = True
         points_to_add = np.where(new_masked == True)
 
@@ -108,7 +102,7 @@ class Mask:
             self._current_types[mask_type.name] = mask_type.code
 
         self._internal_mask[indexes] = np.where(
-            self._internal_mask[indexes] == 0, mask_type.code, MULTIPLE_REASONS.code
+            self._internal_mask[indexes] == 0, mask_type.code, MULTIPLE_REASONS.code,
         )[:]
 
     def add_indexes_to_mask_order(self, order, indexes, mask_type):
@@ -144,7 +138,7 @@ class Mask:
                     argmax,
                     np.max(sum_mask),
                     np.median(sum_mask),
-                )
+                ),
             )
 
         else:
@@ -156,10 +150,10 @@ class Mask:
 
             for index, sum_mask in enumerate(full_mask):
                 if detailed:
-                    logger.info("\n\tEpoch  # {}".format(index))
+                    logger.info(f"\n\tEpoch  # {index}")
 
                     logger.info(
-                        "\n\t\t Reason \t Min (non-0) points  (order) \t Max points (order) \t Median (across orders)\n"
+                        "\n\t\t Reason \t Min (non-0) points  (order) \t Max points (order) \t Median (across orders)\n",
                     )
                     logger.info("\t\t" + "-" * 100)
 
@@ -202,7 +196,7 @@ class Mask:
                                 argmax,
                                 max_val,
                                 np.median(caused_by_reason),
-                            )
+                            ),
                         )
                         global_points[-1] += np.sum(caused_by_reason)
                 else:
@@ -222,7 +216,7 @@ class Mask:
                     argmax,
                     global_points[argmax],
                     np.median(global_points),
-                )
+                ),
             )
 
     @property

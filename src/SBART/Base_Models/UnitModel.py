@@ -1,13 +1,11 @@
 from pathlib import Path
-from typing import NoReturn
 
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 
 
 class UnitModel(BASE):
-    """
-    Base unit.
+    """Base unit.
     """
 
     # The Units will store data in the RV_cube/_content_name folder

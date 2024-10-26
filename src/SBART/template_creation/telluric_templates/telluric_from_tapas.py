@@ -24,8 +24,7 @@ from .Telluric_Template import TelluricTemplate
 
 
 class TapasTelluric(TelluricTemplate):
-    """
-    Create transmittance spectrum from TAPAS web-interface
+    """Create transmittance spectrum from TAPAS web-interface
 
     This class also provides an interface to automatically request and download data from the TAPAS user interface.
 
@@ -175,8 +174,7 @@ class TapasTelluric(TelluricTemplate):
     # TODO: fix the input args of this template!
     @custom_exceptions.ensure_invalid_template
     def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
-        """
-        Create a telluric template from TAPAS transmission spectra [1], that was created for
+        """Create a telluric template from TAPAS transmission spectra [1], that was created for
         the date in which the reference observation was made.
 
         It estimates the continuum level and classifies each point that shows a decrease of 10% as a telluric line.
@@ -196,14 +194,16 @@ class TapasTelluric(TelluricTemplate):
             DataClass object
         custom_frameID :
             If Not None, does not search for the "optimal" frameID to use as a basis
+
         Returns
         -------
         numpy.ndarray
             Telluric (binary) spectrum, for the wavelengths present in the input array
 
         Notes
-        -----------
+        -----
         [1] http://cds-espri.ipsl.fr/tapas/project?methodName=home_en
+
         """
         try:
             super().create_telluric_template(dataClass, custom_frameID=custom_frameID)
@@ -248,10 +248,10 @@ class TapasTelluric(TelluricTemplate):
 
         # avoid problems in the edges -> calculate median filter with less points near the edges
         continuum_level[0 : n_points_filter + 1] = median_filter(
-            self.transmittance_spectra[0 : n_points_filter + 1], 51
+            self.transmittance_spectra[0 : n_points_filter + 1], 51,
         )
         continuum_level[-(n_points_filter + 1) :] = median_filter(
-            self.transmittance_spectra[-(n_points_filter + 1) :], 51
+            self.transmittance_spectra[-(n_points_filter + 1) :], 51,
         )
         self._continuum_level = continuum_level
         self.wavelengths = self.transmittance_wavelengths * 10

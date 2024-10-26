@@ -36,9 +36,7 @@ from SBART.utils.work_packages import ShutdownPackage
 
 
 class RV_routine(BASE):
-    """
-    Base class for the all the RV extraction routines.
-
+    """Base class for the all the RV extraction routines.
 
     **User parameters:**
 
@@ -110,7 +108,7 @@ class RV_routine(BASE):
             BooleanValue,
         ),
         min_block_size=UserParam(
-            50, constraint=Positive_Value_Constraint
+            50, constraint=Positive_Value_Constraint,
         ),  # Min number of consecutive points to not reject a region
         output_fmt=UserParam(
             [
@@ -142,7 +140,7 @@ class RV_routine(BASE):
                     "frameIDs",
                     "DLW",
                     "DLW_ERR",
-                ]
+                ],
             )
             + IterableMustHave(("RVc", "RVc_ERR"))
             + IterableMustHave(("MJD", "BJD"), mode="either"),
@@ -198,10 +196,7 @@ class RV_routine(BASE):
     def _validate_sampler(self, valid_samplers: Iterable[str]) -> None:
         if not any(map(self.sampler.is_sampler, valid_samplers)):
             raise InvalidConfiguration(
-                "{} does not accept the following Sampler : {}".format(
-                    self.name,
-                    self.sampler.name,
-                )
+                f"{self.name} does not accept the following Sampler : {self.sampler.name}",
             )
 
     def load_previous_RVoutputs(self):
@@ -234,9 +229,10 @@ class RV_routine(BASE):
             [description]
 
         Raises
-        -------
+        ------
         NoDataError
             If all all sub-Instruments were rejected
+
         """
         self._subInsts_to_use = dataClass.get_subInstruments_with_valid_frames()
 
@@ -298,8 +294,7 @@ class RV_routine(BASE):
         check_metadata: bool = False,
         store_cube_to_disk=True,
     ) -> None:
-        """
-        Trigger the RV extraction for all sub-Instruments
+        """Trigger the RV extraction for all sub-Instruments
 
         Parameters
         ----------
@@ -317,8 +312,8 @@ class RV_routine(BASE):
             all subInstrument the same orders. If dict, the keys should be the subInstrument and the values a list to skip
             (if the key does not exist, assume that there are None to skip). If str, load a previous RV cube from disk and use the
             orders that the previous run used!. By default ()
-        """
 
+        """
         if isinstance(storage_path, str):
             # Emsure pathlib path
             storage_path = Path(storage_path)
@@ -355,7 +350,7 @@ class RV_routine(BASE):
             logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
             if "GP" in dataClass.get_stellar_model().get_interpol_modes():
                 raise custom_exceptions.InternalError(
-                    "Can't interpolate with GPs without having the memory saving mode enabled"
+                    "Can't interpolate with GPs without having the memory saving mode enabled",
                 )
 
             self.sampler.disable_memory_savings()
@@ -418,8 +413,7 @@ class RV_routine(BASE):
             self.trigger_data_storage(dataClass)
 
     def _validate_template_with_frame(self, stellar_template, first_frame):
-        """
-        Checks if the stellar template and the first frame share the same state of Flux Corrections
+        """Checks if the stellar template and the first frame share the same state of Flux Corrections
         """
         base_message = "Comparing spectra and template with different"
 
@@ -524,12 +518,12 @@ class RV_routine(BASE):
         -------
         dict
             [description]
+
         """
         return {}
 
     def generate_worker_configs(self, dataClassProxy) -> Dict[str, Any]:
-        """
-        Generate the dictionary that will be passed to the launching of the workers!
+        """Generate the dictionary that will be passed to the launching of the workers!
 
         Parameters
         ----------
@@ -578,8 +572,8 @@ class RV_routine(BASE):
     #   Order selection          #
     ##########################
     def apply_orderskip_method(self) -> None:
-        """
-        Computing the orders that will be rejected for each subInstrument
+        """Computing the orders that will be rejected for each subInstrument
+
         Returns
         -------
 
@@ -598,8 +592,7 @@ class RV_routine(BASE):
             raise InvalidConfiguration()
 
     def complement_orders_to_skip(self, dataClass) -> None:
-        """
-        Search for bad orders in the stellar template of all subInstruments.
+        """Search for bad orders in the stellar template of all subInstruments.
 
         Do not search the individual frames, as they might not be opened when we reach here
 
@@ -607,6 +600,7 @@ class RV_routine(BASE):
         ----------
         dataClass : [type]
             [description]
+
         """
         logger.debug("{} loading bad orders from the stellar templates", self.name)
         stellar_model = dataClass.get_stellar_model()
@@ -622,8 +616,7 @@ class RV_routine(BASE):
             logger.debug("Subinst {}, skip: {}", inst, self.to_skip[inst])
 
     def process_orders_to_skip_from_user(self, to_skip) -> dict:
-        """
-        Evaluate the input orders to skip and put them in the proper format
+        """Evaluate the input orders to skip and put them in the proper format
 
         Parameters
         ----------
@@ -636,10 +629,12 @@ class RV_routine(BASE):
         -------
         dict
             Keys will be the subinstruments, values will be a set with the orders to skip
+
         Raises
         ------
         NotImplementedError
             [description]
+
         """
         if isinstance(to_skip, (list, tuple)):
             logger.info("Skipping the same orders across all subInstruments {}", to_skip)
@@ -726,10 +721,10 @@ class RV_routine(BASE):
         logger.debug("Sending shutdown signal to workers")
 
         good, bad = evaluate_shutdown(self.output_pool)
-        logger.debug("Good shutdowns: {}; Bad shutdowns: {}".format(good, bad))
+        logger.debug(f"Good shutdowns: {good}; Bad shutdowns: {bad}")
 
         self._live_workers -= good + bad
-        logger.debug("There are {} live workers. Sending shutdown signal for all".format(self._live_workers))
+        logger.debug(f"There are {self._live_workers} live workers. Sending shutdown signal for all")
         for _ in range(self._live_workers):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
@@ -759,7 +754,6 @@ class RV_routine(BASE):
 
     def _open_shared_memory(self, inst_info: dict) -> None:
         logger.debug("{} does not need to place data in shared memory", self.name)
-        return
 
     def open_queues(self) -> None:
         logger.debug("{} opening multiprocessing interfaces", self.name)
@@ -797,8 +791,7 @@ class RV_routine(BASE):
             dataClass.select_common_wavelengths(wave_analysis_path, subInst)
 
     def launch_wavelength_selection(self, DataClassProxy: DataClass):
-        """
-        Currently not 100% implemented!
+        """Currently not 100% implemented!
 
         Parameters
         ----------

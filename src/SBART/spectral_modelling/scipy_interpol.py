@@ -16,9 +16,7 @@ from SBART.utils.UserConfigs import (
 
 
 class ScipyInterpolSpecModel(ModellingBase):
-    """
-
-    **User parameters:**
+    """**User parameters:**
 
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
@@ -55,21 +53,19 @@ class ScipyInterpolSpecModel(ModellingBase):
         )
 
     def generate_model_from_order(self, order: int) -> NoReturn:
-        """
-        Overrides the parent implementation to make sure that nothing is done (as there is no need to
+        """Overrides the parent implementation to make sure that nothing is done (as there is no need to
         generate models)
         """
         return
 
     def _store_model_to_disk(self) -> NoReturn:
-        """
-        There is nothing to be stored. Overriding parent implementation to avoid issues
+        """There is nothing to be stored. Overriding parent implementation to avoid issues
         """
         return
 
     def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
-        """
-        Interpolate the order of this spectrum to a given wavelength, using a spline.
+        """Interpolate the order of this spectrum to a given wavelength, using a spline.
+
         Parameters
         ----------
         order
@@ -81,11 +77,11 @@ class ScipyInterpolSpecModel(ModellingBase):
         -------
 
         Raises
-        --------
+        ------
         NoConvergenceError
             If the fit for this order failed
-        """
 
+        """
         propagate_interpol_errors = self._internal_configs["INTERPOLATION_ERR_PROP"]
 
         interpolator_map = {
@@ -114,7 +110,7 @@ class ScipyInterpolSpecModel(ModellingBase):
             else:
                 extra = {}
             CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                og_lambda, og_spectra, **extra
+                og_lambda, og_spectra, **extra,
             )
             new_data = CSplineInterpolator(new_wavelengths)
 
@@ -122,7 +118,7 @@ class ScipyInterpolSpecModel(ModellingBase):
                 new_errors = np.zeros(new_data.shape)
             else:
                 CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                    og_lambda, og_err, **extra
+                    og_lambda, og_err, **extra,
                 )
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:

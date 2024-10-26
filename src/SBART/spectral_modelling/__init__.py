@@ -1,5 +1,4 @@
-"""
-This sub-package implements the different methods that can be used to interpolate stellar spectra
+"""This sub-package implements the different methods that can be used to interpolate stellar spectra
 to a new wavelength grid.
 
 """

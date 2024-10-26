@@ -4,7 +4,6 @@ from typing import List, NoReturn
 import numpy as np
 import ujson as json
 from loguru import logger
-from matplotlib import pyplot as plt
 
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.utils import custom_exceptions
@@ -24,9 +23,9 @@ class ActIndicators_Unit(UnitModel):
         tot_number_orders: int,
         load_from_disk: bool = False,
     ):
-        """
-        Parameters
+        """Parameters
         ----------
+
         """
         super().__init__(0, 0)
         self._list_of_fIDs = list_of_fIDS
@@ -82,7 +81,7 @@ class ActIndicators_Unit(UnitModel):
     def get_storage_filename(self):
         return build_filename(
             og_path=self._internalPaths.root_storage_path,
-            filename=f"RV_step_chi_squared_eval",
+            filename="RV_step_chi_squared_eval",
             fmt="json",
         )
 
@@ -110,26 +109,27 @@ class ActIndicators_Unit(UnitModel):
             data[name + "_ERR"] = json_ready_converter(combined)
 
         with open(
-            self._internalPaths.root_storage_path / f"combined_measurments.json",
+            self._internalPaths.root_storage_path / "combined_measurments.json",
             mode="w",
         ) as handle:
             json.dump(data, handle, indent=4)
 
     @classmethod
     def load_from_disk(cls, rv_cube_fpath: Path):
-        """
-        Parameters
+        """Parameters
         ----------
         rv_cube_fpath: path to the RV cube folder. Internally append the folder name from the corresponding data unit
+
         Returns
         -------
+
         """
         super().load_from_disk(rv_cube_fpath)
         new_unit = ActIndicators_Unit(available_inds=[], load_from_disk=True, number_OBS=0, tot_number_orders=0)
         new_unit.generate_root_path(rv_cube_fpath)
         try:
             logger.info("Searching for combined measurements")
-            with open(new_unit._internalPaths.root_storage_path / f"combined_measurments.json") as handle:
+            with open(new_unit._internalPaths.root_storage_path / "combined_measurments.json") as handle:
                 combined_measures = json.load(handle)
 
                 for item, data in combined_measures.items():
@@ -155,7 +155,7 @@ class ActIndicators_Unit(UnitModel):
 
         if loaded % 2 != 0:
             raise custom_exceptions.InvalidConfiguration(
-                "Should have loaded an odd number of npy files on the disk folder..."
+                "Should have loaded an odd number of npy files on the disk folder...",
             )
         logger.debug("Finished loading all npy files from disk")
         return new_unit

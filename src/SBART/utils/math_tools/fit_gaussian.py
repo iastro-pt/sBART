@@ -20,8 +20,8 @@ def fit_CCF_gaussian(
     CCF_profile: unitless_data_vector,
     RV_units: Quantity,
 ) -> Tuple[Quantity, Quantity, Flag]:
-    """
-    Implements a Gaussian fit to the CCF profile.
+    """Implements a Gaussian fit to the CCF profile.
+
     Parameters
     ----------
     RV_units: Quantity
@@ -35,8 +35,8 @@ def fit_CCF_gaussian(
     -------
     float : fitted RV
     float : fitted RV uncertainty
-    """
 
+    """
     if MISSING_iCCF:
         raise Exception("iCCF optional dependency is not installed")
 

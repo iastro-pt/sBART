@@ -17,8 +17,7 @@ from SBART.utils.units import kilometer_second
 
 
 class Spectrum(BASE):
-    """
-    Allow an SBART object to hold spectral data, providing a common interface for it. The goal of this class is to be a parent of
+    """Allow an SBART object to hold spectral data, providing a common interface for it. The goal of this class is to be a parent of
     the Frames and the templates (both stellar and telluric).
 
     This class introduces new attributes and methods into the children classes with the goal of proving a unifying framework.
@@ -59,13 +58,13 @@ class Spectrum(BASE):
         self.was_telluric_corrected = False
 
     def update_uncertainties(self, new_values):
-        """
-        Allow to update the uncertainty values, which allows for manual SNR changes
+        """Allow to update the uncertainty values, which allows for manual SNR changes
 
         Parameters
         ----------
         new_values
             Numpy array with the new uncertainties
+
         Returns
         -------
 
@@ -73,7 +72,7 @@ class Spectrum(BASE):
         # self.uncertainties = full(self.spectra.shape, 200)
         if self.spectra.shape != new_values.shape:
             raise custom_exceptions.InvalidConfiguration(
-                "The new uncertainties don't have the same size as the spectra"
+                "The new uncertainties don't have the same size as the spectra",
             )
         self.uncertainties = new_values
 
@@ -86,8 +85,7 @@ class Spectrum(BASE):
             pass
 
     def check_if_data_correction_enabled(self, property_name) -> bool:
-        """
-        If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
+        """If we attempt to access the correction state from the outside (before opening the S2D arrays), we will
         get a wrong value (of False), as the corrections are yet to be applied.
         Thus, we check if the desired property is currently given as a input argument. If it is, return its
         value, otherwise default to the class property values!
@@ -123,8 +121,7 @@ class Spectrum(BASE):
         # Store whatever
 
     def apply_BERV_correction(self, BERV_value: RV_measurement) -> None:
-        """
-        If it hasn't been done before, apply the BERV correction to the wavelength solution of this frame.
+        """If it hasn't been done before, apply the BERV correction to the wavelength solution of this frame.
 
         Parameters
         ----------
@@ -145,8 +142,7 @@ class Spectrum(BASE):
         self.is_BERV_corrected = True
 
     def remove_BERV_correction(self, BERV_value: RV_measurement):
-        """
-        Remove the BERV correction from a given observation
+        """Remove the BERV correction from a given observation
 
         Parameters
         ----------
@@ -167,9 +163,7 @@ class Spectrum(BASE):
         self.is_BERV_corrected = False
 
     def apply_telluric_correction(self, wavelengths, model, model_uncertainty):
-        """
-
-        Divide the spectra by a telluric correction model, without really accounting for model uncertainties.
+        """Divide the spectra by a telluric correction model, without really accounting for model uncertainties.
         This shouldn't be used in the current "state" ....
 
         Parameters
@@ -188,7 +182,7 @@ class Spectrum(BASE):
 
         if model.shape != self.spectra.shape:
             raise custom_exceptions.InvalidConfiguration(
-                "Telluric correction model does not have the same shape as the S2D"
+                "Telluric correction model does not have the same shape as the S2D",
             )
         self.wavelengths = self.wavelengths / wavelengths
         self.spectra = self.spectra / model
@@ -197,19 +191,17 @@ class Spectrum(BASE):
         self.uncertainties = self.uncertainties / model_uncertainty
 
     def _compute_BLAZE(self):
-        """
-        Estimate the BLAZE function by dividing BLAZE-corrected and BLAZE-uncorrected spectra. A children class must
+        """Estimate the BLAZE function by dividing BLAZE-corrected and BLAZE-uncorrected spectra. A children class must
         implement this, as normally don't have the paths to the two files
 
         Returns
         -------
 
         """
-        raise NotImplementedError("{} does not have a BLAZE computation tool".format(self.name))
+        raise NotImplementedError(f"{self.name} does not have a BLAZE computation tool")
 
     def get_BLAZE_function(self):
-        """
-        Return the blaze function. If it is not available, attempt to compute it!
+        """Return the blaze function. If it is not available, attempt to compute it!
 
         Returns
         -------
@@ -222,8 +214,7 @@ class Spectrum(BASE):
         return self._blaze_function
 
     def get_data_from_spectral_order(self, order: int, include_invalid: bool = False):
-        """
-        Retrieve a single order from the S2D matrix
+        """Retrieve a single order from the S2D matrix
 
         Parameters
         ----------
@@ -231,6 +222,7 @@ class Spectrum(BASE):
             Order to retrive
         include_invalid: bool
             If False, raise exception when attempting to access data from bad order
+
         Returns
         -------
         np.ndarray
@@ -241,8 +233,8 @@ class Spectrum(BASE):
             uncertainties
         np.ndarray
             Binary mask of the pixels
-        """
 
+        """
         self._data_access_checks()
         if order in self.bad_orders and not include_invalid:
             raise custom_exceptions.BadOrderError(f"{order=} is invalid!")
@@ -255,13 +247,12 @@ class Spectrum(BASE):
         )
 
     def get_data_from_full_spectrum(self):
-        """
-        Retrieve the entire spectra.
+        """Retrieve the entire spectra.
         If we are working with S2D data: send the [N_orders, N_pixels] matrix
         If we are working with S1D data: send a single N_pixels 1-D array with the relevant information
 
         Returns
-        ---------
+        -------
         np.ndarray
             wavelengths
         np.ndarray
@@ -280,7 +271,7 @@ class Spectrum(BASE):
                 self.uncertainties,
                 self.spectral_mask.get_custom_mask(),
             )
-        elif self.is_S1D:
+        if self.is_S1D:
             # The S1D file is stored as a S2D with only one order!
             return (
                 self.wavelengths,
@@ -296,8 +287,8 @@ class Spectrum(BASE):
         self.uncertainties *= factor
 
     def set_frame_as_Zscore(self):
-        """
-        Re-defining the frame as one with zero mean and unit-variance (z-score)
+        """Re-defining the frame as one with zero mean and unit-variance (z-score)
+
         Returns
         -------
 
@@ -310,8 +301,7 @@ class Spectrum(BASE):
             self.spectra = (self.spectra - mean) / std
 
     def close_arrays(self):
-        """
-        Close the arrays that are currently open in memory. Next time we try to access them, the disk file will be re-opened.
+        """Close the arrays that are currently open in memory. Next time we try to access them, the disk file will be re-opened.
         Saves RAM at the cost of more I/O operations
 
         """
@@ -335,20 +325,19 @@ class Spectrum(BASE):
 
     @property
     def OrderStatus(self):
-        """
-        Return the Status of the entire Frame
+        """Return the Status of the entire Frame
 
         Returns
         -------
         OrderStatus
+
         """
         DeprecationWarning("Use 'OrderWiseStatus' instead of this method")
         return self.OrderWiseStatus
 
     @property
     def OrderWiseStatus(self) -> OrderStatus:
-        """
-        Returns the OrderStatus of the entire observation
+        """Returns the OrderStatus of the entire observation
 
         Returns
         -------
@@ -370,30 +359,30 @@ class Spectrum(BASE):
 
     @property
     def N_orders(self) -> int:
-        """
-        Returns
+        """Returns
         -------
         int
             Number of orders in the array
+
         """
         return self.array_size[0]
 
     @property
     def pixels_per_order(self) -> int:
-        """
-        Returns
+        """Returns
         -------
         int
             Number of pixels in each order
+
         """
         return self.array_size[1]
 
     @property
     def is_open(self) -> bool:
-        """
-        Returns
+        """Returns
         -------
         bool
             True if it has the arrays loaded on memory
+
         """
         return self._spectrum_has_data_on_memory

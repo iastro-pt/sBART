@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, NoReturn, Optional, Union
 
@@ -36,8 +35,7 @@ from SBART.utils.UserConfigs import (
 
 
 class TelluricTemplate(BaseTemplate):
-    """
-    BaseClass of a telluric template, with all the necessary functionalities.
+    """BaseClass of a telluric template, with all the necessary functionalities.
 
     Inherits from the BaseTemplate, similarly to the stellar templates. The telluric template does not
     have the same shape as the S2D spectra. As we only need the wavelength regions in which it has
@@ -80,9 +78,7 @@ class TelluricTemplate(BaseTemplate):
         application_mode: str = "removal",
         loaded: bool = False,
     ):
-        """
-
-        Parameters
+        """Parameters
         ----------
         extension_mode : str, optional
             How to handle with Earth motion during the year. If 'lines', compute the template in each possible location
@@ -122,7 +118,7 @@ class TelluricTemplate(BaseTemplate):
         if self._internal_configs["inverse_mask"]:
             if self._extension_mode != "window":
                 raise custom_exceptions.InternalError(
-                    "Can't inverse the telluric mask without using a window extension mode"
+                    "Can't inverse the telluric mask without using a window extension mode",
                 )
 
     # Workaround to avoid calling spectra to the binary telluric template (to make things internally consistent)
@@ -149,8 +145,7 @@ class TelluricTemplate(BaseTemplate):
         self._fitModel.generate_priors(dataClass)
 
     def load_information_from_DataClass(self, dataClass: DataClass) -> None:
-        """
-        Load the necessary information from the dataClass to generate the models. Loads:
+        """Load the necessary information from the dataClass to generate the models. Loads:
             - BERV information (for the telluric removal)
             - Generates the model information (i.e. populates priors and bounds of self._fitModel
 
@@ -190,6 +185,7 @@ class TelluricTemplate(BaseTemplate):
         -------
         Tuple[List[float], List[float]]
             [description]
+
         """
         if not self.is_valid:
             return [], np.nan * kilometer_second
@@ -203,7 +199,7 @@ class TelluricTemplate(BaseTemplate):
             return [], []
 
         BERVS = DataClass.collect_KW_observations(
-            KW="BERV", subInstruments=[self._associated_subInst], include_invalid=False
+            KW="BERV", subInstruments=[self._associated_subInst], include_invalid=False,
         )
         max_bervs = DataClass.collect_KW_observations(
             KW="MAX_BERV",
@@ -215,9 +211,8 @@ class TelluricTemplate(BaseTemplate):
         unitless_max_bervs = [i.value for i in max_bervs]
         return BERVS, max_bervs[np.argmax(unitless_max_bervs)]
 
-    def _search_reference_frame(self, dataclass: "DataClass") -> Union[int, float]:
-        """
-        Select the frame that will be used to construct the telluric template.
+    def _search_reference_frame(self, dataclass: DataClass) -> Union[int, float]:
+        """Select the frame that will be used to construct the telluric template.
         By default, select the one with the highest relative humidity. If that
         keyword is not loaded, then uses the one with the highest airmass. If
         there are no valid frames in the associated subINstrument, returns
@@ -232,11 +227,12 @@ class TelluricTemplate(BaseTemplate):
         -------
         int
             [description]
+
         """
         try:
             valid_frame_ids = dataclass.get_frameIDs_from_subInst(self._associated_subInst)
-        except NoDataError as exc:
-            msg = "{} has no valid observations. Not computing telluric template".format(self._associated_subInst)
+        except NoDataError:
+            msg = f"{self._associated_subInst} has no valid observations. Not computing telluric template"
 
             logger.warning(msg)
             self.add_to_status(MISSING_DATA(msg))
@@ -361,13 +357,13 @@ class TelluricTemplate(BaseTemplate):
                     (
                         self._masked_wavelengths[index][1],
                         self._masked_wavelengths[index + 1][0],
-                    )
+                    ),
                 )
             new_blocks.append(
                 (
                     self._masked_wavelengths[-1][1],
                     self._masked_wavelengths[-1][1] * 1000,
-                )
+                ),
             )
 
             self._masked_wavelengths = new_blocks
@@ -384,6 +380,7 @@ class TelluricTemplate(BaseTemplate):
         -------
         List[List[float]]
             Updated position of the feature
+
         """
         if self.was_loaded:
             return [telluric_block]
@@ -418,8 +415,8 @@ class TelluricTemplate(BaseTemplate):
         ----------
         continuum_level : np.ndarray()
             Continuum level that is estimated by the children classes
-        """
 
+        """
         logger.info("Converting from transmittance spectra to binary mask!")
 
         if not self.for_feature_removal:
@@ -504,7 +501,7 @@ class TelluricTemplate(BaseTemplate):
             if "FIT" in key:
                 continue
 
-            header["HIERARCH {}".format(key)] = config_val
+            header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         hdus_cubes = [hdu]
@@ -540,8 +537,8 @@ class TelluricTemplate(BaseTemplate):
         plt.close(fig)
 
     def load_from_file(self, root_path: Path, loading_path: str) -> None:
-        """
-        TODO: save and load the actual flag to disk!
+        """TODO: save and load the actual flag to disk!
+
         Parameters
         ----------
         root_path
@@ -556,7 +553,7 @@ class TelluricTemplate(BaseTemplate):
         with fits.open(loading_path) as hdulist:
             if hdulist[1].header.get("VERSION", "") != __version__:
                 logger.warning(
-                    "Loaded template was not created under the current SBART version. Possible problems may arise"
+                    "Loaded template was not created under the current SBART version. Possible problems may arise",
                 )
             self._associated_subInst = hdulist["Wave"].header["subInst"]
 

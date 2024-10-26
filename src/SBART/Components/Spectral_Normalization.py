@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Dict, NoReturn, Optional
 
-import numpy as np
 from loguru import logger
 
 from SBART.DataUnits import SpecNorm_Unit
@@ -9,7 +8,6 @@ from SBART.spectral_normalization import available_normalization_interfaces
 from SBART.spectral_normalization.normalization_base import NormalizationBase
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -20,9 +18,7 @@ from SBART.utils.UserConfigs import (
 
 
 class Spectral_Normalization(BASE):
-    """
-
-    Introduces, in a given object, the functionality to normalize the continuum level.
+    """Introduces, in a given object, the functionality to normalize the continuum level.
     In order to inherit from this class, it must also be a children of :class:`SBART.Components.SpectrumComponent.Spectrum`
 
     **User parameters:**
@@ -34,7 +30,6 @@ class Spectral_Normalization(BASE):
     ============================ ================ ================ ======================== ================
 
     Notes:
-
         [1] Name of the spectral normalizers, that are described in :mod:`SBART.spectral_normalization`
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
@@ -67,8 +62,8 @@ class Spectral_Normalization(BASE):
         self._normalization_information: Optional[SpecNorm_Unit] = None
 
     def initialize_normalization_interface(self) -> NoReturn:
-        """
-        Initialize the normalization interface for the currently selected mode!
+        """Initialize the normalization interface for the currently selected mode!
+
         Returns
         -------
 
@@ -94,9 +89,9 @@ class Spectral_Normalization(BASE):
 
         if self._internalPaths.root_storage_path is None:
             logger.critical(
-                f"{self.name} launching normalization interface without a root path. Fallback to current directory"
+                f"{self.name} launching normalization interface without a root path. Fallback to current directory",
             )
-            self.generate_root_path(Path("."))
+            self.generate_root_path(Path())
 
         self._normalization_interfaces[key].generate_root_path(self._internalPaths.root_storage_path)
 
@@ -116,10 +111,10 @@ class Spectral_Normalization(BASE):
             self._normalization_information.generate_root_path(self._internalPaths.root_storage_path)
 
     def normalize_spectra(self):
-        """
-        TODO: See if we need to parallelize this!
+        """TODO: See if we need to parallelize this!
 
         Launch the normalization of the spectra, using the selected algorithm
+
         Returns
         -------
 

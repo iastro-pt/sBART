@@ -10,8 +10,7 @@ from .Stellar_Template import StellarTemplate
 
 
 class OBS_Stellar(StellarTemplate):
-    """
-    Stellar template from the observation with the highest SNR (computed as a sum over all spectral orders)
+    """Stellar template from the observation with the highest SNR (computed as a sum over all spectral orders)
     """
 
     method_name = "OBSERVATION"
@@ -24,8 +23,7 @@ class OBS_Stellar(StellarTemplate):
 
     @custom_exceptions.ensure_invalid_template
     def create_stellar_template(self, dataClass, conditions=None) -> None:
-        """
-        Creating the stellar template
+        """Creating the stellar template
         """
         # removal may change the first common wavelength; make sure
         try:

@@ -1,5 +1,4 @@
-"""
-This sub-package implements the different methods that can be used to normalize stellar spectra
+"""This sub-package implements the different methods that can be used to normalize stellar spectra
 
 """
 

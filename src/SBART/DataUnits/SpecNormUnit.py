@@ -3,7 +3,6 @@ from typing import Dict, NoReturn
 
 import ujson as json
 from loguru import logger
-from matplotlib import pyplot as plt
 
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.utils import custom_exceptions
@@ -16,9 +15,9 @@ class SpecNorm_Unit(UnitModel):
     _name = UnitModel._name + _content_name
 
     def __init__(self, frame_name, algo_name: str):
-        """
-        Parameters
+        """Parameters
         ----------
+
         """
         super().__init__(0, 0)
         self.frame_name = frame_name
@@ -57,12 +56,13 @@ class SpecNorm_Unit(UnitModel):
 
     @classmethod
     def load_from_disk(cls, rv_cube_fpath: Path, filename, algo_name):
-        """
-        Parameters
+        """Parameters
         ----------
         rv_cube_fpath: path to the RV cube folder. Internally append the folder name from the corresponding data unit
+
         Returns
         -------
+
         """
         super().load_from_disk(rv_cube_fpath)
 

@@ -1,9 +1,6 @@
-import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
-from scipy.misc import derivative
 
 from SBART.utils import custom_exceptions
 
@@ -55,10 +52,8 @@ class CustomCubicSpline:
         self.cached_ones = np.ones((self.data_size - 2, self.data_size - 2), dtype=np.float64, order="C")
 
     def compute_h_matrix(self):
+        """Create the H matrix
         """
-        Create the H matrix
-        """
-
         if self._cached_h:
             return self._inv_h
 
@@ -109,8 +104,7 @@ class CustomCubicSpline:
         return partials
 
     def _U_entry(self, mode, first_0, second_0):
-        """
-        mode == '22':
+        """Mode == '22':
             calculate u(y''_first_0, y''_second_0)
         if mode == '20':
             calculate u(y''_first_0, y_second_0)
@@ -124,7 +118,7 @@ class CustomCubicSpline:
             else:
                 first_part = np.matmul(partial_first, self.cov_matrix)
             return np.matmul(first_part, np.transpose(partial_second))
-        elif mode == "20":  # entry for 2nd derivative and data
+        if mode == "20":  # entry for 2nd derivative and data
             second = np.zeros(partial_first.shape)
             second[second_0] = 1
 
@@ -137,10 +131,8 @@ class CustomCubicSpline:
             return np.matmul(first_part, second)
 
     def build_U_matrix(self, index_i_0, index_j_0):
+        """Create the "U" matrix for the covariance estimation; Only computes the relevant quadrant
         """
-        Create the "U" matrix for the covariance estimation; Only computes the relevant quadrant
-        """
-
         cov_mat = self.cov_matrix
 
         i = index_i_0
@@ -170,7 +162,7 @@ class CustomCubicSpline:
                 [cov_i1_j, cov_j_j, u_03, u_13],
                 [u_01, u_03, self._U_entry("22", i, j), u_23],
                 [u_03, u_13, u_23, self._U_entry("22", i + 1, j + 1)],
-            ]
+            ],
         )
 
         return U
@@ -193,8 +185,7 @@ class CustomCubicSpline:
         return second_deriv_vals
 
     def interpolate(self, new_wavelengths):
-        """
-        Interpolate the data to the new wavelengths
+        """Interpolate the data to the new wavelengths
         """
         old_wavelengths = self.old_wavelengths
         original_data = self.original_data

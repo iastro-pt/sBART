@@ -14,8 +14,7 @@ from .SbartBaseSampler import SbartBaseSampler
 
 
 class Laplace_approx(SbartBaseSampler):
-    """
-    Laplace's approximation to the model's posterior distribution.
+    """Laplace's approximation to the model's posterior distribution.
     Can be aplied either on epoch-wise or order-wise mode, with this configuration being made from the user parameters of the
     :py:mod:`~SBART.rv_calculation.RV_Bayesian` routine.
     """
@@ -28,15 +27,14 @@ class Laplace_approx(SbartBaseSampler):
         rv_prior: Tuple[RV_measurement, RV_measurement],
         user_configs: Optional[Dict[str, Any]] = None,
     ):
-        """
-
-        Parameters
+        """Parameters
         ----------
         RV_step
             Step that will be used to estimate the numerical derivative around the posterior's MAP
         rv_prior:
             Specifies the "effective" RV window that the sampler can use. More details in :ref:`here <SamplerInit>`.
         user_configs
+
         """
         super().__init__(
             mode="order-wise",
@@ -50,8 +48,7 @@ class Laplace_approx(SbartBaseSampler):
         }
 
     def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Compute the RVs in the selected mode.
+        """Compute the RVs in the selected mode.
 
         Parameters
         ----------
@@ -67,13 +64,14 @@ class Laplace_approx(SbartBaseSampler):
         -------
         [type]
             [description]
+
         """
         out_pkg = Package(("RV", "RV_uncertainty"))
 
         params_to_use = self.model_params.get_enabled_params()
 
         initial_guesses, bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second
+            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second,
         )
 
         if self.mode == "order-wise":
@@ -112,8 +110,7 @@ class Laplace_approx(SbartBaseSampler):
         return out_pkg, order_status
 
     def process_posterior(self, optimization_output, target, target_kwargs, output_pkg) -> Tuple[Package, Flag]:
-        """
-        Process the results of the application of the Laplace Approximation
+        """Process the results of the application of the Laplace Approximation
 
         Parameters
         ----------
@@ -130,6 +127,7 @@ class Laplace_approx(SbartBaseSampler):
         -------
         [type]
             [description]
+
         """
         status = SUCCESS
         if optimization_output.success:
@@ -183,7 +181,7 @@ class Laplace_approx(SbartBaseSampler):
 
             output_pkg["RV_uncertainty"] = np.sqrt(RV_variance) * meter_second
 
-            logger.info("Computing post-RV metrics for mode {}".format(self.mode))
+            logger.info(f"Computing post-RV metrics for mode {self.mode}")
 
             if self.mode == "epoch-wise":
                 target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True

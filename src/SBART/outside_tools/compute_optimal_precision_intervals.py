@@ -7,7 +7,7 @@ try:
     from eniric.precision import rv_precision
 
     ENIRIC_AVAILABLE = True
-except Exception as e:
+except Exception:
     ENIRIC_AVAILABLE = False
 
 import numpy as np
@@ -29,8 +29,8 @@ def generate_all_possible_combinations(available_orders, N_intervals=4, min_inte
 
     Returns:
         _type_: _description_
-    """
 
+    """
     combinations = []
     levels = []
     # The level represents the left-to-right index of the interval
@@ -73,6 +73,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
 
     Raises:
         ImportError: _description_
+
     """
     if not ENIRIC_AVAILABLE:
         raise ImportError("eniric needs to be installed")
@@ -102,7 +103,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
                 empty_storage[id_index, ordeR_index] = convert_data(precision, as_value=True)
 
         intervals = generate_all_possible_combinations(
-            list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size
+            list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size,
         )
         result = []
         for combination in intervals:

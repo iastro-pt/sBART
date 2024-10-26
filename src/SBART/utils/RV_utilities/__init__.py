@@ -1,5 +1,4 @@
-"""
-Responsible for common operations for the RV extraction
+"""Responsible for common operations for the RV extraction
 """
 
 from .AirtoVac import airtovac

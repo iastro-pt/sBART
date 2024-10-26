@@ -1,16 +1,10 @@
 import datetime
-import os
 from pathlib import Path
-from pdb import pm
-from typing import List, NoReturn, Optional, Union
 
 from loguru import logger
-from scipy.datasets import download_all
-from sqlalchemy import create_engine, delete, func, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import create_database, database_exists, drop_database
-
-from SBART import __version__ as SBART_version
+from sqlalchemy_utils import create_database, database_exists
 
 resource_path = Path(__file__).parent.parent / "resources"
 import numpy as np

@@ -23,7 +23,6 @@ except ImportError:
     # To avoid issues with possible needs of jax
     import numpy as jnp
 
-from SBART.ModelParameters import Model
 from SBART.spectral_modelling.modelling_base import ModellingBase
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS
 from SBART.utils.UserConfigs import (
@@ -36,9 +35,7 @@ from SBART.utils.UserConfigs import (
 
 
 class GPSpecModel(ModellingBase):
-    """
-
-    **User parameters:**
+    """**User parameters:**
 
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
@@ -104,8 +101,8 @@ class GPSpecModel(ModellingBase):
             raise custom_exceptions.InternalError("Missing the custom tinygp installation for GP")
 
     def _get_model_storage_filename(self) -> str:
-        """
-        Construct the storage filename for the model parameters for this observation!
+        """Construct the storage filename for the model parameters for this observation!
+
         Returns
         -------
 
@@ -125,8 +122,7 @@ class GPSpecModel(ModellingBase):
         return super().load_previous_model_results_from_disk(model_component_in_use)
 
     def generate_model_from_order(self, og_lambda, og_spectra, og_err, new_wavelengths, order) -> NoReturn:
-        """
-        Fit the stellar spectrum from a given order. If it has already been recomputed (or if it has previously failed)
+        """Fit the stellar spectrum from a given order. If it has already been recomputed (or if it has previously failed)
         does nothing
 
         Parameters
@@ -151,9 +147,7 @@ class GPSpecModel(ModellingBase):
         try:
             solution_array, result_flag = self._launch_GP_fit(og_lambda, og_spectra, og_err, new_wavelengths, order)
         except Exception as e:
-            msg = "Unknown error found when fitting GP to order {}: {}".format(
-                order, traceback.print_tb(e.__traceback__)
-            )
+            msg = f"Unknown error found when fitting GP to order {order}: {traceback.print_tb(e.__traceback__)}"
             logger.critical(msg)
             result_flag = INTERNAL_ERROR(msg)
             solution_array = [np.nan for _ in self._modelling_parameters.get_enabled_params()]
@@ -167,8 +161,7 @@ class GPSpecModel(ModellingBase):
         return super()._store_model_to_disk()
 
     def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
-        """
-        Interpolate the order of this spectrum to a given wavelength, using a GP. If the GP fit is yet to be done,
+        """Interpolate the order of this spectrum to a given wavelength, using a GP. If the GP fit is yet to be done,
         then it is done beforehand.
 
         Parameters
@@ -186,11 +179,11 @@ class GPSpecModel(ModellingBase):
             Model uncertainty
 
         Raises
-        --------
+        ------
         NoConvergenceError
             If the fit for this order failed
-        """
 
+        """
         import time
 
         t0 = time.time()
@@ -270,8 +263,7 @@ class GPSpecModel(ModellingBase):
 
 
 def generate_kernel(amplitude, length_scale, kern_type):
-    """
-    Build a tinygp quasiseperable kernel with the provided amplitude and length_scale
+    """Build a tinygp quasiseperable kernel with the provided amplitude and length_scale
 
     Parameters
     ----------
@@ -281,6 +273,7 @@ def generate_kernel(amplitude, length_scale, kern_type):
         Kernel's lenght scale
     kernel_type:
         Type of kernel, following the **User Parameters** of the Modelling class.
+
     Returns
     -------
 

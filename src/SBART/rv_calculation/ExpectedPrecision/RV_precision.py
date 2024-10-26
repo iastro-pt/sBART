@@ -20,8 +20,7 @@ from .target_function import target
 
 
 class RV_precision(RV_routine):
-    """
-    Compute the order-wise expected precision, based on the Bouchy et al 2001 paper
+    """Compute the order-wise expected precision, based on the Bouchy et al 2001 paper
 
     Only allows to use the following samplers:
 
@@ -56,9 +55,8 @@ class RV_precision(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
-        Parameters
-        ----------------
+        """Parameters
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -69,11 +67,11 @@ class RV_precision(RV_routine):
             One of the :py:mod:`~SBART.Samplers` that is accepted by this routine.
 
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
-        """
 
+        """
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
             RV_configs_copy["order_removal_mode"] = "per_subInstrument"

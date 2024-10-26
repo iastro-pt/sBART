@@ -1,4 +1,3 @@
-from functools import partial
 
 import numpy as np
 from loguru import logger
@@ -11,22 +10,22 @@ def polynomial_continuum_model(x, *model_coeffs):
     try:
         return np.poly1d(model_coeffs)(x)
     except:
-        logger.warning("Problem in coeefs: {}".format(model_coeffs))
+        logger.warning(f"Problem in coeefs: {model_coeffs}")
 
 
 def stretch_continuum_nodel(x, template, *model_coeffs):
-    """
-    Implements the model specified by Xavier Dumusque:
+    """Implements the model specified by Xavier Dumusque:
         A*Template + B*lambda + C
 
     Parameters
-    =============
+    ----------
     x:
         Wavelength solution in which the model will be evaluated
     model_coeffs:
         Coefficients of the model, where the leftmost entry is A and all other entries are a polynomial
     template:
         The data that will be "scaled up"
+
     """
     return np.poly1d(model_coeffs[1:])(x) + template * model_coeffs[0]
 
@@ -71,8 +70,7 @@ def match_continuum_levels(
     continuum_type: str,
     template_uncertainties=None,
 ):
-    """
-    Match the continuum level of the template to that of the provided observation.
+    """Match the continuum level of the template to that of the provided observation.
     If the template uncertainties are passed, it will also update them, accounting for the
     normalization step!
 

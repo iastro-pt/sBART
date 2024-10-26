@@ -1,5 +1,4 @@
-"""
-.. _SamplerInit:
+""".. _SamplerInit:
 
 Provide, to the RV model, new radial velocities.
 

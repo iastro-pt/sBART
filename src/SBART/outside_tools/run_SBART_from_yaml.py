@@ -7,11 +7,7 @@ import yaml
 from SBART.outside_tools.run_SBART_from_config_dict import run_target
 from SBART.utils.spectral_conditions import (
     Empty_condition,
-    FNAME_condition,
-    KEYWORD_condition,
-    SubInstrument_condition,
 )
-from SBART.utils.units import kilometer_second, meter_second
 
 
 def run_SBART_from_yaml(target_config_file, main_run_output_path, only_run=()):
@@ -24,7 +20,7 @@ def run_SBART_from_yaml(target_config_file, main_run_output_path, only_run=()):
         # Launch TM algorithm here !!!!!
 
         if len(only_run) != 0 and run_name not in only_run:
-            print("Run name <{}> is disabled".format(run_name))
+            print(f"Run name <{run_name}> is disabled")
             continue
 
         multi_input_mode = run_configs.get("MULTI_INPUT_MODE", False)
@@ -127,7 +123,7 @@ def import_target_configs(config_path):
 
             try:
                 run_conf = update_keyword_pair(run_conf, "ORDER_SKIP_RANGE", run_conf["ORDER_SKIP_RANGE"])
-            except KeyError as e:
+            except KeyError:
                 pass
 
             try:
@@ -172,7 +168,7 @@ def import_target_configs(config_path):
 
 
 def load_config(config_file):
-    with open(config_file, "r") as stream:
+    with open(config_file) as stream:
         try:
             configs = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

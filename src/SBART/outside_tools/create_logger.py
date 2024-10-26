@@ -1,4 +1,3 @@
-import asyncio
 import os
 import sys
 import warnings
@@ -19,6 +18,7 @@ def setup_SBART_logger(
     """Call from outside the module to setup the logger and necessary folders + structure
 
     FIXME: This will create empty log files for all sub_instruments of the instrument, even if it has no data!
+
     Parameters
     ----------
     path : str
@@ -27,8 +27,8 @@ def setup_SBART_logger(
         [description]
     instrument: pyROAST.instruments
         Instrument that will be used
-    """
 
+    """
     logger.enable("SBART")
     logger.complete()
 
