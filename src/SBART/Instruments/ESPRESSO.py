@@ -36,8 +36,8 @@ class ESPRESSO(ESO_PIPELINE):
 
     sub_instruments = {
         "ESPRESSO18": datetime.datetime.strptime("2019-06-27", r"%Y-%m-%d"),
-        "ESPRESSO19": datetime.datetime.strptime("2020-12-18", r"%Y-%m-%d"),
-        "ESPRESSO21": datetime.datetime.max,
+        "ESPRESSO19": datetime.datetime.max,
+        # "ESPRESSO19": datetime.datetime.strptime("2020-12-18", r"%Y-%m-%d"),
     }
     _name = "ESPRESSO"
 
