@@ -58,11 +58,6 @@ class ESO_PIPELINE(Frame):
     )
 
     _default_params.update(
-        "USE_APPROX_BERV_CORRECTION",
-        UserParam(True, constraint=BooleanValue),
-    )
-
-    _default_params.update(
         "apply_FluxBalance_Norm",
         UserParam(False, constraint=BooleanValue),
     )
