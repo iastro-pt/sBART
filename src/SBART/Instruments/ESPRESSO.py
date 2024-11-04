@@ -143,6 +143,17 @@ class ESPRESSO(ESO_PIPELINE):
 
         if found_ADC_issue:
             self._status.store_warning(KW_WARNING("ADC2 issues found"))
+    
+        espdr_to_num = lambda x:  int("".join(x.split(".")))
+        espdrversion = header["ESO PRO REC1 PIPE ID"].split("/")[-1]
+
+        if self._internal_configs["USE_APPROX_BERV_CORRECTION"]:
+            if espdr_to_num(espdrversion) >= espdrversion("3.2.0"):
+                logger.critical(f"Using approximated BERV correction in espdr/{espdrversion}")
+        else:
+            if espdr_to_num(espdrversion) < espdrversion("3.2.0"):
+                logger.critical(f"Not using approximated BERV correction in espdr/{espdrversion}")
+
 
         super().check_header_QC_ESO_DRS(header)
 
