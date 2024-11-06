@@ -79,7 +79,9 @@ class ESPRESSO(ESO_PIPELINE):
 
         self.instrument_properties["wavelength_coverage"] = coverage
         self.instrument_properties["resolution"] = 140_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("Cerro Paranal")
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
+            "Cerro Paranal"
+        )
         self.instrument_properties["is_drift_corrected"] = True
 
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
@@ -89,7 +91,9 @@ class ESPRESSO(ESO_PIPELINE):
         # Find the UT number and load the airmass
         for i in range(1, 5):
             try:
-                self.observation_info["airmass"] = header[f"HIERARCH ESO TEL{i} AIRM START"]
+                self.observation_info["airmass"] = header[
+                    f"HIERARCH ESO TEL{i} AIRM START"
+                ]
                 self.UT_number = i
                 break
             except KeyError as e:
@@ -105,7 +109,9 @@ class ESPRESSO(ESO_PIPELINE):
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = float(header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"])
+            self.observation_info[name] = float(
+                header[f"HIERARCH ESO TEL{self.UT_number} {endKW}"]
+            )
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
                     self.observation_info[name],
@@ -139,21 +145,12 @@ class ESPRESSO(ESO_PIPELINE):
                 except:
                     pass
             if not found_UT:
-                logger.critical(f"Did not find the entry for the following UT related metric: {flag}")
+                logger.critical(
+                    f"Did not find the entry for the following UT related metric: {flag}"
+                )
 
         if found_ADC_issue:
             self._status.store_warning(KW_WARNING("ADC2 issues found"))
-    
-        espdr_to_num = lambda x:  int("".join(x.split(".")))
-        espdrversion = header["ESO PRO REC1 PIPE ID"].split("/")[-1]
-
-        if self._internal_configs["USE_APPROX_BERV_CORRECTION"]:
-            if espdr_to_num(espdrversion) >= espdrversion("3.2.0"):
-                logger.critical(f"Using approximated BERV correction in espdr/{espdrversion}")
-        else:
-            if espdr_to_num(espdrversion) < espdrversion("3.2.0"):
-                logger.critical(f"Not using approximated BERV correction in espdr/{espdrversion}")
-
 
         super().check_header_QC_ESO_DRS(header)
 

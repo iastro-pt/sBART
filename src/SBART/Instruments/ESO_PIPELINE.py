@@ -407,6 +407,20 @@ class ESO_PIPELINE(Frame):
         if self._status.number_warnings > 0:
             logger.warning("Found {} warning flags in the header KWs", self._status.number_warnings)
 
+        espdr_to_num = lambda x: int("".join(x.split(".")))
+        espdrversion = header["ESO PRO REC1 PIPE ID"].split("/")[-1]
+
+        if self._internal_configs["USE_APPROX_BERV_CORRECTION"]:
+            if espdr_to_num(espdrversion) >= espdrversion("3.2.0"):
+                logger.critical(
+                    f"Using approximated BERV correction in espdr/{espdrversion}"
+                )
+        else:
+            if espdr_to_num(espdrversion) < espdrversion("3.2.0"):
+                logger.critical(
+                    f"Not using approximated BERV correction in espdr/{espdrversion}"
+                )
+
     @property
     def bare_fname(self) -> str:
         return self.fname.split("_S")[0]
