@@ -554,7 +554,7 @@ WARNING = Flag("WARNING", value="W", fatal_flag=False, is_good_flag=False, is_wa
 SIGMA_CLIP_REJECTION = Flag("SIGMA CLIP", value="SC")
 USER_BLOCKED = Flag("USER_BLOCKED", value="U")
 FATAL_KW = Flag("FATAL_KW", value="F")
-KW_WARNING = Flag("KW_WARNING", value="KW_W", is_warning=True)
+KW_WARNING = Flag("KW_WARNING", value="KW_W", is_warning=True, fatal_flag=False)
 
 MISSING_FILE = Flag("MISS_FILE", value="M")
 NO_VALID_ORDERS = Flag("NO_VALID_ORDERS", value="NO")
