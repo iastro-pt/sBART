@@ -7,17 +7,28 @@ from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 
 from .Stellar_Template import StellarTemplate
-
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    NumericValue,
+    PathValue,
+    UserParam,
+)
 
 class OBS_Stellar(StellarTemplate):
     """Stellar template from the observation with the highest SNR (computed as a sum over all spectral orders)
     """
 
     method_name = "OBSERVATION"
+    _default_params = StellarTemplate._default_params
+
+    _default_params.update(
+        "MINIMUM_NUMBER_OBS",
+        UserParam(1, constraint=NumericValue, mandatory=False),
+    )
 
     def __init__(self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False):
         super().__init__(subInst=subInst, user_configs=user_configs, loaded=loaded)
-
         self._selected_frameID = None
         self._found_error = False
 
@@ -47,3 +58,5 @@ class OBS_Stellar(StellarTemplate):
         self.spectral_mask = Mask(mask, mask_type="binary")
 
         self._finish_template_creation()
+
+    def store_metrics(self): ...
