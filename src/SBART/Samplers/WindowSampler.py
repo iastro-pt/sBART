@@ -90,4 +90,6 @@ class WindowSampler(SamplerModel):
         out_pkg["RV"] = 0
         out_pkg["RV_uncertainty"] = 1
         out_pkg["chi_squared_fit_params"] = [0, 0]
+        out_pkg["DLW"] = 0
+        out_pkg["DLW_ERR"] = 0
         return out_pkg, SUCCESS
