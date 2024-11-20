@@ -504,6 +504,14 @@ class DataClass(BASE):
             frame = self.get_frame_by_ID(fId)
             frame.scale_spectra(factor)
 
+    def set_stellar_RV_to_zero(self) -> None:
+        """
+        Allow to override the stellar RV so that it is fixed to zero
+        """
+        for fID in self.get_valid_frameIDS():
+            f = self.get_frame_by_ID(fID)
+            f.observation_info["DRS_RV"] = 0 * kilometer_second
+
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
 
@@ -954,7 +962,7 @@ class DataClass(BASE):
         for key, load_func in self.get_extra_loading_functions().items():
             if self.has_instrument_data(key):
                 logger.info(f"Dataclass has {key} data. Extra loading is being triggered")
-                load_func()
+                load_func(self)
                 return
 
         logger.info("Current instrument does not need to load anything from the outside")
