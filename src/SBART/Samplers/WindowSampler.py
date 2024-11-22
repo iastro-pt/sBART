@@ -3,13 +3,13 @@ It will evaluate the "metric" of a given RV_routine in a pre-determined set of p
 """
 
 from typing import Tuple
-
+import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.work_packages import Package
-
+from SBART.utils.units import meter_second
 
 class WindowSampler(SamplerModel):
     _name = "Window"
@@ -93,3 +93,62 @@ class WindowSampler(SamplerModel):
         out_pkg["DLW"] = 0
         out_pkg["DLW_ERR"] = 0
         return out_pkg, SUCCESS
+
+    def optimize_epochwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
+        """Compute the RV for an entire order, followed by a parabolic fit to estimate
+        uncertainty and better adjust chosen RV
+
+        Parameters
+        ----------
+        target : [type]
+            [description]
+        target_kwargs : [type]
+            Input arguments of the target function. Must contain the following:
+                - dataClassProxy,
+                - frameID
+                - order
+
+        Returns
+        -------
+        [type]
+            [description]
+
+        """
+        out_pkg = Package(("RV_array", "metric_evaluations"))
+
+        metric_profile = []
+        RV_array = []
+        target_kwargs["current_frameID"] = target_kwargs["run_information"]["frameID"]
+        RV_window = self.model_params.get_RV_bounds(target_kwargs["current_frameID"])
+        current_RV = RV_window[0].copy()
+        while True:
+            if current_RV >= RV_window[1]:
+                break
+            metric_profile.append(
+                self.apply_epochwise(
+                    optimizer_estimate=[current_RV.to(meter_second).value],
+                    config_dict=target_kwargs,
+                )
+            )
+            RV_array.append(current_RV)
+
+            current_RV = current_RV + self.RV_step
+        out_pkg["RV_array"] = RV_array
+        out_pkg["metric_evaluations"] = metric_profile
+
+        # Compatibility with RV_step
+        out_pkg["RV"] = 0
+        out_pkg["RV_uncertainty"] = 1
+        out_pkg["chi_squared_fit_params"] = [0, 0]
+        out_pkg["DLW"] = 0
+        out_pkg["DLW_ERR"] = 0
+        return out_pkg, SUCCESS
+
+    def compute_epochwise_combination(self, outputs):
+        return np.sum(
+            [
+                pkg["log_likelihood_from_order"]
+                for pkg in outputs
+                if pkg["status"] == SUCCESS
+            ]
+        )
