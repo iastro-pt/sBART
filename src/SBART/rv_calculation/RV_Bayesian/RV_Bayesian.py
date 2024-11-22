@@ -95,7 +95,7 @@ class RV_Bayesian(RV_routine):
             RV_configs=RV_configs,
             sampler=sampler,
             target=SBART_target,
-            valid_samplers=["Laplace", "MCMC"],
+            valid_samplers=["Laplace", "MCMC", "Window"],
         )
 
         if self._internal_configs["include_jitter"]:
