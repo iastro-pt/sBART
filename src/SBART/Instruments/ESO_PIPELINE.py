@@ -416,7 +416,7 @@ class ESO_PIPELINE(Frame):
                     f"Using approximated BERV correction in espdr/{espdrversion}"
                 )
         else:
-            if espdr_to_num(espdrversion) < espdrversion("3.2.0"):
+            if espdr_to_num(espdrversion) < espdr_to_num("3.2.0"):
                 logger.critical(
                     f"Not using approximated BERV correction in espdr/{espdrversion}"
                 )
