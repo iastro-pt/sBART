@@ -2,7 +2,9 @@
 It will evaluate the "metric" of a given RV_routine in a pre-determined set of points
 """
 
+from collections import defaultdict
 from typing import Tuple
+from SBART.utils.custom_exceptions import FrameError
 import numpy as np
 from loguru import logger
 
@@ -92,6 +94,7 @@ class WindowSampler(SamplerModel):
         out_pkg["chi_squared_fit_params"] = [0, 0]
         out_pkg["DLW"] = 0
         out_pkg["DLW_ERR"] = 0
+        out_pkg["order"] = 0
         return out_pkg, SUCCESS
 
     def optimize_epochwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
@@ -134,14 +137,17 @@ class WindowSampler(SamplerModel):
 
             current_RV = current_RV + self.RV_step
         out_pkg["RV_array"] = RV_array
+        out_pkg["status"] = SUCCESS
         out_pkg["metric_evaluations"] = metric_profile
-
+        out_pkg["frameID"] = target_kwargs["run_information"]["frameID"]
         # Compatibility with RV_step
-        out_pkg["RV"] = 0
-        out_pkg["RV_uncertainty"] = 1
+        out_pkg["RV"] = 0 * meter_second
+        out_pkg["RV_uncertainty"] = 1 * meter_second
         out_pkg["chi_squared_fit_params"] = [0, 0]
-        out_pkg["DLW"] = 0
-        out_pkg["DLW_ERR"] = 0
+        out_pkg["DLW"] = [0]
+        out_pkg["DLW_ERR"] = [0]
+        out_pkg["order"] = [1]
+        out_pkg["FluxModel_misspecification_from_order"] = [[100, 100]]
         return out_pkg, SUCCESS
 
     def compute_epochwise_combination(self, outputs):
@@ -152,3 +158,17 @@ class WindowSampler(SamplerModel):
                 if pkg["status"] == SUCCESS
             ]
         )
+
+    def process_epochwise_metrics(self, outputs):
+        processed_package = defaultdict(list)
+        for pkg in outputs:
+            if pkg["status"] == SUCCESS:
+                for key, item in pkg.items():
+                    processed_package[key].append(item)
+        if len(set(processed_package["frameID"])) != 1:
+            raise FrameError(
+                f"Mixing multiple frameIDs {set(processed_package['frameID'])}"
+            )
+        processed_package["frameID"] = processed_package["frameID"][0]
+
+        return processed_package
