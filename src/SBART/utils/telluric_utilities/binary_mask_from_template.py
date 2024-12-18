@@ -20,7 +20,7 @@ def create_binary_template(transmittance, continuum_level, percentage_drop) -> N
     telluric_indexes = np.where(percentages < -percentage_drop / 100)
 
     # We want a binary template
-    telluric_mask = np.zeros_like(self.transmittance_spectra, dtype=int)
+    telluric_mask = np.zeros_like(transmittance_spectra, dtype=int)
     telluric_mask[telluric_indexes] = 1
 
     return telluric_mask
