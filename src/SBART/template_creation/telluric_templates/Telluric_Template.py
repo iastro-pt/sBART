@@ -32,6 +32,7 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueInInterval,
 )
+from SBART.utils.telluric_utilities import create_binary_template
 
 
 class TelluricTemplate(BaseTemplate):
@@ -422,17 +423,15 @@ class TelluricTemplate(BaseTemplate):
         if not self.for_feature_removal:
             logger.warning("Telluric Template will not be used to remove spectra. No need to create binary mask")
             return
+
+        telluric_mask = create_binary_template(
+            transmittance=self.transmittance_spectra,
+            continuum_level=continuum_level,
+            percentage_drop=self._internal_configs["continuum_percentage_drop"],
+        )
         # Find a decrease of 1% in relation to the continuum level; Positive
         # gains (against the continuum value) are not considered as tellurics
-        percentages = (self.transmittance_spectra - continuum_level) / continuum_level
-        telluric_indexes = np.where(percentages < -self._internal_configs["continuum_percentage_drop"] / 100)
-
-        # We want a binary template
-        telluric_mask = np.zeros_like(self.transmittance_spectra, dtype=int)
-        telluric_mask[telluric_indexes] = 1
-
         self.template = telluric_mask
-
         self._compute_wave_blocks()
 
     #######################################
@@ -574,6 +573,8 @@ class TelluricTemplate(BaseTemplate):
         self.add_to_status(DISK_LOADED_DATA(f"Loaded data from {loading_path}"))
 
     def _finish_template_creation(self):
-        self.create_binary_template(self._continuum_level)
+        if self.template is None:
+            # This ensures that we don't create multiple times the binary mask
+            self.create_binary_template(self._continuum_level)
 
         super()._finish_template_creation()
