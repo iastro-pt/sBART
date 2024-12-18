@@ -31,6 +31,7 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromList,
 )
+from SBART.utils.telluric_utilities import create_binary_template
 
 from .Telluric_Template import TelluricTemplate
 
@@ -143,14 +144,23 @@ class TelfitTelluric(TelluricTemplate):
     """
 
     _default_params = TelluricTemplate._default_params + DefaultValues(
-        atmosphere_profile=UserParam("GDAS", constraint=StringValue),  # GDAS / default / path
+        atmosphere_profile=UserParam(
+            "GDAS", constraint=StringValue
+        ),  # GDAS / default / path
         FIT_MODEL=UserParam(False, constraint=BooleanValue),
         TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue),
         FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
         # step size for telluric model wavelengths
         PARAMS_TO_FIT=UserParam(
             ["pressure", "humidity"],
-            constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
+            constraint=ValueFromList(
+                ["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]
+            ),
+        ),
+        IND_WATER_MASK_THRESHOLD=UserParam(
+            default_value=np.inf,
+            constraint=Positive_Value_Constraint,
+            description="Independent masking of water features, using a different threshold than for other molecules",
         ),
     )
 
@@ -287,7 +297,9 @@ class TelfitTelluric(TelluricTemplate):
                     failed_tests.append(selected_ID)
                     frames_to_search = frames_to_search[1:]
             else:
-                logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
+                logger.warning(
+                    "Couldn't download any of the GDAS profiles. Moving on for the default profile"
+                )
 
         if self._internal_configs["atmosphere_profile"] == "default":
             logger.warning("Using the default atmosphere profile!")
@@ -459,22 +471,57 @@ class TelfitTelluric(TelluricTemplate):
         names = self._fitModel.get_component_names(include_disabled=True)
         logger.debug(f"Parameters in use: {names}")
         logger.info(f"Using params: {parameter_values}")
+
+        # This is the model with every molecule in the dataset. If there is no individual masking for water
+        # This will work with the same threshold for every single element
+        threshold = self._internal_configs["continuum_percentage_drop"]
+        if np.isfinite(self._internal_configs["IND_WATER_MASK_THRESHOLD"]):
+            threshold = self._internal_configs["IND_WATER_MASK_THRESHOLD"]
+
         wavelengths, tell_spectra = self._generate_telluric_model(
             model_parameters={},
             OBS_properties=OBS_properties,
             fixed_params=dict(zip(names, parameter_values)),
         )
 
-        self.transmittance_wavelengths, self.transmittance_spectra = (
-            wavelengths,
-            tell_spectra,
+        self.template = create_binary_template(
+            transmittance=tell_spectra,
+            continuum_level=1.0,
+            percentage_drop=threshold,
         )
-        logger.info("Telfit model is complete.")
 
         # ! no median filtering (might still be needed in the future)
         self._continuum_level = 1.0
         self.wavelengths = wavelengths * 10  # convert to the prevalent wavelength units
 
+        self.transmittance_wavelengths, self.transmittance_spectra = (
+            wavelengths,
+            tell_spectra,
+        )
+
+        if np.isfinite(self._internal_configs["IND_WATER_MASK_THRESHOLD"]):
+            # We wanted an individual mask for water, which means that now we have to
+            # create the mask with the correct transmittance for the other elements
+
+            parameters = {}
+            for key, value in zip(names, parameter_values):
+                parameters[key] = value
+                if key == "humidity":
+                    parameters[key] = 0
+
+            _, tell_spectra = self._generate_telluric_model(
+                model_parameters={},
+                OBS_properties=OBS_properties,
+                fixed_params=parameters,
+            )
+
+            self.template += create_binary_template(
+                transmittance=tell_spectra,
+                continuum_level=1.0,
+                percentage_drop=self._internal_configs["continuum_percentage_drop"],
+            )
+
+        self._compute_wave_blocks()
         self._finish_template_creation()
 
     def _generate_model_parameters(self, dataClass):
