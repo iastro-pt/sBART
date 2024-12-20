@@ -157,8 +157,8 @@ class TelfitTelluric(TelluricTemplate):
                 ["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]
             ),
         ),
-        IND_WATER_MASK_THRESHOLD=UserParam(
-            default_value=np.inf,
+        IND_WATER_MASK_THRESHOLD=UserParam( # Ensuring that things don't blow up when storing the fits files (inf will do that)
+            default_value=1e8,
             constraint=Positive_Value_Constraint,
             description="Independent masking of water features, using a different threshold than for other molecules",
         ),
@@ -475,7 +475,11 @@ class TelfitTelluric(TelluricTemplate):
         # This is the model with every molecule in the dataset. If there is no individual masking for water
         # This will work with the same threshold for every single element
         threshold = self._internal_configs["continuum_percentage_drop"]
-        if np.isfinite(self._internal_configs["IND_WATER_MASK_THRESHOLD"]):
+
+        USE_INDEPENDENT_WATER = self._internal_configs["IND_WATER_MASK_THRESHOLD"] < 1e6
+        if USE_INDEPENDENT_WATER:
+            logger.debug("There is water")
+
             threshold = self._internal_configs["IND_WATER_MASK_THRESHOLD"]
 
         wavelengths, tell_spectra = self._generate_telluric_model(
@@ -499,27 +503,34 @@ class TelfitTelluric(TelluricTemplate):
             tell_spectra,
         )
 
-        if np.isfinite(self._internal_configs["IND_WATER_MASK_THRESHOLD"]):
+        if USE_INDEPENDENT_WATER:
             # We wanted an individual mask for water, which means that now we have to
             # create the mask with the correct transmittance for the other elements
-
+            logger.debug("Starting full spectra model")
             parameters = {}
             for key, value in zip(names, parameter_values):
                 parameters[key] = value
                 if key == "humidity":
                     parameters[key] = 0
 
-            _, tell_spectra = self._generate_telluric_model(
+            logger.warning(f"Original value: {tell_spectra.shape}")
+
+            waves, tell_spectra = self._generate_telluric_model(
                 model_parameters={},
                 OBS_properties=OBS_properties,
                 fixed_params=parameters,
+                grid=wavelengths,
             )
 
+            logger.warning(f"New value: {tell_spectra.shape}")
             self.template += create_binary_template(
                 transmittance=tell_spectra,
                 continuum_level=1.0,
                 percentage_drop=self._internal_configs["continuum_percentage_drop"],
             )
+
+            # Ensure that we don't have values grater than 1, to keep consistency
+            self.template[np.where(self.template>1)] = 1
 
         self._compute_wave_blocks()
         self._finish_template_creation()
