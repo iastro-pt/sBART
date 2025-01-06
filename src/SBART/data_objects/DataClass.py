@@ -355,9 +355,9 @@ class DataClass(BASE):
             collected_KW = set(self.collect_KW_observations(equal_KW, self._inst_type.sub_instruments))
 
             if len(collected_KW) != 1:
-                logger.warning("Different values for the KW value <{}>: {}", equal_KW, collected_KW)
-            else:
-                logger.info("Loaded data from KW : {}", equal_KW, collected_KW)
+                logger.warning(
+                    "Different values for the KW value <{}>: {}", equal_KW, collected_KW
+                )
 
         mapping_values = defaultdict(list)
         for fID in self.get_valid_frameIDS():
