@@ -216,7 +216,6 @@ class SumStellar(StellarTemplate):
 
         for frameID in self.frameIDs_to_use:
             # to avoid multiple processes opening the arrays at the same time, we open it beforehand
-            logger.info("Starting frameID: {}", frameID)
             try:
                 _ = dataClass.load_frame_by_ID(frameID)
             except custom_exceptions.FrameError:
