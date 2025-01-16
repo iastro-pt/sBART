@@ -110,8 +110,11 @@ class RV_cube(BASE):
             "date_folders",
             "bare_filename",
             "CONTRAST",
+            "CONTRAST_ERR",
             "BIS SPAN",
+            "BIS SPAN_ERR",
             "FWHM",
+            "FWHM_ERR",
         ]
         self.time_key = None
         self.cached_info = {key: [] for key in needed_keys}
@@ -1239,8 +1242,11 @@ class RV_cube(BASE):
 
         try:
             new_cube.cached_info["CONTRAST"] = timeseries_table["CONTRAST"]
+            new_cube.cached_info["CONTRAST_ERR"] = timeseries_table["CONTRAST_ERR"]
             new_cube.cached_info["FWHM"] = timeseries_table["FWHM"]
+            new_cube.cached_info["FWHM_ERR"] = timeseries_table["FWHM_ERR"]
             new_cube.cached_info["BIS SPAN"] = timeseries_table["BIS SPAN"]
+            new_cube.cached_info["BIS SPAN_ERR"] = timeseries_table["BIS SPAN_ERR"]
         except:
             logger.warning(
                 "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
