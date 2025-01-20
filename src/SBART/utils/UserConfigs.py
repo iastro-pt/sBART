@@ -1,6 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, Dict, NoReturn, Optional, Iterable
 
 import numpy as np
 from loguru import logger
@@ -80,7 +80,7 @@ class ValueFromDtype(Constraint):
 
 
 class ValueFromList(Constraint):
-    def __init__(self, available_options):
+    def __init__(self, available_options: Iterable):
         super().__init__(const_text=f"Value from list <{available_options}>")
         self.available_options = available_options
 
