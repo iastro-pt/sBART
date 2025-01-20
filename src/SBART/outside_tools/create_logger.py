@@ -47,7 +47,7 @@ def setup_SBART_logger(
             sys.stdout,
             level=terminal_log_level,
             colorize=True,
-            format="{time:YYYY-MM-DDTHH:mm:ss} - <c>{name}</> - <level>{level}</> - {message}",
+            format="{time:YYYY-MM-DDTHH:mm:ss} - <level>{level:8s}</> - <c>{name}</> - {message}",
         )
         # but we do want to see the values, so I don't really care about this!
         logger.add(sys.stderr, level="ERROR", format=fmt)
