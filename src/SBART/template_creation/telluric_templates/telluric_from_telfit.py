@@ -2,21 +2,20 @@ import contextlib
 import os
 import tarfile
 import urllib.request
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
-
-
-
 from loguru import logger
 
 from SBART import SBART_LOC
 from SBART.internals.cache import DB_connection
 from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.paths_tools import file_older_than
-from SBART.utils.status_codes import SUCCESS
 from SBART.utils.SBARTtypes import UI_DICT
+from SBART.utils.status_codes import SUCCESS
+from SBART.utils.telluric_utilities import create_binary_template
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -26,7 +25,6 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromList,
 )
-from SBART.utils.telluric_utilities import create_binary_template
 
 from .Telluric_Template import TelluricTemplate
 
@@ -594,12 +592,15 @@ class TelfitTelluric(TelluricTemplate):
 
     def store_metrics(self):
         super().store_metrics()
-        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
-        parameter_values = self._fitModel.get_fit_results_from_frameID(
-            frameID=self._reference_frameID, allow_disabled=True,
-        )
-        names = self._fitModel.get_component_names(include_disabled=True)
 
-        with open(metrics_path / f"telfit_info_{self._associated_subInst}.txt", mode="w") as to_write:
-            for nam, val in zip(names, parameter_values):
-                to_write.write(f"{nam}:  {val}\n")
+        if self.for_feature_correction or self.disk_save_level == DISK_SAVE_MODE.DISABLED:
+            metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
+            parameter_values = self._fitModel.get_fit_results_from_frameID(
+                frameID=self._reference_frameID,
+                allow_disabled=True,
+            )
+            names = self._fitModel.get_component_names(include_disabled=True)
+
+            with open(metrics_path / f"telfit_info_{self._associated_subInst}.txt", mode="w") as to_write:
+                for nam, val in zip(names, parameter_values):
+                    to_write.write(f"{nam}:  {val}\n")
