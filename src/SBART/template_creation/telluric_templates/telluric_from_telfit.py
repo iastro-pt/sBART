@@ -6,12 +6,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-try:
-    import telfit
 
-    MISSING_TELFIT = False
-except ModuleNotFoundError:
-    MISSING_TELFIT = True
 
 from loguru import logger
 
@@ -174,8 +169,6 @@ class TelfitTelluric(TelluricTemplate):
         application_mode: str = "removal",
         loaded: bool = False,
     ):
-        if MISSING_TELFIT:
-            raise custom_exceptions.InvalidConfiguration("Telfit is not currently installed")
         super().__init__(
             subInst=subInst,
             extension_mode=extension_mode,
@@ -229,8 +222,8 @@ class TelfitTelluric(TelluricTemplate):
 
         for comp in model_components:
             self._fitModel.add_extra_param(comp)
-
-        self.modeler = telfit.Modeler(print_lblrtm_output=False)
+        
+        self.modeler = None
 
     def _prepare_GDAS_data(self, dataClass, selected_frame):  # pylint: disable=C0103
         logger.info("Preparing GDAS data load!")
@@ -450,6 +443,12 @@ class TelfitTelluric(TelluricTemplate):
         [1] https://github.com/kgullikson88/Telluric-Fitter
 
         """
+        try:
+            import telfit
+        except ModuleNotFoundError:
+            raise custom_exceptions.InternalError("Telfit is not istalled")
+        self.modeler = telfit.Modeler(print_lblrtm_output=False)
+
         try:
             super().create_telluric_template(dataClass, custom_frameID=custom_frameID)
         except custom_exceptions.StopComputationError:
