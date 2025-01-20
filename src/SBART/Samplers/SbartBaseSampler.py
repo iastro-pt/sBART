@@ -5,7 +5,7 @@
 """
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,8 +13,8 @@ import numpy as np
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.ModelParameters import ModelComponent
 from SBART.utils.custom_exceptions import FrameError
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import SUCCESS, Flag
-from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.work_packages import Package
 
 
@@ -34,12 +34,11 @@ class SbartBaseSampler(SamplerModel):
         self,
         mode: str,
         RV_step: RV_measurement,
-        RV_window: Tuple[RV_measurement, RV_measurement],
+        RV_window: tuple[RV_measurement, RV_measurement],
         user_configs,
         sampler_folders: Optional[Dict[str, str]] = None,
     ):
-        """Approximate the posterior distribution with a LaPlace approximation;
-        """
+        """Approximate the posterior distribution with a LaPlace approximation;"""
         extra_model_components = [
             ModelComponent("jitter", initial_guess=10, bounds=[0, None]),
             ModelComponent("trend::slope", initial_guess=0, bounds=[None, None]),
@@ -62,7 +61,8 @@ class SbartBaseSampler(SamplerModel):
 
     def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
         """Compute the RV for an entire order, followed by a parabolic fit to estimate
-        uncertainty and better adjust chosen RV
+        uncertainty and better adjust chosen RV.
+
 
         Parameters
         ----------
@@ -88,7 +88,8 @@ class SbartBaseSampler(SamplerModel):
                 for key, item in pkg.items():
                     processed_package[key].append(item)
         if len(set(processed_package["frameID"])) != 1:
-            raise FrameError(f"Mixing multiple frameIDs {set(processed_package['frameID'])}")
+            msg = f"Mixing multiple frameIDs {set(processed_package['frameID'])}"
+            raise FrameError(msg)
         processed_package["frameID"] = processed_package["frameID"][0]
 
         return processed_package
@@ -97,8 +98,7 @@ class SbartBaseSampler(SamplerModel):
         return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
 
     def show_posterior(self, mean_value, variance, RVs):
-        """Plot the approximated (Gaussian) posterior
-        """
+        """Plot the approximated (Gaussian) posterior"""
         std = np.sqrt(variance)
         gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (std * np.sqrt(2 * np.pi))
 

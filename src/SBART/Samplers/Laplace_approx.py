@@ -1,12 +1,12 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 from loguru import logger
 from scipy.misc import derivative
 from scipy.optimize import minimize, minimize_scalar
 
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
-from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package
 
@@ -24,8 +24,8 @@ class Laplace_approx(SbartBaseSampler):
     def __init__(
         self,
         RV_step: RV_measurement,
-        rv_prior: Tuple[RV_measurement, RV_measurement],
-        user_configs: Optional[Dict[str, Any]] = None,
+        rv_prior: tuple[RV_measurement, RV_measurement],
+        user_configs: Optional[dict[str, Any]] = None,
     ):
         """Parameters
         ----------
@@ -47,7 +47,7 @@ class Laplace_approx(SbartBaseSampler):
             "scipy": minimize_scalar,
         }
 
-    def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
+    def optimize(self, target, target_kwargs: dict) -> tuple[Package, Flag]:
         """Compute the RVs in the selected mode.
 
         Parameters
@@ -71,7 +71,8 @@ class Laplace_approx(SbartBaseSampler):
         params_to_use = self.model_params.get_enabled_params()
 
         initial_guesses, bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second,
+            frameID=target_kwargs["run_information"]["frameID"],
+            rv_units=meter_second,
         )
 
         if self.mode == "order-wise":
