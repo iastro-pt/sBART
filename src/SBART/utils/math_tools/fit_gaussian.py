@@ -12,7 +12,7 @@ except ImportError:
 from loguru import logger
 
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
-from SBART.utils.types import unitless_data_vector
+from SBART.utils.SBARTtypes import unitless_data_vector
 
 
 def fit_CCF_gaussian(

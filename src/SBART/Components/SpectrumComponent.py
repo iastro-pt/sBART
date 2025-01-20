@@ -12,7 +12,7 @@ from SBART.utils.shift_spectra import (
     remove_BERV_correction,
 )
 from SBART.utils.status_codes import OrderStatus
-from SBART.utils.types import RV_measurement
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.units import kilometer_second
 
 

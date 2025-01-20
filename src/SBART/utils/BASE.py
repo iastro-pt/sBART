@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
-from SBART.utils.types import UI_DICT, UI_PATH
+from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, InternalParameters
 
 

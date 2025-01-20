@@ -27,7 +27,7 @@ from SBART.utils.status_codes import (
     Status,
 )
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import check_if_overlap
-from SBART.utils.types import RV_measurement
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.units import kilometer_second
 from SBART.utils.UserConfigs import (
     BooleanValue,

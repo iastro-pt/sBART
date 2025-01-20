@@ -11,7 +11,7 @@ from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import BadTemplateError, NoDataError
 from SBART.utils.spectral_conditions import ConditionModel, Empty_condition
 from SBART.utils.status_codes import INTERNAL_ERROR
-from SBART.utils.types import UI_DICT, UI_PATH
+from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,

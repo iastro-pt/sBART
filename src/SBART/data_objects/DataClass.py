@@ -38,7 +38,7 @@ from SBART.utils.status_codes import (  # for entire frame; for individual pixel
     TELLURIC,
     Status,
 )
-from SBART.utils.types import UI_PATH
+from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.units import kilometer_second
 
 

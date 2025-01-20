@@ -14,7 +14,7 @@ from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.ModelParameters import ModelComponent
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
-from SBART.utils.types import RV_measurement
+from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.work_packages import Package
 
 

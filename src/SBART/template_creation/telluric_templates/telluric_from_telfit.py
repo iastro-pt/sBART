@@ -16,7 +16,7 @@ from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.status_codes import SUCCESS
-from SBART.utils.types import UI_DICT
+from SBART.utils.SBARTtypes import UI_DICT
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,

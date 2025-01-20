@@ -12,7 +12,7 @@ from typing import Optional, Union
 
 from astropy import units
 
-from SBART.utils.types import RV_measurement, data_vector
+from SBART.utils.SBARTtypes import RV_measurement, data_vector
 
 meter_second = 1 * units.m / units.second
 

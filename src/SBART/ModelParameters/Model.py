@@ -6,7 +6,7 @@ from loguru import logger
 
 from SBART.utils import custom_exceptions
 from SBART.utils.status_codes import Flag
-from SBART.utils.types import RV_measurement
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.units import convert_data
 
 
