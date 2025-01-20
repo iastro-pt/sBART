@@ -26,6 +26,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
 )
+from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):
@@ -127,7 +128,6 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         array_size = dataClass.get_instrument_information()["array_size"]
         self.array_size = array_size
         self._OrderStatus = OrderStatus(array_size[0])
-
         try:
             self.frameIDs_to_use = dataClass.get_frameIDs_from_subInst(self._associated_subInst)
         except NoDataError:
@@ -323,7 +323,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         try:
             super().trigger_data_storage(clobber)
             self._store_json_information()
-            self.store_metrics()
+            if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+                self.store_metrics()
         except custom_exceptions.FailedStorage:
             return
 
@@ -331,14 +332,14 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         logger.info("Storing template flags to disk")
         storage_path = self._internalPaths.get_path_to("RunTimeProds", as_posix=False)
 
-        detailedFlags_storage = build_filename(
+        detailedflags_storage = build_filename(
             storage_path,
             f"DetailedFlags_{self._associated_subInst}",
             fmt="json",
         )
-        self._OrderStatus.store_as_json(detailedFlags_storage)
+        self._OrderStatus.store_as_json(detailedflags_storage)
 
-        miscInfo = build_filename(
+        miscinfo = build_filename(
             storage_path,
             f"miscInfo_{self._associated_subInst}",
             fmt="json",
@@ -348,7 +349,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         # Note2: carefull with the datatypes that are stored in here...
         # Note3: The miscInfo file will use the parameters of this dict on a setattr
 
-        with open(miscInfo, mode="w") as file:
+        with open(miscinfo, mode="w") as file:
             json.dump(self.get_miscInfo_of_template(), file, indent=4)
 
     def get_miscInfo_of_template(self) -> Dict[str, Any]:
