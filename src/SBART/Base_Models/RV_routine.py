@@ -33,6 +33,7 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 from SBART.utils.work_packages import ShutdownPackage
+from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class RV_routine(BASE):
@@ -146,7 +147,11 @@ class RV_routine(BASE):
             + IterableMustHave(("MJD", "BJD"), mode="either"),
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
-        SAVE_DISK_SPACE=UserParam(False, constraint=BooleanValue),
+        SAVE_DISK_SPACE=UserParam(
+            DISK_SAVE_MODE.DISABLED,
+            constraint=ValueFromList(DISK_SAVE_MODE),
+            description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
+        ),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))),
         # How we select the wavelength regions to use. TODO: think about this one
@@ -341,11 +346,7 @@ class RV_routine(BASE):
             check_metadata=check_metadata,
         )
 
-        if self._internal_configs["SAVE_DISK_SPACE"]:
-            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
-            self.sampler.enable_disk_savings()
-        else:
-            self.sampler.disable_disk_savings()
+        self.sampler.update_disk_saving_level(level=self._internal_configs["SAVE_DISK_SPACE"])
 
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
@@ -501,7 +502,8 @@ class RV_routine(BASE):
             subInst,
             time.time() - init_time,
         )
-        self.create_extra_plots(updated_cube)
+        if self._internal_configs["SAVE_DISK_SPACE"] != DISK_SAVE_MODE.EXTREME:
+            self.create_extra_plots(updated_cube)
         return updated_cube
 
     def create_extra_plots(self, cube) -> NoReturn:
