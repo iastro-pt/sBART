@@ -12,7 +12,7 @@ from SBART.utils.custom_exceptions import (
     InvalidConfiguration,
 )
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
-from SBART.utils.types import UI_DICT
+from SBART.utils.SBARTtypes import UI_DICT
 from SBART.utils.units import meter_second
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package, WorkerInput

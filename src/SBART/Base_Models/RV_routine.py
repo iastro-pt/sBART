@@ -21,7 +21,7 @@ from SBART.utils.custom_exceptions import (
     InvalidConfiguration,
 )
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
-from SBART.utils.types import UI_PATH
+from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
