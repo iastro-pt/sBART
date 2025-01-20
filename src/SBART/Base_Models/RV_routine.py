@@ -158,6 +158,10 @@ class RV_routine(BASE):
             default_value="OBSERVATION",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
         ),
+        COMPUTE_SA_CORRECTION=UserParam(default_value=False,
+                                        constraint=BooleanValue,
+                                        description="If True (default) include the value of SA correction in outputs"
+                                   )
     )
 
     def __init__(
@@ -360,6 +364,7 @@ class RV_routine(BASE):
                 subInsts=self._subInsts_to_use,
                 output_keys=self._internal_configs["output_fmt"],
                 storage_path=self._internalPaths.root_storage_path,
+                compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
             )
 
         # TO be over-written by the child classes

@@ -55,6 +55,7 @@ class RV_holder(BASE):
         subInsts: List[str],
         output_keys: List[str],
         storage_path: Path,
+        compute_SA_values: bool,
     ):
         super().__init__(
             user_configs={},
@@ -64,6 +65,7 @@ class RV_holder(BASE):
             },
             root_level_path=storage_path,
         )
+        self._compute_SA_values = compute_SA_values
 
         self.output_keys = None
 
@@ -366,6 +368,7 @@ class RV_holder(BASE):
             dataClassProxy.get_instrument_information(),
             has_orderwise_rvs=has_orderwise_rvs,
             is_SA_corrected=frame0.is_SA_corrected,
+            disable_SA_computation=not self._compute_SA_values
         )
         fold_name = "merged_subInst" if is_merged else "individual_subInst"
         cube_root_folder = self._internalPaths.get_path_to(fold_name, as_posix=False)
@@ -420,9 +423,9 @@ class RV_holder(BASE):
         logger.debug(
             "Found {} subInstruments: {}".format(len(available_subInsts), available_subInsts)
         )
-
+        
         new_holder = RV_holder(
-            subInsts=available_subInsts, output_keys=[], storage_path=high_level_path
+            subInsts=available_subInsts, output_keys=[], storage_path=high_level_path, storage_mode="one-shot", compute_SA_values=True
         )
 
         for path in high_level_path.iterdir():

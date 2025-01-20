@@ -32,6 +32,7 @@ from SBART.utils.units import (
     meter_second,
 )
 from SBART.utils.work_packages import Package
+from SBART.utils.types import RV_measurement
 
 
 class RV_cube(BASE):
@@ -51,6 +52,7 @@ class RV_cube(BASE):
         instrument_properties: dict,
         has_orderwise_rvs,
         is_SA_corrected: bool,
+        disable_SA_computation: bool = False
     ):
         """It contains:
             - the SA correction value (and applies it)
@@ -65,6 +67,7 @@ class RV_cube(BASE):
         """
         self.is_SA_corrected = is_SA_corrected
         self._associated_subInst = subInst
+        self._disable_SA_computation = disable_SA_computation
 
         super().__init__(
             user_configs={},
@@ -367,10 +370,19 @@ class RV_cube(BASE):
 
         return times[ID_index], rvs[ID_index], uncerts[ID_index]
 
-    def compute_SA_correction(self):
+    def compute_SA_correction(self) -> List[RV_measurement[meter_second]]:
+        """Compute the SA correction for each point. Returns zeros if the SA correction is disabled
+
+        Returns:
+            List[RV_measurement[meter_second]]: List with the SA value for each point
+        """
+        
         if "SA_correction" in self.cached_info:
             return self.cached_info["SA_correction"]
 
+        if self._disable_SA_computation:
+            return [0*meter_second for _ in self.obs_times]
+        
         logger.info("Starting SA correction")
 
         SA = self.cached_info["target"].secular_acceleration
