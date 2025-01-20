@@ -69,9 +69,9 @@ class RV_holder(BASE):
 
         self.output_keys = None
 
-        self._individual_cubes = {subInst: None for subInst in subInsts}
+        self._individual_cubes: dict[str, None | RV_cube] = {subInst: None for subInst in subInsts}
 
-        self._merged_cubes = {subInst: None for subInst in subInsts}
+        self._merged_cubes: dict[str, None | RV_cube] = {subInst: None for subInst in subInsts}
         self.update_output_keys(output_keys)
 
     def update_output_keys(self, keys):
