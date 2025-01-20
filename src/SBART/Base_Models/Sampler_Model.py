@@ -16,6 +16,7 @@ from SBART.utils.SBARTtypes import UI_DICT
 from SBART.utils.units import meter_second
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package, WorkerInput
+from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class SamplerModel(BASE):
@@ -74,7 +75,7 @@ class SamplerModel(BASE):
         self.mode = mode
         self.RV_step = RV_step
         self.mem_save_enabled = False
-        self.disk_save_enabled = False
+
         self.is_merged_subInst = False
 
         RV_param = RV_component(
@@ -221,7 +222,7 @@ class SamplerModel(BASE):
 
     def apply_epochwise(self, optimizer_estimate, config_dict):
         """Application of the model's parameters to all spectral orders at the same time. The children classes
-        must implement this on their own, as the application stratagies will end up being different for each
+        must implement this on their own, as the application stratagies will end up being different for each.
 
         Parameters
         ----------
@@ -325,7 +326,8 @@ class SamplerModel(BASE):
         }
 
         if len(valid_orders) == 0:
-            raise InvalidConfiguration(f"{self.name} has no valid order for which it can compute RVs")
+            msg = f"{self.name} has no valid order for which it can compute RVs"
+            raise InvalidConfiguration(msg)
 
         if self.mode == "order-wise":
             return self._orderwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
@@ -487,18 +489,9 @@ class SamplerModel(BASE):
         logger.info("{} disabling memory saving mode", self.name)
         self.mem_save_enabled = False
 
-    def enable_disk_savings(self) -> NoReturn:
-        """Save, as much as possible, disk space when saving the worker outputs. Each target function will
-        decide on the details of such "savings"
-
-        Returns
-        -------
-
-        """
-        self.disk_save_enabled = True
-
-    def disable_disk_savings(self) -> NoReturn:
-        self.disk_save_enabled = False
+    def update_disk_saving_level(self, level: DISK_SAVE_MODE) -> None:
+        """Update the disk save level"""
+        self.disk_save_level = level
 
     def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
         worker_IN_pkg = WorkerInput()
