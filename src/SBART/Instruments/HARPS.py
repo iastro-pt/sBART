@@ -51,8 +51,8 @@ class HARPS(ESO_PIPELINE):
     """
 
     sub_instruments = {
-        "HARPSpre": datetime.datetime.strptime("2015-05-29", r"%Y-%m-%d"),
-        "HARPSpost": datetime.datetime.max,
+        "HARPS03": datetime.datetime.strptime("2015-05-29", r"%Y-%m-%d"),
+        "HARPS15": datetime.datetime.max,
     }
 
     _name = "HARPS"
