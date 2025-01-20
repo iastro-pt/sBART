@@ -8,7 +8,9 @@ from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues
+from SBART.utils.UserConfigs import DefaultValues, UserParam
+from SBART.utils.choices import DISK_SAVE_MODE
+from SBART.utils.UserConfigs import ValueFromList
 
 
 class TemplateFramework(BASE):
@@ -31,7 +33,13 @@ class TemplateFramework(BASE):
     model_type = "Base"
     template_map = {}
 
-    _default_params = BASE._default_params + DefaultValues()
+    _default_params = BASE._default_params + DefaultValues(
+        SAVE_DISK_SPACE=UserParam(
+            DISK_SAVE_MODE.DISABLED,
+            constraint=ValueFromList(DISK_SAVE_MODE),
+            description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
+        ),
+    )
 
     def __init__(
         self,
@@ -136,7 +144,9 @@ class TemplateFramework(BASE):
                 continue
 
             self.templates[subInst] = self._compute_template(
-                data=dataClass, subInstrument=subInst, user_configs=template_configs,
+                data=dataClass,
+                subInstrument=subInst,
+                user_configs=template_configs,
             )
 
             self.templates[subInst].generate_root_path(
