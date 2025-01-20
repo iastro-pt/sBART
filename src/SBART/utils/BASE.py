@@ -6,6 +6,7 @@ from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, InternalParameters
+from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class BASE:
@@ -38,6 +39,8 @@ class BASE:
         self._internal_configs.receive_user_inputs(user_configs)
         self._needed_folders = needed_folders
         self._status = Status(assume_valid=start_with_valid_status)  # BY DEFAULT IT IS A VALID ONE!
+
+        self.disk_save_level = DISK_SAVE_MODE.DISABLED
 
     ###
     #   Data storage
@@ -120,6 +123,11 @@ class BASE:
     @property
     def storage_name(self) -> str:
         return self.__class__._name
+
+    @property
+    def disk_save_enabled(self) -> bool:
+        """True if there is any sort of disk savings active."""
+        return self.disk_save_level != DISK_SAVE_MODE.DISABLED
 
     @classmethod
     def config_help(cls):
