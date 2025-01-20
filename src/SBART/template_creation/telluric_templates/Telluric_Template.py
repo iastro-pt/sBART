@@ -33,6 +33,7 @@ from SBART.utils.UserConfigs import (
     ValueInInterval,
 )
 from SBART.utils.telluric_utilities import create_binary_template
+from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class TelluricTemplate(BaseTemplate):
@@ -200,7 +201,9 @@ class TelluricTemplate(BaseTemplate):
             return [], []
 
         BERVS = DataClass.collect_KW_observations(
-            KW="BERV", subInstruments=[self._associated_subInst], include_invalid=False,
+            KW="BERV",
+            subInstruments=[self._associated_subInst],
+            include_invalid=False,
         )
         max_bervs = DataClass.collect_KW_observations(
             KW="MAX_BERV",
@@ -516,9 +519,10 @@ class TelluricTemplate(BaseTemplate):
         for val in [hdu_wave, hdu_temp]:
             hdus_cubes.append(val)
 
-        hdu_transWave = fits.ImageHDU(data=self.transmittance_wavelengths, header=header, name="TRANSMIT_WAVE")
-        hdu_transSpec = fits.ImageHDU(data=self.transmittance_spectra, header=header, name="TRANSMIT_SPECTRA")
-        hdus_cubes.extend([hdu_transWave, hdu_transSpec])
+        if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            hdu_transWave = fits.ImageHDU(data=self.transmittance_wavelengths, header=header, name="TRANSMIT_WAVE")
+            hdu_transSpec = fits.ImageHDU(data=self.transmittance_spectra, header=header, name="TRANSMIT_SPECTRA")
+            hdus_cubes.extend([hdu_transWave, hdu_transSpec])
 
         hdul = fits.HDUList(hdus_cubes)
 
@@ -528,12 +532,13 @@ class TelluricTemplate(BaseTemplate):
 
         metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
 
-        fig, axis = plt.subplots()
-        axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
-        axis.set_xlabel(r"Wavelength [$\AA$]")
-        axis.set_ylabel("Transmittance")
-        fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.png")
-        plt.close(fig)
+        if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            fig, axis = plt.subplots()
+            axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
+            axis.set_xlabel(r"Wavelength [$\AA$]")
+            axis.set_ylabel("Transmittance")
+            fig.savefig(metrics_path / f"transmittance_{self._associated_subInst}.png")
+            plt.close(fig)
 
     def load_from_file(self, root_path: Path, loading_path: str) -> None:
         """TODO: save and load the actual flag to disk!
