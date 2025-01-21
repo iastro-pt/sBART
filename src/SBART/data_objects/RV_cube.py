@@ -1006,7 +1006,7 @@ class RV_cube(BASE):
                 f"Optimal_Intervals_{self._associated_subInst}",
                 fmt="txt",
             )
-            if self.N_obs < 200:
+            if self.N_obs < 200 and self.disk_save_level != DISK_SAVE_MODE.EXTREME:
                 for N_interval in [2, 3]:
                     tab = self.run_cromatic_interval_optimization(N_intervals=N_interval, min_number_orders=10)
                     if tab is not None:
