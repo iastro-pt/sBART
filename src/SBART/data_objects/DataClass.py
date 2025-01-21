@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -20,26 +21,29 @@ from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.Base_Models.Frame import Frame
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
-from SBART.Quality_Control.activity_indicators import Indicators
-from SBART.template_creation.StellarModel import StellarModel
-from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
 from SBART.utils.shift_spectra import apply_RVshift
-from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
     ACTIVITY_LINE,
     SIGMA_CLIP_REJECTION,
     TELLURIC,
     Status,
 )
-from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.units import kilometer_second
+
+if TYPE_CHECKING:
+    from SBART.Base_Models.Frame import Frame
+    from SBART.Quality_Control.activity_indicators import Indicators
+    from SBART.template_creation.StellarModel import StellarModel
+    from SBART.template_creation.TelluricModel import TelluricModel
+    from SBART.utils.SBARTtypes import UI_PATH
+    from SBART.utils.spectral_conditions import ConditionModel as CondModel
 
 
 class DataClass(BASE):
@@ -886,7 +890,8 @@ class DataClass(BASE):
     def trigger_data_storage(self) -> None:
         output_path = self._internalPaths.root_storage_path
         logger.debug("DataClass storing Data to {}", output_path)
-        self.metaData.store_json(output_path)
+        if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            self.metaData.store_json(output_path)
         logger.debug("DataClass finished data storage")
 
         for frame in self.observations:
