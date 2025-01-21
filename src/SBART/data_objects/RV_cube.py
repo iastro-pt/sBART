@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +17,7 @@ from SBART.Base_Models.UnitModel import UnitModel
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
 from SBART.utils.expected_precision_interval import (
     convert_to_tab,
@@ -24,6 +25,7 @@ from SBART.utils.expected_precision_interval import (
 )
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
 from SBART.utils.units import (
     centimeter_second,
@@ -32,7 +34,6 @@ from SBART.utils.units import (
     meter_second,
 )
 from SBART.utils.work_packages import Package
-from SBART.utils.SBARTtypes import RV_measurement
 
 
 class RV_cube(BASE):
@@ -48,11 +49,12 @@ class RV_cube(BASE):
     def __init__(
         self,
         subInst: str,
-        frameIDs: List[int],
+        frameIDs: list[int],
         instrument_properties: dict,
         has_orderwise_rvs,
         is_SA_corrected: bool,
-        disable_SA_computation: bool = False
+        storage_mode: str,
+        disable_SA_computation: bool = False,
     ):
         """It contains:
             - the SA correction value (and applies it)
@@ -67,6 +69,7 @@ class RV_cube(BASE):
         """
         self.is_SA_corrected = is_SA_corrected
         self._associated_subInst = subInst
+        self._storage_mode = storage_mode
         self._disable_SA_computation = disable_SA_computation
 
         super().__init__(
@@ -158,7 +161,7 @@ class RV_cube(BASE):
             new_unit.generate_root_path(self._internalPaths.get_path_to("RVcube"))
         self._extra_storage_units.append(new_unit)
 
-    def set_merged_mode(self, orders_to_skip: List[int]) -> None:
+    def set_merged_mode(self, orders_to_skip: list[int]) -> None:
         self._mode = "merged_subInst"
         self._OrderStatus.add_flag_to_order(
             order=orders_to_skip,
@@ -166,7 +169,7 @@ class RV_cube(BASE):
             order_flag=ORDER_SKIP("Skiped due to merged mode"),
         )
 
-    def update_skip_reason(self, orders: Union[List[int], Set[int], int], skip_reason) -> None:
+    def update_skip_reason(self, orders: Union[list[int], set[int], int], skip_reason) -> None:
         if len(orders) == 0:
             return
 
@@ -195,7 +198,7 @@ class RV_cube(BASE):
             status = DataClassProxy.get_frame_by_ID(frameID).OrderWiseStatus
             self._OrderStatus.mimic_status(frameID, status)
 
-    def update_worker_information(self, worker_info: List):
+    def update_worker_information(self, worker_info: list):
         self.worker_outputs = worker_info
 
     def update_computed_precision(self, expected_precision, eniric_precision, eniric_template):
@@ -250,7 +253,7 @@ class RV_cube(BASE):
         as_value: bool,
         units=None,
         apply_drift_corr=None,
-    ) -> Tuple[list, list, list]:
+    ) -> tuple[list, list, list]:
         """Return the RV timeseries
 
         Parameters
@@ -370,19 +373,19 @@ class RV_cube(BASE):
 
         return times[ID_index], rvs[ID_index], uncerts[ID_index]
 
-    def compute_SA_correction(self) -> List[RV_measurement[meter_second]]:
+    def compute_SA_correction(self) -> list[RV_measurement[meter_second]]:
         """Compute the SA correction for each point. Returns zeros if the SA correction is disabled
 
         Returns:
-            List[RV_measurement[meter_second]]: List with the SA value for each point
+            list[RV_measurement[meter_second]]: list with the SA value for each point
         """
-        
+
         if "SA_correction" in self.cached_info:
             return self.cached_info["SA_correction"]
 
         if self._disable_SA_computation:
-            return [0*meter_second for _ in self.obs_times]
-        
+            return [0 * meter_second for _ in self.obs_times]
+
         logger.info("Starting SA correction")
 
         SA = self.cached_info["target"].secular_acceleration
@@ -410,10 +413,10 @@ class RV_cube(BASE):
     # Access data
     #
 
-    def get_raw_TM_RVs(self) -> Tuple[list, list]:
+    def get_raw_TM_RVs(self) -> tuple[list, list]:
         return self.TM_RVs, self.TM_RVs_ERR
 
-    def get_raw_DRS_RVs(self) -> Tuple[list, list]:
+    def get_raw_DRS_RVs(self) -> tuple[list, list]:
         return self.cached_info["DRS_RV"], self.cached_info["DRS_RV_ERR"]
 
     def get_TM_activity_indicator(self, act_name):
@@ -444,7 +447,7 @@ class RV_cube(BASE):
             values, errors = nan_list, nan_list
         return values, errors
 
-    def get_frame_orderwise_status(self, frameID) -> List[Status]:
+    def get_frame_orderwise_status(self, frameID) -> list[Status]:
         return self._OrderStatus.get_status_from_order(frameID, all_orders=True)
 
     @property
@@ -455,7 +458,7 @@ class RV_cube(BASE):
         return self.subInst == subInst
 
     @property
-    def obs_times(self) -> List[float]:
+    def obs_times(self) -> list[float]:
         """Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
         returns the BJD
         """
@@ -620,7 +623,8 @@ class RV_cube(BASE):
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                self._associated_subInst, include_invalid=True,
+                self._associated_subInst,
+                include_invalid=True,
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(f"\n\tFrame {fpath} ({dataClassProxy.get_KW_from_frameID('ISO-DATE', current_frameID)}):\n")
@@ -675,8 +679,8 @@ class RV_cube(BASE):
 
     def export_results(
         self,
-        keys: List[str],
-        header: List[str],
+        keys: list[str],
+        header: list[str],
         dataClassProxy,
         text=True,
         rdb=True,
