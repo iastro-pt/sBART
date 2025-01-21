@@ -189,7 +189,7 @@ class RV_cube(BASE):
 
     def load_data_from_DataClass(self, DataClassProxy: DataClass) -> None:
         logger.debug("{} loading frame information from dataclass", self.name)
-        for frameID in self.frameIDs + self._invalid_frameIDs:
+        for frameID in [*self.frameIDs, *self._invalid_frameIDs]:
             for key in self.cached_info:
                 if key in ["date_folders", "bare_filename"]:
                     continue
@@ -332,15 +332,22 @@ class RV_cube(BASE):
             SA_corr = self.compute_SA_correction()
             final_RVs = [final_RVs[i] - SA_corr[i] for i in range(len(final_RVs))]
 
-        output_times = self.obs_times
+        output_times = copy.copy(self.obs_times)
 
-        if include_invalid_frames:
+        if include_invalid_frames and which == "SBART":
+            # SBART data and we want to include invalid -> we must populate with invalids
+
             bad_rvs = [-99_999 * meter_second for _ in self._invalid_frameIDs]
             bad_err = [-99_999 * meter_second for _ in self._invalid_frameIDs]
             output_times = self.cached_info[self.time_key]
             final_RVs.extend(bad_rvs)
             final_RVs_ERR.extend(bad_err)
-
+        elif which != "SBART" and not include_invalid_frames:
+            # DRS / previous sbART and don't want to include invalid -< we must remove
+            inds = np.where(np.asarray(self.QC_flag) == 0)[0]
+            for index in sorted(inds)[::-1]:
+                final_RVs.pop(index)
+                final_RVs_ERR.pop(index)
         return output_times, convert_data(final_RVs, units, as_value), convert_data(final_RVs_ERR, units, as_value)
 
     def get_RV_from_ID(
@@ -509,7 +516,7 @@ class RV_cube(BASE):
         Can either be BJD of MJD (depends on which exists. If both exist,returns the BJD.
 
         """
-        inds = np.where(self.QC_flag == 1)[0]
+        inds = np.where(np.asarray(self.QC_flag) == 1)[0]
         return [self.cached_info[self.time_key][i] for i in inds]
 
     @property
@@ -569,7 +576,7 @@ class RV_cube(BASE):
         )
         dlw, dlw_err = self.get_TM_activity_indicator("DLW")
 
-        frameIDs = self.frameIDs
+        frameIDs = copy.copy(self.frameIDs)
         if include_invalid_frames:
             # ensure that they array has the same size (no DLW for invalid frames)
             dlw.extend([np.nan for _ in self._invalid_frameIDs])
@@ -583,7 +590,7 @@ class RV_cube(BASE):
             "RV_ERR": raw_err,
             "DLW": dlw,
             "DLW_ERR": dlw_err,
-            "frameIDs": frameIDs,
+            "frameIDs": list(map(int, frameIDs)),
         }
 
         tmp = {
@@ -595,7 +602,7 @@ class RV_cube(BASE):
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "full_path": self.cached_info["date_folders"],
             "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
-            "QC": self.QC_flag,
+            "QC": list(map(int, self.QC_flag)),
         }
 
         inds = np.where(self.QC_flag == 1)[0]
@@ -671,7 +678,7 @@ class RV_cube(BASE):
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
                 self._associated_subInst,
-                include_invalid=True,
+                include_invalid=False,
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
                 file.write(f"\n\tFrame {fpath} ({dataClassProxy.get_KW_from_frameID('ISO-DATE', current_frameID)}):\n")
@@ -966,7 +973,6 @@ class RV_cube(BASE):
 
         """
         data_blocks = self.build_datablock(include_invalid_frames=include_invalid_frames)
-
         final_path = build_filename(
             self._internalPaths.root_storage_path,
             f"RVs_{self._associated_subInst}_{self._mode}",
@@ -976,13 +982,12 @@ class RV_cube(BASE):
         mode = "a" if append else "w"
 
         table = Table(header=header, table_style="NoLines")
-
         for epoch in np.argsort(self.obs_times):
             line = []
             for key in keys:
                 line.append(data_blocks[key][epoch])
             table.add_row(line)
-
+        table.set_decimal_places(18)
         table.write_to_file(final_path, mode=mode, write_LaTeX=False)
 
     def export_rdb(self, append=False):
@@ -1139,6 +1144,7 @@ class RV_cube(BASE):
             apply_drift_corr=False,
             as_value=True,
             units=meter_second,
+            include_invalid_frames=True,
         )
         OBS_date, prev_RV, prev_ERR = self.get_RV_timeseries(
             "DRS",
@@ -1146,6 +1152,7 @@ class RV_cube(BASE):
             apply_drift_corr=False,
             as_value=True,
             units=meter_second,
+            include_invalid_frames=True,
         )
 
         OBS_date, prev_sbart_RV, prev_sbart_ERR = self.get_RV_timeseries(
@@ -1154,11 +1161,14 @@ class RV_cube(BASE):
             apply_drift_corr=False,
             as_value=True,
             units=meter_second,
+            include_invalid_frames=True,
         )
         # Ensure that we have something cached for it, even if zeros
         self.compute_SA_correction()
+        logger.warning("constructing fits file")
         information = {
-            "FrameID": self.frameIDs,
+            "FrameID": [*self.frameIDs, *self._invalid_frameIDs],
+            "QC": self.QC_flag,
             "DRS_RV": prev_RV,
             "DRS_RV_ERR": prev_ERR,
             "prevSBART_RV": prev_sbart_RV,
@@ -1172,6 +1182,7 @@ class RV_cube(BASE):
             "FWHM": self.cached_info["FWHM"],
             "BIS SPAN": self.cached_info["BIS SPAN"],
         }
+
         coldefs = []
         for key, array in information.items():
             coldefs.append(fits.Column(name=key, format="D", array=array))
@@ -1248,7 +1259,6 @@ class RV_cube(BASE):
             miscInfo = json.load(file)
 
         # For backwards compatibility retrieve an empty list
-        invalidframeIDs = miscInfo.get("invalidFrameID", [])
 
         with fits.open(orderwise_filename) as hdu:
             header_info = hdu[0].header
@@ -1256,22 +1266,27 @@ class RV_cube(BASE):
             orderwise_RV = hdu["ORDERWISE_RV"].data
             orderwise_RV_ERR = hdu["ORDERWISE_ERR"].data
             good_order_mask = hdu["GOOD_ORDER_MASK"].data
-
         instrument_info = {
             "array_size": [orderwise_RV.shape[1], 0],
             "is_drift_corrected": header_info["HIERARCH drift_corr"],
         }
         frameIDs = timeseries_table["FrameID"].astype(int).tolist()
+        QC = timeseries_table["QC"].astype(int).tolist()
+
         has_orderwise_rvs = miscInfo["has_orderwise_rvs"]
+        inds = np.where(np.asarray(QC) == 1)[0]
+        good_frameIDs = [frameIDs[i] for i in inds]
+        BADinds = np.where(np.asarray(QC) == 0)[0]
+        invalid = [frameIDs[i] for i in BADinds]
 
         new_cube = RV_cube(
             subInst=subInst,
-            frameIDs=frameIDs,
+            frameIDs=good_frameIDs,
             instrument_properties=instrument_info,
             has_orderwise_rvs=has_orderwise_rvs,
             # for backwards compatibility:
             is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
-            invalid_frameIDs=invalidframeIDs,
+            invalid_frameIDs=invalid,
             storage_mode="one-shot",
         )
 
@@ -1289,7 +1304,7 @@ class RV_cube(BASE):
 
         logger.debug("Generating the new order mask")
 
-        for epoch_index, frameID in enumerate(frameIDs):
+        for epoch_index, frameID in enumerate(good_frameIDs):
             for order, order_bool_status in enumerate(good_order_mask[epoch_index]):
                 if order_bool_status != 1:
                     new_cube._OrderStatus.add_flag_to_order(order=order, order_flag=ORDER_SKIP, frameID=frameID)
