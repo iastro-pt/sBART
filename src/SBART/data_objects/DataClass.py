@@ -355,9 +355,7 @@ class DataClass(BASE):
             collected_KW = set(self.collect_KW_observations(equal_KW, self._inst_type.sub_instruments))
 
             if len(collected_KW) != 1:
-                logger.warning(
-                    "Different values for the KW value <{}>: {}", equal_KW, collected_KW
-                )
+                logger.warning("Different values for the KW value <{}>: {}", equal_KW, collected_KW)
 
         mapping_values = defaultdict(list)
         for fID in self.get_valid_frameIDS():
@@ -596,8 +594,7 @@ class DataClass(BASE):
         RV_shift_mode,
         include_invalid=False,
     ):
-        """Interpolate a given order to a new wavelength solution
-        """
+        """Interpolate a given order to a new wavelength solution"""
         frame = self.get_frame_by_ID(frameID)
         return frame.interpolate_spectrum_to_wavelength(
             order=order,
@@ -833,7 +830,7 @@ class DataClass(BASE):
         return list(frameIDS)
 
     def get_frame_by_ID(self, frameID: int) -> Frame:
-        """Return the frame object that is associated with a given ID
+        """Return the frame object that is associated with a given ID.
 
         Parameters
         ----------

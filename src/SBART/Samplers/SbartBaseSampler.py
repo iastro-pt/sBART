@@ -36,7 +36,7 @@ class SbartBaseSampler(SamplerModel):
         RV_step: RV_measurement,
         RV_window: tuple[RV_measurement, RV_measurement],
         user_configs,
-        sampler_folders: Optional[Dict[str, str]] = None,
+        sampler_folders: Optional[dict[str, str]] = None,
     ):
         """Approximate the posterior distribution with a LaPlace approximation;"""
         extra_model_components = [
@@ -59,7 +59,7 @@ class SbartBaseSampler(SamplerModel):
     def optimize_epochwise(self, target, target_kwargs):
         return self.optimize(target, target_kwargs)
 
-    def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
+    def optimize(self, target, target_kwargs: dict) -> tuple[Package, Flag]:
         """Compute the RV for an entire order, followed by a parabolic fit to estimate
         uncertainty and better adjust chosen RV.
 
@@ -81,7 +81,7 @@ class SbartBaseSampler(SamplerModel):
 
         """
 
-    def process_epochwise_metrics(self, outputs) -> Dict[str, List]:
+    def process_epochwise_metrics(self, outputs) -> dict[str, list]:
         processed_package = defaultdict(list)
         for pkg in outputs:
             if pkg["status"] == SUCCESS:
