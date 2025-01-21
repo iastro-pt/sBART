@@ -15,7 +15,7 @@ from loguru import logger
 from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.SBARTtypes import UI_PATH
+from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
 
@@ -289,7 +289,7 @@ class ModelComponent(BASE):
         return self.__str__()
 
     def json_ready(self) -> Dict[str, Any]:
-        """"TODO: stop ignoring the user parameters!!!!"
+        """ "TODO: stop ignoring the user parameters!!!!"
 
         NOTE: this will NOT work for Models that have astropy.Quantity inside....
 
@@ -365,7 +365,8 @@ class RV_component(ModelComponent):
         elif self._internal_configs["GENERATION_MODE"] == "GLOBAL":
             subInstruments = DataClassProxy.get_subInstruments_with_valid_frames()
             available_previous_rvs = DataClassProxy.collect_KW_observations(
-                KW=self.RV_key, subInstruments=subInstruments,
+                KW=self.RV_key,
+                subInstruments=subInstruments,
             )
 
             RVLowerBound = min(available_previous_rvs) - RV_default_window[0]
@@ -378,7 +379,8 @@ class RV_component(ModelComponent):
         elif self._internal_configs["GENERATION_MODE"] == "SUB-INSTRUMENT":
             for subInst in DataClassProxy.get_subInstruments_with_valid_frames():
                 available_previous_rvs = DataClassProxy.collect_KW_observations(
-                    KW=self.RV_key, subInstruments=[subInst],
+                    KW=self.RV_key,
+                    subInstruments=[subInst],
                 )
 
                 RVLowerBound = min(available_previous_rvs) - RV_default_window[0]
@@ -399,8 +401,7 @@ class RV_component(ModelComponent):
 
 
 class JaxComponent(ModelComponent):
-    """WARNING: ignoring the bounds
-    """
+    """WARNING: ignoring the bounds"""
 
     def _check_dependency(self):
         if MISSING_JAX_DEPENDENCY:
