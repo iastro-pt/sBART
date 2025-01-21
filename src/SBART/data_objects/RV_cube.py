@@ -1272,6 +1272,7 @@ class RV_cube(BASE):
             # for backwards compatibility:
             is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
             invalid_frameIDs=invalidframeIDs,
+            storage_mode="one-shot",
         )
 
         logger.debug("Loading misc Info:")
