@@ -802,7 +802,9 @@ class DataClass(BASE):
             if subinstrument is not None and subInst != subinstrument:
                 continue
             try:
-                out.extend(self.get_frameIDs_from_subInst(subInst, include_invalid=False))
+                good = set(self.get_frameIDs_from_subInst(subInst, include_invalid=False))
+                all_f = set(self.get_frameIDs_from_subInst(subInst, include_invalid=True))
+                out.extend(all_f - good)
             except NoDataError:
                 continue
         return out
