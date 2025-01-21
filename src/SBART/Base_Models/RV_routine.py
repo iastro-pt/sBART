@@ -123,6 +123,7 @@ class RV_routine(BASE):
                 "DLW_ERR",
                 "filename",
                 "frameIDs",
+                "QC",
             ],
             constraint=ValueFromList(
                 [
@@ -141,6 +142,7 @@ class RV_routine(BASE):
                     "frameIDs",
                     "DLW",
                     "DLW_ERR",
+                    "QC",
                 ],
             )
             + IterableMustHave(("RVc", "RVc_ERR"))

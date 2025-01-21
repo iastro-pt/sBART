@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import copy
 import os
 import time
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +15,6 @@ from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.Base_Models.UnitModel import UnitModel
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
@@ -25,7 +26,6 @@ from SBART.utils.expected_precision_interval import (
 )
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
-from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
 from SBART.utils.units import (
     centimeter_second,
@@ -34,6 +34,11 @@ from SBART.utils.units import (
     meter_second,
 )
 from SBART.utils.work_packages import Package
+
+if TYPE_CHECKING:
+    from SBART.Base_Models.UnitModel import UnitModel
+    from SBART.data_objects.DataClass import DataClass
+    from SBART.utils.SBARTtypes import RV_measurement
 
 
 class RV_cube(BASE):
@@ -74,6 +79,8 @@ class RV_cube(BASE):
         self._disable_SA_computation = disable_SA_computation
 
         self._invalid_frameIDs = invalid_frameIDs if invalid_frameIDs is not None else []
+        self.QC_flag: list[int] = [1 for _ in self.frameIDs] + [0 for _ in self._invalid_frameIDs]
+
         super().__init__(
             user_configs={},
             needed_folders={"plots": "plots", "metrics": "metrics", "RVcube": "RVcube"},
@@ -124,7 +131,7 @@ class RV_cube(BASE):
             "FWHM",
             "FWHM_ERR",
         ]
-        self.time_key = None
+        self._time_key = None
         self.cached_info = {key: [] for key in needed_keys}
 
         self._loaded_inst_info = False
@@ -180,9 +187,9 @@ class RV_cube(BASE):
 
         self._OrderStatus.add_flag_to_order(order=orders, order_flag=skip_reason, all_frames=True)
 
-    def load_data_from_DataClass(self, DataClassProxy) -> None:
+    def load_data_from_DataClass(self, DataClassProxy: DataClass) -> None:
         logger.debug("{} loading frame information from dataclass", self.name)
-        for frameID in self.frameIDs:
+        for frameID in self.frameIDs + self._invalid_frameIDs:
             for key in self.cached_info:
                 if key in ["date_folders", "bare_filename"]:
                     continue
@@ -255,8 +262,9 @@ class RV_cube(BASE):
         as_value: bool,
         units=None,
         apply_drift_corr=None,
+        include_invalid_frames: bool = False,
     ) -> tuple[list, list, list]:
-        """Return the RV timeseries
+        """Return the RV timeseries.
 
         Parameters
         ----------
@@ -302,10 +310,7 @@ class RV_cube(BASE):
             logger.critical(f"which = {which} is not supported by get_RV_timeseries")
             raise InvalidConfiguration
 
-        if apply_drift_corr is None:
-            correct_drift = not self._drift_corrected
-        else:
-            correct_drift = apply_drift_corr
+        correct_drift = not self._drift_corrected if apply_drift_corr is None else apply_drift_corr
 
         if correct_drift:
             logger.info("Cleaning RVs of {} from the drift", self._associated_subInst)
@@ -326,10 +331,16 @@ class RV_cube(BASE):
             SA_corr = self.compute_SA_correction()
             final_RVs = [final_RVs[i] - SA_corr[i] for i in range(len(final_RVs))]
 
-        final_RVs = convert_data(final_RVs, units, as_value)
-        final_RVs_ERR = convert_data(final_RVs_ERR, units, as_value)
+        output_times = self.obs_times
 
-        return self.obs_times, final_RVs, final_RVs_ERR
+        if include_invalid_frames:
+            bad_rvs = [-99_999 * meter_second for _ in self._invalid_frameIDs]
+            bad_err = [-99_999 * meter_second for _ in self._invalid_frameIDs]
+            output_times = self.cached_info[self.time_key]
+            final_RVs.extend(bad_rvs)
+            final_RVs_ERR.extend(bad_err)
+
+        return output_times, convert_data(final_RVs, units, as_value), convert_data(final_RVs_ERR, units, as_value)
 
     def get_RV_from_ID(
         self,
@@ -340,7 +351,7 @@ class RV_cube(BASE):
         units,
         apply_drift_corr=None,
     ):
-        """Retrieve the BJD, RV and RV_ERR from a given frameID
+        """Retrieve the BJD, RV and RV_ERR from a given frameID.
 
         Parameters
         ----------
@@ -364,6 +375,15 @@ class RV_cube(BASE):
             [description]
 
         """
+        if frameID in self._invalid_frameIDs:
+            # Should we send out the
+            ID_index = len(self.frameIDs) + self._invalid_frameIDs.index(frameID)
+            rv = -99_999 * meter_second
+            err = -99_999 * meter_second
+            return self.cached_info[self.time_key][ID_index], *convert_data(
+                [rv, err], new_units=units, as_value=as_value
+            )
+
         times, rvs, uncerts = self.get_RV_timeseries(
             which=which,
             apply_SA_corr=apply_SA_corr,
@@ -460,11 +480,8 @@ class RV_cube(BASE):
         return self.subInst == subInst
 
     @property
-    def obs_times(self) -> list[float]:
-        """Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
-        returns the BJD
-        """
-        if self.time_key is None:
+    def time_key(self) -> str:
+        if self._time_key is None:
             found_key = False
 
             for key in ["BJD", "MJD"]:
@@ -481,9 +498,18 @@ class RV_cube(BASE):
                 logger.warning(msg)
                 raise InvalidConfiguration(msg)
 
-            self.time_key = selected_key
+            return selected_key
+        return self._time_key
 
-        return self.cached_info[self.time_key]
+    @property
+    def obs_times(self) -> list[float]:
+        """Provide a "time" of observation.
+
+        Can either be BJD of MJD (depends on which exists. If both exist,returns the BJD.
+
+        """
+        inds = np.where(self.QC_flag == 1)
+        return self.cached_info[self.time_key][inds]
 
     @property
     def N_orders(self) -> int:
@@ -540,7 +566,7 @@ class RV_cube(BASE):
         )
         dlw, dlw_err = self.get_TM_activity_indicator("DLW")
 
-        data_blocks = {
+        return {
             "BJD": self.cached_info["BJD"],
             "MJD": self.cached_info["MJD"],
             "RVc": corr_rv,
@@ -552,12 +578,12 @@ class RV_cube(BASE):
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "full_path": self.cached_info["date_folders"],
-            "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
+            "filename": [Path.name(i) for i in self.cached_info["date_folders"]],
             "frameIDs": self.frameIDs,
             "DLW": dlw,
             "DLW_ERR": dlw_err,
+            "QC": self.QC_flag,
         }
-        return data_blocks
 
     def compute_statistics(self, savefile=True):
         """Compute the scatter and median uncertainty of the different timeseries
@@ -683,7 +709,7 @@ class RV_cube(BASE):
         self,
         keys: list[str],
         header: list[str],
-        dataClassProxy,
+        dataClassProxy: DataClass,
         text=True,
         rdb=True,
         append=False,
@@ -702,11 +728,13 @@ class RV_cube(BASE):
 
         self.export_skip_reasons(dataClassProxy)
         self.compute_statistics()
-        self.plot_RVs(dataClassProxy)
+
+        if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            self.plot_RVs(dataClassProxy)
         self._saved_to_disk = True
 
-    def plot_RVs(self, dataClassProxy) -> None:
-        """Plot & store the RV timeseries
+    def plot_RVs(self, dataClassProxy: DataClass) -> None:
+        """Plot & store the RV timeseries.
 
         Parameters
         ----------
