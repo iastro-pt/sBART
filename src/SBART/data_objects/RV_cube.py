@@ -79,13 +79,13 @@ class RV_cube(BASE):
         self._disable_SA_computation = disable_SA_computation
 
         self._invalid_frameIDs = invalid_frameIDs if invalid_frameIDs is not None else []
-        self.QC_flag: list[int] = [1 for _ in self.frameIDs] + [0 for _ in self._invalid_frameIDs]
 
         super().__init__(
             user_configs={},
             needed_folders={"plots": "plots", "metrics": "metrics", "RVcube": "RVcube"},
         )
         self.frameIDs = frameIDs
+        self.QC_flag: list[int] = [1 for _ in self.frameIDs] + [0 for _ in self._invalid_frameIDs]
 
         N_epochs = len(frameIDs)
         N_orders = instrument_properties["array_size"][0]
@@ -309,7 +309,8 @@ class RV_cube(BASE):
         else:
             logger.critical(f"which = {which} is not supported by get_RV_timeseries")
             raise InvalidConfiguration
-
+        final_RVs = copy.copy(final_RVs)
+        final_RVs_ERR = copy.copy(final_RVs_ERR)
         correct_drift = not self._drift_corrected if apply_drift_corr is None else apply_drift_corr
 
         if correct_drift:
@@ -406,20 +407,20 @@ class RV_cube(BASE):
             return self.cached_info["SA_correction"]
 
         if self._disable_SA_computation:
-            return [0 * meter_second for _ in self.obs_times]
+            self.cached_info["SA_correction"] = [0 * meter_second for _ in self.obs_times]
+        else:
+            logger.info("Starting SA correction")
 
-        logger.info("Starting SA correction")
+            SA = self.cached_info["target"].secular_acceleration
 
-        SA = self.cached_info["target"].secular_acceleration
+            min_time = 55500  # always use the same reference frame
+            logger.info("Setting SA reference frame to BJD = {}", min_time)
 
-        min_time = 55500  # always use the same reference frame
-        logger.info("Setting SA reference frame to BJD = {}", min_time)
+            secular_correction = [SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times]
 
-        secular_correction = [SA * (OBS_time - min_time) / 365.25 for OBS_time in self.obs_times]
+            self.cached_info["SA_correction"] = secular_correction
 
-        self.cached_info["SA_correction"] = secular_correction
-
-        return secular_correction
+        return self.cached_info["SA_correction"]
 
     def get_storage_unit(self, storage_name):
         for unit in self._extra_storage_units:
@@ -508,8 +509,8 @@ class RV_cube(BASE):
         Can either be BJD of MJD (depends on which exists. If both exist,returns the BJD.
 
         """
-        inds = np.where(self.QC_flag == 1)
-        return self.cached_info[self.time_key][inds]
+        inds = np.where(self.QC_flag == 1)[0]
+        return [self.cached_info[self.time_key][i] for i in inds]
 
     @property
     def N_orders(self) -> int:
@@ -593,16 +594,17 @@ class RV_cube(BASE):
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "full_path": self.cached_info["date_folders"],
-            "filename": [Path.name(i) for i in self.cached_info["date_folders"]],
+            "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
             "QC": self.QC_flag,
         }
 
+        inds = np.where(self.QC_flag == 1)[0]
         for key, data in tmp.items():
             if include_invalid_frames:
                 out[key] = data
             else:
                 # Only the first N entries correspond to the valid frames
-                out[key] = data[: len(self.frameIDs)]
+                out[key] = [out[i] for i in inds]
         return out
 
     def compute_statistics(self, savefile=True):
@@ -748,7 +750,6 @@ class RV_cube(BASE):
 
         self.export_skip_reasons(dataClassProxy)
         self.compute_statistics()
-
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
             self.plot_RVs(dataClassProxy)
         self._saved_to_disk = True
@@ -1154,6 +1155,8 @@ class RV_cube(BASE):
             as_value=True,
             units=meter_second,
         )
+        # Ensure that we have something cached for it, even if zeros
+        self.compute_SA_correction()
         information = {
             "FrameID": self.frameIDs,
             "DRS_RV": prev_RV,
