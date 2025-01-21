@@ -355,8 +355,6 @@ class RV_routine(BASE):
             check_metadata=check_metadata,
         )
 
-        self.sampler.update_disk_saving_level(level=self._internal_configs["SAVE_DISK_SPACE"])
-
         if self._internal_configs["MEMORY_SAVE_MODE"]:
             self.sampler.enable_memory_savings()
         else:
