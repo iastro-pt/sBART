@@ -167,7 +167,7 @@ class RV_routine(BASE):
             description="How to store the output files. If one-shot, overwrites all txt files, if rolling appends to end of list",
         ),
         COMPUTE_SA_CORRECTION=UserParam(
-            default_value=False,
+            default_value=True,
             constraint=BooleanValue,
             description="If True (default) include the value of SA correction in outputs",
         ),
