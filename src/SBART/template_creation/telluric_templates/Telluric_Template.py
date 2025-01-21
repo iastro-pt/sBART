@@ -533,9 +533,8 @@ class TelluricTemplate(BaseTemplate):
         logger.debug("Storing template to {}", self._internalPaths.root_storage_path / filename)
         hdul.writeto(self._internalPaths.root_storage_path / filename, overwrite=True)
 
-        metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
-
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
             fig, axis = plt.subplots()
             axis.plot(self.transmittance_wavelengths, self.transmittance_spectra)
             axis.set_xlabel(r"Wavelength [$\AA$]")
@@ -567,8 +566,12 @@ class TelluricTemplate(BaseTemplate):
             waves = hdulist["Wave"].data
             template = hdulist["Temp"].data
 
-            self.transmittance_wavelengths = hdulist["TRANSMIT_WAVE"].data
-            self.transmittance_spectra = hdulist["TRANSMIT_SPECTRA"].data
+            try:
+                self.transmittance_wavelengths = hdulist["TRANSMIT_WAVE"].data
+                self.transmittance_spectra = hdulist["TRANSMIT_SPECTRA"].data
+            except:
+                self.transmittance_spectra = None
+                self.transmittance_wavelengths = None
 
             self.template = template
             self.wavelengths = waves

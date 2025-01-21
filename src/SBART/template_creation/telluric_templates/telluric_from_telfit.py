@@ -37,6 +37,12 @@ atmospheric_profiles_coords_dict = {
     "CALIB_CARMENES": "-2.5+37.2",
 }
 
+try:
+    import telfit
+
+except ModuleNotFoundError:
+    raise custom_exceptions.InternalError("Telfit is not istalled")
+
 
 def construct_gdas_filename(instrument, datetime):
     """Construct the filename as in GDAS archive
@@ -136,25 +142,24 @@ class TelfitTelluric(TelluricTemplate):
 
     """
 
-    _default_params = TelluricTemplate._default_params + DefaultValues(
-        atmosphere_profile=UserParam(
-            "GDAS", constraint=StringValue
-        ),  # GDAS / default / path
-        FIT_MODEL=UserParam(False, constraint=BooleanValue),
-        TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue),
-        FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
-        # step size for telluric model wavelengths
-        PARAMS_TO_FIT=UserParam(
-            ["pressure", "humidity"],
-            constraint=ValueFromList(
-                ["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]
+    _default_params = (
+        TelluricTemplate._default_params
+        + DefaultValues(
+            atmosphere_profile=UserParam("GDAS", constraint=StringValue),  # GDAS / default / path
+            FIT_MODEL=UserParam(False, constraint=BooleanValue),
+            TELFIT_HUMIDITY_THRESHOLD=UserParam(default_value=-1, constraint=NumericValue),
+            FIT_WAVELENGTH_STEP_SIZE=UserParam(0.001, constraint=Positive_Value_Constraint),
+            # step size for telluric model wavelengths
+            PARAMS_TO_FIT=UserParam(
+                ["pressure", "humidity"],
+                constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
             ),
-        ),
-        IND_WATER_MASK_THRESHOLD=UserParam( # Ensuring that things don't blow up when storing the fits files (inf will do that)
-            default_value=1e8,
-            constraint=Positive_Value_Constraint,
-            description="Independent masking of water features, using a different threshold than for other molecules",
-        ),
+            IND_WATER_MASK_THRESHOLD=UserParam(  # Ensuring that things don't blow up when storing the fits files (inf will do that)
+                default_value=1e8,
+                constraint=Positive_Value_Constraint,
+                description="Independent masking of water features, using a different threshold than for other molecules",
+            ),
+        )
     )
 
     method_name = "Telfit"
@@ -220,7 +225,7 @@ class TelfitTelluric(TelluricTemplate):
 
         for comp in model_components:
             self._fitModel.add_extra_param(comp)
-        
+
         self.modeler = None
 
     def _prepare_GDAS_data(self, dataClass, selected_frame):  # pylint: disable=C0103
@@ -288,9 +293,7 @@ class TelfitTelluric(TelluricTemplate):
                     failed_tests.append(selected_ID)
                     frames_to_search = frames_to_search[1:]
             else:
-                logger.warning(
-                    "Couldn't download any of the GDAS profiles. Moving on for the default profile"
-                )
+                logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
 
         if self._internal_configs["atmosphere_profile"] == "default":
             logger.warning("Using the default atmosphere profile!")
@@ -311,8 +314,7 @@ class TelfitTelluric(TelluricTemplate):
         return data
 
     def configure_modeler(self, dataclass) -> None:
-        """See https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas
-        """
+        """See https://www.eso.org/sci/software/pipelines/skytools/molecfit#gdas"""
         selected_frame = dataclass.get_frame_by_ID(self._reference_frameID)
         logger.info("Configuring the Telfit modeler for {}", selected_frame)
         data = self._prepare_GDAS_data(dataClass=dataclass, selected_frame=selected_frame)
@@ -372,8 +374,12 @@ class TelfitTelluric(TelluricTemplate):
         logger.info("Finished configurating the modeler")
 
     def _generate_telluric_model(
-        self, model_parameters, OBS_properties, fixed_params=None, grid=None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self,
+        model_parameters,
+        OBS_properties,
+        fixed_params=None,
+        grid=None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """COmpute the transmittance spectra using tellfit
 
         Parameters
@@ -441,10 +447,7 @@ class TelfitTelluric(TelluricTemplate):
         [1] https://github.com/kgullikson88/Telluric-Fitter
 
         """
-        try:
-            import telfit
-        except ModuleNotFoundError:
-            raise custom_exceptions.InternalError("Telfit is not istalled")
+
         self.modeler = telfit.Modeler(print_lblrtm_output=False)
 
         try:
@@ -463,7 +466,8 @@ class TelfitTelluric(TelluricTemplate):
         #    Later on, if needed, this can be easily changed to fit before removing!
 
         parameter_values = self._fitModel.get_fit_results_from_frameID(
-            frameID=self._reference_frameID, allow_disabled=True,
+            frameID=self._reference_frameID,
+            allow_disabled=True,
         )
         names = self._fitModel.get_component_names(include_disabled=True)
         logger.debug(f"Parameters in use: {names}")
@@ -527,7 +531,7 @@ class TelfitTelluric(TelluricTemplate):
             )
 
             # Ensure that we don't have values grater than 1, to keep consistency
-            self.template[np.where(self.template>1)] = 1
+            self.template[np.where(self.template > 1)] = 1
 
         self._compute_wave_blocks()
         self._finish_template_creation()

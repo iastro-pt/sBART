@@ -183,6 +183,10 @@ class TemplateFramework(BASE):
                 # ! just ignore the FIT keys?
                 if "FIT" in key:
                     continue
+
+                if key in ["SAVE_DISK_SPACE"]:
+                    continue
+
                 config_dict[key] = template_header[f"HIERARCH {key}"]
 
             if self.is_type("Telluric"):
