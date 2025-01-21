@@ -55,6 +55,7 @@ class RV_cube(BASE):
         is_SA_corrected: bool,
         storage_mode: str,
         disable_SA_computation: bool = False,
+        invalid_frameIDs: None | list[int] = None,
     ):
         """It contains:
             - the SA correction value (and applies it)
@@ -72,6 +73,7 @@ class RV_cube(BASE):
         self._storage_mode = storage_mode
         self._disable_SA_computation = disable_SA_computation
 
+        self._invalid_frameIDs = invalid_frameIDs if invalid_frameIDs is not None else []
         super().__init__(
             user_configs={},
             needed_folders={"plots": "plots", "metrics": "metrics", "RVcube": "RVcube"},
@@ -1046,6 +1048,8 @@ class RV_cube(BASE):
         data_out["cached_info"]["date_folders"] = list([i.as_posix() for i in self.cached_info["date_folders"]])
 
         data_out["has_orderwise_rvs"] = self.has_orderwise_rvs
+        data_out["invalidFrameID"] = self._invalid_frameIDs
+
         with open(storage_path, mode="w") as file:
             json.dump(data_out, file, indent=4)
 
@@ -1191,6 +1195,9 @@ class RV_cube(BASE):
         with open(misc_filename) as file:
             miscInfo = json.load(file)
 
+        # For backwards compatibility retrieve an empty list
+        invalidframeIDs = miscInfo.get("invalidFrameID", [])
+
         with fits.open(orderwise_filename) as hdu:
             header_info = hdu[0].header
             timeseries_table = hdu["TIMESERIES_DATA"].data
@@ -1212,6 +1219,7 @@ class RV_cube(BASE):
             has_orderwise_rvs=has_orderwise_rvs,
             # for backwards compatibility:
             is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
+            invalid_frameIDs=invalidframeIDs,
         )
 
         logger.debug("Loading misc Info:")
