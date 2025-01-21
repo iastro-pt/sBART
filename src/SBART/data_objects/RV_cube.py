@@ -731,6 +731,7 @@ class RV_cube(BASE):
         text=True,
         rdb=True,
         append=False,
+        include_invalid_frames: bool = False,
     ):
         if self._saved_to_disk:
             return
@@ -739,8 +740,10 @@ class RV_cube(BASE):
 
         logger.debug("RV cube storing data under the main folder: {}", storage_path)
 
+        append = self._storage_mode == "rolling"
+
         if text:
-            self.export_txt(header, append=append, keys=keys)
+            self.export_txt(header, append=append, keys=keys, include_invalid_frames=include_invalid_frames)
         if rdb:
             self.export_rdb(append)
 

@@ -109,7 +109,8 @@ class RV_routine(BASE):
             BooleanValue,
         ),
         min_block_size=UserParam(
-            50, constraint=Positive_Value_Constraint,
+            50,
+            constraint=Positive_Value_Constraint,
         ),  # Min number of consecutive points to not reject a region
         output_fmt=UserParam(
             [
@@ -164,6 +165,11 @@ class RV_routine(BASE):
         COMMON_WAVELENGTHS_MODE=UserParam(
             default_value="OBSERVATION",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
+        ),
+        WORKING_MODE=UserParam(
+            default_value="one-shot",
+            constraint=ValueFromList(("one-shot", "rolling")),
+            description="How to store the output files. If one-shot, overwrites all txt files, if rolling appends to end of list",
         ),
         COMPUTE_SA_CORRECTION=UserParam(
             default_value=False,
@@ -373,6 +379,7 @@ class RV_routine(BASE):
                 subInsts=self._subInsts_to_use,
                 output_keys=self._internal_configs["output_fmt"],
                 storage_path=self._internalPaths.root_storage_path,
+                storage_mode=self._internal_configs["WORKING_MODE"],
                 compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
             )
 

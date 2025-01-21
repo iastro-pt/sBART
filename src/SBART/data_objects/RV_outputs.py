@@ -2,9 +2,12 @@
 Store the :py:class:`~SBART.data_objects.RV_cube` of all the available sub-Instruments (for which SBART
 computed RVs)
 """
+
+from __future__ import annotations
+
 import glob
 from pathlib import Path
-from typing import List, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, List, NoReturn, Optional, Union
 
 import numpy as np
 from loguru import logger
@@ -13,10 +16,11 @@ from tabletexifier import Table
 from SBART import __version__
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils.BASE import BASE
-from SBART.utils.custom_exceptions import (InvalidConfiguration,
-                                           NoComputedRVsError)
-from SBART.utils.paths_tools import (build_filename, ensure_path_from_input,
-                                     find_latest_version)
+from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
+from SBART.utils.paths_tools import build_filename, ensure_path_from_input, find_latest_version
+
+if TYPE_CHECKING:
+    from SBART.data_objects import DataClass
 
 
 class RV_holder(BASE):
@@ -47,7 +51,7 @@ class RV_holder(BASE):
         "filename",
         "frameIDs",
         "DLW",
-        "DLW_ERR"
+        "DLW_ERR",
     ]
 
     def __init__(
@@ -55,6 +59,7 @@ class RV_holder(BASE):
         subInsts: List[str],
         output_keys: List[str],
         storage_path: Path,
+        storage_mode: str,
         compute_SA_values: bool,
     ):
         super().__init__(
@@ -66,7 +71,7 @@ class RV_holder(BASE):
             root_level_path=storage_path,
         )
         self._compute_SA_values = compute_SA_values
-
+        self._storage_mode = storage_mode
         self.output_keys = None
 
         self._individual_cubes: dict[str, None | RV_cube] = {subInst: None for subInst in subInsts}
@@ -209,9 +214,7 @@ class RV_holder(BASE):
         """
         valid_options = list(self._individual_cubes.keys())
         if subInst not in valid_options:
-            msg = "sub-Instrument <{}> is not a valid value. Select one from <{}>".format(
-                subInst, valid_options
-            )
+            msg = "sub-Instrument <{}> is not a valid value. Select one from <{}>".format(subInst, valid_options)
             logger.critical(msg)
             raise InvalidConfiguration(msg)
 
@@ -259,9 +262,7 @@ class RV_holder(BASE):
             has_merged = True
 
         cube_folder = ["individual_subInst", "merged_subInst"]
-        for set_index, set_of_cubes in enumerate(
-            [self._individual_cubes.values(), self._merged_cubes.values()]
-        ):
+        for set_index, set_of_cubes in enumerate([self._individual_cubes.values(), self._merged_cubes.values()]):
             full_table = Table(header=header, table_style="NoLines")
 
             if not [has_individual, has_merged][set_index]:
@@ -275,9 +276,9 @@ class RV_holder(BASE):
 
                 selected_key = cube.time_key
                 if self.output_keys[0] != selected_key:
-                    logger.warning("User asking for time-key <{}> but we must use <{}>",
-                                   self.output_keys[0],
-                                   selected_key)
+                    logger.warning(
+                        "User asking for time-key <{}> but we must use <{}>", self.output_keys[0], selected_key
+                    )
                     self.output_keys[0] = selected_key
 
                 sorted_indexes = np.argsort(data_block[selected_key])
@@ -400,11 +401,9 @@ class RV_holder(BASE):
         load_full_flags=False,
         load_work_pkgs=False,
         SBART_version: Optional[str] = None,
-        only_load_type: Optional[str] = None
+        only_load_type: Optional[str] = None,
     ):
-        high_level_path = ensure_path_from_input(high_level_path,
-                                                 ensure_existence=True
-                                                 )
+        high_level_path = ensure_path_from_input(high_level_path, ensure_existence=True)
         logger.info("Loading RV outputs from {}", high_level_path)
 
         most_recent_version = find_latest_version(high_level_path)
@@ -418,19 +417,19 @@ class RV_holder(BASE):
 
         # Oh god, my eyes, this is uglyyyyyyyy
         available_paths = [
-            Path(path).stem
-            for path in glob.glob((high_level_path / "*_subInst/*").as_posix())
-            if Path(path).is_dir()
+            Path(path).stem for path in glob.glob((high_level_path / "*_subInst/*").as_posix()) if Path(path).is_dir()
         ]
 
         available_subInsts = set(available_paths)
 
-        logger.debug(
-            "Found {} subInstruments: {}".format(len(available_subInsts), available_subInsts)
-        )
-        
+        logger.debug("Found {} subInstruments: {}".format(len(available_subInsts), available_subInsts))
+
         new_holder = RV_holder(
-            subInsts=available_subInsts, output_keys=[], storage_path=high_level_path, storage_mode="one-shot", compute_SA_values=True
+            subInsts=available_subInsts,
+            output_keys=[],
+            storage_path=high_level_path,
+            storage_mode="one-shot",
+            compute_SA_values=True,
         )
 
         for path in high_level_path.iterdir():
