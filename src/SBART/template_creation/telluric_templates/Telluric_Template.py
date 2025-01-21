@@ -503,6 +503,9 @@ class TelluricTemplate(BaseTemplate):
             if "FIT" in key:
                 continue
 
+            if key in ["SAVE_DISK_SPACE"]:
+                continue
+
             header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 

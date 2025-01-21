@@ -630,7 +630,6 @@ class RV_cube(BASE):
             )
             row = [name + "_raw", np.std(rvs), wstd(rvs, uncerts), np.median(uncerts)]
             rv_table.add_row(row)
-
             # SA correction does not enter the RVc column and, consequently, the statistics
             _, rvs, uncerts = self.get_RV_timeseries(
                 which=name, apply_SA_corr=False, as_value=True, units=meter_second, include_invalid_frames=False

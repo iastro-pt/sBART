@@ -489,10 +489,6 @@ class SamplerModel(BASE):
         logger.info("{} disabling memory saving mode", self.name)
         self.mem_save_enabled = False
 
-    def update_disk_saving_level(self, level: DISK_SAVE_MODE) -> None:
-        """Update the disk save level"""
-        self.disk_save_level = level
-
     def _generate_WorkerIn_Package(self, frameID, order, run_info, subInst, **kwargs) -> WorkerInput:
         worker_IN_pkg = WorkerInput()
         worker_IN_pkg["frameID"] = frameID

@@ -5,7 +5,7 @@ from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues, InternalParameters
+from SBART.utils.UserConfigs import DefaultValues, InternalParameters, UserParam, ValueFromList
 from SBART.utils.choices import DISK_SAVE_MODE
 
 
@@ -19,7 +19,13 @@ class BASE:
     _object_type = ""
     _name = ""
 
-    _default_params = DefaultValues()
+    _default_params = DefaultValues(
+        SAVE_DISK_SPACE=UserParam(
+            DISK_SAVE_MODE.DISABLED,
+            constraint=ValueFromList(DISK_SAVE_MODE),
+            description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
+        ),
+    )
 
     def __init__(
         self,
@@ -40,7 +46,15 @@ class BASE:
         self._needed_folders = needed_folders
         self._status = Status(assume_valid=start_with_valid_status)  # BY DEFAULT IT IS A VALID ONE!
 
-        self.disk_save_level = DISK_SAVE_MODE.DISABLED
+    @property
+    def disk_save_level(self) -> DISK_SAVE_MODE:
+        """Return the current disk save level for this object."""
+        return self._internal_configs["SAVE_DISK_SPACE"]
+
+    def update_disk_saving_level(self, level: DISK_SAVE_MODE) -> None:
+        """Update the disk save level"""
+        if self.disk_save_level != level:
+            self._internal_configs.update_configs_with_values({"SAVE_DISK_SPACE": level})
 
     ###
     #   Data storage

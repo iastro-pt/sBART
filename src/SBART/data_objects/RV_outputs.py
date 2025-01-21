@@ -52,7 +52,9 @@ class RV_holder(BASE):
         "frameIDs",
         "DLW",
         "DLW_ERR",
+        "QC",
     ]
+    _default_params = BASE._default_params
 
     def __init__(
         self,
@@ -380,6 +382,7 @@ class RV_holder(BASE):
         cube_root_folder = self._internalPaths.get_path_to(fold_name, as_posix=False)
         cube_root_folder = cube_root_folder / subInst
         cube.generate_root_path(cube_root_folder)
+        cube.update_disk_saving_level(self.disk_save_level)
         return cube
 
     def trigger_data_storage(self, *args, **kwargs):

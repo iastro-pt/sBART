@@ -150,11 +150,6 @@ class RV_routine(BASE):
             + IterableMustHave(("MJD", "BJD"), mode="either"),
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
-        SAVE_DISK_SPACE=UserParam(
-            DISK_SAVE_MODE.DISABLED,
-            constraint=ValueFromList(DISK_SAVE_MODE),
-            description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
-        ),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))),
         # How we select the wavelength regions to use. TODO: think about this one
@@ -352,7 +347,7 @@ class RV_routine(BASE):
         # The dataclass has nothing to store inside the Iteration folder!
         dataClass.generate_root_path(self._internalPaths.root_storage_path)
         self.sampler.generate_prior_of_model(dataClass)
-
+        self.sampler.update_disk_saving_level(level=self._internal_configs["SAVE_DISK_SPACE"])
         self.select_wavelength_regions(dataClass)
 
         self.find_subInstruments_to_use(
@@ -382,7 +377,7 @@ class RV_routine(BASE):
                 storage_mode=self._internal_configs["WORKING_MODE"],
                 compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
             )
-
+            self._output_RVcubes.update_disk_saving_level(self.disk_save_level)
         # TO be over-written by the child classes
         logger.info("Computing RVs with {}", self.name)
 

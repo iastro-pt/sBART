@@ -384,6 +384,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         header["VERSION"] = __version__
 
         for key, config_val in self._internal_configs.items():
+            if key in ["SAVE_DISK_SPACE"]:
+                continue
             header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
