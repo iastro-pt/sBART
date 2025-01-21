@@ -1002,7 +1002,7 @@ class RV_cube(BASE):
 
         with open(final_path, mode=mode) as file:
             if not append:
-                file.write("jdb\tvrad\tsvrad\n---\t----\t-----\n")
+                file.write("rjd\tvrad\tsvrad\n---\t----\t-----\n")
 
             obs, rvs, uncerts = self.get_RV_timeseries(
                 which="SBART",
