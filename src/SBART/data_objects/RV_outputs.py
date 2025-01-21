@@ -219,15 +219,15 @@ class RV_holder(BASE):
     #     Handle outputs    #
     #########################
 
-    def store_computed_RVs_to_disk(self, dataClassProxy, which_subInst: str) -> None:
+    def store_computed_RVs_to_disk(
+        self, dataClassProxy, which_subInst: str, include_invalid_frames: bool = False
+    ) -> None:
         storage_path = self._internalPaths.root_storage_path
         logger.debug("Storing the RV products to disk: {}", storage_path)
 
         header = self._generate_output_header()
 
-        for set_index, cube in enumerate(
-            [self._individual_cubes[which_subInst], self._merged_cubes[which_subInst]]
-        ):
+        for set_index, cube in enumerate([self._individual_cubes[which_subInst], self._merged_cubes[which_subInst]]):
             full_table = Table(header=header, table_style="NoLines")
 
             if cube is None:
@@ -237,6 +237,7 @@ class RV_holder(BASE):
                 header=header,
                 keys=self.output_keys,
                 dataClassProxy=dataClassProxy,
+                include_invalid_frames=include_invalid_frames,
             )
 
     def store_complete_timeseries(self) -> None:
@@ -358,17 +359,21 @@ class RV_holder(BASE):
             header.append(entry)
         return header
 
-    def generate_new_cube(self, dataClassProxy, subInst, is_merged, has_orderwise_rvs:bool):
-        cube_IDS = dataClassProxy.get_frameIDs_from_subInst(subInst)
-        frame0 = dataClassProxy.get_frame_by_ID(cube_IDS[0])
+    def generate_new_cube(self, dataClassProxy: DataClass, subInst, is_merged, has_orderwise_rvs: bool):
+        valid_cube_IDS = dataClassProxy.get_frameIDs_from_subInst(subInst)
+        invalid_cube_IDs = dataClassProxy.get_invalid_frameIDs(subinstrument=subInst)
+
+        frame0 = dataClassProxy.get_frame_by_ID(valid_cube_IDS[0])
 
         cube = RV_cube(
             subInst,
-            cube_IDS,
+            valid_cube_IDS,
             dataClassProxy.get_instrument_information(),
             has_orderwise_rvs=has_orderwise_rvs,
             is_SA_corrected=frame0.is_SA_corrected,
-            disable_SA_computation=not self._compute_SA_values
+            storage_mode=self._storage_mode,
+            disable_SA_computation=not self._compute_SA_values,
+            invalid_frameIDs=invalid_cube_IDs,
         )
         fold_name = "merged_subInst" if is_merged else "individual_subInst"
         cube_root_folder = self._internalPaths.get_path_to(fold_name, as_posix=False)

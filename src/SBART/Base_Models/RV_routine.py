@@ -165,10 +165,16 @@ class RV_routine(BASE):
             default_value="OBSERVATION",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
         ),
-        COMPUTE_SA_CORRECTION=UserParam(default_value=False,
-                                        constraint=BooleanValue,
-                                        description="If True (default) include the value of SA correction in outputs"
-                                   )
+        COMPUTE_SA_CORRECTION=UserParam(
+            default_value=False,
+            constraint=BooleanValue,
+            description="If True (default) include the value of SA correction in outputs",
+        ),
+        OUTPUT_WITH_INVALID_FRAMES=UserParam(
+            default_value=False,
+            constraint=BooleanValue,
+            description="If True, keep the invalid observations in the output files, with a value of -99999",
+        ),
     )
 
     def __init__(
@@ -403,6 +409,7 @@ class RV_routine(BASE):
                     self._output_RVcubes.store_computed_RVs_to_disk(
                         dataClassProxy=dataClass,
                         which_subInst=subInst,
+                        include_invalid_frames=self._internal_configs["OUTPUT_WITH_INVALID_FRAMES"],
                     )
 
         except DeadWorkerError:
@@ -421,8 +428,7 @@ class RV_routine(BASE):
             self.trigger_data_storage(dataClass)
 
     def _validate_template_with_frame(self, stellar_template, first_frame):
-        """Checks if the stellar template and the first frame share the same state of Flux Corrections
-        """
+        """Checks if the stellar template and the first frame share the same state of Flux Corrections"""
         base_message = "Comparing spectra and template with different"
 
         comparison_map = (

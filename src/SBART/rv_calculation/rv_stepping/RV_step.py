@@ -185,7 +185,10 @@ class RV_step(RV_routine):
 
             for index, frameID in enumerate(cube.frameIDs):
                 data_unit_act.store_combined_indicators(
-                    frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
+                    frameID,
+                    "DLW",
+                    ind_value=final_ind[index],
+                    ind_err=ind_error[index],
                 )
 
             cube.add_extra_storage_unit(data_unit_act)
@@ -194,6 +197,7 @@ class RV_step(RV_routine):
             self._output_RVcubes.store_computed_RVs_to_disk(
                 dataClassProxy=dataClass,
                 which_subInst=inst,
+                include_invalid_frames=self._internal_configs["OUTPUT_WITH_INVALID_FRAMES"],
             )
 
         self.trigger_data_storage(dataClass)
@@ -261,7 +265,10 @@ class RV_step(RV_routine):
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
+                frameID,
+                "DLW",
+                ind_value=final_ind[index],
+                ind_err=ind_error[index],
             )
 
         logger.info("Computing optimal precision bins for cromatic division")

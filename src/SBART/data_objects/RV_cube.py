@@ -549,13 +549,14 @@ class RV_cube(BASE):
     # Export data!
     #
 
-    def build_datablock(self) -> dict:
+    def build_datablock(self, include_invalid_frames: bool = False) -> dict:
         _, raw_rv, raw_err = self.get_RV_timeseries(
             which="SBART",
             apply_SA_corr=False,
             apply_drift_corr=False,
             as_value=True,
             units=kilometer_second,
+            include_invalid_frames=include_invalid_frames,
         )
 
         _, corr_rv, corr_err = self.get_RV_timeseries(
@@ -563,27 +564,46 @@ class RV_cube(BASE):
             apply_SA_corr=False,
             as_value=True,
             units=kilometer_second,
+            include_invalid_frames=include_invalid_frames,
         )
         dlw, dlw_err = self.get_TM_activity_indicator("DLW")
 
-        return {
-            "BJD": self.cached_info["BJD"],
-            "MJD": self.cached_info["MJD"],
+        frameIDs = self.frameIDs
+        if include_invalid_frames:
+            # ensure that they array has the same size (no DLW for invalid frames)
+            dlw.extend([np.nan for _ in self._invalid_frameIDs])
+            dlw_err.extend([np.nan for _ in self._invalid_frameIDs])
+            frameIDs.extend(self._invalid_frameIDs)
+
+        out = {
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
             "RV": raw_rv,
             "RV_ERR": raw_err,
+            "DLW": dlw,
+            "DLW_ERR": dlw_err,
+            "frameIDs": frameIDs,
+        }
+
+        tmp = {
+            "BJD": self.cached_info["BJD"],
+            "MJD": self.cached_info["MJD"],
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
             "SA": convert_data(self.compute_SA_correction(), kilometer_second, True),
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "full_path": self.cached_info["date_folders"],
             "filename": [Path.name(i) for i in self.cached_info["date_folders"]],
-            "frameIDs": self.frameIDs,
-            "DLW": dlw,
-            "DLW_ERR": dlw_err,
             "QC": self.QC_flag,
         }
+
+        for key, data in tmp.items():
+            if include_invalid_frames:
+                out[key] = data
+            else:
+                # Only the first N entries correspond to the valid frames
+                out[key] = data[: len(self.frameIDs)]
+        return out
 
     def compute_statistics(self, savefile=True):
         """Compute the scatter and median uncertainty of the different timeseries
@@ -606,16 +626,14 @@ class RV_cube(BASE):
                 as_value=True,
                 units=meter_second,
                 apply_drift_corr=False,
+                include_invalid_frames=False,
             )
             row = [name + "_raw", np.std(rvs), wstd(rvs, uncerts), np.median(uncerts)]
             rv_table.add_row(row)
 
             # SA correction does not enter the RVc column and, consequently, the statistics
             _, rvs, uncerts = self.get_RV_timeseries(
-                which=name,
-                apply_SA_corr=False,
-                as_value=True,
-                units=meter_second,
+                which=name, apply_SA_corr=False, as_value=True, units=meter_second, include_invalid_frames=False
             )
             row = [name + "_corr", np.std(rvs), wstd(rvs, uncerts), np.median(uncerts)]
             rv_table.add_row(row)
@@ -927,7 +945,7 @@ class RV_cube(BASE):
         for figure in figure_list:
             plt.close(figure)
 
-    def export_txt(self, header, keys, append=False):
+    def export_txt(self, header, keys, append=False, include_invalid_frames: bool = False):
         """Export the data to a text file
 
         Parameters
@@ -944,7 +962,8 @@ class RV_cube(BASE):
             write a detailed table with all of the information of the different corrections, by default True
 
         """
-        data_blocks = self.build_datablock()
+        data_blocks = self.build_datablock(include_invalid_frames=include_invalid_frames)
+
         final_path = build_filename(
             self._internalPaths.root_storage_path,
             f"RVs_{self._associated_subInst}_{self._mode}",
