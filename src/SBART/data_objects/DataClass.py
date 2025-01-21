@@ -772,8 +772,8 @@ class DataClass(BASE):
 
         return values
 
-    def get_valid_frameIDS(self) -> List[int]:
-        """Get list of all available frame IDs (across all subInstruments)
+    def get_valid_frameIDS(self) -> list[int]:
+        """Get list of all available frame IDs (across all subInstruments).
 
         Returns
         -------
@@ -790,8 +790,25 @@ class DataClass(BASE):
 
         return out
 
-    def get_frameIDs_from_subInst(self, subInstrument: str, include_invalid: bool = False) -> List[int]:
-        """Get all frameIDs associated with a given instrument. By default, only returns the valid ones
+    def get_invalid_frameIDs(self, subinstrument: None | str) -> list[int]:  # noqa: N802
+        """Get a list of the invalid frameIDs (by default, all of them).
+
+        Args:
+            subinstrument (None | str): If not None, returrns only for this subInstrument
+
+        """
+        out = []
+        for subInst in self._inst_type.sub_instruments:  # noqa: N806
+            if subinstrument is not None and subInst != subinstrument:
+                continue
+            try:
+                out.extend(self.get_frameIDs_from_subInst(subInst, include_invalid=False))
+            except NoDataError:
+                continue
+        return out
+
+    def get_frameIDs_from_subInst(self, subInstrument: str, include_invalid: bool = False) -> list[int]:  # noqa: FBT001, FBT002, N802
+        """Get all frameIDs associated with a given instrument. By default, only returns the valid ones.
 
         Parameters
         ----------
