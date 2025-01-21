@@ -16,6 +16,7 @@ from SBART import __version__
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 from SBART.utils.shift_spectra import (
@@ -24,6 +25,7 @@ from SBART.utils.shift_spectra import (
 )
 from SBART.utils.spectral_conditions import Empty_condition, KEYWORD_condition
 from SBART.utils.status_codes import DISK_LOADED_DATA, MISSING_DATA, SUCCESS
+from SBART.utils.telluric_utilities import create_binary_template
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import find_overlaps
 from SBART.utils.units import kilometer_second
 from SBART.utils.UserConfigs import (
@@ -32,8 +34,6 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueInInterval,
 )
-from SBART.utils.telluric_utilities import create_binary_template
-from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class TelluricTemplate(BaseTemplate):
@@ -509,20 +509,26 @@ class TelluricTemplate(BaseTemplate):
             header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
-        hdus_cubes = [hdu]
+        contam = self.contaminated_regions
+        contam_imge = np.zeros((len(contam), 2))
+        for row, entry in enumerate(contam):
+            contam_imge[row] = entry
+        hdu_contam = fits.ImageHDU(data=contam_imge, header=header, name="CONTAM")
 
-        hdu_wave = fits.ImageHDU(data=self.wavelengths, header=header, name="Wave")
-        complete_template = np.zeros(self.template.shape)
-        for pair in self._masked_wavelengths:
-            indexes = np.where(np.logical_and(self.wavelengths >= pair[0], self.wavelengths <= pair[1]))
-            complete_template[indexes] = 1
-
-        hdu_temp = fits.ImageHDU(data=complete_template, header=header, name="Temp")
-
-        for val in [hdu_wave, hdu_temp]:
-            hdus_cubes.append(val)
+        hdus_cubes = [hdu, hdu_contam]
 
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
+            hdu_wave = fits.ImageHDU(data=self.wavelengths, header=header, name="Wave")
+            complete_template = np.zeros(self.template.shape)
+            for pair in self._masked_wavelengths:
+                indexes = np.where(np.logical_and(self.wavelengths >= pair[0], self.wavelengths <= pair[1]))
+                complete_template[indexes] = 1
+
+            hdu_temp = fits.ImageHDU(data=complete_template, header=header, name="Temp")
+
+            for val in [hdu_wave, hdu_temp]:
+                hdus_cubes.append(val)
+
             hdu_transWave = fits.ImageHDU(data=self.transmittance_wavelengths, header=header, name="TRANSMIT_WAVE")
             hdu_transSpec = fits.ImageHDU(data=self.transmittance_spectra, header=header, name="TRANSMIT_SPECTRA")
             hdus_cubes.extend([hdu_transWave, hdu_transSpec])
@@ -561,11 +567,14 @@ class TelluricTemplate(BaseTemplate):
                 logger.warning(
                     "Loaded template was not created under the current SBART version. Possible problems may arise",
                 )
-            self._associated_subInst = hdulist["Wave"].header["subInst"]
 
-            waves = hdulist["Wave"].data
-            template = hdulist["Temp"].data
+            self._associated_subInst = hdulist["CONTAM"].header["subInst"]
 
+            try:
+                waves = hdulist["Wave"].data
+                template = hdulist["Temp"].data
+            except:
+                waves, template = None, None
             try:
                 self.transmittance_wavelengths = hdulist["TRANSMIT_WAVE"].data
                 self.transmittance_spectra = hdulist["TRANSMIT_SPECTRA"].data
@@ -573,14 +582,22 @@ class TelluricTemplate(BaseTemplate):
                 self.transmittance_spectra = None
                 self.transmittance_wavelengths = None
 
-            self.template = template
-            self.wavelengths = waves
+            try:
+                self.template = template
+                self.wavelengths = waves
+            except KeyError:
+                self.template = None
+                self.wavelengths = None
 
             try:
                 self.use_approximated_BERV_correction = hdulist[1].header["HIERARCH APPROX BERV CORRECTION"]
             except KeyError:
                 logger.warning("Loading old telluric template with missing keywords")
                 self.use_approximated_BERV_correction = False
+
+            self._computed_wave_blocks = True
+            self._masked_wavelengths = hdulist["CONTAM"].data.tolist()
+
         self.add_to_status(DISK_LOADED_DATA(f"Loaded data from {loading_path}"))
 
     def _finish_template_creation(self):
