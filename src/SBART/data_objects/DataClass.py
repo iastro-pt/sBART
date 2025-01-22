@@ -800,7 +800,7 @@ class DataClass(BASE):
 
         return out
 
-    def get_invalid_frameIDs(self, subinstrument: None | str) -> list[int]:  # noqa: N802
+    def get_invalid_frameIDs(self, subinstrument: None | str = None) -> list[int]:  # noqa: N802
         """Get a list of the invalid frameIDs (by default, all of them).
 
         Args:
