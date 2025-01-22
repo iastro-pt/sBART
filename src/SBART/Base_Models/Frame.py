@@ -288,6 +288,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "seeing": None,
             "MOON PHASE": 0,
             "MOON DISTANCE": 0,
+            "INS MODE": "",
+            "INS NAME": "",
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others

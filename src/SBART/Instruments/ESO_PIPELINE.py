@@ -105,6 +105,8 @@ class ESO_PIPELINE(Frame):
             "EXPTIME": "EXPTIME",
             "DRS_CCF_MASK": f"HIERARCH {KW_identifier} QC CCF MASK",
             "DRS_FLUX_CORRECTION_TEMPLATE": "HIERARCH ESO PRO REC1 CAL8 NAME",
+            "INS NAME": "INSTRUME",
+            "INS MODE": f"HIERARCH {KW_identifier} INS MODE",
         }
         if override_KW_map is not None:
             for key, value in override_KW_map.items():
@@ -225,7 +227,9 @@ class ESO_PIPELINE(Frame):
             self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} METEO {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin",
+                    self.observation_info[name],
+                    old_scale="Celsius",
+                    new_scale="Kelvin",
                 )
 
         if self.observation_info["relative_humidity"] == 255:
@@ -412,14 +416,10 @@ class ESO_PIPELINE(Frame):
 
         if self._internal_configs["USE_APPROX_BERV_CORRECTION"]:
             if espdr_to_num(espdrversion) >= espdr_to_num("3.2.0"):
-                logger.critical(
-                    f"Using approximated BERV correction in espdr/{espdrversion}"
-                )
+                logger.critical(f"Using approximated BERV correction in espdr/{espdrversion}")
         else:
             if espdr_to_num(espdrversion) < espdr_to_num("3.2.0"):
-                logger.critical(
-                    f"Not using approximated BERV correction in espdr/{espdrversion}"
-                )
+                logger.critical(f"Not using approximated BERV correction in espdr/{espdrversion}")
 
     @property
     def bare_fname(self) -> str:

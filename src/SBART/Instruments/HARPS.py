@@ -131,7 +131,6 @@ class HARPS(ESO_PIPELINE):
 
         self.instrument_properties["resolution"] = 115_000
         self.instrument_properties["EarthLocation"] = EarthLocation.of_site("La Silla Observatory")
-
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
         self.instrument_properties["site_pressure"] = 750
