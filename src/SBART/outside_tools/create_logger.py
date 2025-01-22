@@ -14,8 +14,9 @@ def setup_SBART_logger(
     log_to_terminal: bool = True,
     terminal_log_level="DEBUG",
     write_to_file=True,
+    append_to_file=True,
 ) -> None:
-    """Call from outside the module to setup the logger and necessary folders + structure
+    """Call from outside the module to setup the logger and necessary folders + structure.
 
     FIXME: This will create empty log files for all sub_instruments of the instrument, even if it has no data!
 
@@ -63,6 +64,7 @@ def setup_SBART_logger(
         filter="SBART",
         backtrace=False,
         diagnose=True,
+        mode="a" if append_to_file else "w",
     )
 
     logger.warning("Currently disabled the multi-folder logger structure")
