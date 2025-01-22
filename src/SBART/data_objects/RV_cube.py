@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import copy
-from itertools import product
 import os
 import time
 import warnings
+from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
@@ -43,7 +43,9 @@ if TYPE_CHECKING:
 
 
 class RV_cube(BASE):
-    """The RV cube stores the result of a SBART run of a given sub-Instrument. It is also responsible for:
+    """The RV cube stores the result of a SBART run of a given sub-Instrument.
+
+    It is also responsible for:
 
     - Provide a way of accessing SBART and /or CCF results
     - Apply RV corrections (drift, SA)

@@ -14,14 +14,15 @@ from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
 from SBART.utils.custom_exceptions import (
     BadTemplateError,
     DeadWorkerError,
     InvalidConfiguration,
 )
-from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.SBARTtypes import UI_PATH
+from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -33,7 +34,6 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 from SBART.utils.work_packages import ShutdownPackage
-from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class RV_routine(BASE):
@@ -160,11 +160,6 @@ class RV_routine(BASE):
         COMMON_WAVELENGTHS_MODE=UserParam(
             default_value="OBSERVATION",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
-        ),
-        WORKING_MODE=UserParam(
-            default_value="one-shot",
-            constraint=ValueFromList(("one-shot", "rolling")),
-            description="How to store the output files. If one-shot, overwrites all txt files, if rolling appends to end of list",
         ),
         COMPUTE_SA_CORRECTION=UserParam(
             default_value=True,
