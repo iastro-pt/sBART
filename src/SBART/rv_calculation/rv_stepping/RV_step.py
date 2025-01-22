@@ -7,6 +7,7 @@ from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits import Classical_Unit
 from SBART.utils import custom_exceptions, meter_second
+from SBART.utils.choices import WORKING_MODE
 from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
@@ -164,10 +165,8 @@ class RV_step(RV_routine):
             data_unit_act = ActIndicators_Unit(
                 available_inds=["DLW"],
                 tot_number_orders=cube.N_orders,
-                number_OBS=len(cube.frameIDs),
                 list_of_fIDS=cube.frameIDs,
             )
-
             og_data_act = original_cube.get_storage_unit("Indicators")
             ind, errs = og_data_act.get_all_orderwise_indicator("DLW")
             problematic_orders = cube.problematic_orders
@@ -192,7 +191,10 @@ class RV_step(RV_routine):
                 )
 
             cube.add_extra_storage_unit(data_unit_act)
-            self._output_RVcubes.add_RV_cube(inst, RV_cube=cube, is_merged=True)
+            if self.work_mode == WORKING_MODE.ONE_SHOT:
+                self._output_RVcubes.add_RV_cube(subInst, RV_cube=cube, is_merged=True)
+            elif self.work_mode == WORKING_MODE.ROLLING:
+                self._output_RVcubes.ingest_cube_into_rolling_skip_reasons(subInst=subInst, cube=cube, is_merged=True)
 
             self._output_RVcubes.store_computed_RVs_to_disk(
                 dataClassProxy=dataClass,
@@ -202,15 +204,13 @@ class RV_step(RV_routine):
 
         self.trigger_data_storage(dataClass)
 
-    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
+    def process_workers_output(self, empty_cube: RV_cube, worker_outputs: list[list]) -> RV_cube:
         data_unit = Classical_Unit()
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
             tot_number_orders=empty_cube.N_orders,
-            number_OBS=len(empty_cube.frameIDs),
             list_of_fIDS=empty_cube.frameIDs,
         )
-
         for pkg in worker_outputs:
             for order_pkg in pkg:
                 frameID = order_pkg["frameID"]
@@ -241,6 +241,7 @@ class RV_step(RV_routine):
                         ind_name="DLW",
                         ind_value=order_pkg["DLW"],
                         ind_err=order_pkg["DLW_ERR"],
+                        status=order_status,
                     )
         empty_cube.update_worker_information(worker_outputs)
 
