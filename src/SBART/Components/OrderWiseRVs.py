@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -35,6 +36,14 @@ class OrderWiseRVs(BASE):
     def get_index_of_frameID(self, frameID: int) -> int:
         """Get the internal ID of a frameID."""
         return self.frameIDs.index(frameID)
+
+    def get_orderwise_values(self, frameID):
+        inds = self.get_index_of_frameID(frameID)
+        return (
+            self._Rv_orderwise[inds, :],
+            self._RvErrors_orderwise[inds, :],
+            self._OrderStatus.get_status_from_order(frameID=frameID, all_orders=True),
+        )
 
     def reset_epoch(self, frameID: int) -> None:
         """Fully reset the orderwise information of a given frameID."""
@@ -87,7 +96,7 @@ class OrderWiseRVs(BASE):
             raise custom_exceptions.InvalidConfiguration(msg)
 
         for entry in frameIDs:
-            if entry in self._stored_frameIDs:
+            if entry in self.frameIDs:
                 msg = "Adding a repeat of the same frameID"
                 raise custom_exceptions.InvalidConfiguration(msg)
 
@@ -166,7 +175,13 @@ class OrderWiseRVs(BASE):
         """
         return self._OrderStatus.common_bad_orders
 
-    def store_to_disk(self, path_to_store: UI_PATH, associated_subInst: str) -> None:
+    def store_to_disk(
+        self,
+        path_to_store: UI_PATH,
+        associated_subInst: str,
+        store_flags: bool = True,
+        extra_identifier: None | str = None,
+    ) -> None:
         header = fits.Header()
 
         hdu = fits.PrimaryHDU(data=[], header=header)
@@ -184,16 +199,17 @@ class OrderWiseRVs(BASE):
         hdu_timeseries = fits.BinTableHDU.from_columns(coldefs, name="TIMESERIES_DATA")
 
         hdul = fits.HDUList([hdu, hdu_timeseries, hdu_RVs, hdu_ERR, hdu_mask])
+        extra = f"_{extra_identifier}" if extra_identifier is not None else ""
         storage_path = build_filename(
             path_to_store,
-            f"OrderWiseInfo_{associated_subInst}",
+            f"OrderWiseInfo{extra}_{associated_subInst}",
             fmt="fits",
         )
         hdul.writeto(storage_path, overwrite=True)
 
         storage_path = build_filename(
             path_to_store,
-            f"DetailedFlags_{associated_subInst}",
+            f"DetailedFlags{extra}_{associated_subInst}",
             fmt="json",
         )
 
@@ -201,26 +217,26 @@ class OrderWiseRVs(BASE):
             json.dump(self._OrderStatus.to_json(), file, indent=4)
 
     @classmethod
-    def load_from_disk(
-        cls,
-        subInst_path,
-        SBART_version: str | None = None,
-    ) -> OrderWiseRVs:
-        subInst = subInst_path.stem
-
-        storage_path = build_filename(
-            subInst_path / "RVcube",
-            filename=f"OrderWiseInfo_{subInst}",
-            fmt="fits",
-            SBART_version=SBART_version,
-        )
+    def load_from_disk(cls, subInst_path, SBART_version: str | None = None, full_path=None) -> OrderWiseRVs:
+        if full_path is None:
+            subInst = subInst_path.stem
+            storage_path = build_filename(
+                subInst_path / "RVcube",
+                filename=f"OrderWiseInfo_{subInst}",
+                fmt="fits",
+                SBART_version=SBART_version,
+            )
+        else:
+            storage_path = Path(full_path)
         with fits.open(storage_path) as hdu:
             orderwise_RV = hdu["ORDERWISE_RV"].data
             orderwise_RV_ERR = hdu["ORDERWISE_ERR"].data
             good_order_mask = hdu["GOOD_ORDER_MASK"].data
             timeseries_table = hdu["TIMESERIES_DATA"].data
 
-        new_comp = OrderWiseRVs(frameIDs=timeseries_table["FrameID"].tolist(), N_orders=orderwise_RV.shape[1])
+        new_comp = OrderWiseRVs(
+            frameIDs=timeseries_table["FrameID"].astype(int).tolist(), N_orders=orderwise_RV.shape[1]
+        )
 
         new_comp._Rv_orderwise = orderwise_RV  # noqa: SLF001
         new_comp._RvErrors_orderwise = orderwise_RV_ERR  # noqa: SLF001
