@@ -6,7 +6,7 @@ import time
 import warnings
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +17,7 @@ from tabletexifier import Table
 
 from SBART import __version__
 from SBART.Components.OrderWiseRVs import OrderWiseRVs
+from SBART.data_objects.Target import Target
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
@@ -54,7 +55,7 @@ class RV_cube(BASE):
     def __init__(
         self,
         subInst: str,
-        frameIDs: list[int],
+        valid_frameIDs: list[int],
         instrument_properties: dict,
         has_orderwise_rvs,
         is_SA_corrected: bool,
@@ -77,24 +78,23 @@ class RV_cube(BASE):
         self._associated_subInst = subInst
         self._storage_mode = storage_mode
         self._disable_SA_computation = disable_SA_computation
-
-        self._invalid_frameIDs = invalid_frameIDs if invalid_frameIDs is not None else []
+        invalid_frameIDs = invalid_frameIDs if invalid_frameIDs is not None else []
+        self._all_frames = [*valid_frameIDs, *invalid_frameIDs]
+        self.QC_flag: list[int] = [1 for _ in valid_frameIDs] + [0 for _ in invalid_frameIDs]
 
         super().__init__(
             user_configs={},
             needed_folders={"plots": "plots", "metrics": "metrics", "RVcube": "RVcube"},
         )
         self.instrument_properties = instrument_properties
-        self.frameIDs = frameIDs
-        self.QC_flag: list[int] = [1 for _ in self.frameIDs] + [0 for _ in self._invalid_frameIDs]
 
-        N_epochs = len(frameIDs)
+        N_epochs = len(valid_frameIDs)
         N_orders = instrument_properties["array_size"][0]
 
         self.worker_outputs = []
 
         # RVs and uncertainties -> unitless values in meter/second
-        self.orderwise_rvs = OrderWiseRVs(frameIDs=frameIDs, N_orders=N_orders)
+        self.orderwise_rvs = OrderWiseRVs(frameIDs=valid_frameIDs, N_orders=N_orders)
 
         self._extra_storage_units = []
         self.has_orderwise_rvs = has_orderwise_rvs
@@ -141,12 +141,24 @@ class RV_cube(BASE):
 
         self._mode = "individual"
 
+        # TODO: merge GOOD and BAD frames, to ease access to the cached_info
+
         # Still be to improved:
         self.eniric_RV_precision = []
         self.expected_RV_precision = []
         self.template_RV_precision = []
 
         self._saved_to_disk = False
+
+    @property
+    def frameIDs(self) -> list[int]:
+        inds = np.where(np.asarray(self.QC_flag) == 1)
+        return [self._all_frames[i] for i in inds[0]]
+
+    @property
+    def _invalid_frameIDs(self) -> list[int]:
+        inds = np.where(np.asarray(self.QC_flag) == 0)
+        return [self._all_frames[i] for i in inds[0]]
 
     #################################
     # Update internal data
@@ -163,7 +175,9 @@ class RV_cube(BASE):
         logger.info("RV cube making copy of {}", other.name)
         self.cached_info = other.cached_info
 
-        self._Rv_orderwise, self._RvErrors_orderwise, self._OrderStatus = other.data
+        self.orderwise_rvs._Rv_orderwise, self.orderwise_rvs._RvErrors_orderwise, self.orderwise_rvs._OrderStatus = (
+            other.data
+        )
         self._loaded_inst_info = True
         self._saved_to_disk = False
 
@@ -180,9 +194,49 @@ class RV_cube(BASE):
     def update_skip_reason(self, orders: list[int] | set[int] | int, skip_reason: Flag) -> None:
         self.orderwise_rvs.update_skip_reason(orders, skip_reason)
 
+    def ingest_dataClass_from_rolling(self, DataClassProxy: DataClass):
+        good_frames = DataClassProxy.get_valid_frameIDS()
+        bad_frames = DataClassProxy.get_invalid_frameIDs()
+
+        for QCstate, framelist in [(1, good_frames), (0, bad_frames)]:
+            for frameID in framelist:
+                if frameID not in self._all_frames:
+                    # Everything is good, we append to the end as it is a new OB
+                    self._all_frames.append(frameID)
+                    self.QC_flag.append(QCstate)
+                    for key in self.cached_info:
+                        if key in ["date_folders", "bare_filename"]:
+                            continue
+
+                        self.cached_info[key].append(DataClassProxy.get_KW_from_frameID(key, frameID))
+
+                    frame = DataClassProxy.get_frame_by_ID(frameID)
+                    self.cached_info["date_folders"].append(frame.file_path)
+                    self.cached_info["bare_filename"].append(frame.bare_fname)
+                else:
+                    # Replacing an OB with a good one. Updating its values
+                    index = self._all_frames.index(frameID)
+                    self.QC_flag[index] = QCstate
+                    for key in self.cached_info:
+                        if key in [
+                            "date_folders",
+                            "bare_filename",
+                            "target",
+                            "SA_correction",
+                            "previous_SBART_RV",
+                            "previous_SBART_RV_ERR",
+                        ]:
+                            continue
+
+                        self.cached_info[key][index] = DataClassProxy.get_KW_from_frameID(key, frameID)
+
+                    frame = DataClassProxy.get_frame_by_ID(frameID)
+                    self.cached_info["date_folders"][index] = frame.file_path
+                    self.cached_info["bare_filename"][index] = frame.bare_fname
+
     def load_data_from_DataClass(self, DataClassProxy: DataClass) -> None:
         logger.debug("{} loading frame information from dataclass", self.name)
-        for frameID in [*self.frameIDs, *self._invalid_frameIDs]:
+        for frameID in self._all_frames:
             for key in self.cached_info:
                 if key in ["date_folders", "bare_filename"]:
                     continue
@@ -236,6 +290,30 @@ class RV_cube(BASE):
 
     def store_order_data(self, frameID: int, order: int, RV: float, error: float, status: Flag) -> None:
         self.orderwise_rvs.store_order_data(frameID=frameID, order=order, status=status, RV=RV, error=error)
+
+    def add_new_frame(
+        self,
+        frameID: int,
+        RVs: Iterable[float],
+        errors: Iterable[float],
+        status: Iterable[Flag],
+    ) -> None:
+        self.orderwise_rvs.add_new_epochs(N_epochs=1, frameIDs=[frameID])
+        orders = list(range(len(RVs)))
+        for o, r, e, s in zip(orders, RVs, errors, [i.all_flags for i in status]):
+            self.store_order_data(frameID=frameID, order=o, RV=r, error=e, status=s)
+
+    def overwrite_existing_frame(
+        self,
+        frameID: int,
+        RVs: Iterable[float],
+        errors: Iterable[float],
+        status: Iterable[Flag],
+    ) -> None:
+        self.orderwise_rvs.reset_epoch(frameID=frameID)
+        orders = list(range(len(RVs)))
+        for o, r, e, s in zip(orders, RVs, errors, [i.all_flags for i in status]):
+            self.store_order_data(frameID=frameID, order=o, RV=r, error=e, status=s)
 
     # #################################3
     #
@@ -329,7 +407,7 @@ class RV_cube(BASE):
             output_times = self.cached_info[self.time_key]
             final_RVs.extend(bad_rvs)
             final_RVs_ERR.extend(bad_err)
-        elif which != "SBART" and not include_invalid_frames:
+        elif which not in ["SBART", "previous_SBART"] and not include_invalid_frames:
             # DRS / previous sbART and don't want to include invalid -< we must remove
             inds = np.where(np.asarray(self.QC_flag) == 0)[0]
             for index in sorted(inds)[::-1]:
@@ -424,6 +502,9 @@ class RV_cube(BASE):
         msg = f"Storage unit {storage_name} does not exist ({len(self._extra_storage_units)} available)"
         logger.critical(msg)
         raise NoDataError(msg)
+
+    def merge_tm_activity_units(self, name: str, unit):
+        self.get_storage_unit(name).merge_with(unit)
 
     ##########################
     #
@@ -550,8 +631,10 @@ class RV_cube(BASE):
             include_invalid_frames=include_invalid_frames,
         )
         dlw, dlw_err = self.get_TM_activity_indicator("DLW")
-
+        dlw = copy.copy(dlw)
+        dlw_err = copy.copy(dlw_err)
         frameIDs = copy.copy(self.frameIDs)
+
         if include_invalid_frames:
             # ensure that they array has the same size (no DLW for invalid frames)
             dlw.extend([np.nan for _ in self._invalid_frameIDs])
@@ -583,7 +666,6 @@ class RV_cube(BASE):
 
         for key in ["BJD", "MJD", "INS MODE", "INS NAME", "PROG ID", "DATE_NIGHT", "DRS-VERSION", *ind_keys]:
             tmp[key] = self.cached_info[key]
-
         inds = np.where(self.QC_flag == 1)[0]
         for key, data in tmp.items():
             if include_invalid_frames:
@@ -734,7 +816,6 @@ class RV_cube(BASE):
         if rdb:
             self.export_rdb(append)
             self.export_complete_rdb()
-
         self.export_skip_reasons(dataClassProxy)
         self.compute_statistics()
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
@@ -817,9 +898,9 @@ class RV_cube(BASE):
 
             figure_list.extend([fig_full, fig_part])
 
-            orders = np.asarray(range(self._Rv_orderwise.shape[1]))
-            for epoch, data in enumerate(self._RvErrors_orderwise):
-                full_rvs = self._Rv_orderwise[epoch]
+            orders = np.asarray(range(self.orderwise_rvs._Rv_orderwise.shape[1]))
+            for epoch, data in enumerate(self.orderwise_rvs._RvErrors_orderwise):
+                full_rvs = self.orderwise_rvs._Rv_orderwise[epoch]
 
                 valid_orders = data.copy()
                 valid_RVs = full_rvs.copy()
@@ -908,6 +989,9 @@ class RV_cube(BASE):
             contrast = dataClassProxy.collect_KW_observations("CONTRAST", [self.subInst])
             FWHM = dataClassProxy.collect_KW_observations("FWHM", [self.subInst])
             BIS = dataClassProxy.collect_KW_observations("BIS SPAN", [self.subInst])
+            # print(len(dlw))
+            # breakpoint()
+            print(len(self.obs_times), len(dlw))
             ax[0, 0].errorbar(self.obs_times, dlw, err, ls="", marker="x")
             ax[0, 0].set_xlabel("BJD")
             ax[1, 0].scatter(FWHM, dlw)
@@ -960,7 +1044,6 @@ class RV_cube(BASE):
         )
 
         mode = "a" if append else "w"
-
         table = Table(header=header, table_style="NoLines")
         for epoch in np.argsort(self.obs_times):
             line = []
@@ -1174,11 +1257,11 @@ class RV_cube(BASE):
             "DRIFT": convert_data(self.cached_info["drift"], new_units=meter_second, as_value=True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], new_units=meter_second, as_value=True),
             "SA": convert_data(self.cached_info["SA_correction"], new_units=meter_second, as_value=True),
-            "CONTRAST": self.cached_info["CONTRAST"],
-            "FWHM": self.cached_info["FWHM"],
-            "BIS SPAN": self.cached_info["BIS SPAN"],
+            "BERV": convert_data(self.cached_info["BERV"], new_units=meter_second, as_value=True),
         }
 
+        for ind, extra in product(["FWHM", "CONTRAST", "BIS SPAN"], ["", "_ERR"]):
+            information[f"{ind}{extra}"] = self.cached_info[f"{ind}{extra}"]
         coldefs = []
         for key, array in information.items():
             coldefs.append(fits.Column(name=key, format="D", array=array))
@@ -1211,6 +1294,17 @@ class RV_cube(BASE):
             path_to_store=self._internalPaths.get_path_to("RVcube", as_posix=False),
             associated_subInst=self._associated_subInst,
         )
+        text_info = {}
+        str_info = ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]
+        for key in str_info:
+            text_info[key] = self.cached_info[key]
+        storage_path = build_filename(
+            self._internalPaths.get_path_to("RVcube", as_posix=False),
+            f"CachedInfo_{self._associated_subInst}",
+            fmt="json",
+        )
+        with open(storage_path, mode="w") as tow:
+            json.dump(text_info, tow)
 
     @classmethod
     def load_cube_from_disk(
@@ -1235,6 +1329,12 @@ class RV_cube(BASE):
             fmt="fits",
             SBART_version=SBART_version,
         )
+        cachedJSONinfo_filename = build_filename(
+            subInst_path / "RVcube",
+            filename=f"CachedInfo_{subInst}",
+            fmt="json",
+            SBART_version=SBART_version,
+        )
         detailed_flags_filename = build_filename(
             subInst_path / "RVcube",
             filename=f"DetailedFlags_{subInst}",
@@ -1255,6 +1355,10 @@ class RV_cube(BASE):
         with fits.open(cachedinfo_filename) as hdu:
             header_info = hdu[0].header
             timeseries_table = hdu["TIMESERIES_DATA"].data
+
+        with open(cachedJSONinfo_filename) as tor:
+            timeseries_text = json.load(tor)
+
         instrument_info = {
             "array_size": [header_info[f"HIERARCH array_size_{i}"] for i in range(2)],
             "is_drift_corrected": header_info["HIERARCH drift_corr"],
@@ -1270,7 +1374,7 @@ class RV_cube(BASE):
 
         new_cube = RV_cube(
             subInst=subInst,
-            frameIDs=good_frameIDs,
+            valid_frameIDs=good_frameIDs,
             instrument_properties=instrument_info,
             has_orderwise_rvs=has_orderwise_rvs,
             # for backwards compatibility:
@@ -1278,12 +1382,15 @@ class RV_cube(BASE):
             invalid_frameIDs=invalid,
             storage_mode="one-shot",
         )
+        cube_root_folder = subInst
+        new_cube.generate_root_path(cube_root_folder)
 
         logger.debug("Loading misc Info:")
         for key, values in miscInfo["cached_info"].items():
             if key == "date_folders":
                 values = list([Path(i) for i in values])
-
+            if key == "target":
+                values = Target(["foo"], original_name=values)
             new_cube.cached_info[key] = values
 
         logger.debug("Loading orderwise info")
@@ -1306,30 +1413,35 @@ class RV_cube(BASE):
         entries = {
             "DRS_RV": "DRS_RV",
             "DRS_RV_ERR": "DRS_RV_ERR",
-            "previous_SBART_RV": "prevSBART_RV",
-            "previous_SBART_RV_ERR": "prevSBART_RV_ERR",
             "SA_correction": "SA",
             "drift": "DRIFT",
             "drift_ERR": "DRIFT_ERR",
+            "BERV": "BERV",
         }
 
         for internal_kw, storage_kw in entries.items():
             new_cube.cached_info[internal_kw] = convert_to_quantity(timeseries_table[storage_kw])
 
+        indexed_entries = {
+            "previous_SBART_RV": "prevSBART_RV",
+            "previous_SBART_RV_ERR": "prevSBART_RV_ERR",
+        }
+        for internal_kw, storage_kw in indexed_entries.items():
+            new_cube.cached_info[internal_kw] = convert_to_quantity(timeseries_table[storage_kw][inds])
+
         try:
-            new_cube.cached_info["CONTRAST"] = timeseries_table["CONTRAST"]
-            new_cube.cached_info["CONTRAST_ERR"] = timeseries_table["CONTRAST_ERR"]
-            new_cube.cached_info["FWHM"] = timeseries_table["FWHM"]
-            new_cube.cached_info["FWHM_ERR"] = timeseries_table["FWHM_ERR"]
-            new_cube.cached_info["BIS SPAN"] = timeseries_table["BIS SPAN"]
-            new_cube.cached_info["BIS SPAN_ERR"] = timeseries_table["BIS SPAN_ERR"]
+            for ind, extra in product(["FWHM", "CONTRAST", "BIS SPAN"], ["", "_ERR"]):
+                new_cube.cached_info[f"{ind}{extra}"] = timeseries_table[f"{ind}{extra}"]
+
+            for key in ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]:
+                new_cube.cached_info[key] = timeseries_text[key]
         except:
             logger.warning(
                 "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
             )
 
-        new_cube.TM_RVs = convert_to_quantity(timeseries_table["TM_raw"])
-        new_cube.TM_RVs_ERR = convert_to_quantity(timeseries_table["TM_raw_ERR"])
+        new_cube.TM_RVs = convert_to_quantity(timeseries_table["TM_raw"][inds])
+        new_cube.TM_RVs_ERR = convert_to_quantity(timeseries_table["TM_raw_ERR"][inds])
         new_cube._loaded_inst_info = True
 
         if load_full_flag:
