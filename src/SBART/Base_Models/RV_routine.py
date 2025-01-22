@@ -14,11 +14,12 @@ from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.choices import DISK_SAVE_MODE
+from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
 from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
 from SBART.utils.custom_exceptions import (
     BadTemplateError,
     DeadWorkerError,
+    InternalError,
     InvalidConfiguration,
 )
 from SBART.utils.SBARTtypes import UI_PATH
@@ -307,7 +308,7 @@ class RV_routine(BASE):
         check_metadata: bool = False,
         store_cube_to_disk=True,
     ) -> None:
-        """Trigger the RV extraction for all sub-Instruments
+        """Trigger the RV extraction for all sub-Instruments.
 
         Parameters
         ----------
@@ -356,21 +357,31 @@ class RV_routine(BASE):
             # Check here if the Stellar template will be interpolated with a GP:
             logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
             if "GP" in dataClass.get_stellar_model().get_interpol_modes():
-                raise custom_exceptions.InternalError(
-                    "Can't interpolate with GPs without having the memory saving mode enabled",
-                )
+                msg = "Can't interpolate with GPs without having the memory saving mode enabled"
+                raise custom_exceptions.InternalError(msg)
 
             self.sampler.disable_memory_savings()
 
-        if self._output_RVcubes is None:
-            self._output_RVcubes = RV_holder(
-                subInsts=self._subInsts_to_use,
-                output_keys=self._internal_configs["output_fmt"],
-                storage_path=self._internalPaths.root_storage_path,
-                storage_mode=self._internal_configs["WORKING_MODE"],
-                compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
-            )
-            self._output_RVcubes.update_disk_saving_level(self.disk_save_level)
+        if self.work_mode == WORKING_MODE.ROLLING:
+            try:
+                self._output_RVcubes = RV_holder.load_from_disk(high_level_path=self._internalPaths.root_storage_path)
+                _found = True
+                self._output_RVcubes.update_work_mode_level(WORKING_MODE.ROLLING)
+            except custom_exceptions.NoDataError:
+                _found = False
+                self.update_work_mode_level(WORKING_MODE.ONE_SHOT)
+
+        if self.work_mode == WORKING_MODE.ONE_SHOT or not _found:  # noqa: SIM102
+            if self._output_RVcubes is None:
+                self._output_RVcubes = RV_holder(
+                    subInsts=self._subInsts_to_use,
+                    output_keys=self._internal_configs["output_fmt"],
+                    storage_path=self._internalPaths.root_storage_path,
+                    storage_mode=self._internal_configs["WORKING_MODE"],
+                    compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
+                )
+                self._output_RVcubes.update_disk_saving_level(self.disk_save_level)
+
         # TO be over-written by the child classes
         logger.info("Computing RVs with {}", self.name)
 
@@ -378,6 +389,7 @@ class RV_routine(BASE):
         self.complement_orders_to_skip(dataClass)
 
         self.apply_orderskip_method()
+
         self.open_queues()
 
         # making sure that shared memory is always closed before exiting
@@ -398,7 +410,18 @@ class RV_routine(BASE):
                     is_merged = self._internal_configs["order_removal_mode"] == "global"
                 else:
                     is_merged = False
-                self._output_RVcubes.add_RV_cube(subInst, RV_cube=output_cube, is_merged=is_merged)
+
+                if self.work_mode == WORKING_MODE.ONE_SHOT:
+                    self._output_RVcubes.add_RV_cube(subInst, RV_cube=output_cube, is_merged=is_merged)
+                elif self.work_mode == WORKING_MODE.ROLLING:
+                    self._output_RVcubes.ingest_cube_into_rolling_skip_reasons(
+                        subInst=subInst, cube=output_cube, is_merged=is_merged
+                    )
+                    self._output_RVcubes.ingest_dataClass_from_rolling(subInst=subInst, dataClass=dataClass)
+
+                else:
+                    msg = f"{self.work_mode} is not recognized"
+                    raise InternalError(msg)  # noqa: TRY301
 
                 if store_cube_to_disk:
                     self._output_RVcubes.store_computed_RVs_to_disk(
@@ -625,8 +648,8 @@ class RV_routine(BASE):
             self.to_skip[inst] = bad_orders.union(self.to_skip[inst])
             logger.debug("Subinst {}, skip: {}", inst, self.to_skip[inst])
 
-    def process_orders_to_skip_from_user(self, to_skip) -> dict:
-        """Evaluate the input orders to skip and put them in the proper format
+    def process_orders_to_skip_from_user(self, to_skip) -> dict[str, list[int]]:
+        """Evaluate the input orders to skip and put them in the proper format.
 
         Parameters
         ----------
@@ -648,7 +671,7 @@ class RV_routine(BASE):
         """
         if isinstance(to_skip, (list, tuple)):
             logger.info("Skipping the same orders across all subInstruments {}", to_skip)
-            orders_to_skip = {key: set(to_skip) for key in self._subInsts_to_use}
+            orders_to_skip = {key: to_skip for key in self._subInsts_to_use}
 
         elif isinstance(to_skip, str):
             logger.info("Loading orders to skip from previous run of SBART: {}", to_skip)
@@ -667,7 +690,14 @@ class RV_routine(BASE):
             [logger.info("{} - {}", key, value) for key, value in to_skip.items()]
             orders_to_skip = {key: set(value) for key, value in to_skip.items()}
 
-        return orders_to_skip
+        if self.work_mode == WORKING_MODE.ROLLING:
+            # In rolling mode we might want to include user inputs
+            for key in self._subInsts_to_use:
+                if self._internal_configs["order_removal_mode"] == "per_subInstrument":
+                    orders_to_skip[key].extend(self._output_RVcubes.get_orders_to_skip(key))
+                elif self._internal_configs["order_removal_mode"] == "global":
+                    orders_to_skip[key].extend(self._output_RVcubes.get_orders_to_skip("merged"))
+        return {i: set(j) for i, j in orders_to_skip.items()}
 
     def generate_valid_orders(self, subInst, dataClass) -> list:
         bad_order = self.to_skip[subInst]
