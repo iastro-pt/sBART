@@ -102,8 +102,7 @@ class Target:
 
     @property
     def secular_acceleration(self):
-        """Return the secular accelaration of the target star, as an astropy.Quantity object
-        """
+        """Return the secular accelaration of the target star, as an astropy.Quantity object"""
         if self._simbad_error:
             logger.warning("\tWARNING: Failed connection to SIMBAD!!!!!! SA OF 0 BEING RETURNED")
             self._SA = 0 * meter_second
@@ -114,7 +113,8 @@ class Target:
                 self._SA = secular_acceleration(self.searchable_name(self.true_name))
             except Exception:
                 logger.opt(exception=True).critical(
-                    "Could not compute the secular accelaration from {}", self.true_name,
+                    "Could not compute the secular accelaration from {}",
+                    self.true_name,
                 )
                 self._SA = 0 * meter_second
                 self._simbad_error = True
@@ -140,7 +140,9 @@ class Target:
 
     @property
     def true_name(self):
-        """Return the name of a target that is extracted from the header of the .fits files. This name
+        """Return the name of a target that is extracted from the header of the .fits files.
+
+           This name
         can be overriden if the user provides a new name when instantiating this object
 
         Returns
