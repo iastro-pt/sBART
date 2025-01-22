@@ -16,6 +16,7 @@ from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
+from SBART.Components.OrderWiseRVs import OrderWiseRVs
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
@@ -87,6 +88,7 @@ class RV_cube(BASE):
             user_configs={},
             needed_folders={"plots": "plots", "metrics": "metrics", "RVcube": "RVcube"},
         )
+        self.instrument_properties = instrument_properties
         self.frameIDs = frameIDs
         self.QC_flag: list[int] = [1 for _ in self.frameIDs] + [0 for _ in self._invalid_frameIDs]
 
@@ -96,10 +98,7 @@ class RV_cube(BASE):
         self.worker_outputs = []
 
         # RVs and uncertainties -> unitless values in meter/second
-        self._Rv_orderwise = np.zeros((N_epochs, N_orders)) + np.nan
-        self._RvErrors_orderwise = np.zeros((N_epochs, N_orders)) + np.nan
-
-        self._OrderStatus = OrderStatus(N_orders=N_orders, frameIDs=frameIDs)
+        self.orderwise_rvs = OrderWiseRVs(frameIDs=frameIDs, N_orders=N_orders)
 
         self._extra_storage_units = []
         self.has_orderwise_rvs = has_orderwise_rvs
@@ -177,20 +176,10 @@ class RV_cube(BASE):
 
     def set_merged_mode(self, orders_to_skip: list[int]) -> None:
         self._mode = "merged_subInst"
-        self._OrderStatus.add_flag_to_order(
-            order=orders_to_skip,
-            all_frames=True,
-            order_flag=ORDER_SKIP("Skiped due to merged mode"),
-        )
+        self.orderwise_rvs.set_merged_mode(orders_to_skip)
 
-    def update_skip_reason(self, orders: Union[list[int], set[int], int], skip_reason) -> None:
-        if len(orders) == 0:
-            return
-
-        if isinstance(orders, set):
-            orders = list(orders)
-
-        self._OrderStatus.add_flag_to_order(order=orders, order_flag=skip_reason, all_frames=True)
+    def update_skip_reason(self, orders: list[int] | set[int] | int, skip_reason: Flag) -> None:
+        self.orderwise_rvs.update_skip_reason(orders, skip_reason)
 
     def load_data_from_DataClass(self, DataClassProxy: DataClass) -> None:
         logger.debug("{} loading frame information from dataclass", self.name)
@@ -207,10 +196,7 @@ class RV_cube(BASE):
 
         self.cached_info["target"] = DataClassProxy.get_Target()
         self._loaded_inst_info = True
-
-        for frameID in self.frameIDs:
-            status = DataClassProxy.get_frame_by_ID(frameID).OrderWiseStatus
-            self._OrderStatus.mimic_status(frameID, status)
+        self.orderwise_rvs.frame_mimic_status(DataClassProxy=DataClassProxy)
 
     def update_worker_information(self, worker_info: list):
         self.worker_outputs = worker_info
@@ -249,11 +235,8 @@ class RV_cube(BASE):
         self.TM_RVs_ERR[epoch_index] = epoch_error
         self.TM_RVs[epoch_index] = epoch_rv
 
-    def store_order_data(self, frameID: int, order: int, RV, error, status: Flag) -> None:
-        epoch = self.frameIDs.index(frameID)
-        self._Rv_orderwise[epoch][order] = RV
-        self._RvErrors_orderwise[epoch][order] = error
-        self._OrderStatus.add_flag_to_order(order=order, frameID=frameID, order_flag=status)
+    def store_order_data(self, frameID: int, order: int, RV: float, error: float, status: Flag) -> None:
+        self.orderwise_rvs.store_order_data(frameID=frameID, order=order, status=status, RV=RV, error=error)
 
     # #################################3
     #
@@ -483,7 +466,7 @@ class RV_cube(BASE):
         return values, errors
 
     def get_frame_orderwise_status(self, frameID) -> list[Status]:
-        return self._OrderStatus.get_status_from_order(frameID, all_orders=True)
+        return self.orderwise_rvs._OrderStatus.get_status_from_order(frameID, all_orders=True)
 
     @property
     def subInst(self) -> str:
@@ -526,12 +509,12 @@ class RV_cube(BASE):
 
     @property
     def N_orders(self) -> int:
-        return self._Rv_orderwise.shape[1]
+        return self.orderwise_rvs.N_orders
 
     @property
     def N_obs(self) -> int:
         """Return the total number of observations"""
-        return self._Rv_orderwise.shape[0]
+        return self.orderwise_rvs.N_obs
 
     @property
     def name(self) -> str:
@@ -539,23 +522,11 @@ class RV_cube(BASE):
 
     @property
     def data(self):
-        return (
-            self._Rv_orderwise.copy(),
-            self._RvErrors_orderwise.copy(),
-            copy.deepcopy(self._OrderStatus),
-        )
+        return self.orderwise_rvs.data
 
     @property
     def problematic_orders(self) -> set:
-        """Get the orders that should be discarded when computing RVs
-
-        Returns
-        -------
-        [type]
-            [description]
-
-        """
-        return self._OrderStatus.common_bad_orders
+        return self.orderwise_rvs.problematic_orders
 
     ##################################
     #
@@ -679,7 +650,7 @@ class RV_cube(BASE):
             file.write("Summary of data rejection:")
 
             file.write(
-                f"\n\tRejected {len(self.problematic_orders)} out of {self._RvErrors_orderwise.shape[1]} available orders:",
+                f"\n\tRejected {len(self.problematic_orders)} out of {self.orderwise_rvs.N_orders} available orders:",
             )
             file.write(f"\n\tCommon orders removed:\n{self.problematic_orders}\n")
 
@@ -702,7 +673,7 @@ class RV_cube(BASE):
 
                 if current_frameID in self.frameIDs:
                     # Valid frame -> will include bad orders from the RV extraction
-                    lines, frame_orderskip_reasons = self._OrderStatus.description(
+                    lines, frame_orderskip_reasons = self.orderwise_rvs._OrderStatus.description(
                         indent_level=2,
                         frameID=current_frameID,
                         include_footer=False,
@@ -1068,7 +1039,7 @@ class RV_cube(BASE):
     ##
 
     def run_cromatic_interval_optimization(self, N_intervals=3, min_number_orders=10):
-        """Optimize the cromatic intervals using the order-wise RV precision
+        """Optimize the cromatic intervals using the order-wise RV precision.
 
         Args:
             N_intervals (int, optional): Number of intervals to optimize. Defaults to 3.
@@ -1078,32 +1049,9 @@ class RV_cube(BASE):
             Table/None: tabletexifier.Table with the results if everything went well. Otherwise, defaults to a None
 
         """
-        precision_array = self._RvErrors_orderwise
-        problem_orders = self.problematic_orders
-
-        valid_orders = [i for i in range(self.N_orders) if i not in problem_orders]
-        final_arr = precision_array[:, valid_orders]
-        tab = None
-
-        try:
-            result, intervals = optimize_intervals_over_array(
-                list_of_orders=valid_orders,
-                array_of_precisions=final_arr,
-                N_intervals=N_intervals,
-                min_interval_size=min_number_orders,
-            )
-
-            tab = convert_to_tab(
-                orders_to_run=valid_orders,
-                result=result,
-                intervals=intervals,
-                precision_array=final_arr,
-            )
-        except InvalidConfiguration:
-            logger.critical("Not enough orders to generate cromatic intervals")
-        except Exception as e:
-            logger.critical(f"Found unknown error: {e}")
-        return tab
+        return self.orderwise_rvs.run_cromatic_interval_optimization(
+            N_intervals=N_intervals, min_number_orders=min_number_orders
+        )
 
     def trigger_data_storage(self, *args, **kwargs):
         t0 = time.time()
@@ -1157,15 +1105,6 @@ class RV_cube(BASE):
         with open(storage_path, mode="w") as file:
             json.dump(data_out, file, indent=4)
 
-        storage_path = build_filename(
-            self._internalPaths.get_path_to("RVcube", as_posix=False),
-            f"DetailedFlags_{self._associated_subInst}",
-            fmt="json",
-        )
-
-        with open(storage_path, mode="w") as file:
-            json.dump(self._OrderStatus.to_json(), file, indent=4)
-
     def _store_work_packages(self):
         logger.info("Storing work packages")
         complete_outputs = {"work_packages": []}
@@ -1185,7 +1124,6 @@ class RV_cube(BASE):
 
     def _store_OrderWise_to_Fits(self):
         logger.info("Storing order-wise information to fits file")
-        orderwiseRvs, orderwiseErrors, _ = self.data
 
         OBS_date, TM_RV, TM_ERR = self.get_RV_timeseries(
             "SBART",
@@ -1248,26 +1186,22 @@ class RV_cube(BASE):
         header["VERSION"] = self.sBART_version
         header["mode"] = self._mode
         header["HIERARCH is_SA_corrected"] = self.is_SA_corrected
-
+        header["HIERARCH array_size_0"] = self.instrument_properties["array_size"][0]
+        header["HIERARCH array_size_1"] = self.instrument_properties["array_size"][1]
         hdu = fits.PrimaryHDU(data=[], header=header)
 
-        hdu_RVs = fits.ImageHDU(data=orderwiseRvs, header=header, name="ORDERWISE_RV")
-        hdu_ERR = fits.ImageHDU(data=orderwiseErrors, header=header, name="ORDERWISE_ERR")
-        hdu_mask = fits.ImageHDU(
-            data=self._OrderStatus.as_boolean().astype(int),
-            header=header,
-            name="GOOD_ORDER_MASK",
-        )
-
-        hdul = fits.HDUList([hdu, hdu_timeseries, hdu_RVs, hdu_ERR, hdu_mask])
+        hdul = fits.HDUList([hdu, hdu_timeseries])
 
         storage_path = build_filename(
             self._internalPaths.get_path_to("RVcube", as_posix=False),
-            f"OrderWiseInfo_{self._associated_subInst}",
+            f"CachedInfo_{self._associated_subInst}",
             fmt="fits",
         )
-
         hdul.writeto(storage_path, overwrite=True)
+        self.orderwise_rvs.store_to_disk(
+            path_to_store=self._internalPaths.get_path_to("RVcube", as_posix=False),
+            associated_subInst=self._associated_subInst,
+        )
 
     @classmethod
     def load_cube_from_disk(
@@ -1286,9 +1220,9 @@ class RV_cube(BASE):
             fmt="json",
             SBART_version=SBART_version,
         )
-        orderwise_filename = build_filename(
+        cachedinfo_filename = build_filename(
             subInst_path / "RVcube",
-            filename=f"OrderWiseInfo_{subInst}",
+            filename=f"CachedInfo_{subInst}",
             fmt="fits",
             SBART_version=SBART_version,
         )
@@ -1309,14 +1243,11 @@ class RV_cube(BASE):
 
         # For backwards compatibility retrieve an empty list
 
-        with fits.open(orderwise_filename) as hdu:
+        with fits.open(cachedinfo_filename) as hdu:
             header_info = hdu[0].header
             timeseries_table = hdu["TIMESERIES_DATA"].data
-            orderwise_RV = hdu["ORDERWISE_RV"].data
-            orderwise_RV_ERR = hdu["ORDERWISE_ERR"].data
-            good_order_mask = hdu["GOOD_ORDER_MASK"].data
         instrument_info = {
-            "array_size": [orderwise_RV.shape[1], 0],
+            "array_size": [header_info[f"HIERARCH array_size_{i}"] for i in range(2)],
             "is_drift_corrected": header_info["HIERARCH drift_corr"],
         }
         frameIDs = timeseries_table["FrameID"].astype(int).tolist()
@@ -1347,17 +1278,12 @@ class RV_cube(BASE):
             new_cube.cached_info[key] = values
 
         logger.debug("Loading orderwise info")
-        new_cube._Rv_orderwise = orderwise_RV
-        new_cube._RvErrors_orderwise = orderwise_RV_ERR
+
         new_cube._mode = header_info["mode"]
 
         logger.debug("Generating the new order mask")
-
-        for epoch_index, frameID in enumerate(good_frameIDs):
-            for order, order_bool_status in enumerate(good_order_mask[epoch_index]):
-                if order_bool_status != 1:
-                    new_cube._OrderStatus.add_flag_to_order(order=order, order_flag=ORDER_SKIP, frameID=frameID)
-
+        orderwise = OrderWiseRVs.load_from_disk(subInst_path=subInst_path, SBART_version=SBART_version)
+        new_cube.orderwise_rvs = orderwise
         logger.debug("Loading timeseries data")
 
         convert_to_quantity = lambda data: [elem * meter_second for elem in data]
