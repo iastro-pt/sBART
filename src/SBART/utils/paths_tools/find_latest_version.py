@@ -3,6 +3,7 @@ import os
 from loguru import logger
 
 from SBART import __version__, __version_info__
+from SBART.utils.custom_exceptions import NoDataError
 
 
 def find_latest_version(path, enable_logs: bool = True) -> str:
@@ -31,7 +32,7 @@ def find_latest_version(path, enable_logs: bool = True) -> str:
     try:
         highest_ver = max(version_sum)
     except ValueError as exc:  # no version number in the list
-        raise FileNotFoundError(f"There are no SBART outputs in {path}") from exc
+        raise NoDataError(f"There are no SBART outputs in {path}") from exc
 
     if highest_ver != sum([i * j for i, j in zip([100, 10, 1], __version_info__)]) and enable_logs:
         logger.warning(
