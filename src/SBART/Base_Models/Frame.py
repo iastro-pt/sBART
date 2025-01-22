@@ -290,6 +290,8 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "MOON DISTANCE": 0,
             "INS MODE": "",
             "INS NAME": "",
+            "PROG ID": "",
+            "DATE_NIGHT": "",
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others

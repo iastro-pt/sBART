@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Dict, Iterable, Optional
 
 import numpy as np
@@ -97,7 +98,7 @@ class ESO_PIPELINE(Frame):
             "BJD": f"HIERARCH {KW_identifier} QC BJD",
             "MJD": "MJD-OBS",
             "ISO-DATE": "DATE-OBS",
-            "DRS-VERSION": "HIERARCH ESO PRO REC1 PIPE ID",
+            "DRS-VERSION": f"HIERARCH {KW_identifier} PRO REC1 PIPE ID",
             "MD5-CHECK": "DATAMD5",
             "RA": "RA",
             "DEC": "DEC",
@@ -107,6 +108,7 @@ class ESO_PIPELINE(Frame):
             "DRS_FLUX_CORRECTION_TEMPLATE": "HIERARCH ESO PRO REC1 CAL8 NAME",
             "INS NAME": "INSTRUME",
             "INS MODE": f"HIERARCH {KW_identifier} INS MODE",
+            "PROG ID": f"HIERARCH {KW_identifier} OBS PROG ID",
         }
         if override_KW_map is not None:
             for key, value in override_KW_map.items():
@@ -263,6 +265,16 @@ class ESO_PIPELINE(Frame):
             full_key = f"HIERARCH {self.KW_identifier} QC CCF {key}"
             self.observation_info[key] = header[full_key]
             self.observation_info[key + "_ERR"] = header[full_key + " ERROR"]
+
+        obs_date = header["DATE-OBS"]
+
+        obs_date = "-".join(obs_date.split("T")).split(":")[0]
+        obs_date = datetime.datetime.strptime(obs_date, r"%Y-%m-%d-%H")
+
+        if obs_date.hour < 16:  # noqa: PLR2004
+            # If before 4pm, the observation was from previous day
+            obs_date = obs_date - datetime.timedelta(days=1)
+        self.observation_info["DATE_NIGHT"] = datetime.datetime.strftime(obs_date, r"%Y-%m-%d")
 
     def load_ESO_DRS_S2D_data(self, overload_SCIDATA_key=None):
         if self._internal_configs["use_old_pipeline"]:

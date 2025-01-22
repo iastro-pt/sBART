@@ -22,13 +22,9 @@ from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
-from SBART.utils.expected_precision_interval import (
-    convert_to_tab,
-    optimize_intervals_over_array,
-)
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
-from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
+from SBART.utils.status_codes import Flag, OrderStatus, Status
 from SBART.utils.units import (
     centimeter_second,
     convert_data,
@@ -134,6 +130,9 @@ class RV_cube(BASE):
             "FWHM_ERR",
             "INS MODE",
             "INS NAME",
+            "PROG ID",
+            "DATE_NIGHT",
+            "DRS-VERSION",
         ]
         self._time_key = None
         self.cached_info = {key: [] for key in needed_keys}
@@ -314,7 +313,7 @@ class RV_cube(BASE):
 
         if apply_SA_corr:
             if self.is_SA_corrected:
-                msg = "Applying the SA correction to data that is already corrected from it"
+                msg = "Applying the SA correction to fdata that is already corrected from it"
                 logger.critical(msg)
                 raise custom_exceptions.InvalidConfiguration(msg)
             SA_corr = self.compute_SA_correction()
@@ -582,7 +581,7 @@ class RV_cube(BASE):
 
         ind_keys = [f"{a}{b}" for a, b in product(["FWHM", "CONTRAST"], ("", "_ERR"))]
 
-        for key in ["BJD", "MJD", "INS MODE", "INS NAME", *ind_keys]:
+        for key in ["BJD", "MJD", "INS MODE", "INS NAME", "PROG ID", "DATE_NIGHT", "DRS-VERSION", *ind_keys]:
             tmp[key] = self.cached_info[key]
 
         inds = np.where(self.QC_flag == 1)[0]
@@ -1005,15 +1004,19 @@ class RV_cube(BASE):
             f"complete_{self._associated_subInst}_{self._mode}",
             "rdb",
         )
-        cols = ["FWHM", "FWHM_ERR", "CONTRAST", "CONTRAST_ERR", "BERV", "QC", "filename", "INS MODE", "INS NAME"]
 
-        # TODO: prog_id
-        # TODO: ins_drs_version
-        # TODO: obj_id_catname
-        # TODO: obj_id_daceid
-        # TODO: date_night
-        # TODO: do we need the header?
+        float_cols = [
+            "FWHM",
+            "FWHM_ERR",
+            "CONTRAST",
+            "CONTRAST_ERR",
+            "BERV",
+        ]
+        int_cols = ["QC"]
 
+        str_cols = ["DATE_NIGHT", "DRS-VERSION", "PROG ID", "filename", "INS MODE", "INS NAME"]
+
+        cols = [*float_cols, *int_cols, *str_cols]
         prods = self.get_RV_timeseries(
             which="SBART", apply_SA_corr=False, units=kilometer_second, as_value=True, include_invalid_frames=True
         )
@@ -1023,15 +1026,21 @@ class RV_cube(BASE):
             out_array[:, col_index] = data
         for index, key in enumerate(cols):
             out_array[:, 3 + index] = data_blocks[key]
+
+        cols = ["BJD", "RV", "RV_ERR", *cols]
+
+        header = " ".join(cols) + "\n" + " ".join(["-" * len(i) for i in cols])
+
         np.savetxt(
             fname=final_path,
             X=out_array,
             fmt=[
                 "%.7f",
             ]
-            * 8
-            + ["%i"]  # QC flag with an integer
-            + ["%s"] * 3,  # filename, ins mode and ins name
+            * (3 + len(float_cols))
+            + ["%i"] * len(int_cols)
+            + ["%s"] * len(str_cols),
+            header=header,
         )
 
     ##
