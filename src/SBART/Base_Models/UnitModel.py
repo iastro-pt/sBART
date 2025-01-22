@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from SBART.utils import custom_exceptions
@@ -5,8 +7,7 @@ from SBART.utils.BASE import BASE
 
 
 class UnitModel(BASE):
-    """Base unit.
-    """
+    """Base unit."""
 
     # The Units will store data in the RV_cube/_content_name folder
     _content_name = "BASE"
@@ -27,3 +28,5 @@ class UnitModel(BASE):
     def load_from_disk(cls, root_path: Path):
         if not root_path.exists():
             raise custom_exceptions.NoDataError
+
+    def merge_with(self, new_unit: UnitModel) -> None: ...
