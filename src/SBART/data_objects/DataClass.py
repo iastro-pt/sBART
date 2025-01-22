@@ -128,7 +128,8 @@ class DataClass(BASE):
         else:
             raise TypeError
 
-        for frameID, filepath in enumerate(OBS_list):
+        for filepath in OBS_list:
+            frameID = hash(filepath.stem)
             self.observations.append(
                 self._inst_type(
                     filepath,
