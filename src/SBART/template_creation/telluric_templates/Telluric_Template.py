@@ -496,6 +496,7 @@ class TelluricTemplate(BaseTemplate):
         header["VERSION"] = __version__
         header["IS_VALID"] = self.is_valid
         header["HIERARCH APPROX BERV CORRECTION"] = self.use_approximated_BERV_correction
+
         for key, config_val in self._internal_configs.items():
             if "path" in key or "user_" in key or isinstance(config_val, (list, tuple)):
                 continue
@@ -506,7 +507,10 @@ class TelluricTemplate(BaseTemplate):
             if key in ["SAVE_DISK_SPACE"]:
                 continue
 
-            header[f"HIERARCH {key}"] = config_val
+            if key in ["WORKING_MODE"]:
+                header[f"HIERARCH {key}"] = config_val.value
+            else:
+                header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         contam = self.contaminated_regions

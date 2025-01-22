@@ -386,7 +386,12 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         for key, config_val in self._internal_configs.items():
             if key in ["SAVE_DISK_SPACE"]:
                 continue
-            header[f"HIERARCH {key}"] = config_val
+
+            if key in ["WORKING_MODE"]:
+                header[f"HIERARCH {key}"] = config_val.value
+            else:
+                header[f"HIERARCH {key}"] = config_val
+
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         hdus_cubes = [hdu]
