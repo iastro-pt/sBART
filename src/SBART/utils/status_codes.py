@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, NoReturn, Optional, Set, Tuple, Union
+from __future__ import annotations
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Set, Tuple, Union
 
 import numpy as np
 import ujson as json
@@ -120,8 +121,12 @@ class Status:
 
         self._warnings = set()
 
-    def store_flag(self, new_flag: Flag) -> NoReturn:
-        self._stored_flags.add(new_flag)
+    def store_flag(self, new_flag: Flag | Iterable[Flag]) -> NoReturn:
+        if isinstance(new_flag, Iterable):
+            for entry in new_flag:
+                self._stored_flags.add(entry)
+        else:
+            self._stored_flags.add(new_flag)
 
     def has_flag(self, flag) -> bool:
         return flag in self._stored_flags
@@ -471,7 +476,6 @@ class OrderStatus:
             ID_to_process = self._stored_frameIDs
 
         for frameID in ID_to_process:
-            print(frameID)
             fatal_flag_dict = {}
             warning_flag_dict = {}
 
