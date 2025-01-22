@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 # class syntax
 
@@ -11,3 +11,8 @@ class DISK_SAVE_MODE(Enum):
     BASIC = 2
 
     EXTREME = 3
+
+
+class WORKING_MODE(Enum):
+    ONE_SHOT = auto()
+    ROLLING = auto()
