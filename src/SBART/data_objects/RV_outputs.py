@@ -16,7 +16,8 @@ from tabletexifier import Table
 from SBART import __version__
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.utils.BASE import BASE
-from SBART.utils.custom_exceptions import InvalidConfiguration, NoComputedRVsError
+from SBART.utils.choices import WORKING_MODE
+from SBART.utils.custom_exceptions import InternalError, InvalidConfiguration, NoComputedRVsError
 from SBART.utils.paths_tools import build_filename, ensure_path_from_input, find_latest_version
 
 if TYPE_CHECKING:
@@ -113,8 +114,36 @@ class RV_holder(BASE):
         else:
             self._individual_cubes[subInst] = RV_cube
 
+    def ingest_dataClass_from_rolling(self, subInst, dataClass):
+        for is_merged in (True, False):
+            cube = self.get_RV_cube(subInst=subInst, merged=is_merged)
+            cube.ingest_dataClass_from_rolling(dataClass)
+
+    def ingest_cube_into_rolling_skip_reasons(self, subInst: str, cube: RV_cube, is_merged: bool) -> None:
+        if self.work_mode != WORKING_MODE.ROLLING:
+            msg = "Cant use rolling mode functions outside it"
+            raise InternalError(msg)
+
+        cube_frames = cube.frameIDs
+        current_cube = self.get_RV_cube(subInst=subInst, merged=is_merged)
+
+        ord_rv, ord_err, status = cube.data
+
+        for row_index, frame in enumerate(cube_frames):
+            ord_sta = status.get_status_from_order(frameID=frame, all_orders=True)
+            if frame in current_cube.frameIDs:
+                current_cube.overwrite_existing_frame(
+                    frameID=frame, RVs=ord_rv[row_index], errors=ord_err[row_index], status=ord_sta
+                )
+            else:
+                current_cube.add_new_frame(
+                    frameID=frame, RVs=ord_rv[row_index], errors=ord_err[row_index], status=ord_sta
+                )
+        current_cube.merge_tm_activity_units("Indicators", cube.get_storage_unit("Indicators"))
+
     def get_orders_to_skip(self, subInst: str) -> List[int]:
-        """Retrieve the orders that were skipped for the calculation of RVs
+        """Retrieve the orders that were skipped for the calculation of RVs.
+
         Parameters
         ----------
         subInst : str
@@ -134,7 +163,6 @@ class RV_holder(BASE):
         NoComputedRVsError
             [description]
         """
-
         if subInst == "merged":
             # in the merged cubes the orders to skip are equal in all of them...
             selected_cube = self.get_RV_cube(list(self._merged_cubes.keys())[0], merged=True)
@@ -461,3 +489,12 @@ class RV_holder(BASE):
                 new_holder.add_RV_cube(subInst, RV_cube=new_cube, is_merged=is_merged)
 
         return new_holder
+
+    def update_work_mode_level(self, level: WORKING_MODE) -> None:
+        super().update_work_mode_level(level=level)
+
+        for cube in self._individual_cubes.values():
+            cube.update_work_mode_level(level)
+
+        for cube in self._merged_cubes.values():
+            cube.update_work_mode_level(level)
