@@ -7,10 +7,9 @@ from loguru import logger
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues, UserParam
-from SBART.utils.choices import DISK_SAVE_MODE
-from SBART.utils.UserConfigs import ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
 
 class TemplateFramework(BASE):
@@ -187,7 +186,10 @@ class TemplateFramework(BASE):
                 if key in ["SAVE_DISK_SPACE"]:
                     continue
 
-                config_dict[key] = template_header[f"HIERARCH {key}"]
+                if key == "WORKING_MODE":
+                    config_dict[key] = getattr(WORKING_MODE, template_header[f"HIERARCH {key}"])
+                else:
+                    config_dict[key] = template_header[f"HIERARCH {key}"]
 
             if self.is_type("Telluric"):
                 config_dict["download_path"] = ""
