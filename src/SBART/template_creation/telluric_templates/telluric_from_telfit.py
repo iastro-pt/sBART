@@ -14,6 +14,7 @@ from SBART.utils import custom_exceptions
 from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.paths_tools import file_older_than
 from SBART.utils.SBARTtypes import UI_DICT
+from SBART.utils.spectral_conditions import KEYWORD_condition
 from SBART.utils.status_codes import SUCCESS
 from SBART.utils.telluric_utilities import create_binary_template
 from SBART.utils.UserConfigs import (
@@ -239,6 +240,9 @@ class TelfitTelluric(TelluricTemplate):
             # logger.debug("GDAS data load mode set to download")
             logger.info("Launching GDAS profile downloader")
             instrument, date = selected_frame.inst_name, selected_frame.get_KW_value("ISO-DATE")
+
+            # JD for '2004-12-01T00:00:00', which is the same as the first profile from GDAS
+            self._metric_selection_conditions += KEYWORD_condition("BJD", [2453340.5, np.inf])
 
             logger.warning("Iterating over other possible frames to search for a working reference")
             failed_tests = [self._reference_frameID]
