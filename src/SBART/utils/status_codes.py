@@ -4,10 +4,11 @@ import numpy as np
 import ujson as json
 from loguru import logger
 
+from SBART.utils import custom_exceptions
+
 
 class Flag:
-    """Used to represent a "state" of operation. The majority of them represents failures and/or warnings.
-    """
+    """Used to represent a "state" of operation. The majority of them represents failures and/or warnings."""
 
     __slots__ = (
         "name",
@@ -254,6 +255,10 @@ class OrderStatus:
     def __init__(self, N_orders: int, frameIDs: Optional[List[int]] = None):
         N_epochs = len(frameIDs) if frameIDs is not None else frameIDs
 
+        if frameIDs is not None and len(set(frameIDs)) != len(frameIDs):
+            msg = "Using a repeated set of FrameIDs"
+            raise custom_exceptions.InvalidConfiguration(msg)
+
         # we might have invalid frames -> frameIDs are not (necessarily) continuous
         self._stored_frameIDs = frameIDs if frameIDs is not None else [None]
         if N_epochs is not None:
@@ -266,8 +271,12 @@ class OrderStatus:
         # TODO: do we want to init to VALID ??
         self._OrderStatus += VALID
 
+    def get_index_of_frameID(self, frameID: int) -> int:
+        """Get the internal ID of a frameID."""
+        return self._stored_frameIDs.index(frameID)
+
     def mimic_status(self, frameID: int, other_status) -> NoReturn:
-        """WARNING: this does not copy the warnings!
+        """WARNING: this does not copy the warnings.
 
         Parameters
         ----------
@@ -280,7 +289,8 @@ class OrderStatus:
         """
         order_wise_stats = other_status.get_status_from_order(all_orders=True)
         if not other_status.from_frame:
-            raise RuntimeError("We can only mimic the status of a single frame at a time!")
+            msg = "We can only mimic the status of a single frame at a time!"
+            raise RuntimeError(msg)
 
         for order, order_status in enumerate(order_wise_stats):
             for flag in order_status.all_flags:
@@ -299,7 +309,7 @@ class OrderStatus:
             if all_frames:
                 self._OrderStatus[:, order] = self._OrderStatus[:, order] + order_flag
             else:
-                frame_index = self._stored_frameIDs.index(frameID)
+                frame_index = self.get_index_of_frameID(frameID)
                 self._OrderStatus[frame_index, order] = self._OrderStatus[frame_index, order] + order_flag
 
     def worst_rejection_flag_from_frameID(self, frameID: Optional[int] = None, ignore_flags=()) -> Tuple[str, int]:
@@ -327,7 +337,7 @@ class OrderStatus:
         frameID: Optional[int] = None,
         all_orders: bool = False,
     ):
-        """Return the status from a given set of orders for one frame
+        """Return the status from a given set of orders for one frame.
 
         Parameters
         ----------
@@ -347,21 +357,22 @@ class OrderStatus:
                 return self._OrderStatus[0]
             return self._OrderStatus[0, order]
 
-        if self._internal_mode == "matrix":
-            if frameID is None:
-                raise RuntimeError("When we have multiple observations we need a frameID")
+        # For the matrix mode
+        if frameID is None:
+            msg = "When we have multiple observations we need a frameID"
+            raise RuntimeError(msg)
 
-            epoch = self._stored_frameIDs.index(frameID)
-            if all_orders:
-                return self._OrderStatus[epoch, :]
-            return self._OrderStatus[epoch, order]
+        epoch = self.get_index_of_frameID(frameID)
+        if all_orders:
+            return self._OrderStatus[epoch, :]
+        return self._OrderStatus[epoch, order]
 
     @property
     def from_frame(self) -> bool:
         return self._internal_mode == "line"
 
     @property
-    def bad_orders(self) -> Set[int]:
+    def bad_orders(self) -> set[int]:
         if self._internal_mode == "matrix":
             raise RuntimeError("bad_orders is only defined at the Frame level. Use the common_bad_orders property")
         bad_orders = set()
@@ -372,7 +383,7 @@ class OrderStatus:
 
     @property
     def common_bad_orders(self):
-        """Find the common set of spectral orders that is rejected in all epochs
+        """Find the common set of spectral orders that is rejected in all epochs.
 
         Returns
         -------
@@ -397,6 +408,46 @@ class OrderStatus:
             for order in range(N_orders):
                 self._OrderStatus[epoch][order] = Status()
 
+    def reset_state_of_frameIDs(self, frameIDs: list[int]) -> None:  # noqa: N802, N803
+        """Fully reset the flags of one frame, used in ROLL mode."""
+        for frame_id in frameIDs:
+            index = self.get_index_of_frameID(frame_id)
+            new_row = [Status() for _ in range(self._OrderStatus.shape[1])]
+            self._OrderStatus[index] = new_row
+
+    def add_new_epochs(self, N_epochs: int, frameIDs: list[int]) -> None:  # noqa: N803
+        """Add a new epoch in the status.
+
+        Args:
+            N_epochs (int): Number of epochs to be added, must be > 0
+            frameIDs (list[int]): FrameID of the provided observations
+
+        Raises:
+            custom_exceptions.InvalidConfiguration: If N_epochs < 0
+            custom_exceptions.InvalidConfiguration: If number of epochs is not the same as the one of frmaeIDs
+            custom_exceptions.InvalidConfiguration: If one of the frameIDs already exists
+
+        """
+        if N_epochs <= 0:
+            msg = "Can't add negative rows"
+            logger.critical(msg)
+            raise custom_exceptions.InvalidConfiguration(msg)
+        if len(frameIDs) != N_epochs:
+            msg = "Number of frameIDs doesn't match the provided number of epochs"
+            logger.critical(msg)
+            raise custom_exceptions.InvalidConfiguration(msg)
+
+        for entry in frameIDs:
+            if entry in self._stored_frameIDs:
+                msg = "Adding a repeat of the same frameID"
+                raise custom_exceptions.InvalidConfiguration(msg)
+
+        n_orders = self._OrderStatus.shape[1]
+        for _ in range(N_epochs):
+            new_line = [Status() for _ in range(n_orders)]
+            self._OrderStatus = np.vstack([self._OrderStatus, new_line])
+        self._stored_frameIDs.extend(frameIDs)
+
     ###
     #   Status string representation
     ###
@@ -420,6 +471,7 @@ class OrderStatus:
             ID_to_process = self._stored_frameIDs
 
         for frameID in ID_to_process:
+            print(frameID)
             fatal_flag_dict = {}
             warning_flag_dict = {}
 
@@ -595,13 +647,17 @@ MAX_ITER = Flag("MAX ITERATIONS", -3)
 
 QUAL_DATA = Flag("QUAL_DATA", 1, " Qual data different than zero")  # qual data different than zero
 ERROR_THRESHOLD = Flag(
-    "ERROR_THRESHOLD", 2, "Error over specified threshold",
+    "ERROR_THRESHOLD",
+    2,
+    "Error over specified threshold",
 )  # error threshold over the selected threshold
 INTERPOLATION = Flag("INTERPOLATION", 4, "Removed due to interpolation")  # removed due to interpolation constraints
 TELLURIC = Flag("TELLURIC", 8, "Telluric feature")  # classified as telluric feature,
 MISSING_DATA = Flag("MISSING_DATA", 16, "Missing spectral data in the pixel")  # data is missing in the given points,
 SPECTRAL_MISMATCH = Flag(
-    "SPECTRAL_MISMATCH", 32, "Removed due to outlier routine",
+    "SPECTRAL_MISMATCH",
+    32,
+    "Removed due to outlier routine",
 )  # mismatch between the template and the spectra
 SATURATION = Flag("SATURATION", 64, "Saturated Pixel")  # Saturation of the detector; Only used by HARPS
 NAN_DATA = Flag("NaN_Pixel", 128, "Nan Value")
