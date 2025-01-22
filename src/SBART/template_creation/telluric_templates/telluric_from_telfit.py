@@ -263,7 +263,7 @@ class TelfitTelluric(TelluricTemplate):
             sort_inds = np.argsort(metric_to_select)
             frames_to_search = np.asarray(frameIDs)[sort_inds][::-1]
 
-            max_search_iterations = frameIDs
+            max_search_iterations = len(frameIDs)
             logger.info("Starting loop to retrive GDAS profile")
 
             for attempt_nb in range(max_search_iterations):  # TODO: add here the search for a new reference!
