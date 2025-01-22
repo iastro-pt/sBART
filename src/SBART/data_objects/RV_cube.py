@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from itertools import product
 import os
 import time
 import warnings
@@ -130,6 +131,8 @@ class RV_cube(BASE):
             "BIS SPAN_ERR",
             "FWHM",
             "FWHM_ERR",
+            "INS MODE",
+            "INS NAME",
         ]
         self._time_key = None
         self.cached_info = {key: [] for key in needed_keys}
@@ -594,16 +597,20 @@ class RV_cube(BASE):
         }
 
         tmp = {
-            "BJD": self.cached_info["BJD"],
-            "MJD": self.cached_info["MJD"],
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
             "SA": convert_data(self.compute_SA_correction(), kilometer_second, True),
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
+            "BERV": convert_data(self.cached_info["BERV"], kilometer_second, True),
             "full_path": self.cached_info["date_folders"],
             "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
             "QC": list(map(int, self.QC_flag)),
         }
+
+        ind_keys = [f"{a}{b}" for a, b in product(["FWHM", "CONTRAST"], ("", "_ERR"))]
+
+        for key in ["BJD", "MJD", "INS MODE", "INS NAME", *ind_keys]:
+            tmp[key] = self.cached_info[key]
 
         inds = np.where(self.QC_flag == 1)[0]
         for key, data in tmp.items():
@@ -754,6 +761,7 @@ class RV_cube(BASE):
             self.export_txt(header, append=append, keys=keys, include_invalid_frames=include_invalid_frames)
         if rdb:
             self.export_rdb(append)
+            self.export_complete_rdb()
 
         self.export_skip_reasons(dataClassProxy)
         self.compute_statistics()
@@ -1013,6 +1021,45 @@ class RV_cube(BASE):
 
             for index in np.argsort(obs):
                 file.write(f"{obs[index] - 24e5}\t{rvs[index]}\t{uncerts[index]}\n")
+
+    def export_complete_rdb(self) -> None:
+        """Export a complete rdb file."""
+
+        data_blocks = self.build_datablock(include_invalid_frames=True)
+        star_name = self.cached_info["target"].true_name
+        final_path = build_filename(
+            self._internalPaths.root_storage_path,
+            f"complete_{self._associated_subInst}_{self._mode}",
+            "rdb",
+        )
+        cols = ["FWHM", "FWHM_ERR", "CONTRAST", "CONTRAST_ERR", "BERV", "QC", "filename", "INS MODE", "INS NAME"]
+
+        # TODO: prog_id
+        # TODO: ins_drs_version
+        # TODO: obj_id_catname
+        # TODO: obj_id_daceid
+        # TODO: date_night
+        # TODO: do we need the header?
+
+        prods = self.get_RV_timeseries(
+            which="SBART", apply_SA_corr=False, units=kilometer_second, as_value=True, include_invalid_frames=True
+        )
+        out_array = np.zeros((len(prods[0]), len(cols) + 3), dtype=object)
+
+        for col_index, data in enumerate(prods):
+            out_array[:, col_index] = data
+        for index, key in enumerate(cols):
+            out_array[:, 3 + index] = data_blocks[key]
+        np.savetxt(
+            fname=final_path,
+            X=out_array,
+            fmt=[
+                "%.7f",
+            ]
+            * 8
+            + ["%i"]  # QC flag with an integer
+            + ["%s"] * 3,  # filename, ins mode and ins name
+        )
 
     ##
     # Under implementation
