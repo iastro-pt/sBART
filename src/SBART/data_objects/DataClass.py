@@ -128,7 +128,9 @@ class DataClass(BASE):
         else:
             raise TypeError
 
-        if len(set(OBS_list)) != len(OBS_list):
+        names = [i.name for i in OBS_list]
+
+        if len(set(names)) != len(names):
             msg = "Ingesting repeated observations into s-BART"
             logger.critical(msg)
             raise InvalidConfiguration(msg)
