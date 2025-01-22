@@ -128,6 +128,11 @@ class DataClass(BASE):
         else:
             raise TypeError
 
+        if len(set(OBS_list)) != len(OBS_list):
+            msg = "Ingesting repeated observations into s-BART"
+            logger.critical(msg)
+            raise InvalidConfiguration(msg)
+
         for filepath in OBS_list:
             frameID = hash(filepath.stem)
             self.observations.append(
@@ -646,9 +651,10 @@ class DataClass(BASE):
         return_frameIDs: bool = False,
         from_header: bool = False,
     ) -> Union[list, Tuple[List[float], List[int]]]:
-        """Parse through the loaded observations and retrieve a specific KW from
-        all of them. There is no sort of the files. The output will follow the
-        order of the files loaded in memory!
+        """Parse through the loaded observations and retrieve a specific KW from all of them.
+
+        There is no sort of the files. The output will follow the
+        order of the files loaded in memory.
 
         Parameters
         ----------
