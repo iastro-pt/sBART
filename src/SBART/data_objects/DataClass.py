@@ -853,7 +853,11 @@ class DataClass(BASE):
         -------
 
         """
-        return self.observations[frameID]
+        for i in self.observations:
+            if i.frameID == frameID:
+                return i
+        msg = f"{frameID} doesn't exist"
+        raise custom_exceptions.NoDataError(msg)
 
     def get_subInstruments_with_valid_frames(self) -> list:
         """Find all subInstruments that have at least one valid observation
@@ -944,9 +948,9 @@ class DataClass(BASE):
         return self.observations[0].is_Instrument(instrument)
 
     def _build_frameID_map(self) -> None:
-        """Populate the self.frameID_map with the frameIDs available for each subInstrument"""
-        for frame_ID, frame in enumerate(self.observations):
-            self.frameID_map[frame.sub_instrument].append(frame_ID)
+        """Populate the self.frameID_map with the frameIDs available for each subInstrument."""
+        for frame in self.observations:
+            self.frameID_map[frame.sub_instrument].append(frame.frameID)
 
     def show_loadedData_table(self) -> Table:
         """Compute the number of observations available in each subInstrument. Find the number of valid (
