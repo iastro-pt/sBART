@@ -16,7 +16,7 @@ from SBART import __version__
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
-from SBART.utils.choices import DISK_SAVE_MODE
+from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 from SBART.utils.shift_spectra import (
@@ -27,7 +27,7 @@ from SBART.utils.spectral_conditions import Empty_condition, KEYWORD_condition
 from SBART.utils.status_codes import DISK_LOADED_DATA, MISSING_DATA, SUCCESS
 from SBART.utils.telluric_utilities import create_binary_template
 from SBART.utils.telluric_utilities.compute_overlaps_blocks import find_overlaps
-from SBART.utils.units import kilometer_second
+from SBART.utils.units import convert_data, kilometer_second
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -94,7 +94,9 @@ class TelluricTemplate(BaseTemplate):
 
         self._application_mode = application_mode
         self._extension_mode = extension_mode
-        self._masked_wavelengths = []
+        self._base_mask: list[list[float]] = []
+
+        self._masked_wavelengths: list[list[float, float]] = []
         self._computed_wave_blocks = False
 
         self.transmittance_wavelengths = None
@@ -102,7 +104,7 @@ class TelluricTemplate(BaseTemplate):
         self._continuum_level = None
 
         self._fitModel = Model(params_of_model=[])
-        self._BERVS = []
+        self.BERVS: list[float] = []
         self.MAXBERV = None
         self._reference_frameID = None  # used for telluric removal!
 
@@ -161,7 +163,7 @@ class TelluricTemplate(BaseTemplate):
         """
         logger.debug("Template {} loading data from the dataClass", self.name)
 
-        self.BERVS, self.MAXBERV = self._load_BERV_info(dataClass)
+        self._load_BERV_info(dataClass)
 
         frames = dataClass.get_valid_frameIDS()
         zeroth_frame = dataClass.get_frame_by_ID(frames[0])
@@ -175,7 +177,7 @@ class TelluricTemplate(BaseTemplate):
         self._loaded_dataclass_info = True
 
     # Internal Data loading routines
-    def _load_BERV_info(self, DataClass):
+    def _load_BERV_info(self, DataClass) -> None:
         """Load the BERV values and the MaxBERV of all observations from the subInstrument associated with this template!
 
         Parameters
@@ -190,7 +192,8 @@ class TelluricTemplate(BaseTemplate):
 
         """
         if not self.is_valid:
-            return [], np.nan * kilometer_second
+            self.MAXBERV = np.nan * kilometer_second
+            return
 
         if self._associated_subInst not in DataClass.get_subInstruments_with_valid_frames():
             logger.warning(
@@ -198,7 +201,8 @@ class TelluricTemplate(BaseTemplate):
                 self._associated_subInst,
             )
             self.add_to_status(MISSING_DATA)
-            return [], []
+            self.MAXBERV = np.nan * kilometer_second
+            return
 
         BERVS = DataClass.collect_KW_observations(
             KW="BERV",
@@ -213,10 +217,19 @@ class TelluricTemplate(BaseTemplate):
 
         # It seems that numpy does not like lists of astropy.units elements
         unitless_max_bervs = [i.value for i in max_bervs]
-        return BERVS, max_bervs[np.argmax(unitless_max_bervs)]
+
+        if self.work_mode == WORKING_MODE.ROLLING:
+            # No need to repeat BERVS
+            self.BERVS.extend(BERVS)
+            self.BERVS = list(set(self.BERVS))
+            new_berv_max = max_bervs[np.argmax(unitless_max_bervs)]
+            self.MAXBERV = max(new_berv_max, self.MAXBERV)
+        else:
+            self.BERVS.extend(BERVS)
+            self.MAXBERV = max_bervs[np.argmax(unitless_max_bervs)]
 
     def _search_reference_frame(self, dataclass: DataClass) -> Union[int, float]:
-        """Select the frame that will be used to construct the telluric template.
+        """Select the frame that will be used to construct the telluric template
         By default, select the one with the highest relative humidity. If that
         keyword is not loaded, then uses the one with the highest airmass. If
         there are no valid frames in the associated subINstrument, returns
@@ -325,6 +338,16 @@ class TelluricTemplate(BaseTemplate):
 
         self._fitModel.disable_full_model()
 
+    def ingest_new_rolling_observations(self, dataClass):
+        """Ingest new observations into a rolling mode tempalte"""
+        if self.work_mode != WORKING_MODE.ROLLING:
+            msg = "Can't access ROLLING mode functions without being in it"
+            raise custom_exceptions.InvalidConfiguration(msg)
+
+        self._computed_wave_blocks = False
+        self._load_BERV_info(DataClass=dataClass)
+        self._masked_wavelengths = []
+
     ###
     #   transmittance post-processing
     ###
@@ -344,10 +367,7 @@ class TelluricTemplate(BaseTemplate):
 
         updated_block = []
 
-        indexes = build_blocks(np.where(self.template != 0))
-
-        for telluric_block in indexes:
-            interval = self.wavelengths[telluric_block]
+        for interval in self._base_mask:
             # first overlap search, to take advantage of the smaller list size in here (when compared against the "global" one)
             updated_block.extend(find_overlaps(self._extend_detections([interval[0], interval[-1]])))
 
@@ -372,8 +392,8 @@ class TelluricTemplate(BaseTemplate):
 
             self._masked_wavelengths = new_blocks
 
-    def _extend_detections(self, telluric_block: List[list], shrink=False) -> List[List[float]]:
-        """Extend each block of telluric detection based on the self._extension_mode that was selected by the user
+    def _extend_detections(self, telluric_block: list[list], shrink=False) -> list[list[float]]:
+        """Extend each block of telluric detection based on the self._extension_mode that was selected by the user.
 
         Parameters
         ----------
@@ -435,6 +455,11 @@ class TelluricTemplate(BaseTemplate):
         # Find a decrease of 1% in relation to the continuum level; Positive
         # gains (against the continuum value) are not considered as tellurics
         self.template = telluric_mask
+
+        indexes = build_blocks(np.where(self.template != 0))
+        for telluric_block in indexes:
+            self._base_mask.append(self.wavelengths[telluric_block])
+
         self._compute_wave_blocks()
 
     #######################################
@@ -496,6 +521,8 @@ class TelluricTemplate(BaseTemplate):
         header["VERSION"] = __version__
         header["IS_VALID"] = self.is_valid
         header["HIERARCH APPROX BERV CORRECTION"] = self.use_approximated_BERV_correction
+        header["MAX_BERV"] = convert_data(self.MAXBERV, units=kilometer_second, as_value=True)
+        header["HIERARCH EXTEND MODE"] = self._extension_mode
 
         for key, config_val in self._internal_configs.items():
             if "path" in key or "user_" in key or isinstance(config_val, (list, tuple)):
@@ -513,13 +540,15 @@ class TelluricTemplate(BaseTemplate):
                 header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
-        contam = self.contaminated_regions
+        contam = self._base_mask
         contam_imge = np.zeros((len(contam), 2))
         for row, entry in enumerate(contam):
             contam_imge[row] = entry
         hdu_contam = fits.ImageHDU(data=contam_imge, header=header, name="CONTAM")
 
-        hdus_cubes = [hdu, hdu_contam]
+        hdu_berv = fits.ImageHDU(data=self.BERVS, header=header, name="BERVS")
+
+        hdus_cubes = [hdu, hdu_contam, hdu_berv]
 
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
             hdu_wave = fits.ImageHDU(data=self.wavelengths, header=header, name="Wave")
@@ -573,7 +602,10 @@ class TelluricTemplate(BaseTemplate):
                 )
 
             self._associated_subInst = hdulist["CONTAM"].header["subInst"]
+            self.MAXBERV = hdulist["CONTAM"].header["MAX_BERV"] * kilometer_second
+            self.BERVS = hdulist["BERVS"].data.tolist()
 
+            self._extension_mode = hdulist["CONTAM"].header["HIERARCH EXTEND MODE"]
             try:
                 waves = hdulist["Wave"].data
                 template = hdulist["Temp"].data
@@ -599,8 +631,8 @@ class TelluricTemplate(BaseTemplate):
                 logger.warning("Loading old telluric template with missing keywords")
                 self.use_approximated_BERV_correction = False
 
-            self._computed_wave_blocks = True
-            self._masked_wavelengths = hdulist["CONTAM"].data.tolist()
+            self._computed_wave_blocks = False
+            self._base_mask = hdulist["CONTAM"].data.tolist()
 
         self.add_to_status(DISK_LOADED_DATA(f"Loaded data from {loading_path}"))
 
