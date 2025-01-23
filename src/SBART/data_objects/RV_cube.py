@@ -1148,7 +1148,6 @@ class RV_cube(BASE):
     def trigger_data_storage(self, *args, **kwargs):
         t0 = time.time()
         super().trigger_data_storage(*args, **kwargs)
-
         try:
             logger.info("Computing optimal intervals for RV extraction")
             storage_path = build_filename(
@@ -1161,7 +1160,7 @@ class RV_cube(BASE):
                     tab = self.run_cromatic_interval_optimization(N_intervals=N_interval, min_number_orders=10)
                     if tab is not None:
                         tab.write_to_file(path=storage_path)
-            else:
+            elif self.N_obs >= 200:
                 logger.warning("More than 200 observations loaded, skipping optimization of order interval")
         except Exception as e:
             logger.critical(f"Generation of optimal intervals failed due to {e}")
