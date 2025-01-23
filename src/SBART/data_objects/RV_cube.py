@@ -1384,8 +1384,7 @@ class RV_cube(BASE):
             invalid_frameIDs=invalid,
             storage_mode="one-shot",
         )
-        cube_root_folder = subInst
-        new_cube.generate_root_path(cube_root_folder)
+        new_cube.generate_root_path(subInst_path)
 
         logger.debug("Loading misc Info:")
         for key, values in miscInfo["cached_info"].items():
