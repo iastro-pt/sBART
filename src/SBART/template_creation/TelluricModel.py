@@ -5,6 +5,7 @@ from loguru import logger
 
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Base_Models.TemplateFramework import TemplateFramework
+from SBART.utils.choices import WORKING_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
@@ -59,7 +60,7 @@ class TelluricModel(TemplateFramework):
     )
 
     def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):
-        """Instantiation of the object:
+        """Instantiation of the object.
 
         Parameters
         ----------
@@ -81,7 +82,7 @@ class TelluricModel(TemplateFramework):
         self._usage_mode = usage_mode
 
     def request_template(self, subInstrument: str) -> Type[BaseTemplate]:
-        """Returns the template for a given sub-Instrument.
+        """Return the template for a given sub-Instrument.
 
         Parameters
         ----------
@@ -125,6 +126,7 @@ class TelluricModel(TemplateFramework):
             always compute telluric template, even if it exists
 
         """
+
         super().Generate_Model(
             dataClass=dataClass,
             template_configs=telluric_configs,
@@ -193,18 +195,29 @@ class TelluricModel(TemplateFramework):
         else:
             raise InvalidConfiguration()
 
-        tell_template = chosen_template(
-            subInst=subInstrument,
-            user_configs=user_configs,
-            extension_mode=self._internal_configs["EXTENSION_MODE"],
-            application_mode=self._internal_configs["APPLICATION_MODE"],
-        )
+        if self.work_mode == WORKING_MODE.ONE_SHOT:
+            tell_template = chosen_template(
+                subInst=subInstrument,
+                user_configs=user_configs,
+                extension_mode=self._internal_configs["EXTENSION_MODE"],
+                application_mode=self._internal_configs["APPLICATION_MODE"],
+            )
 
-        tell_template.load_information_from_DataClass(data)
-        if self.is_for_removal:
-            tell_template.create_telluric_template(dataClass=data)
+            tell_template.load_information_from_DataClass(data)
+
+            if self.is_for_removal:
+                tell_template.create_telluric_template(dataClass=data)
+            else:
+                logger.debug("Telluric template in removal mode. Fitting from inside dataClass")
+
         else:
-            logger.debug("Telluric template in removal mode. Fitting from inside dataClass")
+            # If this is a rolling mode, we just need to add the new information
+            tell_template = self.templates[subInstrument]
+            tell_template.ingest_new_rolling_observations(dataClass=data)
+
+            if not self.is_for_removal:
+                msg = "The rolling template can only be used to remove features, not correct "
+                raise InvalidConfiguration(msg)
 
         return tell_template
 
