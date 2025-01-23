@@ -1,3 +1,4 @@
+import contextlib
 import os
 from typing import List, Optional, Type
 
@@ -5,6 +6,7 @@ from astropy.io import fits
 from loguru import logger
 
 from SBART.Base_Models.Template_Model import BaseTemplate
+from SBART.template_creation.telluric_templates.Telluric_Template import TelluricTemplate
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
@@ -46,7 +48,8 @@ class TemplateFramework(BASE):
         root_folder_path: UI_PATH,
         user_configs: Optional[UI_DICT] = None,
     ):
-        """Parameters
+        """
+        Parameters
         ----------
         mode
             To be deprecated
@@ -63,7 +66,7 @@ class TemplateFramework(BASE):
         )
         self._internalPaths.add_root_path(root_folder_path, "templates")
 
-        self.templates = {}
+        self.templates: dict[str, TelluricTemplate] = {}
 
         self._valid_params = {}
 
@@ -107,7 +110,7 @@ class TemplateFramework(BASE):
         attempt_to_load: bool = False,
         store_templates: bool = True,
     ) -> None:
-        """Generate a model for all subInstruments with data
+        """Generate a model for all subInstruments with data.
 
         Parameters
         ----------
@@ -132,6 +135,8 @@ class TemplateFramework(BASE):
                 logger.info("No templates to load from disk. Creating all from scratch")
         else:
             logger.info("Creating all templates from scratch")
+            self.templates = {}
+            self.update_work_mode_level(WORKING_MODE.ONE_SHOT)
 
         for subInst in dataClass.get_available_subInstruments():
             if subInst not in self.templates:
@@ -141,6 +146,7 @@ class TemplateFramework(BASE):
             if prev_template is not None:
                 logger.debug(f"Template from {subInst} has already been loaded.")
                 continue
+            self.templates[subInst].update_work_mode_level(self.work_mode)
 
             self.templates[subInst] = self._compute_template(
                 data=dataClass,
@@ -196,10 +202,16 @@ class TemplateFramework(BASE):
 
             loaded_temp = self.__class__.template_map[temp_name](temp_subInst, loaded=True, user_configs=config_dict)
 
-            try:
+            with contextlib.suppress(custom_exceptions.NoDataError):
                 loaded_temp.load_from_file(root_path=template_path, loading_path=temp_path)
-            except custom_exceptions.NoDataError:
-                pass
+
+            # Ensuring that we are always sharing the same work mode with the templates
+            loaded_temp.update_work_mode_level(self.work_mode)
+            if self.work_mode == WORKING_MODE.ROLLING:
+                loaded_temp.generate_root_path(
+                    self._internalPaths.get_path_to(self.__class__.model_type, as_posix=False),
+                )
+
             self.templates[temp_subInst] = loaded_temp
 
     def _find_templates_from_disk(self, which: str) -> List[str]:
