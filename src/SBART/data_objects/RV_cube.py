@@ -1298,6 +1298,9 @@ class RV_cube(BASE):
         str_info = ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]
         for key in str_info:
             text_info[key] = self.cached_info[key]
+
+        text_info["root_folder"] = self._internalPaths.root_storage_path.as_posix()
+
         storage_path = build_filename(
             self._internalPaths.get_path_to("RVcube", as_posix=False),
             f"CachedInfo_{self._associated_subInst}",
@@ -1435,6 +1438,7 @@ class RV_cube(BASE):
 
             for key in ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]:
                 new_cube.cached_info[key] = timeseries_text[key]
+            new_cube.generate_root_path(Path(timeseries_text["root_folder"]))
         except:
             logger.warning(
                 "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
