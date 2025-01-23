@@ -232,7 +232,6 @@ class RV_Bayesian(RV_routine):
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
             tot_number_orders=empty_cube.N_orders,
-            number_OBS=len(empty_cube.frameIDs),
             list_of_fIDS=empty_cube.frameIDs,
         )
 
@@ -260,6 +259,7 @@ class RV_Bayesian(RV_routine):
                             ind_name="DLW",
                             ind_value=dlw,
                             ind_err=err,
+                            status=order_status,
                         )
 
         # Compute the combined DLW value
@@ -274,7 +274,10 @@ class RV_Bayesian(RV_routine):
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
+                frameID,
+                "DLW",
+                ind_value=final_ind[index],
+                ind_err=ind_error[index],
             )
 
         empty_cube.add_extra_storage_unit(data_unit_act)
@@ -381,8 +384,7 @@ class RV_Bayesian(RV_routine):
             logger.warning("Skipping the plot of the model missspecification")
 
     def calculate_rvs(self, output):
-        """Store the final RV as computed by the Bayesian method
-        """
+        """Store the final RV as computed by the Bayesian method"""
         # TODO: re-work this function!
         for epoch, data in enumerate(output):
             self.RV_cube.store_single_RV(epoch, data["RV"], data["RV_uncertainty"])
