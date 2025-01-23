@@ -389,7 +389,6 @@ class RV_routine(BASE):
         self.complement_orders_to_skip(dataClass)
 
         self.apply_orderskip_method()
-
         self.open_queues()
 
         # making sure that shared memory is always closed before exiting
@@ -403,7 +402,6 @@ class RV_routine(BASE):
                     dataClass=dataClass,
                     subInst=subInst,
                 )
-
                 if self.loaded_from_previous_run:
                     # if we are loading from the orders to skip from a previous run,
                     # the RV cubes of this iteration must follow the same "naming scheme"
@@ -422,7 +420,6 @@ class RV_routine(BASE):
                 else:
                     msg = f"{self.work_mode} is not recognized"
                     raise InternalError(msg)  # noqa: TRY301
-
                 if store_cube_to_disk:
                     self._output_RVcubes.store_computed_RVs_to_disk(
                         dataClassProxy=dataClass,
@@ -441,7 +438,6 @@ class RV_routine(BASE):
 
         if len(self._subInsts_to_use) == 0:
             logger.warning("No data was processed. {} storing nothing to disk!", self.name)
-
         if store_data:
             self.trigger_data_storage(dataClass)
 
