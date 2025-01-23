@@ -192,9 +192,9 @@ class RV_step(RV_routine):
 
             cube.add_extra_storage_unit(data_unit_act)
             if self.work_mode == WORKING_MODE.ONE_SHOT:
-                self._output_RVcubes.add_RV_cube(subInst, RV_cube=cube, is_merged=True)
+                self._output_RVcubes.add_RV_cube(inst, RV_cube=cube, is_merged=True)
             elif self.work_mode == WORKING_MODE.ROLLING:
-                self._output_RVcubes.ingest_cube_into_rolling_skip_reasons(subInst=subInst, cube=cube, is_merged=True)
+                self._output_RVcubes.ingest_cube_into_rolling_skip_reasons(subInst=inst, cube=cube, is_merged=True)
 
             self._output_RVcubes.store_computed_RVs_to_disk(
                 dataClassProxy=dataClass,
