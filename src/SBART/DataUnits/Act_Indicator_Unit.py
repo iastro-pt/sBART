@@ -48,7 +48,6 @@ class ActIndicators_Unit(UnitModel):
 
     def store_combined_indicators(self, frameID, ind_name, ind_value, ind_err):
         index = self._list_of_fIDs.index(frameID)
-        print("Storing combined indicators")
         self.combined_holder[ind_name][index] = ind_value
         self.combined_error_holder[ind_name][index] = ind_err
 
