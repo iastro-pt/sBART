@@ -146,7 +146,6 @@ class TemplateFramework(BASE):
             if prev_template is not None:
                 logger.debug(f"Template from {subInst} has already been loaded.")
                 continue
-            self.templates[subInst].update_work_mode_level(self.work_mode)
 
             self.templates[subInst] = self._compute_template(
                 data=dataClass,

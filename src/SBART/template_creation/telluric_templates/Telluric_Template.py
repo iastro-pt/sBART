@@ -521,7 +521,7 @@ class TelluricTemplate(BaseTemplate):
         header["VERSION"] = __version__
         header["IS_VALID"] = self.is_valid
         header["HIERARCH APPROX BERV CORRECTION"] = self.use_approximated_BERV_correction
-        header["MAX_BERV"] = convert_data(self.MAXBERV, units=kilometer_second, as_value=True)
+        header["MAX_BERV"] = convert_data(self.MAXBERV, new_units=kilometer_second, as_value=True)
         header["HIERARCH EXTEND MODE"] = self._extension_mode
 
         for key, config_val in self._internal_configs.items():
@@ -546,7 +546,9 @@ class TelluricTemplate(BaseTemplate):
             contam_imge[row] = entry
         hdu_contam = fits.ImageHDU(data=contam_imge, header=header, name="CONTAM")
 
-        hdu_berv = fits.ImageHDU(data=self.BERVS, header=header, name="BERVS")
+        hdu_berv = fits.ImageHDU(
+            data=convert_data(self.BERVS, new_units=kilometer_second, as_value=True), header=header, name="BERVS"
+        )
 
         hdus_cubes = [hdu, hdu_contam, hdu_berv]
 
@@ -603,7 +605,7 @@ class TelluricTemplate(BaseTemplate):
 
             self._associated_subInst = hdulist["CONTAM"].header["subInst"]
             self.MAXBERV = hdulist["CONTAM"].header["MAX_BERV"] * kilometer_second
-            self.BERVS = hdulist["BERVS"].data.tolist()
+            self.BERVS = [i * kilometer_second for i in hdulist["BERVS"].data.tolist()]
 
             self._extension_mode = hdulist["CONTAM"].header["HIERARCH EXTEND MODE"]
             try:

@@ -195,7 +195,7 @@ class TelluricModel(TemplateFramework):
         else:
             raise InvalidConfiguration()
 
-        if self.work_mode == WORKING_MODE.ONE_SHOT:
+        if self.work_mode == WORKING_MODE.ONE_SHOT or self.templates[subInstrument] is None:
             tell_template = chosen_template(
                 subInst=subInstrument,
                 user_configs=user_configs,
