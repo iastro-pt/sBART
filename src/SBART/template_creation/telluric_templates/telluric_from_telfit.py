@@ -538,6 +538,7 @@ class TelfitTelluric(TelluricTemplate):
             # Ensure that we don't have values grater than 1, to keep consistency
             self.template[np.where(self.template > 1)] = 1
 
+        self.build_blocks()
         self._compute_wave_blocks()
         self._finish_template_creation()
 
@@ -553,7 +554,6 @@ class TelfitTelluric(TelluricTemplate):
 
         """
         super()._generate_model_parameters(dataClass)
-
         for frameID in dataClass.get_frameIDs_from_subInst(self._associated_subInst, include_invalid=False):
             frame = dataClass.get_frame_by_ID(frameID)
             initial_guess = {

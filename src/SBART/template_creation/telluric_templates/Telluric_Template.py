@@ -169,7 +169,6 @@ class TelluricTemplate(BaseTemplate):
         zeroth_frame = dataClass.get_frame_by_ID(frames[0])
 
         self.use_approximated_BERV_correction = zeroth_frame.use_approximated_BERV_correction
-
         if not self.is_valid:
             return
 
@@ -365,10 +364,14 @@ class TelluricTemplate(BaseTemplate):
         if not self.was_loaded:
             logger.info("Extending telluric features with the mode: <{}>", self._extension_mode)
 
+        if len(self._base_mask) == 0:
+            self.build_blocks()
+
         updated_block = []
 
         for interval in self._base_mask:
             # first overlap search, to take advantage of the smaller list size in here (when compared against the "global" one)
+            # The intervals are the start and end of each block
             updated_block.extend(find_overlaps(self._extend_detections([interval[0], interval[-1]])))
 
         self._masked_wavelengths = find_overlaps(updated_block)
@@ -456,11 +459,14 @@ class TelluricTemplate(BaseTemplate):
         # gains (against the continuum value) are not considered as tellurics
         self.template = telluric_mask
 
+        self.build_blocks()
+        self._compute_wave_blocks()
+
+    def build_blocks(self) -> None:
         indexes = build_blocks(np.where(self.template != 0))
         for telluric_block in indexes:
-            self._base_mask.append(self.wavelengths[telluric_block])
-
-        self._compute_wave_blocks()
+            wavel = self.wavelengths[telluric_block]
+            self._base_mask.append([wavel[0], wavel[-1]])
 
     #######################################
     #  Outside access to the properties   #
@@ -573,7 +579,6 @@ class TelluricTemplate(BaseTemplate):
         filename = f"{self.storage_name}_{self._associated_subInst}.fits"
         logger.debug("Storing template to {}", self._internalPaths.root_storage_path / filename)
         hdul.writeto(self._internalPaths.root_storage_path / filename, overwrite=True)
-
         if self.disk_save_level != DISK_SAVE_MODE.EXTREME:
             metrics_path = self._internalPaths.get_path_to("metrics", as_posix=False)
             fig, axis = plt.subplots()
