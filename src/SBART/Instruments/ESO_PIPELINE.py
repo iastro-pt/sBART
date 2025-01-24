@@ -98,7 +98,7 @@ class ESO_PIPELINE(Frame):
             "BJD": f"HIERARCH {KW_identifier} QC BJD",
             "MJD": "MJD-OBS",
             "ISO-DATE": "DATE-OBS",
-            "DRS-VERSION": f"HIERARCH {KW_identifier} PRO REC1 PIPE ID",
+            "DRS-VERSION": "HIERARCH ESO PRO REC1 PIPE ID",
             "MD5-CHECK": "DATAMD5",
             "RA": "RA",
             "DEC": "DEC",
