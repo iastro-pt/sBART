@@ -227,7 +227,7 @@ class TelfitTelluric(TelluricTemplate):
     def _prepare_GDAS_data(self, dataClass, selected_frame):  # pylint: disable=C0103
         logger.info("Preparing GDAS data load!")
 
-        resources_folder = os.path.join(SBART_LOC, "resources/atmosphere_profiles")
+        resources_folder = SBART_LOC / "resources/atmosphere_profiles"
 
         conn = DB_connection()
 
@@ -265,7 +265,8 @@ class TelfitTelluric(TelluricTemplate):
             max_search_iterations = len(frameIDs)
             logger.info("Starting loop to retrive GDAS profile")
 
-            for attempt_nb in range(max_search_iterations):  # TODO: add here the search for a new reference!
+            found = True
+            for attempt_nb in range(max_search_iterations):
                 selected_ID = frames_to_search[0]
 
                 date = dataClass.get_KW_from_frameID(frameID=selected_ID, KW="ISO-DATE")
@@ -293,13 +294,11 @@ class TelfitTelluric(TelluricTemplate):
                     frames_to_search = frames_to_search[1:]
             else:
                 logger.warning("Couldn't download any of the GDAS profiles. Moving on for the default profile")
+                found = False
 
-        if self._internal_configs["atmosphere_profile"] == "default":
+        if self._internal_configs["atmosphere_profile"] == "default" or not found:
             logger.warning("Using the default atmosphere profile!")
-            atmos_profile_file = os.path.join(
-                resources_folder,
-                f"{selected_frame.inst_name}_atmosphere_profile.txt",
-            )
+            atmos_profile_file = resources_folder / f"{selected_frame.inst_name}_atmosphere_profile.txt"
             data = np.loadtxt(atmos_profile_file)
 
         elif os.path.exists(self._internal_configs["atmosphere_profile"]) and not len(
@@ -308,7 +307,6 @@ class TelfitTelluric(TelluricTemplate):
             # what does this do???
             atmos_profile_file = self._internal_configs["atmosphere_profile"]
             data = np.loadtxt(atmos_profile_file)
-
         logger.info("Finished setup of GDAS profile")
         return data
 
