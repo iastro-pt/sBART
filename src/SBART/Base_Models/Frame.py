@@ -645,14 +645,16 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         """Evaluate the masked points to find those that can always be discarded!"""
         # True in the points to mask
         logger.debug("Rejecting spectral orders")
-        entire_mask = self.spectral_mask.get_custom_mask()
 
-        for order, value in enumerate(entire_mask):
-            # See if the total amounf of rejected points is larger than
-            # 1 - reject_order-percentage of the entire order
-            perc = self._internal_configs["reject_order_percentage"]
-            if np.sum(value) > (1 - perc) * self.pixels_per_order:
-                self._OrderStatus.add_flag_to_order(order, HIGH_CONTAMINATION("Rejection threshold met in order"))
+        if self.spectral_mask is not None:
+            entire_mask = self.spectral_mask.get_custom_mask()
+
+            for order, value in enumerate(entire_mask):
+                # See if the total amounf of rejected points is larger than
+                # 1 - reject_order-percentage of the entire order
+                perc = self._internal_configs["reject_order_percentage"]
+                if np.sum(value) > (1 - perc) * self.pixels_per_order:
+                    self._OrderStatus.add_flag_to_order(order, HIGH_CONTAMINATION("Rejection threshold met in order"))
 
         if len(self.bad_orders) > 0:
             logger.info(
@@ -680,9 +682,10 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
                     ranges(bad_SNR),
                 )
 
-        if len(self.bad_orders) == self.N_orders:
+        if len(self.bad_orders) >= 0.75 * self.N_orders:
             logger.critical("All spectral orders of Frame {} have been rejected", self)
             self.add_to_status(NO_VALID_ORDERS(" Rejected all spectral orders"))
+
         elif len(self.bad_orders) >= self._internal_configs["MAX_ORDER_REJECTION"] * self.N_orders:
             logger.warning(
                 "Frame {} is rejecting more than {} % of the spectral orders",
@@ -836,6 +839,7 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
         self.load_instrument_specific_KWs(hdu)
         self.check_header_QC(hdu)
         self.find_instrument_type()
+        self.assess_bad_orders()
 
     ####################################
     #       Access data
