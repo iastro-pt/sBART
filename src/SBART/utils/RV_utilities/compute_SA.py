@@ -91,7 +91,3 @@ def secular_acceleration(star):
     return (
         sa * meter_second
     )  # not really the proper units, but close enough!! The year is taken into account in the RV correction
-
-
-if __name__ == "__main__":
-    print(secular_acceleration("GJ699"))

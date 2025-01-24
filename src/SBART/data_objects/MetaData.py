@@ -123,13 +123,3 @@ class MetaData:
             raise custom_exceptions.StopComputationError(msg)
 
         return MetaData(information)
-
-
-if __name__ == "__main__":
-    A = MetaData()
-    B = MetaData()
-    A.add_info("a", [1, 2, 3], "dd")
-    B.add_info("a", [2, 1], "dd")
-
-    print(A.information)
-    print(A.subInstrument_comparison(B, "dd"))

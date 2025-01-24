@@ -21,10 +21,3 @@ def weighted_mean(orders_RV, squared_uncertainties, RV_variance_estimator="simpl
         )
 
     return final_RV, final_error
-
-
-if __name__ == "__main__":
-    orders = np.array([[1, 1, 2, np.nan], [0.1, 2, 3, 1]])
-    errors = np.ones_like(orders)
-    errors[0, -1] = np.nan
-    print(weighted_mean(orders, errors), np.nanmean(orders, axis=1))

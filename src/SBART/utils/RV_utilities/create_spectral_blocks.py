@@ -34,12 +34,3 @@ def build_blocks(indexes):
             grouped_indexes.append([indexes[0][index + 1]])
 
     return grouped_indexes
-
-
-if __name__ == "__main__":
-    import numpy as np
-
-    arr = np.array([0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0])
-    ind = np.where(arr != 0)
-    print(build_blocks(ind))
-    print(arr[ind])

@@ -540,12 +540,3 @@ class SamplerModel(BASE):
 
         """
         raise NotImplementedError("The children classes must override the epoch-wise combination")
-
-
-if __name__ == "__main__":
-
-    def target(val):
-        return 3 * val**2 + 0 * val - 2
-
-    sampler = SamplerModel()
-    print(sampler.optimize(target))
