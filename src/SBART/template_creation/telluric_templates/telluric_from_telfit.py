@@ -39,12 +39,6 @@ atmospheric_profiles_coords_dict = {
     "CALIB_CARMENES": "-2.5+37.2",
 }
 
-try:
-    import telfit
-
-except ModuleNotFoundError:
-    raise custom_exceptions.InternalError("Telfit is not istalled")
-
 
 def construct_gdas_filename(instrument, datetime):
     """Construct the filename as in GDAS archive
@@ -426,8 +420,9 @@ class TelfitTelluric(TelluricTemplate):
 
     @custom_exceptions.ensure_invalid_template
     def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
-        """Create a telluric template from a TelFit transmission spectra [1], that
-        was created for the date in which the reference observation was made.
+        """Create a telluric template from a TelFit transmission spectra [1].
+
+        The model is created for the date in which the reference observation was made.
 
         It estimates the continuum level and classifies each point that shows a
         decrease of 1% as a telluric line. Furthermore, it creates a window of
@@ -452,13 +447,19 @@ class TelfitTelluric(TelluricTemplate):
         [1] https://github.com/kgullikson88/Telluric-Fitter
 
         """
-
-        self.modeler = telfit.Modeler(print_lblrtm_output=False)
-
         try:
             super().create_telluric_template(dataClass, custom_frameID=custom_frameID)
         except custom_exceptions.StopComputationError:
             return
+
+        try:
+            import telfit
+
+        except ModuleNotFoundError as e:
+            msg = "Telfit is not istalled"
+            raise custom_exceptions.InternalError(msg) from e
+
+        self.modeler = telfit.Modeler(print_lblrtm_output=False)
 
         self.configure_modeler(dataClass)
 
