@@ -90,11 +90,3 @@ class DB_connection:
         logger.info("Deleting data from all Tables")
         Base.metadata.drop_all(bind=self.engine)
         Base.metadata.create_all(bind=self.engine)
-
-
-if __name__ == "__main__":
-    conn = DB_connection()
-
-    conn.add_new_star("testes", 0, 0, 0)
-    conn.delete_all()
-    print(conn.get_star_params("testes"))
