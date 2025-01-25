@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from multiprocessing import Process, Queue
 from pathlib import Path

@@ -3,6 +3,7 @@
 **Note:** Not supposed to be used by the user!
 
 """
+from __future__ import annotations
 
 from collections import defaultdict
 from typing import Optional
