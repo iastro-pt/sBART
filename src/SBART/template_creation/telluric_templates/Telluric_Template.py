@@ -409,8 +409,6 @@ class TelluricTemplate(BaseTemplate):
             Updated position of the feature
 
         """
-        if self.was_loaded:
-            return [telluric_block]
 
         updated_block = []
 
