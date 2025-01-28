@@ -20,4 +20,8 @@ def weighted_mean(orders_RV, squared_uncertainties, RV_variance_estimator="simpl
             np.nansum(weights * (orders_RV - final_RV[:, np.newaxis]) ** 2, axis=1) / (sum_weights * (No - 1)),
         )
 
+    # Ensuring that we never pass np.inf outside
+    final_error[np.isinf(final_error)] = np.nan
+    final_RV[np.isinf(final_RV)] = np.nan
+
     return final_RV, final_error
