@@ -187,7 +187,7 @@ class TelfitTelluric(TelluricTemplate):
         model_components.append(
             ModelComponent(
                 name="temperature",
-                initial_guess=100,
+                initial_guess=283.15,
                 bounds=[0, None],
                 default_enabled=True,
             ),
