@@ -368,6 +368,8 @@ class SamplerModel(BASE):
             logger.info("Memory saving mode is disabled. Using optimal sampling strategy")
             _ = dataClass.load_all_from_subInst(subInst)
             N_packages = 0
+            # Reload valid frameIDs, some might have been rejected at runtime
+            valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
             for frameID in valid_IDS:
                 for order in run_info["valid_orders"]:
                     worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
