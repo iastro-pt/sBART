@@ -5,6 +5,7 @@ manual_tests/*
 docs/_build/*
 docs/low_level_interface/SBART
 
+
 */build/*
 __pycache__/
 
@@ -18,6 +19,7 @@ tests/*outputs/*
 
 .idea/
 src/SBART/resources/atmosphere_profiles/*
+src/SBART/resources/atmosphere_grid/*
 src/SBART/resources/internalSBART.db
 
 docs/tutorials/templates/*
