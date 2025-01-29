@@ -1,9 +1,14 @@
 from __future__ import annotations
+
 import contextlib
 import os
 import tarfile
 import urllib.request
-from typing import Optional
+from functools import partial
+from itertools import product
+from multiprocessing import Pool
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from loguru import logger
@@ -14,7 +19,6 @@ from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
 from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.paths_tools import file_older_than
-from SBART.utils.SBARTtypes import UI_DICT
 from SBART.utils.spectral_conditions import KEYWORD_condition
 from SBART.utils.status_codes import SUCCESS
 from SBART.utils.telluric_utilities import create_binary_template
@@ -25,10 +29,17 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     StringValue,
     UserParam,
+    ValueFromDtype,
     ValueFromList,
 )
 
 from .Telluric_Template import TelluricTemplate
+
+if TYPE_CHECKING:
+    from SBART.data_objects.DataClass import DataClass
+    from SBART.utils.SBARTtypes import UI_DICT
+
+RESOURCES_PATH = Path(__file__).parent.parent.parent / "resources"
 
 atmospheric_profiles_coords_dict = {
     "HARPS": "-70.7-29.3",
@@ -38,6 +49,32 @@ atmospheric_profiles_coords_dict = {
     "CARMENES": "-2.5+37.2",
     "CALIB_CARMENES": "-2.5+37.2",
 }
+
+
+def fun(params, modeler, loc, OBS_properties, freqs, control_dict, grid) -> None:
+    airmass, humidity, temperature = params
+
+    fname = f"transmittance_{airmass:.1f}_{humidity:.0f}_{temperature:.0f}.txt"
+
+    lowfreq, highfreq = freqs
+    observatory = OBS_properties["EarthLocation"]
+
+    control_dict["temperature"] = temperature
+    control_dict["humidity"] = humidity
+
+    m = modeler.MakeModel(
+        lowfreq=lowfreq,
+        highfreq=highfreq,
+        vac2air=False,
+        angle=np.rad2deg(np.arccos(1 / airmass)),
+        lat=observatory.lat.value,
+        alt=observatory.height.value / 1e3,
+        resolution=OBS_properties["resolution"],
+        wavegrid=grid,
+        **control_dict,
+    )
+    wave, transmit = m.x, m.y
+    np.savetxt(fname=loc / fname, X=np.c_[wave, transmit])
 
 
 def construct_gdas_filename(instrument, datetime):
@@ -150,6 +187,22 @@ class TelfitTelluric(TelluricTemplate):
                 ["pressure", "humidity"],
                 constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
             ),
+            USE_GRID_OF_TRANSMITTANCE=UserParam(
+                default_value=False,
+                constraint=BooleanValue,
+                description=(
+                    "If True (default False), uses a grid of pre-computed Telfit transmittances to generate"
+                    "the telluric model. If the grid doesn't exist, it will generate a new one"
+                ),
+            ),
+            GRID_MAIN_PATH=UserParam(
+                default_value=None,
+                constraint=ValueFromDtype((str, Path, type(None))),
+                description=(
+                    "If not None, it will be used to store the transmittance grid. If None"
+                    "stores in s_BART 'resources' folder in the location of installation"
+                ),
+            ),
             IND_WATER_MASK_THRESHOLD=UserParam(  # Ensuring that things don't blow up when storing the fits files (inf will do that)
                 default_value=1e8,
                 constraint=Positive_Value_Constraint,
@@ -178,11 +231,11 @@ class TelfitTelluric(TelluricTemplate):
 
         model_components = []
 
-        default_molecule_dict = dict(
-            co2=385.34,
-            ch4=1819.0,
-            n2o=325.1,
-        )
+        default_molecule_dict = {
+            "co2": 385.34,
+            "ch4": 1819.0,
+            "n2o": 325.1,
+        }
 
         model_components.append(
             ModelComponent(
@@ -232,7 +285,6 @@ class TelfitTelluric(TelluricTemplate):
         conn = DB_connection()
 
         if self._internal_configs["atmosphere_profile"] == "GDAS":
-            # logger.debug("GDAS data load mode set to download")
             logger.info("Launching GDAS profile downloader")
             instrument, date = selected_frame.inst_name, selected_frame.get_KW_value("ISO-DATE")
 
@@ -372,12 +424,14 @@ class TelfitTelluric(TelluricTemplate):
 
     def _generate_telluric_model(
         self,
+        dataClass,
         model_parameters,
         OBS_properties,
+        instrument: str,
         fixed_params=None,
         grid=None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """COmpute the transmittance spectra using tellfit
+        """COmpute the transmittance spectra using tellfit.
 
         Parameters
         ----------
@@ -390,7 +444,7 @@ class TelfitTelluric(TelluricTemplate):
             Wavelengths and transmittance arrays
 
         """
-        control_dict = {i: j for i, j in zip(self._fitModel.get_enabled_params(), model_parameters)}
+        control_dict = dict(zip(self._fitModel.get_enabled_params(), model_parameters))
         if fixed_params is not None:
             control_dict = {**control_dict, **fixed_params}
 
@@ -402,7 +456,67 @@ class TelfitTelluric(TelluricTemplate):
             lowfreq = 1e7 / grid.max()
             highfreq = 1e7 / grid.min()
 
+        generate_new_grid = False
+        if self._internal_configs["USE_GRID_OF_TRANSMITTANCE"]:
+            if self._internal_configs["GRID_MAIN_PATH"] is not None:
+                loc = Path(self._internal_configs["GRID_MAIN_PATH"])
+            else:
+                loc = RESOURCES_PATH / "atmosphere_grid" / instrument
+                if not loc.exists() or len(list(loc.iterdir())) == 0:
+                    logger.warning("Folder with grids is not available. Generating it now")
+                    loc.mkdir(exist_ok=True, parents=True)
+                    # Not the greatest code, but this ensures that the modeler
+                    # is ready to go when we launch the telfit grid computation
+
+                    try:
+                        import telfit
+
+                    except ModuleNotFoundError as e:
+                        msg = "Telfit is not istalled"
+                        raise custom_exceptions.InternalError(msg) from e
+
+                    if self.modeler is None:
+                        self.modeler = telfit.Modeler(print_lblrtm_output=False)
+                        self.configure_modeler(dataClass)
+
+                    self._construct_grid(
+                        loc,
+                        OBS_properties=OBS_properties,
+                        control_dict=control_dict,
+                        freqs=[lowfreq, highfreq],
+                        grid=None,  # TODO: see if we can reduce the number of points in here
+                    )
+            logger.debug(f"Using grid of trasmittance values, searching in {loc}")
+            # This needs to be updated if the grid changes
+            closest_temp = int(np.ceil(control_dict["temperature"] / 2) * 2)
+            closest_rhum = int(np.ceil(control_dict["humidity"] / 5) * 5)
+            closest_airmass = np.round(np.ceil(OBS_properties["airmass"] / 0.1) * 0.1, 2)
+
+            desired_file = loc / f"transmittance_{closest_airmass}_{closest_rhum}_{closest_temp}.txt"
+            if not desired_file.exists():
+                params = (closest_temp, closest_rhum, closest_airmass)
+
+                logger.critical(
+                    f"Using a grid of transmittance and missing the relevant profiles ({params}). Moving onwards to nominal run"
+                )
+            else:
+                logger.debug("Found pre-computed transmittance spectra, serving it")
+                data = np.loadtxt(desired_file)
+                return data[:, 0], data[:, 1]
+
+        try:
+            import telfit
+
+        except ModuleNotFoundError as e:
+            msg = "Telfit is not istalled"
+            raise custom_exceptions.InternalError(msg) from e
+
+        if self.modeler is None:
+            self.modeler = telfit.Modeler(print_lblrtm_output=False)
+            self.configure_modeler(dataClass)
+
         observatory = OBS_properties["EarthLocation"]
+
         m = self.modeler.MakeModel(
             lowfreq=lowfreq,
             highfreq=highfreq,
@@ -416,8 +530,29 @@ class TelfitTelluric(TelluricTemplate):
         )
         return m.x, m.y
 
+    def _construct_grid(self, loc, OBS_properties, control_dict, freqs, grid):
+        # If we update the grid steps, we will need to also change the search for the closest file
+        airmass_values = np.arange(start=1, stop=2.1, step=0.1)
+        humidity_values = np.arange(start=0, stop=35, step=5, dtype=int)
+        temperature_values = np.arange(278, 294.1, step=2, dtype=int)  # from 5 to 20 Celsius
+
+        combinations = product(airmass_values, humidity_values, temperature_values)
+
+        target = partial(
+            fun,
+            modeler=self.modeler,
+            loc=loc,
+            OBS_properties=OBS_properties,
+            freqs=freqs,
+            control_dict=control_dict,
+            grid=grid,
+        )
+
+        with Pool(processes=4) as p:
+            p.map(target, combinations)
+
     @custom_exceptions.ensure_invalid_template
-    def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
+    def create_telluric_template(self, dataClass: DataClass, custom_frameID: Optional[int] = None) -> None:
         """Create a telluric template from a TelFit transmission spectra [1].
 
         The model is created for the date in which the reference observation was made.
@@ -450,17 +585,6 @@ class TelfitTelluric(TelluricTemplate):
         except custom_exceptions.StopComputationError:
             return
 
-        try:
-            import telfit
-
-        except ModuleNotFoundError as e:
-            msg = "Telfit is not istalled"
-            raise custom_exceptions.InternalError(msg) from e
-
-        self.modeler = telfit.Modeler(print_lblrtm_output=False)
-
-        self.configure_modeler(dataClass)
-
         OBS_properties = {
             "airmass": dataClass.get_KW_from_frameID("airmass", self._reference_frameID),
             **dataClass.get_instrument_information(),
@@ -473,6 +597,8 @@ class TelfitTelluric(TelluricTemplate):
             frameID=self._reference_frameID,
             allow_disabled=True,
         )
+        instrument = dataClass.get_frame_by_ID(self._reference_frameID).inst_name
+
         names = self._fitModel.get_component_names(include_disabled=True)
         logger.debug(f"Parameters in use: {names}")
         logger.info(f"Using params: {parameter_values}")
@@ -488,9 +614,11 @@ class TelfitTelluric(TelluricTemplate):
             threshold = self._internal_configs["IND_WATER_MASK_THRESHOLD"]
 
         wavelengths, tell_spectra = self._generate_telluric_model(
+            dataClass=dataClass,
             model_parameters={},
             OBS_properties=OBS_properties,
             fixed_params=dict(zip(names, parameter_values)),
+            instrument=instrument,
         )
 
         self.template = create_binary_template(
@@ -521,10 +649,12 @@ class TelfitTelluric(TelluricTemplate):
             logger.warning(f"Original value: {tell_spectra.shape}")
 
             waves, tell_spectra = self._generate_telluric_model(
+                dataClass=dataClass,
                 model_parameters={},
                 OBS_properties=OBS_properties,
                 fixed_params=parameters,
                 grid=wavelengths,
+                instrument=instrument,
             )
 
             logger.warning(f"New value: {tell_spectra.shape}")
