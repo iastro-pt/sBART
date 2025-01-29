@@ -16,3 +16,8 @@ class DISK_SAVE_MODE(Enum):
 class WORKING_MODE(Enum):
     ONE_SHOT = "ONE_SHOT"
     ROLLING = "ROLLING"
+
+
+class TELLURIC_EXTENSION(Enum):
+    LINES = "LINES"
+    WINDOW = "WINDOW"

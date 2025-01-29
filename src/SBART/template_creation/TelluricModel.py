@@ -5,7 +5,7 @@ from loguru import logger
 
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Base_Models.TemplateFramework import TemplateFramework
-from SBART.utils.choices import WORKING_MODE
+from SBART.utils.choices import TELLURIC_EXTENSION, WORKING_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
@@ -17,8 +17,9 @@ from .telluric_templates.Telluric_Template import TelluricTemplate
 
 class TelluricModel(TemplateFramework):
     # noinspection LongLine
-    """The TelluricModel is responsible for the creation of the telluric template for each sub-Instrument. This object
-    supports the following user parameters:
+    """The TelluricModel is responsible for the creation of the telluric template for each sub-Instrument.
+
+    This object supports the following user parameters:
 
     **User parameters:**
 
@@ -53,10 +54,11 @@ class TelluricModel(TemplateFramework):
     model_type = "Telluric"
 
     template_map = {"Telfit": TelfitTelluric, "Tapas": TapasTelluric}
+
     _default_params = TemplateFramework._default_params + DefaultValues(
         CREATION_MODE=UserParam(None, constraint=ValueFromList(("tapas", "telfit")), mandatory=True),
         APPLICATION_MODE=UserParam("removal", constraint=ValueFromList(("removal", "correction"))),
-        EXTENSION_MODE=UserParam("lines", constraint=ValueFromList(("lines", "window"))),
+        EXTENSION_MODE=UserParam(TELLURIC_EXTENSION.LINES, constraint=ValueFromList(TELLURIC_EXTENSION)),
     )
 
     def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):
@@ -80,6 +82,11 @@ class TelluricModel(TemplateFramework):
         # can be 'individual' -> template applied to its own subInstrument
         # or  'merged' and we use a template built from merging the templates from all subInstruments
         self._usage_mode = usage_mode
+
+    def load_templates_from_disk(self):
+        super().load_templates_from_disk()
+        for value in self.templates.values():
+            value.update_extension_mode(self._internal_configs["EXTENSION_MODE"])
 
     def request_template(self, subInstrument: str) -> Type[BaseTemplate]:
         """Return the template for a given sub-Instrument.
@@ -142,7 +149,7 @@ class TelluricModel(TemplateFramework):
             self.store_templates_to_disk()
 
     def merge_templates(self) -> None:
-        """Merge the telluric template of all sub-Instruments to create a master telluric binary template
+        """Merge the telluric template of all sub-Instruments to create a master telluric binary template.
 
         Raises
         ------
@@ -168,7 +175,7 @@ class TelluricModel(TemplateFramework):
             raise TemplateNotExistsError()
 
         for fname in os.listdir(loading_path):
-            if which in fname and self._internal_configs["EXTENSION_MODE"] in fname and fname.endswith("fits"):
+            if which in fname and fname.endswith("fits"):
                 available_templates.append(fname)
         logger.info(
             "Found {} available templates: {} of type {}",

@@ -16,7 +16,7 @@ from SBART import __version__
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
-from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
+from SBART.utils.choices import DISK_SAVE_MODE, TELLURIC_EXTENSION, WORKING_MODE
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 from SBART.utils.shift_spectra import (
@@ -75,8 +75,8 @@ class TelluricTemplate(BaseTemplate):
     def __init__(
         self,
         subInst: str,
+        extension_mode: TELLURIC_EXTENSION,
         user_configs: Union[None, dict] = None,
-        extension_mode: str = "lines",
         application_mode: str = "removal",
         loaded: bool = False,
     ):
@@ -120,7 +120,7 @@ class TelluricTemplate(BaseTemplate):
 
         self.use_approximated_BERV_correction = False
         if self._internal_configs["inverse_mask"]:
-            if self._extension_mode != "window":
+            if self._extension_mode != TELLURIC_EXTENSION.WINDOW:
                 raise custom_exceptions.InternalError(
                     "Can't inverse the telluric mask without using a window extension mode",
                 )
@@ -337,6 +337,24 @@ class TelluricTemplate(BaseTemplate):
 
         self._fitModel.disable_full_model()
 
+    def update_extension_mode(self, new_mode: TELLURIC_EXTENSION) -> None:
+        """Update the telluric extension mode.
+
+        Args:
+            new_mode (TELLURIC_EXTENSION): New mode.
+
+        Raises:
+            custom_exceptions.InvalidConfiguration: Mode is not recognized
+
+        """
+        if new_mode not in TELLURIC_EXTENSION:
+            msg = f"{new_mode} not recognized"
+            raise custom_exceptions.InvalidConfiguration(msg)
+
+        self._computed_wave_blocks = False
+        self._masked_wavelengths = []
+        self._extension_mode = new_mode
+
     def ingest_new_rolling_observations(self, dataClass):
         """Ingest new observations into a rolling mode tempalte"""
         if self.work_mode != WORKING_MODE.ROLLING:
@@ -416,7 +434,7 @@ class TelluricTemplate(BaseTemplate):
             apply_approximated_BERV_correction if self.use_approximated_BERV_correction else apply_BERV_correction
         )
 
-        if self._extension_mode == "lines":
+        if self._extension_mode == TELLURIC_EXTENSION.LINES:
             for berv_value in self.BERVS:
                 berv = berv_value.to(kilometer_second).value
                 offset = 15 / 1000  # expand each line by 15 m/s to account for wings
@@ -425,12 +443,13 @@ class TelluricTemplate(BaseTemplate):
                 highest_wavelength = berv_function(telluric_block[1], BERV=berv + offset)
                 updated_block.append([lowest_wavelength, highest_wavelength])
 
-        elif self._extension_mode == "window":
+        elif self._extension_mode == TELLURIC_EXTENSION.LINES:
             berv = self.MAXBERV.to(kilometer_second).value
             lowest_wavelength = berv_function(telluric_block[0], BERV=-berv)
             highest_wavelength = berv_function(telluric_block[1], BERV=berv)
             updated_block.append([lowest_wavelength, highest_wavelength])
-
+        else:
+            raise custom_exceptions.InternalError(f"{self._extension_mode} not recognized")
         return updated_block
 
     def create_binary_template(self, continuum_level) -> None:
@@ -482,7 +501,7 @@ class TelluricTemplate(BaseTemplate):
 
     @property
     def storage_name(self) -> str:
-        return f"{self.__class__.method_name}_{self._extension_mode}_{self.__class__.template_type}"
+        return f"{self.__class__.method_name}_{self.__class__.template_type}"
 
     @property
     def for_feature_removal(self) -> bool:
@@ -526,7 +545,6 @@ class TelluricTemplate(BaseTemplate):
         header["IS_VALID"] = self.is_valid
         header["HIERARCH APPROX BERV CORRECTION"] = self.use_approximated_BERV_correction
         header["MAX_BERV"] = convert_data(self.MAXBERV, new_units=kilometer_second, as_value=True)
-        header["HIERARCH EXTEND MODE"] = self._extension_mode
 
         for key, config_val in self._internal_configs.items():
             if "path" in key or "user_" in key or isinstance(config_val, (list, tuple)):
@@ -610,7 +628,9 @@ class TelluricTemplate(BaseTemplate):
             self.MAXBERV = hdulist["CONTAM"].header["MAX_BERV"] * kilometer_second
             self.BERVS = [i * kilometer_second for i in hdulist["BERVS"].data.tolist()]
 
-            self._extension_mode = hdulist["CONTAM"].header["HIERARCH EXTEND MODE"]
+            # By default we load with a window extension mode
+            self._extension_mode = TELLURIC_EXTENSION.WINDOW
+
             try:
                 waves = hdulist["Wave"].data
                 template = hdulist["Temp"].data
