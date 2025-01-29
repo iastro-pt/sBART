@@ -15,5 +15,3 @@ Available Instruments
 
     ESPRESSO
     HARPS
-    HARPSN
-    CARMENES
