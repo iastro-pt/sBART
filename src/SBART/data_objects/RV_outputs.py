@@ -314,11 +314,9 @@ class RV_holder(BASE):
                 sorted_indexes = np.argsort(data_block[selected_key])
 
                 for sort_index in sorted_indexes:
-                    row = []
-                    for key in self.output_keys:
-                        row.append(data_block[key][sort_index])
-                    full_table.add_row(row)
+                    full_table.add_row([data_block[key][sort_index] for key in self.output_keys])
 
+            full_table.set_decimal_places(18)
             full_table.write_to_file(
                 build_filename(
                     self._internalPaths.get_path_to(cube_folder[set_index], as_posix=False),
