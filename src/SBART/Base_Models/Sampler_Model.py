@@ -3,20 +3,21 @@ from typing import Iterable, List, NoReturn, Optional, Tuple, Union
 
 from astropy.units import Quantity
 from loguru import logger
+import numpy as np
 
 from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
+from SBART.data_objects import DataClass
 from SBART.utils.BASE import BASE
 from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     FrameError,
     InvalidConfiguration,
 )
-from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
 from SBART.utils.SBARTtypes import UI_DICT
+from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
 from SBART.utils.units import meter_second
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package, WorkerInput
-from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class SamplerModel(BASE):
@@ -75,6 +76,8 @@ class SamplerModel(BASE):
         self.mode = mode
         self.RV_step = RV_step
         self.mem_save_enabled = False
+        # Only used if "mem_save_enabled" is True
+        self._max_number_obs = 10
 
         self.is_merged_subInst = False
 
@@ -335,7 +338,9 @@ class SamplerModel(BASE):
             return self._epochwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
         raise InvalidConfiguration(f"{self.name} does not support mode <{self.mode}>")
 
-    def _orderwise_manager(self, dataClass, subInst: str, run_info: dict, package_queue, output_pool) -> list:
+    def _orderwise_manager(
+        self, dataClass: DataClass, subInst: str, run_info: dict, package_queue, output_pool
+    ) -> list:
         """Handle communication with the workers, when computing order-wise RVs.
         If the memory saving mode is enabled, the S2D arrays of the frames are closed afterwards
         """
@@ -343,39 +348,32 @@ class SamplerModel(BASE):
         valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
         logger.debug("Running frameIDs : {}", valid_IDS)
         worker_prods = []
-        if self.mem_save_enabled:
-            logger.info("Memory saving mode is enabled. Using optimal RAM-saving strategy")
-            for frameID in valid_IDS:
-                # open before multiple cores attempt to open it!
+
+        chunk_size = self._max_number_obs if self.mem_save_enabled else len(valid_IDS)
+        chunks = np.array_split(valid_IDS, np.ceil(len(valid_IDS) / chunk_size))
+
+        for chunk in chunks:
+            # count the packages per chunk!
+            n_packages = 0
+            for frame_id in chunk:
                 try:
-                    _ = dataClass.load_frame_by_ID(frameID)
-                except FrameError:
-                    logger.warning("RunTimeRejection of frameID = {}", frameID)
+                    _ = dataClass.load_frame_by_ID(frame_id)
+                except FrameError:  # noqa: PERF203
+                    logger.warning("RunTimeRejection of frameID = {}", frame_id)
                     continue
-                logger.debug(f"Using RV window of: {self.model_params.get_RV_bounds(frameID)}")
-                N_packages = 0
 
+            for frame_id in chunk:
                 for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
+                    worker_in_pkg = self._generate_WorkerIn_Package(frame_id, order, run_info, subInst)
+                    package_queue.put(worker_in_pkg)
+                    n_packages += 1
+            worker_prods.append(self._receive_data_workers(N_packages=n_packages, output_pool=output_pool))
 
-                    package_queue.put(worker_IN_pkg)
-                    N_packages += 1
+            if self.mem_save_enabled:
+                # If in MEMORY_SAVE_MODE = True -> close opened observations
+                for frame_id in chunk:
+                    dataClass.close_frame_by_ID(frame_id)
 
-                worker_prods.append(self._receive_data_workers(N_packages=N_packages, output_pool=output_pool))
-                if self.mem_save_enabled:
-                    dataClass.close_frame_by_ID(frameID)
-        else:
-            logger.info("Memory saving mode is disabled. Using optimal sampling strategy")
-            _ = dataClass.load_all_from_subInst(subInst)
-            N_packages = 0
-            # Reload valid frameIDs, some might have been rejected at runtime
-            valid_IDS = dataClass.get_frameIDs_from_subInst(subInst)
-            for frameID in valid_IDS:
-                for order in run_info["valid_orders"]:
-                    worker_IN_pkg = self._generate_WorkerIn_Package(frameID, order, run_info, subInst)
-                    package_queue.put(worker_IN_pkg)
-                    N_packages += 1
-            worker_prods.append(self._receive_data_workers(N_packages=N_packages, output_pool=output_pool))
         return worker_prods
 
     def _epochwise_manager(self, dataClass, subInst: str, run_info, package_queue, output_pool) -> List[List[Package]]:
@@ -483,7 +481,7 @@ class SamplerModel(BASE):
     def __repr__(self):
         return self.name
 
-    def enable_memory_savings(self):
+    def enable_memory_savings(self, nobs: int):
         logger.info("{} enabling memory saving mode", self.name)
         self.mem_save_enabled = True
 

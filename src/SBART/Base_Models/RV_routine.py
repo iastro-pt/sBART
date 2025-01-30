@@ -3,13 +3,12 @@ from __future__ import annotations
 import time
 from multiprocessing import Process, Queue
 from pathlib import Path
-from typing import Any, Dict, Iterable, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, NoReturn, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
-from SBART.data_objects import DataClass
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.data_objects.RV_outputs import RV_holder
@@ -24,7 +23,6 @@ from SBART.utils.custom_exceptions import (
     InternalError,
     InvalidConfiguration,
 )
-from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.status_codes import BAD_TEMPLATE, ORDER_SKIP
 from SBART.utils.UserConfigs import (
     BooleanValue,
@@ -37,6 +35,10 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 from SBART.utils.work_packages import ShutdownPackage
+
+if TYPE_CHECKING:
+    from SBART.data_objects import DataClass
+    from SBART.utils.SBARTtypes import UI_PATH
 
 
 class RV_routine(BASE):
@@ -153,6 +155,11 @@ class RV_routine(BASE):
             + IterableMustHave(("MJD", "BJD"), mode="either"),
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
+        MAX_NUMBER_OF_OPEN_OBS=UserParam(
+            10,
+            constraint=Positive_Value_Constraint,
+            description="If MEMORY_SAVE_MODE is active, only keep thisnumber of observations in memory",
+        ),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))),
         # How we select the wavelength regions to use. TODO: think about this one
@@ -354,7 +361,7 @@ class RV_routine(BASE):
         )
 
         if self._internal_configs["MEMORY_SAVE_MODE"]:
-            self.sampler.enable_memory_savings()
+            self.sampler.enable_memory_savings(self._internal_configs["MAX_NUMBER_OF_OPEN_OBS"])
         else:
             # Check here if the Stellar template will be interpolated with a GP:
             logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
