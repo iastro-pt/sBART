@@ -4,7 +4,6 @@ corner ~= 2.2.1
 tabletexifier >= 0.3.4
 astropy  >= 5.2.2
 astroquery ~= 0.4.6
-tqdm ~= 4.64.0
 matplotlib >= 3.7.5 
 emcee ~= 3.1.1
 loguru ~= 0.6.0
