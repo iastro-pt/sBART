@@ -4,7 +4,6 @@ from multiprocessing import Process, Queue
 from typing import Dict, Optional
 
 import numpy as np
-import tqdm
 from loguru import logger
 from tabletexifier import Table
 
@@ -188,9 +187,8 @@ class SumStellar(StellarTemplate):
             "subInst": self._associated_subInst,
             "N_orders": N_orders,
             "dataClass": dataClass,
-            "frame_RV_map": {  # construct map between the actual frames and the RVs. Done like this to allow being over-riden easily
-                i: j for i, j in zip(self.frameIDs_to_use, self.sourceRVs)
-            },
+            # construct map between the actual frames and the RVs. Done like this to allow being over-riden easily
+            "frame_RV_map": dict(zip(self.frameIDs_to_use, self.sourceRVs)),
         }
 
         logger.info("Launching {} workers!", self._internal_configs["NUMBER_WORKERS"])
@@ -200,10 +198,6 @@ class SumStellar(StellarTemplate):
         buffers = self.shm
 
         for _ in range(self._internal_configs["NUMBER_WORKERS"]):
-            _ = tqdm.tqdm(
-                total=len(self.frameIDs_to_use) // self._internal_configs["NUMBER_WORKERS"],
-                leave=False,
-            )
             p = Process(
                 target=self.perform_calculations,
                 args=(self.package_pool, self.output_pool, buffers),
@@ -213,6 +207,7 @@ class SumStellar(StellarTemplate):
 
         RunTimeRejections = []
 
+        start_time = time.time()
         for frameID in self.frameIDs_to_use:
             # to avoid multiple processes opening the arrays at the same time, we open it beforehand
             try:
@@ -228,7 +223,6 @@ class SumStellar(StellarTemplate):
             for order in range(N_orders):
                 self.package_pool.put((frameID, order))
                 total_number_packages += 1
-            t = time.time()
             received = 0
 
             while received != total_number_packages:
@@ -237,12 +231,12 @@ class SumStellar(StellarTemplate):
                     logger.critical("non finite output")
                     kill_workers([], self.package_pool, self._internal_configs["NUMBER_WORKERS"])
                     self._found_error = True
-                    raise BadTemplateError("Template creation failed")
+                    msg = "Template creation failed"
+                    raise BadTemplateError(msg)
 
                 frameID, order, rejection = comm_out
                 self.rejection_array[self.frameIDs_to_use.index(frameID), order] = rejection
                 received += 1
-            logger.debug(f"Frame took {time.time() - t :0f} seconds")
 
             if self._internal_configs["MEMORY_SAVE_MODE"]:
                 _ = dataClass.close_frame_by_ID(frameID)
@@ -263,9 +257,6 @@ class SumStellar(StellarTemplate):
 
         new_mask = np.zeros(self.spectra.shape, dtype=bool)
 
-        # plt.plot(shr_counts[2], marker = 'x', linestyle ='')
-        # plt.axhline(len(self.frameIDs_to_use))
-        # plt.show()
         new_mask[np.where(shr_counts != len(self.frameIDs_to_use))] = True
         new_mask[np.where(self.spectra < self._internal_configs["FLUX_threshold_for_template"])] = True
 
@@ -282,6 +273,7 @@ class SumStellar(StellarTemplate):
         self.spectral_mask = Mask(new_mask, mask_type="binary")
         # error propagation for the mean
         self.uncertainties = np.sqrt(shr_uncert[:]) / len(self.frameIDs_to_use)
+        logger.info(f"Construction of stellar template took {time.timw() - start_time}")
 
     def add_new_frame_to_template(self, frame: Frame):
         super().add_new_frame_to_template(frame)

@@ -14,6 +14,7 @@ from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Components import Spectral_Modelling
 from SBART.Masks import Mask
 from SBART.utils import build_filename, custom_exceptions
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
@@ -26,7 +27,6 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
 )
-from SBART.utils.choices import DISK_SAVE_MODE
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):
@@ -553,10 +553,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         logger.info("Putting the stellar template in shared memory")
         self._in_shared_mem = True
 
-        if custom_size is None:
-            array_of_zeros = np.zeros(self.wavelengths.shape)
-        else:
-            array_of_zeros = np.zeros(custom_size)
+        array_of_zeros = np.zeros(self.wavelengths.shape) if custom_size is None else np.zeros(custom_size)
 
         buffer_info, shared_uncerts = create_shared_array(array_of_zeros)
         self.shm["template_errors"] = buffer_info
