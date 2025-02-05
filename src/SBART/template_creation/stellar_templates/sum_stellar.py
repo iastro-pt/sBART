@@ -273,7 +273,7 @@ class SumStellar(StellarTemplate):
         self.spectral_mask = Mask(new_mask, mask_type="binary")
         # error propagation for the mean
         self.uncertainties = np.sqrt(shr_uncert[:]) / len(self.frameIDs_to_use)
-        logger.info(f"Construction of stellar template took {time.timw() - start_time}")
+        logger.info(f"Construction of stellar template took {time.time() - start_time}")
 
     def add_new_frame_to_template(self, frame: Frame):
         super().add_new_frame_to_template(frame)
