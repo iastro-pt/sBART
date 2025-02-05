@@ -666,7 +666,7 @@ class RV_cube(BASE):
 
         for key in ["BJD", "MJD", "INS MODE", "INS NAME", "PROG ID", "DATE_NIGHT", "DRS-VERSION", *ind_keys]:
             tmp[key] = self.cached_info[key]
-        inds = np.where(self.QC_flag == 1)[0]
+        inds = np.where(np.asarray(self.QC_flag) == 1)[0]
         for key, data in tmp.items():
             if include_invalid_frames:
                 out[key] = data
