@@ -25,6 +25,11 @@ def json_ready_converter(value):
         value = value.to(meter_second).value
     elif isinstance(value, np.ndarray):
         value = value.tolist()
+    elif isinstance(value, np.integer):
+        value = int(value)
+    elif isinstance(value, np.floating):
+        value = float(value)
+        
     if isinstance(value, (list, tuple)) and len(value) > 0:
         if isinstance(value[0], Quantity):
             # TODO: this will fail if we mix QUantity and unitless in the same list!
@@ -34,5 +39,6 @@ def json_ready_converter(value):
         new_dict = {}
         for key, val in value.items():
             new_dict[key] = json_ready_converter(val)
+
         value = new_dict
     return value
