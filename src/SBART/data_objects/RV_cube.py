@@ -635,12 +635,17 @@ class RV_cube(BASE):
         dlw_err = copy.copy(dlw_err)
         frameIDs = copy.copy(self.frameIDs)
 
+        SA = convert_data(self.compute_SA_correction(), kilometer_second, True)
+
         if include_invalid_frames:
             # ensure that they array has the same size (no DLW for invalid frames)
             dlw.extend([np.nan for _ in self._invalid_frameIDs])
             dlw_err.extend([np.nan for _ in self._invalid_frameIDs])
+            SA.extend([np.nan for _ in self._invalid_frameIDs])
             frameIDs.extend(self._invalid_frameIDs)
-
+            
+        
+         # Dictionary that already contains the data needed for the output
         out = {
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
@@ -649,11 +654,11 @@ class RV_cube(BASE):
             "DLW": dlw,
             "DLW_ERR": dlw_err,
             "frameIDs": list(map(int, frameIDs)),
+            "SA": SA
         }
 
         tmp = {
-            "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
-            "SA": convert_data(self.compute_SA_correction(), kilometer_second, True),
+            "OBJ": [self.cached_info["target"].true_name for _ in dlw],
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
             "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "BERV": convert_data(self.cached_info["BERV"], kilometer_second, True),
@@ -667,12 +672,14 @@ class RV_cube(BASE):
         for key in ["BJD", "MJD", "INS MODE", "INS NAME", "PROG ID", "DATE_NIGHT", "DRS-VERSION", *ind_keys]:
             tmp[key] = self.cached_info[key]
         inds = np.where(np.asarray(self.QC_flag) == 1)[0]
+        
         for key, data in tmp.items():
             if include_invalid_frames:
+                # By default we cache all information
                 out[key] = data
             else:
-                # Only the first N entries correspond to the valid frames
-                out[key] = [out[i] for i in inds]
+                # We only want to get the valid frames
+                out[key] = [data[i] for i in inds]
         return out
 
     def compute_statistics(self, savefile=True):
@@ -1206,7 +1213,7 @@ class RV_cube(BASE):
             f"WorkPackages_{self._associated_subInst}",
             fmt="json",
         )
-
+        breakpoint()
         with open(storage_path, mode="w") as file:
             json.dump(complete_outputs, file, indent=4)
 
