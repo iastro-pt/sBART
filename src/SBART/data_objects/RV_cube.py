@@ -1213,7 +1213,6 @@ class RV_cube(BASE):
             f"WorkPackages_{self._associated_subInst}",
             fmt="json",
         )
-        breakpoint()
         with open(storage_path, mode="w") as file:
             json.dump(complete_outputs, file, indent=4)
 
