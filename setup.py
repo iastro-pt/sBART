@@ -9,7 +9,7 @@ import numpy
 curr_file = Path(__file__).parent.absolute()
 
 
-version = "0.6.1"
+version = "1.0.0"
 
 USE_CYTHON = True  # command line option, try-import, ...
 
