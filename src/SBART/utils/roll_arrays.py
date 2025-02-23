@@ -2,9 +2,7 @@ import numpy as np
 
 
 def roll_array(array, shift_amount):
-    """
-
-    Shift the array "array" by "shift_amount". The values that roll to the other edge of the array are replaced by
+    """Shift the array "array" by "shift_amount". The values that roll to the other edge of the array are replaced by
     numpy.nan.
 
     Used for the telluric template alignment
@@ -19,6 +17,7 @@ def roll_array(array, shift_amount):
     Returns
     -------
     Shifted template
+
     """
     if shift_amount == 0:
         return array

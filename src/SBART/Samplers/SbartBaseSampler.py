@@ -1,30 +1,25 @@
-"""
-Common interface of the SBART samplers.
+"""Common interface of the SBART samplers.
 
 **Note:** Not supposed to be used by the user!
 
 """
-import time
+
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-from loguru import logger
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.types import RV_measurement
+from SBART.ModelParameters import ModelComponent
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
+from SBART.utils.types import RV_measurement
 from SBART.utils.work_packages import Package
-
-from SBART.ModelParameters import ModelComponent
 
 
 class SbartBaseSampler(SamplerModel):
-    """
-
-    Base semi-Bayesian sampler, which implements the SBART model as described in the paper.
+    """Base semi-Bayesian sampler, which implements the SBART model as described in the paper.
 
     The posterior characterization algorithms inherit from this:
 
@@ -43,8 +38,7 @@ class SbartBaseSampler(SamplerModel):
         user_configs,
         sampler_folders: Optional[Dict[str, str]] = None,
     ):
-        """
-        Approximate the posterior distribution with a LaPlace approximation;
+        """Approximate the posterior distribution with a LaPlace approximation;
         """
         extra_model_components = [
             ModelComponent("jitter", initial_guess=10, bounds=[0, None]),
@@ -84,8 +78,8 @@ class SbartBaseSampler(SamplerModel):
         -------
         [type]
             [description]
+
         """
-        pass
 
     def process_epochwise_metrics(self, outputs) -> Dict[str, List]:
         processed_package = defaultdict(list)
@@ -96,22 +90,17 @@ class SbartBaseSampler(SamplerModel):
         if len(set(processed_package["frameID"])) != 1:
             raise FrameError(f"Mixing multiple frameIDs {set(processed_package['frameID'])}")
         processed_package["frameID"] = processed_package["frameID"][0]
-        
+
         return processed_package
 
     def compute_epochwise_combination(self, outputs):
-        return np.sum(
-            [pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS]
-        )
+        return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
 
     def show_posterior(self, mean_value, variance, RVs):
-        """
-        Plot the approximated (Gaussian) posterior
+        """Plot the approximated (Gaussian) posterior
         """
         std = np.sqrt(variance)
-        gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (
-            std * np.sqrt(2 * np.pi)
-        )
+        gaussian = lambda x, mean, std: np.exp(-0.5 * ((x - mean) / std) ** 2) / (std * np.sqrt(2 * np.pi))
 
         plt.scatter(RVs, gaussian(RVs, mean_value, std))
 

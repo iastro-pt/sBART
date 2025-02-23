@@ -6,16 +6,15 @@ from scipy.misc import derivative
 from scipy.optimize import minimize, minimize_scalar
 
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
+from SBART.utils.types import RV_measurement
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package
-from SBART.utils.types import RV_measurement
 
 from .SbartBaseSampler import SbartBaseSampler
 
 
 class Laplace_approx(SbartBaseSampler):
-    """
-    Laplace's approximation to the model's posterior distribution.
+    """Laplace's approximation to the model's posterior distribution.
     Can be aplied either on epoch-wise or order-wise mode, with this configuration being made from the user parameters of the
     :py:mod:`~SBART.rv_calculation.RV_Bayesian` routine.
     """
@@ -28,18 +27,20 @@ class Laplace_approx(SbartBaseSampler):
         rv_prior: Tuple[RV_measurement, RV_measurement],
         user_configs: Optional[Dict[str, Any]] = None,
     ):
-        """
-
-        Parameters
+        """Parameters
         ----------
         RV_step
             Step that will be used to estimate the numerical derivative around the posterior's MAP
         rv_prior:
             Specifies the "effective" RV window that the sampler can use. More details in :ref:`here <SamplerInit>`.
         user_configs
+
         """
         super().__init__(
-            mode="order-wise", RV_step=RV_step, RV_window=rv_prior, user_configs=user_configs
+            mode="order-wise",
+            RV_step=RV_step,
+            RV_window=rv_prior,
+            user_configs=user_configs,
         )
 
         self._optimizers_map = {
@@ -47,8 +48,7 @@ class Laplace_approx(SbartBaseSampler):
         }
 
     def optimize(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Compute the RVs in the selected mode.
+        """Compute the RVs in the selected mode.
 
         Parameters
         ----------
@@ -64,13 +64,14 @@ class Laplace_approx(SbartBaseSampler):
         -------
         [type]
             [description]
+
         """
         out_pkg = Package(("RV", "RV_uncertainty"))
 
         params_to_use = self.model_params.get_enabled_params()
 
         initial_guesses, bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second
+            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second,
         )
 
         if self.mode == "order-wise":
@@ -108,11 +109,8 @@ class Laplace_approx(SbartBaseSampler):
         out_pkg["status"] = order_status
         return out_pkg, order_status
 
-    def process_posterior(
-        self, optimization_output, target, target_kwargs, output_pkg
-    ) -> Tuple[Package, Flag]:
-        """
-        Process the results of the application of the Laplace Approximation
+    def process_posterior(self, optimization_output, target, target_kwargs, output_pkg) -> Tuple[Package, Flag]:
+        """Process the results of the application of the Laplace Approximation
 
         Parameters
         ----------
@@ -129,6 +127,7 @@ class Laplace_approx(SbartBaseSampler):
         -------
         [type]
             [description]
+
         """
         status = SUCCESS
         if optimization_output.success:
@@ -163,18 +162,14 @@ class Laplace_approx(SbartBaseSampler):
                 output_pkg[key] = np.nan * meter_second
 
         if optimization_output.success:
-            target_interface = (
-                self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
-            )
+            target_interface = self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
             args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
                 free_RV_target = lambda RV: target_interface(RV, *args)
             else:
                 # Fix all parameters to MAP estimate and compute the 2nd derivative on RV
-                free_RV_target = lambda RV: target_interface(
-                    [RV, *optimization_output.x[1:]], *args
-                )
+                free_RV_target = lambda RV: target_interface([RV, *optimization_output.x[1:]], *args)
 
             RV_variance = 1 / derivative(
                 free_RV_target,
@@ -186,15 +181,11 @@ class Laplace_approx(SbartBaseSampler):
 
             output_pkg["RV_uncertainty"] = np.sqrt(RV_variance) * meter_second
 
-            logger.info("Computing post-RV metrics for mode {}".format(self.mode))
+            logger.info(f"Computing post-RV metrics for mode {self.mode}")
 
             if self.mode == "epoch-wise":
-                target_kwargs["run_information"]["target_specific_configs"][
-                    "compute_metrics"
-                ] = True
-                target_kwargs["run_information"]["target_specific_configs"][
-                    "SAVE_DISK_SPACE"
-                ] = self.disk_save_enabled
+                target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
+                target_kwargs["run_information"]["target_specific_configs"]["SAVE_DISK_SPACE"] = self.disk_save_enabled
                 target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
                 min_info = target_interface(optimization_output.x, target_kwargs)
                 for key, val in min_info.items():
@@ -203,9 +194,7 @@ class Laplace_approx(SbartBaseSampler):
                 target_kwargs["compute_metrics"] = True
                 target_kwargs["weighted"] = True
                 target_kwargs["SAVE_DISK_SPACE"] = self.disk_save_enabled
-                min_info = target_interface(
-                    optimization_output.x, target, target_kwargs
-                )
+                min_info = target_interface(optimization_output.x, target, target_kwargs)
 
                 for key, val in min_info.items():
                     output_pkg[key] = val

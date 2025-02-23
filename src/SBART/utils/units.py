@@ -1,5 +1,4 @@
-"""
-Collection of utilities to handle units throughout the code base. Aside from the data conversion function, it also
+"""Collection of utilities to handle units throughout the code base. Aside from the data conversion function, it also
 provides three RV "measurements", which are *astropy* Quantities:
 
 * meter_second
@@ -27,11 +26,10 @@ def convert_data(
     new_units: Optional[RV_measurement] = None,
     as_value: bool = False,
 ):
-    """
-    Accept input data that are astropy.units and converts it to a new unit and/or to a numerical value
+    """Accept input data that are astropy.units and converts it to a new unit and/or to a numerical value
 
     Parameters
-    =============
+    ----------
     data :
         Input data
     new_units :
@@ -40,11 +38,11 @@ def convert_data(
         Switch the list entries to numerical values
 
     Returns
-    ===========
+    -------
     converted_list : list
         Data in the specified format
-    """
 
+    """
     single_elem = False
     data_to_process = data
 

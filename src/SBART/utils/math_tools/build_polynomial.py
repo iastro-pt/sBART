@@ -1,5 +1,5 @@
 def evaluate_polynomial(params, XX):
-    """Generate a N-degree polynomial from the parameters present in the param argument.
+    r"""Generate a N-degree polynomial from the parameters present in the param argument.
     The constant term of the polynomial is set at zero!
 
 
@@ -14,8 +14,8 @@ def evaluate_polynomial(params, XX):
     -------
     np.ndarray
         Results from the evaluation of the polynomial
-    """
 
+    """
     out = 0
     for coef_index, coef in enumerate(params):
         out += coef * XX ** (coef_index + 1)

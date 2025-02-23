@@ -2,25 +2,20 @@ import math
 import os
 from pathlib import Path
 
-from SBART.Instruments import instrument_dict as instrument_name_map
-from SBART.Quality_Control.activity_indicators import Indicators
-from SBART.Samplers import Sampler_map
 from SBART.data_objects import DataClassManager
-from SBART.data_objects import DataClass
+from SBART.Instruments import instrument_dict as instrument_name_map
 from SBART.outside_tools.create_logger import setup_SBART_logger
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
 from SBART.rv_calculation.rv_stepping.RV_step import RV_step
+from SBART.Samplers import Sampler_map
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.spectral_conditions import (
-    Empty_condition,
-)
+from SBART.utils.spectral_conditions import Empty_condition
 
 
-def config_update_with_fallback_to_default(
-    config_dict, SBART_key_name, user_configs, user_key_name=None
-):
+def config_update_with_fallback_to_default(config_dict, SBART_key_name, user_configs, user_key_name=None):
     try:
         user_key_name = SBART_key_name if user_key_name is None else user_key_name
         config_dict[SBART_key_name] = user_configs[user_key_name]
@@ -46,7 +41,7 @@ def run_target(
 ):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
-            raise Exception("Trying to use a template that does not exist ({})".format(path))
+            raise Exception(f"Trying to use a template that does not exist ({path})")
 
     instrument = instrument_name_map[instrument_name]
     RVstep = user_configs["RVstep"]
@@ -130,9 +125,7 @@ def run_target(
 
     confsRV = {"MEMORY_SAVE_MODE": stellar_template_configs["MEMORY_SAVE_MODE"]}
 
-    confsRV = config_update_with_fallback_to_default(
-        confsRV, "sigma_outliers_tolerance", user_configs
-    )
+    confsRV = config_update_with_fallback_to_default(confsRV, "sigma_outliers_tolerance", user_configs)
 
     confsRV = {
         **confsRV,
@@ -162,9 +155,7 @@ def run_target(
 
         orders = user_configs["ORDER_SKIP"]
     else:
-        confsRV = config_update_with_fallback_to_default(
-            confsRV, "order_removal_mode", user_configs
-        )
+        confsRV = config_update_with_fallback_to_default(confsRV, "order_removal_mode", user_configs)
         rv_model = RV_Bayesian(
             math.ceil(user_configs["NUMBER_WORKERS"] / 2),
             RV_configs=confsRV,

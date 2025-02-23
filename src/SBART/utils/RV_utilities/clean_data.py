@@ -1,6 +1,7 @@
 import numpy as np
 
 from SBART.utils.shift_spectra import apply_RVshift
+
 from .create_spectral_blocks import build_blocks
 
 
@@ -14,8 +15,7 @@ def find_wavelength_limits(
     min_block_size,
     order=None,
 ):
-    """
-    Find the actual wavelength limits
+    """Find the actual wavelength limits
     """
     current_order_wavelength = spectra_order_waves
 
@@ -23,15 +23,13 @@ def find_wavelength_limits(
 
     template_telluric_free_blocks = build_blocks(np.where(template_order_mask))
     for block in template_telluric_free_blocks:  # account for gaps in the template
-        if (
-            len(block) < min_block_size
-        ):  # random number for now, only want to compare "large" portions of the template
+        if len(block) < min_block_size:  # random number for now, only want to compare "large" portions of the template
             continue
         blocks.append(
             (
                 template_order_wavelengths[block[0]],
                 template_order_wavelengths[block[-1]],
-            )
+            ),
         )
     valid_wave_positions = np.zeros(current_order_wavelength.shape, dtype=bool)
     for wavelengths_block in blocks:
@@ -42,7 +40,7 @@ def find_wavelength_limits(
         last_value = apply_RVshift(wavelengths_block[-1], lower_limit)
 
         wavelengths_limits = np.where(
-            np.logical_and(spectra_order_waves >= first_value, spectra_order_waves <= last_value)
+            np.logical_and(spectra_order_waves >= first_value, spectra_order_waves <= last_value),
         )
 
         if len(wavelengths_limits[0]) < min_block_size:

@@ -1,3 +1,2 @@
-"""
-Different models for the stellar template
+"""Different models for the stellar template
 """

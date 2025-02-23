@@ -11,21 +11,20 @@ from loguru import logger
 from scipy.ndimage import median_filter
 
 from SBART.utils import custom_exceptions, get_TAPAS_data
+from SBART.utils.shift_spectra import remove_BERV_correction
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
+    PathValue,
     Positive_Value_Constraint,
-    PathValue,
     UserParam,
-    PathValue,
 )
-from SBART.utils.shift_spectra import remove_BERV_correction
+
 from .Telluric_Template import TelluricTemplate
 
 
 class TapasTelluric(TelluricTemplate):
-    """
-    Create transmittance spectrum from TAPAS web-interface
+    """Create transmittance spectrum from TAPAS web-interface
 
     This class also provides an interface to automatically request and download data from the TAPAS user interface.
 
@@ -88,9 +87,7 @@ class TapasTelluric(TelluricTemplate):
 
     def fit_telluric_model_to_frame(self, frame):
         super().fit_telluric_model_to_frame(frame)
-        raise NotImplementedError(
-            "Tapas template does not implement a correction model for tellurics"
-        )
+        raise NotImplementedError("Tapas template does not implement a correction model for tellurics")
 
     def _prepare_TAPAS_download(self, dataClass):
         user, password = self._internal_configs["user_info"]
@@ -109,7 +106,8 @@ class TapasTelluric(TelluricTemplate):
             tapas_dwnl_path = os.path.join(tapas_dwnl_path, f"{self._associated_subInst}.ipac")
         else:
             logger.info(
-                "Using common Transmittance spectra for each subInstrument: {}", tapas_dwnl_path
+                "Using common Transmittance spectra for each subInstrument: {}",
+                tapas_dwnl_path,
             )
 
             if (
@@ -128,17 +126,12 @@ class TapasTelluric(TelluricTemplate):
 
         download = True
 
-        if (
-            os.path.isfile(tapas_dwnl_path) and not self._internal_configs["force_download"]
-        ):  # direct path to the file!
+        if os.path.isfile(tapas_dwnl_path) and not self._internal_configs["force_download"]:  # direct path to the file!
             logger.info("TAPAS file already exists. Skipping download")
             download = False
 
         if download or self._internal_configs["force_download"]:
-            if (
-                not self._internal_configs["download_tapas"]
-                and not self._internal_configs["force_download"]
-            ):
+            if not self._internal_configs["download_tapas"] and not self._internal_configs["force_download"]:
                 # Check if the download flag is disabled and if we don't want to force it to go through
                 raise Exception("TAPAS download is disabled")
             if len(user) == 0:
@@ -164,9 +157,7 @@ class TapasTelluric(TelluricTemplate):
             ref_info["DEC"] = string_DEC.split(".")[0].replace("+", "")
 
             ref_info["instrument"] = dataClass.get_instrument_information()["name"]
-            ref_info["spectralRange"] = dataClass.get_instrument_information()[
-                "wavelength_coverage"
-            ]
+            ref_info["spectralRange"] = dataClass.get_instrument_information()["wavelength_coverage"]
 
             logger.info("Preparing to get TAPAS data")
             tapas_path = get_TAPAS_data(
@@ -183,8 +174,7 @@ class TapasTelluric(TelluricTemplate):
     # TODO: fix the input args of this template!
     @custom_exceptions.ensure_invalid_template
     def create_telluric_template(self, dataClass, custom_frameID: Optional[int] = None) -> None:
-        """
-        Create a telluric template from TAPAS transmission spectra [1], that was created for
+        """Create a telluric template from TAPAS transmission spectra [1], that was created for
         the date in which the reference observation was made.
 
         It estimates the continuum level and classifies each point that shows a decrease of 10% as a telluric line.
@@ -204,14 +194,16 @@ class TapasTelluric(TelluricTemplate):
             DataClass object
         custom_frameID :
             If Not None, does not search for the "optimal" frameID to use as a basis
+
         Returns
         -------
         numpy.ndarray
             Telluric (binary) spectrum, for the wavelengths present in the input array
 
         Notes
-        -----------
+        -----
         [1] http://cds-espri.ipsl.fr/tapas/project?methodName=home_en
+
         """
         try:
             super().create_telluric_template(dataClass, custom_frameID=custom_frameID)
@@ -246,9 +238,7 @@ class TapasTelluric(TelluricTemplate):
         self._associated_BERV = tapas_BERV
 
         # Tapas spectra comes BERV-corrected
-        self.transmittance_wavelengths = remove_BERV_correction(
-            self.transmittance_wavelengths, self._associated_BERV
-        )
+        self.transmittance_wavelengths = remove_BERV_correction(self.transmittance_wavelengths, self._associated_BERV)
 
         ###
         # Compute the binary template
@@ -258,10 +248,10 @@ class TapasTelluric(TelluricTemplate):
 
         # avoid problems in the edges -> calculate median filter with less points near the edges
         continuum_level[0 : n_points_filter + 1] = median_filter(
-            self.transmittance_spectra[0 : n_points_filter + 1], 51
+            self.transmittance_spectra[0 : n_points_filter + 1], 51,
         )
         continuum_level[-(n_points_filter + 1) :] = median_filter(
-            self.transmittance_spectra[-(n_points_filter + 1) :], 51
+            self.transmittance_spectra[-(n_points_filter + 1) :], 51,
         )
         self._continuum_level = continuum_level
         self.wavelengths = self.transmittance_wavelengths * 10

@@ -3,16 +3,17 @@ from multiprocessing import Process, Queue
 from pathlib import Path
 from typing import Any, Dict, Iterable, NoReturn, Optional, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.data_objects import DataClass
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
 from SBART.utils.custom_exceptions import (
     BadTemplateError,
@@ -24,20 +25,18 @@ from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
+    IterableMustHave,
     NumericValue,
     Positive_Value_Constraint,
     UserParam,
     ValueFromDtype,
     ValueFromList,
-    IterableMustHave,
 )
 from SBART.utils.work_packages import ShutdownPackage
 
 
 class RV_routine(BASE):
-    """
-    Base class for the all the RV extraction routines.
-
+    """Base class for the all the RV extraction routines.
 
     **User parameters:**
 
@@ -87,17 +86,21 @@ class RV_routine(BASE):
 
     _default_params = BASE._default_params + DefaultValues(
         uncertainty_prop_type=UserParam(
-            "interpolation", constraint=ValueFromList(("interpolation", "propagation"))
+            "interpolation",
+            constraint=ValueFromList(
+                ("interpolation", "propagation"),
+            ),
+            description="Method with which the uncertainty propagation will be done",
         ),
-        RV_extraction=UserParam(
-            "order-wise", constraint=ValueFromList(("order-wise",))
-        ),
+        RV_extraction=UserParam("order-wise", constraint=ValueFromList(("order-wise",))),
         order_removal_mode=UserParam(
             "per_subInstrument",
             constraint=ValueFromList(("per_subInstrument", "global")),
         ),
         sigma_outliers_tolerance=UserParam(
-            6, constraint=NumericValue
+            6,
+            constraint=NumericValue,
+            description="Sigma-clip for outliers in spectra <-> template comparison",
         ),  # tolerance for outliers in spectra - temp comp
         outlier_metric=UserParam("Paper", ValueFromList(("Paper", "MAD"))),
         remove_OBS_from_template=UserParam(
@@ -105,7 +108,7 @@ class RV_routine(BASE):
             BooleanValue,
         ),
         min_block_size=UserParam(
-            50, constraint=Positive_Value_Constraint
+            50, constraint=Positive_Value_Constraint,
         ),  # Min number of consecutive points to not reject a region
         output_fmt=UserParam(
             [
@@ -137,7 +140,7 @@ class RV_routine(BASE):
                     "frameIDs",
                     "DLW",
                     "DLW_ERR",
-                ]
+                ],
             )
             + IterableMustHave(("RVc", "RVc_ERR"))
             + IterableMustHave(("MJD", "BJD"), mode="either"),
@@ -145,9 +148,7 @@ class RV_routine(BASE):
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
         SAVE_DISK_SPACE=UserParam(False, constraint=BooleanValue),
         CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
-        CONTINUUM_FIT_POLY_DEGREE=UserParam(
-            1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))
-        ),
+        CONTINUUM_FIT_POLY_DEGREE=UserParam(1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))),
         # How we select the wavelength regions to use. TODO: think about this one
         #     GLOBAL - common to all valid frames
         #     SUB-INSTRUMENT - equal to GLOBAL, but inside the sub-Instruments
@@ -169,8 +170,8 @@ class RV_routine(BASE):
         extra_folders_needed: Optional[Dict[str, str]] = None,
     ):
         super().__init__(RV_configs, needed_folders=extra_folders_needed)
-        self.package_pool = None
-        self.output_pool = None
+        self.package_pool: Optional[Queue] = None
+        self.output_pool: Optional[Queue] = None
 
         self.N_jobs = N_jobs
         self._live_workers = 0
@@ -195,10 +196,7 @@ class RV_routine(BASE):
     def _validate_sampler(self, valid_samplers: Iterable[str]) -> None:
         if not any(map(self.sampler.is_sampler, valid_samplers)):
             raise InvalidConfiguration(
-                "{} does not accept the following Sampler : {}".format(
-                    self.name,
-                    self.sampler.name,
-                )
+                f"{self.name} does not accept the following Sampler : {self.sampler.name}",
             )
 
     def load_previous_RVoutputs(self):
@@ -208,7 +206,10 @@ class RV_routine(BASE):
         try:
             self._output_RVcubes = RV_holder.load_from_disk(self._internalPaths.root_storage_path)
             self._output_RVcubes.update_output_keys(self._internal_configs["output_fmt"])
-        except (custom_exceptions.NoDataError, custom_exceptions.InvalidConfiguration) as exc:
+        except (
+            custom_exceptions.NoDataError,
+            custom_exceptions.InvalidConfiguration,
+        ) as exc:
             logger.warning("Couldn't load previous RV outputs")
             raise custom_exceptions.StopComputationError from exc
 
@@ -228,9 +229,10 @@ class RV_routine(BASE):
             [description]
 
         Raises
-        -------
+        ------
         NoDataError
             If all all sub-Instruments were rejected
+
         """
         self._subInsts_to_use = dataClass.get_subInstruments_with_valid_frames()
 
@@ -239,14 +241,10 @@ class RV_routine(BASE):
             raise custom_exceptions.NoDataError
 
         if check_metadata:
-            logger.debug(
-                f"Comparing metadata with the one stored in {dataClass.get_internalPaths().root_storage_path}"
-            )
+            logger.debug(f"Comparing metadata with the one stored in {dataClass.get_internalPaths().root_storage_path}")
 
             try:
-                previous_metadata = MetaData.load_from_json(
-                    dataClass.get_internalPaths().root_storage_path
-                )
+                previous_metadata = MetaData.load_from_json(dataClass.get_internalPaths().root_storage_path)
             except custom_exceptions.NoDataError as exc:
                 logger.warning("Failed to load Metadata. Skipping comparison")
                 raise custom_exceptions.StopComputationError from exc
@@ -296,8 +294,7 @@ class RV_routine(BASE):
         check_metadata: bool = False,
         store_cube_to_disk=True,
     ) -> None:
-        """
-        Trigger the RV extraction for all sub-Instruments
+        """Trigger the RV extraction for all sub-Instruments
 
         Parameters
         ----------
@@ -315,8 +312,8 @@ class RV_routine(BASE):
             all subInstrument the same orders. If dict, the keys should be the subInstrument and the values a list to skip
             (if the key does not exist, assume that there are None to skip). If str, load a previous RV cube from disk and use the
             orders that the previous run used!. By default ()
-        """
 
+        """
         if isinstance(storage_path, str):
             # Emsure pathlib path
             storage_path = Path(storage_path)
@@ -325,9 +322,7 @@ class RV_routine(BASE):
         self.iteration_number = dataClass.get_stellar_model().iteration_number
         logger.info(f"Current iteration:: {self.iteration_number}")
         # Note: self.storage_name from RV_Bayesian also includes the sampler name!
-        self._internalPaths.add_root_path(
-            storage_path / f"Iteration_{self.iteration_number}", self.storage_name
-        )
+        self._internalPaths.add_root_path(storage_path / f"Iteration_{self.iteration_number}", self.storage_name)
 
         self.sampler.generate_root_path(self._internalPaths.root_storage_path)
 
@@ -343,9 +338,7 @@ class RV_routine(BASE):
         )
 
         if self._internal_configs["SAVE_DISK_SPACE"]:
-            logger.info(
-                f"{self.name} will save disk space. Setting up the sampler to store less data"
-            )
+            logger.info(f"{self.name} will save disk space. Setting up the sampler to store less data")
             self.sampler.enable_disk_savings()
         else:
             self.sampler.disable_disk_savings()
@@ -357,7 +350,7 @@ class RV_routine(BASE):
             logger.info(f"{dataClass.get_stellar_model().get_interpol_modes()}")
             if "GP" in dataClass.get_stellar_model().get_interpol_modes():
                 raise custom_exceptions.InternalError(
-                    "Can't interpolate with GPs without having the memory saving mode enabled"
+                    "Can't interpolate with GPs without having the memory saving mode enabled",
                 )
 
             self.sampler.disable_memory_savings()
@@ -420,8 +413,7 @@ class RV_routine(BASE):
             self.trigger_data_storage(dataClass)
 
     def _validate_template_with_frame(self, stellar_template, first_frame):
-        """
-        Checks if the stellar template and the first frame share the same state of Flux Corrections
+        """Checks if the stellar template and the first frame share the same state of Flux Corrections
         """
         base_message = "Comparing spectra and template with different"
 
@@ -436,7 +428,7 @@ class RV_routine(BASE):
                 "corrections of the flux dispersion with wavelength",
             ),
             ("was_telluric_corrected", "telluric correction states"),
-            ("is_skysub", "different SkySub states")
+            ("is_skysub", "different SkySub states"),
         )
         messages_to_pass = []
         bad_comparison = False
@@ -444,9 +436,7 @@ class RV_routine(BASE):
             template_val = getattr(stellar_template, kw_name)
             frame_val = first_frame.check_if_data_correction_enabled(kw_name)
             if frame_val != template_val:
-                messages_to_pass.append(
-                    f"{base_message} {key_message} ({template_val} vs {frame_val})"
-                )
+                messages_to_pass.append(f"{base_message} {key_message} ({template_val} vs {frame_val})")
 
                 if kw_name != "was_telluric_corrected":
                     bad_comparison = True
@@ -455,9 +445,7 @@ class RV_routine(BASE):
             logger.warning(message)
 
         if bad_comparison:
-            raise custom_exceptions.InvalidConfiguration(
-                "Failed comparison between template and spectra"
-            )
+            raise custom_exceptions.InvalidConfiguration("Failed comparison between template and spectra")
 
     def apply_routine_to_subInst(self, dataClass: DataClass, subInst: str) -> RV_cube:
         # TO be over-written by the child classes
@@ -470,16 +458,12 @@ class RV_routine(BASE):
         stellar_template = stellar_model.request_data(subInstrument=subInst)
         first_frame = dataClass.get_frame_by_ID(valid_IDS[0])
 
-        self._validate_template_with_frame(
-            stellar_template=stellar_template, first_frame=first_frame
-        )
+        self._validate_template_with_frame(stellar_template=stellar_template, first_frame=first_frame)
 
         try:
             template_bad_orders = list(stellar_model.get_orders_to_skip(subInst=subInst))
         except BadTemplateError:
-            logger.opt(exception=True).warning(
-                "SubInst {} does not have a valid stellar template", subInst
-            )
+            logger.opt(exception=True).warning("SubInst {} does not have a valid stellar template", subInst)
             return RV_cube(subInst, valid_IDS, dataClass.get_instrument_information())
 
         is_merged = self._internal_configs["order_removal_mode"] == "global"
@@ -534,12 +518,12 @@ class RV_routine(BASE):
         -------
         dict
             [description]
+
         """
         return {}
 
     def generate_worker_configs(self, dataClassProxy) -> Dict[str, Any]:
-        """
-        Generate the dictionary that will be passed to the launching of the workers!
+        """Generate the dictionary that will be passed to the launching of the workers!
 
         Parameters
         ----------
@@ -588,8 +572,8 @@ class RV_routine(BASE):
     #   Order selection          #
     ##########################
     def apply_orderskip_method(self) -> None:
-        """
-        Computing the orders that will be rejected for each subInstrument
+        """Computing the orders that will be rejected for each subInstrument
+
         Returns
         -------
 
@@ -598,9 +582,7 @@ class RV_routine(BASE):
         if self._internal_configs["order_removal_mode"] == "per_subInstrument":
             logger.debug("per_subInstrument mode selected. Doing nothing")
         elif self._internal_configs["order_removal_mode"] == "global":
-            logger.debug(
-                "Selecting common rejection among all subInstruments. Updating orders to skip"
-            )
+            logger.debug("Selecting common rejection among all subInstruments. Updating orders to skip")
             bad_orders = set()
             for orders_to_skip in self.to_skip.values():
                 bad_orders = bad_orders.union(orders_to_skip)
@@ -610,8 +592,7 @@ class RV_routine(BASE):
             raise InvalidConfiguration()
 
     def complement_orders_to_skip(self, dataClass) -> None:
-        """
-        Search for bad orders in the stellar template of all subInstruments.
+        """Search for bad orders in the stellar template of all subInstruments.
 
         Do not search the individual frames, as they might not be opened when we reach here
 
@@ -619,6 +600,7 @@ class RV_routine(BASE):
         ----------
         dataClass : [type]
             [description]
+
         """
         logger.debug("{} loading bad orders from the stellar templates", self.name)
         stellar_model = dataClass.get_stellar_model()
@@ -627,17 +609,14 @@ class RV_routine(BASE):
             try:
                 bad_orders = stellar_model.get_orders_to_skip(subInst=inst)
             except BadTemplateError:
-                logger.opt(exception=True).warning(
-                    "SubInst {} does not have a valid stellar template", inst
-                )
+                logger.opt(exception=True).warning("SubInst {} does not have a valid stellar template", inst)
                 continue
 
             self.to_skip[inst] = bad_orders.union(self.to_skip[inst])
             logger.debug("Subinst {}, skip: {}", inst, self.to_skip[inst])
 
     def process_orders_to_skip_from_user(self, to_skip) -> dict:
-        """
-        Evaluate the input orders to skip and put them in the proper format
+        """Evaluate the input orders to skip and put them in the proper format
 
         Parameters
         ----------
@@ -650,10 +629,12 @@ class RV_routine(BASE):
         -------
         dict
             Keys will be the subinstruments, values will be a set with the orders to skip
+
         Raises
         ------
         NotImplementedError
             [description]
+
         """
         if isinstance(to_skip, (list, tuple)):
             logger.info("Skipping the same orders across all subInstruments {}", to_skip)
@@ -721,6 +702,8 @@ class RV_routine(BASE):
         self.kill_workers()
         self.close_queues()
         self.close_shared_mem_arrays()
+        # Ensure that no pyplot window is open after everything is closed down
+        plt.close("all")
 
     def close_shared_mem_arrays(self) -> None:
         """Close any array that might exist in shared memory"""
@@ -738,12 +721,10 @@ class RV_routine(BASE):
         logger.debug("Sending shutdown signal to workers")
 
         good, bad = evaluate_shutdown(self.output_pool)
-        logger.debug("Good shutdowns: {}; Bad shutdowns: {}".format(good, bad))
+        logger.debug(f"Good shutdowns: {good}; Bad shutdowns: {bad}")
 
         self._live_workers -= good + bad
-        logger.debug(
-            "There are {} live workers. Sending shutdown signal for all".format(self._live_workers)
-        )
+        logger.debug(f"There are {self._live_workers} live workers. Sending shutdown signal for all")
         for _ in range(self._live_workers):
             self.package_pool.put(ShutdownPackage())
         logger.debug("Waiting for worker response")
@@ -773,7 +754,6 @@ class RV_routine(BASE):
 
     def _open_shared_memory(self, inst_info: dict) -> None:
         logger.debug("{} does not need to place data in shared memory", self.name)
-        return
 
     def open_queues(self) -> None:
         logger.debug("{} opening multiprocessing interfaces", self.name)
@@ -811,8 +791,7 @@ class RV_routine(BASE):
             dataClass.select_common_wavelengths(wave_analysis_path, subInst)
 
     def launch_wavelength_selection(self, DataClassProxy: DataClass):
-        """
-        Currently not 100% implemented!
+        """Currently not 100% implemented!
 
         Parameters
         ----------
@@ -835,9 +814,7 @@ class RV_routine(BASE):
             frameIDs = DataClassProxy.get_frameIDs_from_subInst(subInst)
             orders = self.generate_valid_orders(subInst=subInst, dataClass=DataClassProxy)
 
-            subInst_combined_counters = np.zeros(
-                DataClassProxy.get_instrument_information()["array_size"]
-            )
+            subInst_combined_counters = np.zeros(DataClassProxy.get_instrument_information()["array_size"])
             # apply outlier search in here
 
             results = []

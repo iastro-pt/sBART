@@ -17,6 +17,7 @@ def json_ready_converter(value):
     -------
     [type]
         [description]
+
     """
     if isinstance(value, set):
         value = list(value)

@@ -1,20 +1,17 @@
-from curses.ascii import SP
+
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 
-from SBART.utils.math_tools.numerical_derivatives import compute_non_uni_step_first_derivative
-from SBART.utils.shift_spectra import SPEED_OF_LIGHT
-
-import scipy.optimize as sc
+from SBART.utils.math_tools.numerical_derivatives import (
+    compute_non_uni_step_first_derivative,
+)
 
 
 def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
     # Compute second derivation of the template
 
-    derivative, errors = compute_non_uni_step_first_derivative(
-        spec_wave, temp_flux, np.sqrt(temp_variance)
-    )
+    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
     deriv_1 = derivative
     # plt.plot(spec_wave[1:-1], deriv_1)
 
@@ -48,7 +45,7 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
         squared_weights
         * squared_derivative
         * squared_residuals
-        * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals)
+        * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals),
     )
     sigma_B = np.sum(squared_weights * (2 * derivative * errors) ** 2)
 
@@ -80,11 +77,10 @@ if __name__ == "__main__":
 
     def normal_f(x, mu, sigma):
         """Gaussiana clássica"""
-
         dentro = (x - mu) / sigma
         princip = np.exp(-0.5 * dentro**2)
 
-        return np.asarray((princip / (sigma * (2 * np.pi) ** 0.5)))
+        return np.asarray(princip / (sigma * (2 * np.pi) ** 0.5))
 
     spec = np.linspace(6000, 6500, 2000)
     print(spec.size)

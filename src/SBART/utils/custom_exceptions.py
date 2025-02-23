@@ -4,31 +4,26 @@ from loguru import logger
 class Error(Exception):
     """Base class for exceptions in this module."""
 
-    pass
 
 
 class FrameError(Error):
     """Raised when a INVALID S2D file is opened!"""
 
-    pass
 
 
 class AlreadyLoaded(Error):
     """Raised when we try to load something that was already loaded!"""
 
-    pass
 
 
 class BadOrderError(Error):
     """Raised when we access a bad order"""
 
-    pass
 
 
 class NoConvergenceError(Error):
     """Raised when we access data from a fit that did not converge"""
 
-    pass
 
 
 class NoComputedRVsError(Error):
@@ -38,27 +33,24 @@ class NoComputedRVsError(Error):
     ----------
     Error : [type]
         [description]
+
     """
 
-    pass
 
 
 class DeadWorkerError(Error):
     """Used when a worker finds a problem"""
 
-    pass
 
 
 class NoDataError(Error):
     """Used when all loaded frames are blocked/invalid"""
 
-    pass
 
 
 class InvalidConfiguration(Error):
     """Used when a given configuration falls outside the accepted values"""
 
-    pass
 
 
 class TemplateNotExistsError(Error):
@@ -93,7 +85,7 @@ def ensure_invalid_template(func):
     def inner1(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
-        except Exception as e:
+        except Exception:
             self.mark_as_invalid()
             logger.opt(exception=True).critical("Template creation failed")
 

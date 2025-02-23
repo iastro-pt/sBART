@@ -1,13 +1,11 @@
-"""
-
-"""
+""" """
 
 import numpy as np
 
 from SBART.utils import second_term
-from SBART.utils.RV_utilities import ensure_valid_RV, compute_DLW
-from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.math_tools.build_polynomial import evaluate_polynomial
+from SBART.utils.RV_utilities import compute_DLW, ensure_valid_RV
+from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.shift_spectra import apply_RVshift
 
 
@@ -39,7 +37,6 @@ def SBART_target(params, **kwargs):
         # TODO: apply the PixelWise computation here
         polynomial_contribution = 0
         print("there is no PixelWise trend!!!!!!!!!!!!")
-        pass
     elif kwargs["chromatic_trend"] == "OrderWise":
         polynomial_contribution = evaluate_polynomial(poly_params, central_wavelength)
     else:
@@ -56,26 +53,25 @@ def SBART_target(params, **kwargs):
         np.logical_and(
             current_wavelength >= wave_spectra_starframe[0],
             current_wavelength <= wave_spectra_starframe[-1],
-        )
+        ),
     )
 
-    interpolated_template, interpol_errors = (
-        StellarTemplate.interpolate_spectrum_to_wavelength(
-            order=kwargs["current_order"],
-            RV_shift_mode="apply",
-            shift_RV_by=RV_shift,
-            new_wavelengths=current_wavelength[indexes],
-            include_invalid=False,
-        )
+    (
+        interpolated_template,
+        interpol_errors,
+    ) = StellarTemplate.interpolate_spectrum_to_wavelength(
+        order=kwargs["current_order"],
+        RV_shift_mode="apply",
+        shift_RV_by=RV_shift,
+        new_wavelengths=current_wavelength[indexes],
+        include_invalid=False,
     )
     if kwargs["current_order"] == 59 and 0:
         # plt.plot(current_wavelength[indexes], interpolated_template)
         # plt.plot(current_wavelength[indexes], spectra[indexes], color = 'black')
         path = "/home/amiguel/work/automated_runs/ESPRESSO/SBART_OUT_data/GJ54.1/"
         temp_name = kwargs["name"]
-        np.savetxt(
-            path + "spectra.npy", np.c_[current_wavelength[indexes], spectra[indexes]]
-        )
+        np.savetxt(path + "spectra.npy", np.c_[current_wavelength[indexes], spectra[indexes]])
         np.savetxt(
             path + temp_name + ".npy",
             np.c_[current_wavelength[indexes], interpolated_template],
@@ -96,9 +92,7 @@ def SBART_target(params, **kwargs):
     # error propagation from the template and spectra
     # template not assumed to be noise free
 
-    diag = (
-        kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter
-    ) / interpolated_template**2
+    diag = (kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter) / interpolated_template**2
 
     # Build H matrix
     H = np.ones((2, N))
@@ -119,11 +113,7 @@ def SBART_target(params, **kwargs):
     # Build the different terms of the marginal likelihood
     first_term = -0.5 * np.sum(np.square(data) / diag)
     order_value = (
-        first_term
-        + second_value
-        - 0.5 * np.sum(np.log(diag))
-        - 0.5 * np.log(det_A)
-        - 0.5 * (N - m) * np.log(2 * np.pi)
+        first_term + second_value - 0.5 * np.sum(np.log(diag)) - 0.5 * np.log(det_A) - 0.5 * (N - m) * np.log(2 * np.pi)
     )
 
     weight = 1 if not kwargs["weighted"] else interpolated_template.size
@@ -131,41 +121,31 @@ def SBART_target(params, **kwargs):
     if kwargs["weighted"] and 0:
         # COmputation of the expected information. Ignore for now !
         expected_info[order] = (
-            np.sum(
-                0.5
-                * (
-                    1
-                    + np.log(
-                        2
-                        * np.pi
-                        * (uncerts_trimmed[indexes] / interpolated_template) ** 2
-                    )
-                )
-            )
-            / weight
+            np.sum(0.5 * (1 + np.log(2 * np.pi * (uncerts_trimmed[indexes] / interpolated_template) ** 2))) / weight
         )
 
     if kwargs["compute_metrics"]:
         # Flux model miss-specification
         # Use the expected value for the parameters of the polynomial
 
-        normalized_template, normalized_uncerts, coefs, residuals = (
-            match_continuum_levels(
-                current_wavelength,
-                spectra[indexes],
-                interpolated_template,
-                indexes,
-                continuum_type="paper",
-                fit_degree=1,
-                template_uncertainties=interpol_errors,
-            )
+        (
+            normalized_template,
+            normalized_uncerts,
+            coefs,
+            residuals,
+        ) = match_continuum_levels(
+            current_wavelength,
+            spectra[indexes],
+            interpolated_template,
+            indexes,
+            continuum_type="paper",
+            fit_degree=1,
+            template_uncertainties=interpol_errors,
         )
 
         if not kwargs.get("SAVE_DISK_SPACE", False):
             misspec_metric = (spectra[indexes] - normalized_template) / np.sqrt(
-                kwargs["squared_spectra_uncerts"][indexes]
-                + interpol_errors**2
-                + squared_jitter
+                kwargs["squared_spectra_uncerts"][indexes] + interpol_errors**2 + squared_jitter,
             )
         else:
             misspec_metric = np.asarray([0])

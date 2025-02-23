@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Any, Dict, List, NoReturn, Tuple, Union
+from typing import Any, Dict, NoReturn, Union
 
 import numpy as np
 
@@ -12,9 +12,9 @@ except ImportError:
 
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.types import RV_measurement
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 
@@ -31,7 +31,7 @@ class ModelComponent(BASE):
             default_value="GLOBAL",
             constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
             mandatory=False,
-        )
+        ),
     )
 
     def __init__(
@@ -43,9 +43,9 @@ class ModelComponent(BASE):
         default_enabled=False,
         param_type="general",
     ):
-        """
-        Define a parameter in our RV model. Contains information regarding the initial guess and the bounds that the
+        """Define a parameter in our RV model. Contains information regarding the initial guess and the bounds that the
         parameter can take
+
         Parameters
         ----------
         name: str
@@ -60,6 +60,7 @@ class ModelComponent(BASE):
             Describe an overall "theme" for the parameter. The MOdels then allow to search all parameters that "theme"
 
         name
+
         """
         super().__init__(
             user_configs=user_configs,
@@ -67,14 +68,10 @@ class ModelComponent(BASE):
         )
 
         if not isinstance(bounds, (list, tuple, np.ndarray)):
-            raise custom_exceptions.InvalidConfiguration(
-                "Bounds of a parameter must be an iterable"
-            )
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must be an iterable")
 
         if len(bounds) != 2:
-            raise custom_exceptions.InvalidConfiguration(
-                "Bounds of a parameter must have two elements"
-            )
+            raise custom_exceptions.InvalidConfiguration("Bounds of a parameter must have two elements")
 
         if isinstance(bounds, tuple):
             bounds = list(bounds)
@@ -99,8 +96,7 @@ class ModelComponent(BASE):
     ###
 
     def generate_priors(self, DataClassProxy):
-        """
-        Generate the initial guess and parameter bounds. Currently, only supports using the same initial guess
+        """Generate the initial guess and parameter bounds. Currently, only supports using the same initial guess
         and bounds for ALL subInstruments. For a more fine-tuned control, inherit from this class and overload this function
 
         Parameters
@@ -124,9 +120,7 @@ class ModelComponent(BASE):
             if "RV_component" in self.name:
                 msg = "RV component has a non-valid initial guess"
                 raise custom_exceptions.InternalError(msg)
-            raise custom_exceptions.InvalidConfiguration(
-                "Model component must have an initial guess"
-            )
+            raise custom_exceptions.InvalidConfiguration("Model component must have an initial guess")
 
         if self.is_locked:
             logger.debug("Can't update the values of a locked parameter")
@@ -201,16 +195,12 @@ class ModelComponent(BASE):
             bad_param = True
 
         if bad_param:
-            msg = "Attempting to use parameter ({}) that did not generate the prior information".format(
-                self.param_name
-            )
+            msg = f"Attempting to use parameter ({self.param_name}) that did not generate the prior information"
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
 
         if not self.is_enabled and not allow_disabled:
-            msg = "Attempting to get information from disabled parameter: {}".format(
-                self.param_name
-            )
+            msg = f"Attempting to get information from disabled parameter: {self.param_name}"
             logger.critical(msg)
             raise custom_exceptions.InternalError(msg)
 
@@ -226,8 +216,7 @@ class ModelComponent(BASE):
         return self.parameter_type == type_to_check
 
     def lock_param(self) -> NoReturn:
-        """
-        Lock the parameter space of a given parameter. When doing so, checks:
+        """Lock the parameter space of a given parameter. When doing so, checks:
             - if the lower bound of the param space is smaller than the upper bound
             - If the initial guess is inside the parameter space
         If any of the conditions is not met: raises SBART.utils.custom_exceptions.InvalidConfiguration
@@ -258,7 +247,8 @@ class ModelComponent(BASE):
     def enable_param(self) -> NoReturn:
         if self.is_enabled:
             logger.warning(
-                "Attempting to enable param that is already enabled: {}", self.param_name
+                "Attempting to enable param that is already enabled: {}",
+                self.param_name,
             )
             return
         self._change_enabled_status(True)
@@ -266,7 +256,8 @@ class ModelComponent(BASE):
     def disable_param(self) -> NoReturn:
         if not self.is_enabled:
             logger.warning(
-                "Attempting to disable param that is already disabled: {}", self.param_name
+                "Attempting to disable param that is already disabled: {}",
+                self.param_name,
             )
             return
         if self.is_locked:
@@ -292,17 +283,16 @@ class ModelComponent(BASE):
         return msg
 
     def __str__(self) -> str:
-        return "Parameter::{}".format(self.param_name)
+        return f"Parameter::{self.param_name}"
 
     def __repr__(self):
         return self.__str__()
 
     def json_ready(self) -> Dict[str, Any]:
-        """
-        "TODO: stop ignoring the user parameters!!!!"
-
+        """"TODO: stop ignoring the user parameters!!!!"
 
         NOTE: this will NOT work for Models that have astropy.Quantity inside....
+
         Returns
         -------
 
@@ -318,14 +308,14 @@ class ModelComponent(BASE):
                 "parameter_type": self.parameter_type,
                 "frameID_information": self.frameID_information,
                 "frameID_results": self.frameID_results,
-            }
+            },
         }
 
         return {**base_json, **class_json}
 
     @classmethod
     def load_from_json(cls, json_info):
-        "TODO: stop ignoring the user parameters!!!!"
+        """TODO: stop ignoring the user parameters!!!!"""
         comp = ModelComponent(
             name=json_info["name"],
             initial_guess=json_info["default_guess"],
@@ -355,15 +345,11 @@ class RV_component(ModelComponent):
         self.RV_key = RV_keyword
         # RVwindow is only passed to take advantage of sanity checks in the parent class
 
-        super().__init__(
-            name="RV", bounds=RVwindow, user_configs=user_configs, default_enabled=True
-        )
+        super().__init__(name="RV", bounds=RVwindow, user_configs=user_configs, default_enabled=True)
 
         for edge in RVwindow:
             if not isinstance(edge, RV_measurement):
-                raise custom_exceptions.InvalidConfiguration(
-                    "RV window edge must be astropy quantity"
-                )
+                raise custom_exceptions.InvalidConfiguration("RV window edge must be astropy quantity")
 
     def generate_priors(self, DataClassProxy):
         RV_default_window = self.RVwindow
@@ -379,7 +365,7 @@ class RV_component(ModelComponent):
         elif self._internal_configs["GENERATION_MODE"] == "GLOBAL":
             subInstruments = DataClassProxy.get_subInstruments_with_valid_frames()
             available_previous_rvs = DataClassProxy.collect_KW_observations(
-                KW=self.RV_key, subInstruments=subInstruments
+                KW=self.RV_key, subInstruments=subInstruments,
             )
 
             RVLowerBound = min(available_previous_rvs) - RV_default_window[0]
@@ -392,7 +378,7 @@ class RV_component(ModelComponent):
         elif self._internal_configs["GENERATION_MODE"] == "SUB-INSTRUMENT":
             for subInst in DataClassProxy.get_subInstruments_with_valid_frames():
                 available_previous_rvs = DataClassProxy.collect_KW_observations(
-                    KW=self.RV_key, subInstruments=[subInst]
+                    KW=self.RV_key, subInstruments=[subInst],
                 )
 
                 RVLowerBound = min(available_previous_rvs) - RV_default_window[0]
@@ -404,10 +390,7 @@ class RV_component(ModelComponent):
 
     def string_representation(self, indent_level) -> str:
         string_offset = indent_level * "\t"
-        return (
-            super().string_representation(indent_level)
-            + f"\n{string_offset}\tRV window:{self.RVwindow}"
-        )
+        return super().string_representation(indent_level) + f"\n{string_offset}\tRV window:{self.RVwindow}"
 
     def disable_param(self) -> NoReturn:
         msg = "Attempting to disable the RV parameter"
@@ -416,8 +399,7 @@ class RV_component(ModelComponent):
 
 
 class JaxComponent(ModelComponent):
-    """
-    WARNING: ignoring the bounds
+    """WARNING: ignoring the bounds
     """
 
     def _check_dependency(self):
@@ -425,8 +407,8 @@ class JaxComponent(ModelComponent):
             raise custom_exceptions.InternalError("Missing jax dependency")
 
     def json_ready(self) -> Dict[str, Any]:
-        """
-        NOTE: this will NOT work for Models that have astropy.Quantity inside....
+        """NOTE: this will NOT work for Models that have astropy.Quantity inside....
+
         Returns
         -------
 
@@ -456,7 +438,7 @@ class JaxComponent(ModelComponent):
                 "parameter_type": self.parameter_type,
                 "frameID_information": updated_info,
                 "frameID_results": updated_results,
-            }
+            },
         }
 
         return {**base_json, **class_json}
@@ -475,12 +457,9 @@ class JaxComponent(ModelComponent):
 
         for frame, info in json_info["frameID_information"].items():
             info["initial_guess"] = jnp.float64(info["initial_guess"])
-        comp.frameID_information = {
-            int(i): val for i, val in json_info["frameID_information"].items()
-        }
+        comp.frameID_information = {int(i): val for i, val in json_info["frameID_information"].items()}
         comp.frameID_results = {
-            int(frameID): jnp.float64(value)
-            for frameID, value in json_info["frameID_results"].items()
+            int(frameID): jnp.float64(value) for frameID, value in json_info["frameID_results"].items()
         }
 
         if json_info["_locked"]:

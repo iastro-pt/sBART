@@ -1,14 +1,12 @@
 import numpy as np
 
-from SBART.utils.RV_utilities import ensure_valid_RV, compute_DLW
+from SBART.utils.RV_utilities import compute_DLW, ensure_valid_RV
 from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
-from SBART.utils.shift_spectra import apply_RVshift, SPEED_OF_LIGHT
-from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
+from SBART.utils.shift_spectra import apply_RVshift
 
 
 def target(params, **kwargs):
-    """
-    Metric function for the chi-squared minimization.
+    """Metric function for the chi-squared minimization.
 
     Parameters
     ----------
@@ -37,10 +35,13 @@ def target(params, **kwargs):
         np.logical_and(
             current_wavelength >= wave_spectra_starframe[0],
             current_wavelength <= wave_spectra_starframe[-1],
-        )
+        ),
     )
 
-    interpolated_template, interpol_errors = StellarTemplate.interpolate_spectrum_to_wavelength(
+    (
+        interpolated_template,
+        interpol_errors,
+    ) = StellarTemplate.interpolate_spectrum_to_wavelength(
         order=kwargs["current_order"],
         RV_shift_mode="apply",
         shift_RV_by=tentative_RV_shift,

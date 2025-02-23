@@ -1,25 +1,22 @@
 from typing import NoReturn
 
 import numpy as np
+from scipy.interpolate import CubicSpline, PchipInterpolator, RBFInterpolator, interp1d
 
+from SBART.spectral_modelling.modelling_base import ModellingBase
+from SBART.utils import custom_exceptions
+from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
 from SBART.utils.UserConfigs import (
     DefaultValues,
-    UserParam,
-    ValueFromList,
     IntegerValue,
     Positive_Value_Constraint,
+    UserParam,
+    ValueFromList,
 )
-from scipy.interpolate import CubicSpline, PchipInterpolator, interp1d, RBFInterpolator
-
-from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
-from SBART.utils import custom_exceptions
-from SBART.spectral_modelling.modelling_base import ModellingBase
 
 
 class ScipyInterpolSpecModel(ModellingBase):
-    """
-
-    **User parameters:**
+    """**User parameters:**
 
     ============================ ================ ================ ======================== ================
     Parameter name                 Mandatory      Default Value    Valid Values                 Comment
@@ -39,10 +36,12 @@ class ScipyInterpolSpecModel(ModellingBase):
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam(
-            "cubic", constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"])
+            "cubic",
+            constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"]),
         ),
         INTERPOLATION_ERR_PROP=UserParam(
-            "interpolation", constraint=ValueFromList(["none", "interpolation", "propagation"])
+            "interpolation",
+            constraint=ValueFromList(["none", "interpolation", "propagation"]),
         ),
         NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
     )
@@ -54,23 +53,19 @@ class ScipyInterpolSpecModel(ModellingBase):
         )
 
     def generate_model_from_order(self, order: int) -> NoReturn:
-        """
-        Overrides the parent implementation to make sure that nothing is done (as there is no need to
+        """Overrides the parent implementation to make sure that nothing is done (as there is no need to
         generate models)
         """
         return
 
     def _store_model_to_disk(self) -> NoReturn:
-        """
-        There is nothing to be stored. Overriding parent implementation to avoid issues
+        """There is nothing to be stored. Overriding parent implementation to avoid issues
         """
         return
 
-    def interpolate_spectrum_to_wavelength(
-        self, og_lambda, og_spectra, og_err, new_wavelengths, order
-    ):
-        """
-        Interpolate the order of this spectrum to a given wavelength, using a spline.
+    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
+        """Interpolate the order of this spectrum to a given wavelength, using a spline.
+
         Parameters
         ----------
         order
@@ -82,11 +77,11 @@ class ScipyInterpolSpecModel(ModellingBase):
         -------
 
         Raises
-        --------
+        ------
         NoConvergenceError
             If the fit for this order failed
-        """
 
+        """
         propagate_interpol_errors = self._internal_configs["INTERPOLATION_ERR_PROP"]
 
         interpolator_map = {
@@ -100,9 +95,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         if propagate_interpol_errors == "propagation":
             # Custom Cubic spline routine!
             if self._internal_configs["SPLINE_TYPE"] != "cubic":
-                raise custom_exceptions.InvalidConfiguration(
-                    "Can't use non cubic-splines with propagation"
-                )
+                raise custom_exceptions.InvalidConfiguration("Can't use non cubic-splines with propagation")
             CSplineInterpolator = CustomCubicSpline(
                 og_lambda,
                 og_spectra,
@@ -117,7 +110,7 @@ class ScipyInterpolSpecModel(ModellingBase):
             else:
                 extra = {}
             CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                og_lambda, og_spectra, **extra
+                og_lambda, og_spectra, **extra,
             )
             new_data = CSplineInterpolator(new_wavelengths)
 
@@ -125,12 +118,10 @@ class ScipyInterpolSpecModel(ModellingBase):
                 new_errors = np.zeros(new_data.shape)
             else:
                 CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                    og_lambda, og_err, **extra
+                    og_lambda, og_err, **extra,
                 )
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:
-            raise custom_exceptions.InvalidConfiguration(
-                f"How did we get {propagate_interpol_errors=}?"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"How did we get {propagate_interpol_errors=}?")
 
         return new_data, new_errors

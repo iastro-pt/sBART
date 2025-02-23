@@ -4,10 +4,10 @@ import warnings
 import numpy as np
 from astropy import units as u
 from astroquery.simbad import Simbad
-
-from SBART.utils.units import meter_second
-from SBART.internals.cache import DB_connection
 from loguru import logger
+
+from SBART.internals.cache import DB_connection
+from SBART.utils.units import meter_second
 
 as_yr = u.arcsec / u.year
 mas_yr = u.milliarcsecond / u.year
@@ -35,8 +35,7 @@ def build_query(star):
     r = aSimbad.query_object(star)
     if r is None:
         raise ValueError(f"star {star} not found in Simbad")
-    else:
-        r = r[0]
+    r = r[0]
     query = f"""SELECT TOP 1 * FROM gaiadr2.gaia_source \
     WHERE CONTAINS(
                 POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),
@@ -92,6 +91,7 @@ def secular_acceleration(star):
     return (
         sa * meter_second
     )  # not really the proper units, but close enough!! The year is taken into account in the RV correction
+
 
 if __name__ == "__main__":
     print(secular_acceleration("GJ699"))

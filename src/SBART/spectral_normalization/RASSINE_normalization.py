@@ -3,22 +3,19 @@ import subprocess
 from copy import deepcopy
 from pathlib import Path
 from typing import NoReturn
-from scipy.interpolate import CubicSpline
 
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.units.format import fits
-
-from SBART.utils import custom_exceptions
 from loguru import logger
+from scipy.interpolate import CubicSpline
 
 from SBART.spectral_normalization.normalization_base import NormalizationBase
-from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam, BooleanValue
+from SBART.utils import custom_exceptions
+from SBART.utils.UserConfigs import DefaultValues, PathValue, UserParam
 
 
 class RASSINE_normalization(NormalizationBase):
-    """
-    Uses RASSINE to normalize the stellar spectra.
+    """Uses RASSINE to normalize the stellar spectra.
 
     **Description:**
 
@@ -95,9 +92,7 @@ class RASSINE_normalization(NormalizationBase):
             },
         )
         if obj_info["is_S2D"] and "S1D_folder" not in user_configs:
-            raise custom_exceptions.InvalidConfiguration(
-                "Must provide the S1D folder when using S2D files"
-            )
+            raise custom_exceptions.InvalidConfiguration("Must provide the S1D folder when using S2D files")
 
     def _get_S1D_data(self, wavelengths, flux, uncertainties):
         if self._spec_info["is_S2D"]:
@@ -109,7 +104,12 @@ class RASSINE_normalization(NormalizationBase):
                 file_path=S1D_path,
                 user_configs=temp_configs,
             )
-            wavelengths, flux, uncertainties, _ = new_frame.get_data_from_full_spectrum()
+            (
+                wavelengths,
+                flux,
+                uncertainties,
+                _,
+            ) = new_frame.get_data_from_full_spectrum()
 
         return (
             wavelengths[0],
@@ -128,7 +128,7 @@ class RASSINE_normalization(NormalizationBase):
         filename = self._spec_info["S1D_name"]
         filename = filename.replace("fits", "csv")
         logger.debug(
-            f'Storing RASSINE input data to {self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename}'
+            f'Storing RASSINE input data to {self._internalPaths.get_path_to("RASSINE_IN", as_posix=False) / filename}',
         )
         # Ensure the format that is expected by RASSINE
         np.savetxt(
@@ -233,9 +233,7 @@ config = {'spectrum_name':spectrum_name,
           'speedup':1}                     
         """
         )
-        with open(
-            Path(self._internal_configs["RASSINE_path"]) / "Rassine_config.py", mode="w"
-        ) as file:
+        with open(Path(self._internal_configs["RASSINE_path"]) / "Rassine_config.py", mode="w") as file:
             file.write(rassine_config)
 
     def run_RASSINE(self, wavelengths, flux, uncertainties):
@@ -243,7 +241,7 @@ config = {'spectrum_name':spectrum_name,
         # TODO: check the commands to launch RASSINE
         logger.info("Launching RASSINE")
 
-        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"])
+        subprocess.run(["python", Path(self._internal_configs["RASSINE_path"]) / "Rassine.py"], check=False)
 
         logger.info("RASSINE has finished running")
 
@@ -253,20 +251,19 @@ config = {'spectrum_name':spectrum_name,
         self.run_RASSINE(wavelengths, flux, uncertainties)
         filename = self._spec_info["S1D_name"].replace(".fits", "")
 
-        output_path = (
-            self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / f"RASSINE_{filename}.p"
-        )
+        output_path = self._internalPaths.get_path_to("RASSINE_OUT", as_posix=False) / f"RASSINE_{filename}.p"
 
         # TODO: missing the parameters that will be cached!
         params_to_store = {"RASSINE_OUT_FOLDER": output_path.as_posix()}
 
-        return *self._apply_epoch_normalization(
-            wavelengths, flux, uncertainties, **params_to_store
-        ), params_to_store
+        return (
+            *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **params_to_store),
+            params_to_store,
+        )
 
     def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         super()._apply_epoch_normalization(wavelengths, flux, uncertainties, **kwargs)
-        logger.info(f"Applying normalization to epoch!")
+        logger.info("Applying normalization to epoch!")
         og_shape = wavelengths.shape
 
         wavelengths, flux, uncertainties = self._get_S1D_data(wavelengths, flux, uncertainties)
@@ -287,7 +284,8 @@ config = {'spectrum_name':spectrum_name,
         # contain the entire wavelength solution
         cont_solution[
             np.logical_or(
-                wavelengths < rass_products["wave"][0], wavelengths > rass_products["wave"][-1]
+                wavelengths < rass_products["wave"][0],
+                wavelengths > rass_products["wave"][-1],
             )
         ] = np.nan
         self.plot_rassine_products(wavelengths, flux, uncertainties, rass_products, cont_solution)
@@ -297,11 +295,8 @@ config = {'spectrum_name':spectrum_name,
 
         return wavelengths, flux, uncertainties
 
-    def plot_rassine_products(
-        self, wavelength, flux, uncert, rass_products, interpolated_cont
-    ) -> NoReturn:
-        """
-        Plot the end result of the continuum normalization
+    def plot_rassine_products(self, wavelength, flux, uncert, rass_products, interpolated_cont) -> NoReturn:
+        """Plot the end result of the continuum normalization
 
         Parameters
         ----------
@@ -323,7 +318,11 @@ config = {'spectrum_name':spectrum_name,
         axis[0].plot(wavelength, flux, color="black")
         axis[0].plot(wavelength, interpolated_cont, color="blue")
         axis[1].plot(wavelength, flux / interpolated_cont, color="black")
-        axis[0].plot(rass_products["wave"], rass_products["output"]["continuum_cubic"], color="red")
+        axis[0].plot(
+            rass_products["wave"],
+            rass_products["output"]["continuum_cubic"],
+            color="red",
+        )
         axis[1].set_xlabel(r"$\lambda [\AA]$")
         axis[0].set_ylabel("Flux")
         axis[1].set_ylabel("Normalized flux")

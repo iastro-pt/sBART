@@ -1,58 +1,70 @@
 from __future__ import annotations
-from collections import defaultdict
 
-import ujson as json
+from collections import defaultdict
 from pathlib import Path
-from typing import Iterable, List, NoReturn, Optional, Type, Union, Dict, Any, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
+import ujson as json
 from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.utils.BASE import BASE
 from SBART.Base_Models.Frame import Frame
-from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
+from SBART.Quality_Control.activity_indicators import Indicators
 from SBART.template_creation.StellarModel import StellarModel
 from SBART.template_creation.TelluricModel import TelluricModel
+from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.spectral_conditions import ConditionModel as CondModel
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
     ACTIVITY_LINE,
-    KW_WARNING,
+    SIGMA_CLIP_REJECTION,
     TELLURIC,
     Status,
-    SIGMA_CLIP_REJECTION,
 )
 from SBART.utils.types import UI_PATH
-from SBART.utils.units import kilometer_second, meter_second
-from SBART.utils import custom_exceptions
+from SBART.utils.units import kilometer_second
 
 
 class DataClass(BASE):
-    """
+    """Standard interface to handle data.
+
     The user-facing object that handles the loading and data access to the spectral data, independently of the instrument.
     Furthermore, this must be launched as a proxyObject (insert docs here) in order to avoid problems with data syncronization
     and optimize the speed of the code.
 
-         To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
-          it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
+    To use this class in SBART RV extraction routines, we place it in shared memory, allowing all processes to easily access
+        it. This is done with a `proxyObject <https://docs.python.org/3.8/library/multiprocessing.html>`_.
 
-          SBART already provides a DataClass object that is wrapped by a proxyObject:
+        SBART already provides a DataClass object that is wrapped by a proxyObject:
 
-        .. code-block:: python
+    .. code-block:: python
 
-            from SBART.data_objects import DataClassManager
-            manager = DataClassManager()
-            manager.start()
-            data_object = manager.DataClass(*args, **kwargs)
+        from SBART.data_objects import DataClassManager
+        manager = DataClassManager()
+        manager.start()
+        data_object = manager.DataClass(*args, **kwargs)
 
-        This *data_object* has all the functions that the DataClass object implements!
+    This *data_object* has all the functions that the DataClass object implements!
     """
+
+    extra_loading_functions: Dict[str, Callable] = {}
 
     def __init__(
         self,
@@ -65,9 +77,8 @@ class DataClass(BASE):
         sigma_clip_RVs: Optional[float] = None,
         target_dictionary_path: Optional[UI_PATH] = None,
     ):
-        """
-        Parameters
-        =============
+        """Parameters
+        ----------
         input_files:
             Either a path to a txt file, or a list of S2d files
         storage_path:
@@ -83,6 +94,7 @@ class DataClass(BASE):
             If it is a positive integer, reject frames with a sigma clip on the DRS RVs
         target_dictionary_path:
             File with two columns: first, target names; second: simbad resolvable mapping
+
         """
         super().__init__()
         self.sigma_clip_RVs = sigma_clip_RVs
@@ -96,7 +108,7 @@ class DataClass(BASE):
         self.metaData = MetaData()
 
         if reject_subInstruments is not None:
-            logger.warning("Rejecting subInstruments: {}".format(reject_subInstruments))
+            logger.warning(f"Rejecting subInstruments: {reject_subInstruments}")
 
         OBS_list = []
         if isinstance(input_files, (str, Path)):
@@ -106,13 +118,11 @@ class DataClass(BASE):
                     OBS_list.append(Path(line.split("\n")[0]))
 
         elif isinstance(input_files, Iterable):
-            logger.info(
-                "DataClass opening {} files from a list/tuple", len(input_files)
-            )
+            logger.info("DataClass opening {} files from a list/tuple", len(input_files))
 
             OBS_list = [Path(i) if isinstance(i, str) else i for i in input_files]
         else:
-            raise TypeError()
+            raise TypeError
 
         for frameID, filepath in enumerate(OBS_list):
             self.observations.append(
@@ -121,9 +131,8 @@ class DataClass(BASE):
                     instrument_options,
                     reject_subInstruments,
                     frameID=frameID,
-                    quiet_user_params=frameID
-                    != 0,  # Only the first frame will output logs
-                )
+                    quiet_user_params=frameID != 0,  # Only the first frame will output logs
+                ),
             )
 
         self.generate_root_path(storage_path)
@@ -140,9 +149,7 @@ class DataClass(BASE):
 
         # TODO: find a better way of doing this!
         self.Target = Target(
-            self.collect_KW_observations(
-                "OBJECT", self._inst_type.sub_instruments, include_invalid=False
-            ),
+            self.collect_KW_observations("OBJECT", self._inst_type.sub_instruments, include_invalid=False),
             original_name=target_name,
             target_dictionary_path=target_dictionary_path,
         )
@@ -163,12 +170,11 @@ class DataClass(BASE):
     ########################
     #    Operate on Data   #
     ########################
+    def get_extra_loading_functions(self):
+        return self.extra_loading_functions
 
-    def load_previous_SBART_results(
-        self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False
-    ):
-        """
-        Load the results from a previous application of SBART, storing the RV and uncertainty inside the corresponding
+    def load_previous_SBART_results(self, LoadingPath_previousRun: UI_PATH, use_merged_cube: bool = False):
+        """Load the results from a previous application of SBART, storing the RV and uncertainty inside the corresponding
         Frame object
 
         Parameters
@@ -180,19 +186,17 @@ class DataClass(BASE):
         -------
 
         Raises
-        -------
+        ------
         SBART.utils.custom_exceptions.InvalidConfiguration
             If the loaded data uses a different frameID scheme than the one currently in use or if we couldn't find the
             RV outputs on disk
-        """
 
+        """
         logger.info("Loading RVs from previous SBART run as the starting-RVs")
         try:
             RV_RESULTS = RV_holder.load_from_disk(LoadingPath_previousRun)
         except FileNotFoundError:
-            raise InvalidConfiguration(
-                "RV outputs couldn't be found on the provided path"
-            )
+            raise InvalidConfiguration("RV outputs couldn't be found on the provided path")
 
         for ID_index, frameID in enumerate(self.get_valid_frameIDS()):
             frame = self.get_frame_by_ID(frameID)
@@ -206,14 +210,10 @@ class DataClass(BASE):
                 apply_drift_corr=False,
             )
 
-            previous_filename = cube.cached_info["date_folders"][
-                cube.frameIDs.index(frameID)
-            ]
+            previous_filename = cube.cached_info["date_folders"][cube.frameIDs.index(frameID)]
 
             if previous_filename != frame.file_path:
-                msg = "Loading RVs from cube with different frameID layouts of {} ({} vs {})".format(
-                    frame.sub_instrument, previous_filename, frame.file_path
-                )
+                msg = f"Loading RVs from cube with different frameID layouts of {frame.sub_instrument} ({previous_filename} vs {frame.file_path})"
                 logger.critical(msg)
                 raise InvalidConfiguration(msg)
 
@@ -236,16 +236,13 @@ class DataClass(BASE):
             Object with the wavelength blocks "original" positions.
 
         # TODO: also allow to use the previous SBART RVs for this!!!!
+
         """
         logger.info("Computing activity windows for each RV measurements")
         for frameID in self.get_valid_frameIDS():
             frame = self.get_frame_by_ID(frameID)
-            blocked_regions = lines.compute_forbidden_wavelengths(
-                frame.previous_RV_measurements[0]
-            )
-            frame.mark_wavelength_region(
-                reason=ACTIVITY_LINE, wavelength_blocks=blocked_regions
-            )
+            blocked_regions = lines.compute_forbidden_wavelengths(frame.previous_RV_measurements[0])
+            frame.mark_wavelength_region(reason=ACTIVITY_LINE, wavelength_blocks=blocked_regions)
 
     def remove_telluric_features(self, Telluric_Template: TelluricModel) -> None:
         for subInstrument in self.get_subInstruments_with_valid_frames():
@@ -264,9 +261,7 @@ class DataClass(BASE):
                         wavelengths,
                         model,
                         model_uncertainty,
-                    ) = subInst_template.fit_telluric_model_to_frame(
-                        self.get_frame_by_ID(frameID)
-                    )
+                    ) = subInst_template.fit_telluric_model_to_frame(self.get_frame_by_ID(frameID))
 
                     self.get_frame_by_ID(frameID).apply_telluric_correction(
                         wavelengths=wavelengths,
@@ -276,15 +271,8 @@ class DataClass(BASE):
 
         self._applied_telluric_removal = True
 
-    def replace_frames_with_S2D_version(
-        self, new_shape: Optional[Tuple[int, int]] = None
-    ):
-        """
-        In-place substitution of all frames with their S2D-compatible shapes!
-        Returns
-        -------
-
-        """
+    def replace_frames_with_S2D_version(self, new_shape: Optional[Tuple[int, int]] = None):
+        """In-place substitution of all frames with their S2D-compatible shapes."""
         logger.warning("Transforming the frames to have a S2D-compatible shape")
         for index, frame in enumerate(self.observations):
             s2d_frame = frame.copy_into_S2D(new_S2D_size=new_shape)
@@ -295,9 +283,7 @@ class DataClass(BASE):
     def ingest_StellarModel(self, Stellar_Model: StellarModel) -> None:
         logger.debug("Ingesting StellarModel into the DataClass")
         if self.StellarModel is not None:
-            logger.warning(
-                "Stellar template has already been ingested. Switching old template by the new one"
-            )
+            logger.warning("Stellar template has already been ingested. Switching old template by the new one")
 
         # Empty update just to ensure initialization of the modelling interfaces
         Stellar_Model.update_interpol_properties({})
@@ -321,15 +307,14 @@ class DataClass(BASE):
                 frame.select_wavelength_region(order, good_regions)
 
     def reject_observations(self, conditions: CondModel) -> None:
-        """Apply the conditions to evaluate if the VALID frame meets the
-        specified conditions or not!
+        """Apply the conditions to evaluate if the VALID frame meets the specified conditions or not.
 
         Parameters
         ----------
         conditions:
             Conditions set by the user
-        """
 
+        """
         if conditions is None:
             return
 
@@ -360,34 +345,32 @@ class DataClass(BASE):
     #    Sanity Control    #
     ########################
     def _validate_loaded_observations(self) -> None:
-        """Check if the same DRS version is used across all loaded files!"""
-
-        for equal_KW in ["DRS-VERSION", "SPEC_TYPE", "DRS_CCF_MASK", "DRS_FLUX_CORRECTION_TEMPLATE"]:
-            collected_KW = set(
-                self.collect_KW_observations(equal_KW, self._inst_type.sub_instruments)
-            )
+        """Check if the same DRS version is used across all loaded files."""
+        for equal_KW in [
+            "DRS-VERSION",
+            "SPEC_TYPE",
+            "DRS_CCF_MASK",
+            "DRS_FLUX_CORRECTION_TEMPLATE",
+        ]:
+            collected_KW = set(self.collect_KW_observations(equal_KW, self._inst_type.sub_instruments))
 
             if len(collected_KW) != 1:
                 logger.warning(
                     "Different values for the KW value <{}>: {}", equal_KW, collected_KW
                 )
-            else:
-                logger.info("Loaded data from KW : {}", equal_KW, collected_KW)
 
         mapping_values = defaultdict(list)
         for fID in self.get_valid_frameIDS():
             frame = self.get_frame_by_ID(fID)
             mapping_values["BLAZE"].append(frame.is_blaze_corrected)
             mapping_values["SKYSUB"].append(frame.is_skysub)
-        
+
         for key, value in mapping_values.items():
             if len(set(value)) != 1:
                 logger.critical(f"We have a different correction type in {key}:{set(value)}")
-        
+
         if self.sigma_clip_RVs is not None:
-            logger.info(
-                f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV"
-            )
+            logger.info(f"Rejecting frames that are more than {self.sigma_clip_RVs} sigma away from mean RV")
 
             for subInstrument in self.get_subInstruments_with_valid_frames():
                 RV = self.collect_RV_information(
@@ -404,7 +387,7 @@ class DataClass(BASE):
                 )
                 mean_RV = np.median(RV)
                 metric = np.std(
-                    RV
+                    RV,
                 )  # using the same sigma clip as https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.sigmaclip.html
 
                 bounds = [
@@ -412,24 +395,19 @@ class DataClass(BASE):
                     mean_RV + self.sigma_clip_RVs * metric,
                 ]
 
-                bad_indexes = np.where(np.logical_or(RV < bounds[0], RV > bounds[1]))
+                bad_indexes = np.where(np.logical_or(bounds[0] > RV, bounds[1] < RV))
                 valid_frameIDs = self.get_frameIDs_from_subInst(subInstrument)
                 bad_IDS = np.asarray(valid_frameIDs)[bad_indexes]
 
                 for frameID_to_reject in bad_IDS:
                     bad_frame = self.get_frame_by_ID(frameID_to_reject)
-                    logger.warning(
-                        f"{bad_frame} rejected due to sigma clipping of DRS RVs"
-                    )
+                    logger.warning(f"{bad_frame} rejected due to sigma clipping of DRS RVs")
                     bad_frame.add_to_status(SIGMA_CLIP_REJECTION)
 
-                logger.info(
-                    f"Sigma clip rejected {len(bad_IDS)} frames of {subInstrument}"
-                )
+                logger.info(f"Sigma clip rejected {len(bad_IDS)} frames of {subInstrument}")
 
     def _collect_MetaData(self) -> None:
         """Collect information from the individual (valid) observations to store inside the MetaData object"""
-
         logger.info("Collecting MetaData from the observations")
         for subInst in self.get_subInstruments_with_valid_frames():
             meta_search = {
@@ -460,15 +438,15 @@ class DataClass(BASE):
         frame.load_data()
         return 1
 
-    def set_all_as_Zscore_frames(self) -> NoReturn:
+    def set_all_as_Zscore_frames(self) -> None:
         logger.warning("Setting all frames as a zero-mean unit variance")
         for frameID in self.get_valid_frameIDS():
             frame = self.get_frame_by_ID(frameID)
             frame.set_frame_as_Zscore()
 
-    def normalize_all(self) -> NoReturn:
-        """
-        Launch the normalization for all (valid) frames
+    def normalize_all(self) -> None:
+        """Launch the normalization for all (valid) frames
+
         Returns
         -------
 
@@ -481,9 +459,8 @@ class DataClass(BASE):
         for subInst in self.get_subInstruments_with_valid_frames():
             self.normalize_all_from_subInst(subInst)
 
-    def update_uncertainties_of_frame(self, frameID: int, new_uncerts) -> NoReturn:
-        """
-        Update the flux uncertainties of a given frame
+    def update_uncertainties_of_frame(self, frameID: int, new_uncerts) -> None:
+        """Update the flux uncertainties of a given frame
 
         .. warning::
             This will change your measured data, be careful with this!!!
@@ -495,9 +472,9 @@ class DataClass(BASE):
         frame._never_close = True
         logger.warning("This frame will never close until SBART finished!")
 
-    def normalize_all_from_subInst(self, subInst: str) -> NoReturn:
-        """
-        Normalizing all (valid) frames from a given subInstrument
+    def normalize_all_from_subInst(self, subInst: str) -> None:
+        """Normalizing all (valid) frames from a given subInstrument
+
         Parameters
         ----------
         subInst
@@ -511,9 +488,9 @@ class DataClass(BASE):
             frame = self.get_frame_by_ID(fId)
             frame.normalize_spectra()
 
-    def scale_up_all_observations(self, factor: float) -> NoReturn:
-        """
-        Multiply the flux and uncertainties by a given flux level (avoid possible SNR issues)
+    def scale_up_all_observations(self, factor: float) -> None:
+        """Multiply the flux and uncertainties by a given flux level (avoid possible SNR issues)
+
         Parameters
         ----------
         factor
@@ -522,11 +499,18 @@ class DataClass(BASE):
         -------
 
         """
-
         logger.warning(f"Scaling up all spectra by a factor of {factor}")
         for fId in self.get_valid_frameIDS():
             frame = self.get_frame_by_ID(fId)
             frame.scale_spectra(factor)
+
+    def set_stellar_RV_to_zero(self) -> None:
+        """
+        Allow to override the stellar RV so that it is fixed to zero
+        """
+        for fID in self.get_valid_frameIDS():
+            f = self.get_frame_by_ID(fID)
+            f.observation_info["DRS_RV"] = 0 * kilometer_second
 
     def load_all_from_subInst(self, subInst: str) -> int:
         """Load all valid frames from a given subInstrument
@@ -540,11 +524,10 @@ class DataClass(BASE):
         -------
         int
             [description]
+
         """
         logger.debug("Opening all frames from {}", subInst)
-        IDs_from_subInst = self.get_frameIDs_from_subInst(
-            subInstrument=subInst, include_invalid=False
-        )
+        IDs_from_subInst = self.get_frameIDs_from_subInst(subInstrument=subInst, include_invalid=False)
         for frameID in IDs_from_subInst:
             try:
                 self.load_frame_by_ID(frameID)
@@ -563,11 +546,8 @@ class DataClass(BASE):
     def get_subInst_from_frameID(self, frameID: int) -> str:
         return self.get_frame_by_ID(frameID).sub_instrument
 
-    def get_frame_OBS_order(
-        self, frameID: int, order: int, include_invalid: bool = False
-    ):
-        """
-        Request the data from one spectral order.
+    def get_frame_OBS_order(self, frameID: int, order: int, include_invalid: bool = False):
+        """Request the data from one spectral order.
 
         Parameters
         ----------
@@ -587,31 +567,23 @@ class DataClass(BASE):
 
     def update_interpol_properties_of_all_frames(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
-            raise custom_exceptions.InvalidConfiguration(
-                "The interpolation properties must be passed as a dictionary"
-            )
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
 
         for frame in self.observations:
             frame.set_interpolation_properties(new_properties)
 
-    def update_interpol_properties_of_stellar_model(
-        self, new_properties: Dict[str, Any]
-    ):
+    def update_interpol_properties_of_stellar_model(self, new_properties: Dict[str, Any]):
         if not isinstance(new_properties, dict):
-            raise custom_exceptions.InvalidConfiguration(
-                "The interpolation properties must be passed as a dictionary"
-            )
+            raise custom_exceptions.InvalidConfiguration("The interpolation properties must be passed as a dictionary")
 
         if self.StellarModel is None:
             raise custom_exceptions.NoDataError("The Stellar Model wasn't ingested")
         self.StellarModel.update_interpol_properties(new_properties)
 
-    def update_frame_interpol_properties(self, frameID, new_properties) -> NoReturn:
-        """
-        Allow to update the interpolation settings from the outside, so that any object can configure
+    def update_frame_interpol_properties(self, frameID, new_properties) -> None:
+        """Allow to update the interpolation settings from the outside, so that any object can configure
         the interpolation as it wishes
         """
-
         frame = self.get_frame_by_ID(frameID)
         frame.set_interpolation_properties(new_properties)
 
@@ -624,8 +596,7 @@ class DataClass(BASE):
         RV_shift_mode,
         include_invalid=False,
     ):
-        """
-        Interpolate a given order to a new wavelength solution
+        """Interpolate a given order to a new wavelength solution
         """
         frame = self.get_frame_by_ID(frameID)
         return frame.interpolate_spectrum_to_wavelength(
@@ -637,8 +608,8 @@ class DataClass(BASE):
         )
 
     def get_frame_arrays_by_ID(self, frameID: int):
-        """
-        Access data from the entire spectral range (i.e. all orders come as a matrix)
+        """Access data from the entire spectral range (i.e. all orders come as a matrix)
+
         Parameters
         ----------
         frameID
@@ -671,10 +642,9 @@ class DataClass(BASE):
         include_invalid: bool = False,
         conditions: CondModel = None,
         return_frameIDs: bool = False,
-        from_header: bool = False
+        from_header: bool = False,
     ) -> Union[list, Tuple[List[float], List[int]]]:
-        """
-        Parse through the loaded observations and retrieve a specific KW from
+        """Parse through the loaded observations and retrieve a specific KW from
         all of them. There is no sort of the files. The output will follow the
         order of the files loaded in memory!
 
@@ -691,22 +661,21 @@ class DataClass(BASE):
             If True, also retrieve the KWs of Frames deemed to not be valid. By
             default False
         from_header: bool, optional
-            If True, searches the fits header, rather than the internal keywords. 
+            If True, searches the fits header, rather than the internal keywords.
             By default, False
 
         Returns
         -------
         list
             List of the KW
+
         """
         output = []
         all_frameIDs = []
 
         for subInst in subInstruments:
             try:
-                available_frameIDs = self.get_frameIDs_from_subInst(
-                    subInst, include_invalid=include_invalid
-                )
+                available_frameIDs = self.get_frameIDs_from_subInst(subInst, include_invalid=include_invalid)
             except NoDataError:
                 continue
 
@@ -716,7 +685,7 @@ class DataClass(BASE):
                     if not keep:
                         output.append(None)
                         continue
-                
+
                 frame = self.get_frame_by_ID(frameID)
 
                 if from_header:
@@ -767,6 +736,7 @@ class DataClass(BASE):
         ------
         InvalidConfiguration
             [description]
+
         """
         if KW not in [
             "BERV",
@@ -775,14 +745,12 @@ class DataClass(BASE):
             "previous_SBART_RV",
             "previous_SBART_RV_ERR",
         ]:
-            msg = "Asking for a non-RV KW: {}".format(KW)
+            msg = f"Asking for a non-RV KW: {KW}"
             logger.critical(msg)
             raise InvalidConfiguration(msg)
 
         if frameIDs is None:
-            values = self.collect_KW_observations(
-                KW, [subInst], include_invalid=include_invalid
-            )
+            values = self.collect_KW_observations(KW, [subInst], include_invalid=include_invalid)
         else:
             values = []
             for frameID in frameIDs:
@@ -811,21 +779,18 @@ class DataClass(BASE):
         -------
         list
             [description]
+
         """
         out = []
         for subInst in self._inst_type.sub_instruments:
             try:
-                out.extend(
-                    self.get_frameIDs_from_subInst(subInst, include_invalid=False)
-                )
+                out.extend(self.get_frameIDs_from_subInst(subInst, include_invalid=False))
             except NoDataError:
                 continue
 
         return out
 
-    def get_frameIDs_from_subInst(
-        self, subInstrument: str, include_invalid: bool = False
-    ) -> List[int]:
+    def get_frameIDs_from_subInst(self, subInstrument: str, include_invalid: bool = False) -> List[int]:
         """Get all frameIDs associated with a given instrument. By default, only returns the valid ones
 
         Parameters
@@ -839,13 +804,9 @@ class DataClass(BASE):
         -------
         list
             [description]
-        """
 
-        frameIDS = [
-            i
-            for i in self.frameID_map[subInstrument]
-            if self.get_frame_by_ID(i).is_valid or include_invalid
-        ]
+        """
+        frameIDS = [i for i in self.frameID_map[subInstrument] if self.get_frame_by_ID(i).is_valid or include_invalid]
         if len(frameIDS) == 0:
             msg = f"There is no available observation in {subInstrument}"
             raise NoDataError(msg)
@@ -853,8 +814,7 @@ class DataClass(BASE):
         return list(frameIDS)
 
     def get_frame_by_ID(self, frameID: int) -> Frame:
-        """
-        Return the frame object that is associated with a given ID
+        """Return the frame object that is associated with a given ID
 
         Parameters
         ----------
@@ -873,6 +833,7 @@ class DataClass(BASE):
         -------
         list
             SubInstruments that have at least one valid observation
+
         """
         out = []
         for subInst in self._inst_type.sub_instruments:
@@ -916,8 +877,7 @@ class DataClass(BASE):
             frame.trigger_data_storage()
 
     def generate_root_path(self, storage_path: Path):
-        """
-        Triggers the parent routine and also generates the root path for the Frames
+        """Triggers the parent routine and also generates the root path for the Frames
 
         Parameters
         ----------
@@ -938,8 +898,7 @@ class DataClass(BASE):
     #          MISC        #
     ########################
     def has_instrument_data(self, instrument: str) -> bool:
-        """
-        Check if the first loaded frame is of a given Instrument
+        """Check if the first loaded frame is of a given Instrument
 
         .. warning::
             in the off-chance that we mix data this will give problems...
@@ -947,8 +906,7 @@ class DataClass(BASE):
         return self.observations[0].is_Instrument(instrument)
 
     def has_instrument_data(self, instrument: str) -> bool:
-        """
-        Check if the first loaded frame is of a given Instrument
+        """Check if the first loaded frame is of a given Instrument
 
         .. warning::
             in the off-chance that we mix data this will give problems...
@@ -964,9 +922,7 @@ class DataClass(BASE):
         """Compute the number of observations available in each subInstrument. Find the number of valid (
         with and without warnings) and the invalid ones!
         """
-        tab = Table(
-            ["subInstrument", "Total OBS", "Valid OBS [warnings]", "INVALID OBS"]
-        )
+        tab = Table(["subInstrument", "Total OBS", "Valid OBS [warnings]", "INVALID OBS"])
         total_warnings = 0
         total = 0
         total_valid = 0
@@ -999,33 +955,32 @@ class DataClass(BASE):
         return tab
 
     def load_instrument_extra_information(self):
-        """
-        See if the given instrument is one of the ones that has extra information to load.
+        """See if the given instrument is one of the ones that has extra information to load.
         If so, then
         """
-        info_load_map = {}
-
         logger.info("Checking if the instrument has extra data to load")
-        for key, load_func in info_load_map.items():
+        for key, load_func in self.get_extra_loading_functions().items():
             if self.has_instrument_data(key):
-                logger.info(
-                    f"Dataclass has {key} data. Extra loading is being triggered"
-                )
-                load_func()
+                logger.info(f"Dataclass has {key} data. Extra loading is being triggered")
+                load_func(self)
                 return
 
-        logger.info(
-            "Current instrument does not need to load anything from the outside"
-        )
+        logger.info("Current instrument does not need to load anything from the outside")
 
+    @classmethod
+    def add_extra_loading_information(cls, name: str, loader: Callable) -> None:
+        """Add a new loader function to run after the Instrument loads its data
+
+        Args:
+            name (str): Instrument name
+            loader (Callable): function to run afterwards
+
+        """
+        if name in cls.extra_loading_functions:
+            logger.warning(f"Overloading extra-loading information from {name}")
+        cls.extra_loading_functions[name] = loader
 
     def __repr__(self):
-        return (
-            f"Data Class from {self._inst_type.instrument_properties['name']} holding "
-            + ", ".join(
-                [
-                    f"{len(IDS)} OBS from {name}"
-                    for name, IDS in self.frameID_map.items()
-                ]
-            )
+        return f"Data Class from {self._inst_type.instrument_properties['name']} holding " + ", ".join(
+            [f"{len(IDS)} OBS from {name}" for name, IDS in self.frameID_map.items()],
         )

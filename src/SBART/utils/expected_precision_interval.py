@@ -1,7 +1,7 @@
-from SBART.Instruments import ESPRESSO
-from SBART.utils.units import convert_data
-from tabletexifier import Table
 from loguru import logger
+from tabletexifier import Table
+
+from SBART.utils.units import convert_data
 
 try:
     from eniric.precision import rv_precision
@@ -11,7 +11,6 @@ except Exception:
     ENIRIC_AVAILABLE = False
 import numpy as np
 
-from SBART.data_objects import DataClass
 from SBART.utils.custom_exceptions import InvalidConfiguration
 
 
@@ -29,8 +28,8 @@ def generate_all_possible_combinations(available_orders, N_intervals=4, min_inte
 
     Returns:
         _type_: _description_
-    """
 
+    """
     combinations = []
     levels = []
     # The level represents the left-to-right index of the interval
@@ -73,6 +72,7 @@ def optimize_precision(data, orders_to_avoid, N_intervals=3, min_interval_size=1
 
     Raises:
         ImportError: _description_
+
     """
     if not ENIRIC_AVAILABLE:
         raise ImportError("eniric needs to be installed")
@@ -142,21 +142,19 @@ def convert_to_tab(orders_to_run, result, intervals, precision_array):
                 (
                     orders_to_run[element[0]],
                     orders_to_run[element[1] - 1],
-                )
+                ),
             )
         row = [int_to_write, f"{result[index]:.2f}", precisions]
         tab.add_row(row)
     return tab
 
 
-def optimize_intervals_over_array(
-    list_of_orders, array_of_precisions, N_intervals, min_interval_size
-):
+def optimize_intervals_over_array(list_of_orders, array_of_precisions, N_intervals, min_interval_size):
     if len(list_of_orders) != array_of_precisions.shape[1]:
         raise Exception("Something went wrong")
 
     intervals = generate_all_possible_combinations(
-        list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size
+        list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size,
     )
 
     if len(intervals) == 0:

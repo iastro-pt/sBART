@@ -1,7 +1,7 @@
-"""
-Classes that handle input/output data.
+"""Classes that handle input/output data.
 
 """
+
 from SBART.utils.concurrent_tools.proxyObjects import DataClassManager
 
 from .DataClass import DataClass

@@ -21,8 +21,8 @@ class Paths:
         self._constructed_folders = set()
 
     def add_relative_path(self, folder_KW: str, rel_path: str) -> NoReturn:
-        """
-        Add a relative (to self._root_path) folder, associated with a given Keyword
+        """Add a relative (to self._root_path) folder, associated with a given Keyword
+
         Parameters
         ----------
         folder_KW
@@ -34,13 +34,9 @@ class Paths:
         """
         self._folder_mappings[folder_KW] = rel_path
 
-    def get_path_to(
-        self, folder_tag: str, absolute: bool = True, as_posix: bool = True
-    ) -> Union[str, Path]:
+    def get_path_to(self, folder_tag: str, absolute: bool = True, as_posix: bool = True) -> Union[str, Path]:
         if self._root_path is None:
-            raise custom_exceptions.MissingRootPath(
-                "Must provide the root level path before asking for other paths"
-            )
+            raise custom_exceptions.MissingRootPath("Must provide the root level path before asking for other paths")
 
         if folder_tag == "ROOT":
             out_path = self._root_path.absolute()
@@ -59,9 +55,7 @@ class Paths:
 
         return out_path
 
-    def add_root_path(
-        self, path: Union[str, Path], current_folder_name: Optional[str] = None
-    ):
+    def add_root_path(self, path: Union[str, Path], current_folder_name: Optional[str] = None):
         if isinstance(path, str):
             path = Path(path)
 
@@ -80,5 +74,6 @@ class Paths:
 
 if __name__ == "__main__":
     handler = Paths(
-        "/home/amiguel/seminar/teste_code_changes/CARMENES", {"testes": "testepaths/hkasdh"}
+        "/home/amiguel/seminar/teste_code_changes/CARMENES",
+        {"testes": "testepaths/hkasdh"},
     )

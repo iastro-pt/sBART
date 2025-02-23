@@ -1,17 +1,17 @@
 import os
 from pathlib import Path
 
-import numpy
-
 import setuptools
+from setuptools import Extension
+
+import numpy
 
 curr_file = Path(__file__).parent.absolute()
 
-from setuptools import Extension
 
-version = "0.6.0"
+version = "0.6.1"
 
-USE_CYTHON = False  # command line option, try-import, ...
+USE_CYTHON = True  # command line option, try-import, ...
 
 ext = ".pyx" if USE_CYTHON else ".c"
 
@@ -55,8 +55,8 @@ ext_modules = [
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 if USE_CYTHON:
-    from Cython.Build import cythonize
     import Cython.Compiler.Options
+    from Cython.Build import cythonize
 
     Cython.Compiler.Options.annotate = True
     from Cython.Build import cythonize
@@ -68,10 +68,7 @@ if USE_CYTHON:
 
 from distutils.core import setup
 
-all_packages = setuptools.find_packages(
-    where="src",
-    # include=["SBART.*"]
-)
+all_packages = setuptools.find_packages(where="src", include=["SBART*"])
 
 requ_path = Path(__file__).parent
 with open(requ_path / "requirements.txt") as f:

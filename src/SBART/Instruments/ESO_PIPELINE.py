@@ -7,14 +7,13 @@ from scipy.constants import convert_temperature
 
 from SBART.Base_Models.Frame import Frame
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
 from SBART.utils.status_codes import FATAL_KW, KW_WARNING
 from SBART.utils.units import kilometer_second
+from SBART.utils.UserConfigs import BooleanValue, DefaultValues, UserParam
 
 
 class ESO_PIPELINE(Frame):
-    """
-    Interface to handle data products (S2D and S1D) of the ESO pipeline (DRS 3.0)
+    """Interface to handle data products (S2D and S1D) of the ESO pipeline (DRS 3.0)
 
     **User parameters:**
 
@@ -59,11 +58,6 @@ class ESO_PIPELINE(Frame):
     )
 
     _default_params.update(
-        "USE_APPROX_BERV_CORRECTION",
-        UserParam(True, constraint=BooleanValue),
-    )
-
-    _default_params.update(
         "apply_FluxBalance_Norm",
         UserParam(False, constraint=BooleanValue),
     )
@@ -81,9 +75,7 @@ class ESO_PIPELINE(Frame):
         override_KW_map=None,
         override_indicators=None,
     ):
-        """
-
-        Parameters
+        """Parameters
         ----------
         file_path
             Path to the S2D (or S1D) file.
@@ -93,6 +85,7 @@ class ESO_PIPELINE(Frame):
             Iterable of subInstruments to fully reject
         frameID
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
+
         """
         # Wavelength coverage
 
@@ -129,11 +122,7 @@ class ESO_PIPELINE(Frame):
             file_path=file_path,
             frameID=frameID,
             KW_map=KW_map,
-            available_indicators=(
-                available_indicators
-                if override_indicators is None
-                else override_indicators
-            ),
+            available_indicators=(available_indicators if override_indicators is None else override_indicators),
             user_configs=user_configs,
             reject_subInstruments=reject_subInstruments,
             quiet_user_params=quiet_user_params,
@@ -156,17 +145,30 @@ class ESO_PIPELINE(Frame):
             self._load_ESO_DRS_KWs(header)
         self.load_telemetry_info(header)
 
+        drs_version = header.get("HIERARCH ESO PRO REC1 PIPE ID", "espdr/3.0.0")
+        version = drs_version.split("/")[-1]
+
+        # TODO: Check the number of the DRS version that has this fixed
+        version_sum = lambda a: sum(a * 10**b for a, b in zip(map(int, a.split(".")[::-1]), range(3)))
+
+        if version_sum(version) < version_sum("3.2.1"):
+            # For older versions we always need to use the
+            # approximated BERV correction
+            self.use_approximated_BERV_correction = True
+        else:
+            # Newer versions don't need the approximated BERV correction
+            self.use_approximated_BERV_correction = False
+
     def load_S2D_data(self):
         if self.is_open:
             logger.debug("{} has already been opened", self.__str__())
-            return
+            return None
         super().load_S2D_data()
 
         if self._internal_configs["use_old_pipeline"]:
             # The return is to ensure that we don't do anything after this point!
             return self.load_old_DRS_S2D()
-        else:
-            self.load_ESO_DRS_S2D_data()
+        self.load_ESO_DRS_S2D_data()
 
     def load_S1D_data(self):
         super().load_S1D_data()
@@ -174,8 +176,7 @@ class ESO_PIPELINE(Frame):
         if self._internal_configs["use_old_pipeline"]:
             # The return is to ensure that we don't do anything after this point!
             return self.load_old_DRS_S1D()
-        else:
-            self.load_ESO_DRS_S1D_data()
+        self.load_ESO_DRS_S1D_data()
 
     def check_header_QC(self, header: fits.header.Header):
         super().check_header_QC(header)
@@ -200,8 +201,7 @@ class ESO_PIPELINE(Frame):
 
     # Load common information to the ESO DRS version across different spectrographs
     def load_telemetry_info(self, header):
-        """
-        Loads (at least) the following keywords:
+        """Loads (at least) the following keywords:
 
         - relative humidity
         - ambient temperature, in Celsius
@@ -216,7 +216,6 @@ class ESO_PIPELINE(Frame):
         -------
 
         """
-
         ambi_KWs = {
             "relative_humidity": "HUMIDITY",
             "ambient_temperature": "TEMP10M",
@@ -226,7 +225,7 @@ class ESO_PIPELINE(Frame):
             self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} METEO {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin",
                 )
 
         if self.observation_info["relative_humidity"] == 255:
@@ -238,27 +237,21 @@ class ESO_PIPELINE(Frame):
     def _load_ESO_DRS_KWs(self, header):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         # Load BERV info + previous RV
-        self.observation_info["MAX_BERV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
-        )
-        self.observation_info["BERV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
-        )
+        self.observation_info["MAX_BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERVMAX"] * kilometer_second
+        self.observation_info["BERV"] = header[f"HIERARCH {self.KW_identifier} QC BERV"] * kilometer_second
 
-        self.observation_info["DRS_RV"] = (
-            header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
-        )
+        self.observation_info["DRS_RV"] = header[f"HIERARCH {self.KW_identifier} QC CCF RV"] * kilometer_second
         self.observation_info["DRS_RV_ERR"] = (
             header[f"HIERARCH {self.KW_identifier} QC CCF RV ERROR"] * kilometer_second
         )
 
         for order in range(self.instrument_properties["array_sizes"]["S2D"][0]):
             self.observation_info["orderwise_SNRs"].append(
-                header[f"HIERARCH {self.KW_identifier} QC ORDER{order + 1} SNR"]
+                header[f"HIERARCH {self.KW_identifier} QC ORDER{order + 1} SNR"],
             )
 
         # Chosen activity indicators
@@ -270,7 +263,7 @@ class ESO_PIPELINE(Frame):
     def load_ESO_DRS_S2D_data(self, overload_SCIDATA_key=None):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         with fits.open(self.file_path) as hdulist:
@@ -291,9 +284,7 @@ class ESO_PIPELINE(Frame):
             if self._internal_configs["apply_FluxCorr"]:
                 logger.debug("Starting chromatic flux correction")
                 keyword = f"HIERARCH {self.KW_identifier} QC ORDER%d FLUX CORR"
-                flux_corr = np.array(
-                    [hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)]
-                )
+                flux_corr = np.array([hdulist[0].header[keyword % o] for o in range(1, self.N_orders + 1)])
                 fit_nb = (flux_corr != 1.0).sum()
 
                 ignore = self.N_orders - fit_nb
@@ -301,15 +292,13 @@ class ESO_PIPELINE(Frame):
 
                 # ? see espdr_scince:espdr_correct_flux
                 poly_deg = round(8 * fit_nb / self.N_orders)
-                logger.debug("Fitting polynomial (n={})".format(poly_deg))
+                logger.debug(f"Fitting polynomial (n={poly_deg})")
                 llc = hdulist[5].data[:, self.array_size[1] // 2]
                 coeff = np.polyfit(llc[ignore:], flux_corr[ignore:], poly_deg - 1)
                 # corr_model = np.zeros_like(hdu[5].data, dtype=np.float32)
                 corr_model = np.polyval(coeff, hdulist[5].data)
 
-                corr_model[
-                    flux_corr == 1
-                ] = 1  # orders where the CORR FACTOR are 1 do not have correction!
+                corr_model[flux_corr == 1] = 1  # orders where the CORR FACTOR are 1 do not have correction!
                 self.spectra = self.spectra / corr_model  # correct from chromatic variations
                 self.flux_atmos_balance_corrected = True
                 # TODO: understand if we want to include the factor in uncertainties or not!
@@ -340,7 +329,7 @@ class ESO_PIPELINE(Frame):
     def load_ESO_DRS_S1D_data(self):
         if self._internal_configs["use_old_pipeline"]:
             raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from new pipeline with the config for the old one"
+                "Can't load data from new pipeline with the config for the old one",
             )
 
         with fits.open(self.file_path) as hdulist:
@@ -358,8 +347,8 @@ class ESO_PIPELINE(Frame):
         self.build_mask(bypass_QualCheck=False)
 
     def _compute_BLAZE(self):
-        """
-        Assume that S2D and S2D_BLAZE live within the same folder (should be true for most cases)
+        """Assume that S2D and S2D_BLAZE live within the same folder (should be true for most cases)
+
         Returns
         -------
 
@@ -384,10 +373,14 @@ class ESO_PIPELINE(Frame):
 
         nonfatal_QC_flags = {
             f"HIERARCH {self.KW_identifier}" + " QC SCIRED FLUX CORR CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
-            f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
         }
+        if not self.is_skysub:
+            extra_checks = {
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHECK": 0,
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT FLUX_RATIO CHECK": 0,
+                f"HIERARCH {self.KW_identifier}" + " QC SCIRED DRIFT CHI2 CHECK": 0,
+            }
+            nonfatal_QC_flags = {**nonfatal_QC_flags, **extra_checks}
 
         if self._internal_configs["SCIRED_CHECK_IS_FATAL"]:
             fatal_QC_flags[f"HIERARCH {self.KW_identifier} QC SCIRED CHECK"] = 0
@@ -413,6 +406,20 @@ class ESO_PIPELINE(Frame):
 
         if self._status.number_warnings > 0:
             logger.warning("Found {} warning flags in the header KWs", self._status.number_warnings)
+
+        espdr_to_num = lambda x: int("".join(x.split(".")))
+        espdrversion = header["ESO PRO REC1 PIPE ID"].split("/")[-1]
+
+        if self._internal_configs["USE_APPROX_BERV_CORRECTION"]:
+            if espdr_to_num(espdrversion) >= espdr_to_num("3.2.0"):
+                logger.critical(
+                    f"Using approximated BERV correction in espdr/{espdrversion}"
+                )
+        else:
+            if espdr_to_num(espdrversion) < espdr_to_num("3.2.0"):
+                logger.critical(
+                    f"Not using approximated BERV correction in espdr/{espdrversion}"
+                )
 
     @property
     def bare_fname(self) -> str:

@@ -1,5 +1,4 @@
-"""
-.. _SBART-OBS-REJECTION:
+""".. _SBART-OBS-REJECTION:
 
 ==============================================
 Selecting Observations based on conditions
@@ -88,20 +87,19 @@ For a :py:class:`~SBART.data_objects.DataClass.DataClass` object, we can use its
 """
 
 from pathlib import Path
-from typing import Any, List, Tuple, overload
+from typing import Any, List, Tuple
 
 import numpy as np
 from loguru import logger
+from typing_extensions import override
 
 from SBART.utils import custom_exceptions
 from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.status_codes import USER_BLOCKED, VALID, Flag, KW_WARNING
-from typing_extensions import override
+from SBART.utils.status_codes import KW_WARNING, USER_BLOCKED, VALID, Flag
 
 
 class ConditionModel:
-    """
-    Defines the Base Condition Class, from which we can generate new conditions. The conditions represent a boolean check that
+    """Defines the Base Condition Class, from which we can generate new conditions. The conditions represent a boolean check that
     is applied to a given spectra, which is then rejected or kept, depending on the result from the check.
 
     The ConditionModel is implemented in such a way that summing two conditions together creates a new, independent,
@@ -122,8 +120,7 @@ class ConditionModel:
         return self.__add__(other)
 
     def evaluate(self, frame) -> Tuple[bool, List[Flag]]:
-        """
-        Apply all boolean checks to a given frame, returning a boolean value and a list of Flags with the results.
+        """Apply all boolean checks to a given frame, returning a boolean value and a list of Flags with the results.
 
         Parameters
         ----------
@@ -136,6 +133,7 @@ class ConditionModel:
             Boolean result of the comparison
         flags:
             List of flags, one for each condition that was applied
+
         """
         valid_OBS = True
 
@@ -173,10 +171,11 @@ class ConditionModel:
 
 
 class KEYWORD_condition(ConditionModel):
-    """
-    Limit the KW to be inside the defined interval (edges included)
+    """Limit the KW to be inside the defined interval (edges included)
+
     Parameters
-    ===============
+    ----------
+
     """
 
     def __init__(self, KW: str, bounds: List[Any], include_edges: bool = True):
@@ -229,16 +228,15 @@ class KEYWORD_condition(ConditionModel):
             if self._include_edges:
                 if bound_elem[0] <= KW_val <= bound_elem[1]:
                     keep = True
-            else:
-                if bound_elem[0] < KW_val < bound_elem[1]:
-                    keep = True
+            elif bound_elem[0] < KW_val < bound_elem[1]:
+                keep = True
 
             if keep:
                 break
 
-        message = "KW {} inside the boundary {}".format(self.KW, self.bounds)
+        message = f"KW {self.KW} inside the boundary {self.bounds}"
         if not keep:
-            message = "KW {} outside the boundary {} : {}".format(self.KW, self.bounds, KW_val)
+            message = f"KW {self.KW} outside the boundary {self.bounds} : {KW_val}"
 
         flag = VALID if keep else USER_BLOCKED(message)
 
@@ -254,15 +252,15 @@ class KEYWORD_condition(ConditionModel):
 
     @property
     def cond_info(self):
-        return "KW {} inside window: {}".format(self.KW, self.bounds)
+        return f"KW {self.KW} inside window: {self.bounds}"
 
 
 class SubInstrument_condition(ConditionModel):
-    """
-    Flag the observations that are from the defined subInstrument
+    """Flag the observations that are from the defined subInstrument
 
     Parameters
-    ============
+    ----------
+
     """
 
     def __init__(self, subInst: str):
@@ -271,7 +269,7 @@ class SubInstrument_condition(ConditionModel):
 
     def select_spectra(self, frame) -> Flag:
         if frame.is_SubInstrument(self._bad_subInst):
-            message = "Removed subInstrument: {}".format(self._bad_subInst)
+            message = f"Removed subInstrument: {self._bad_subInst}"
             flag = USER_BLOCKED(message)
         else:
             flag = VALID
@@ -279,15 +277,15 @@ class SubInstrument_condition(ConditionModel):
 
     @property
     def cond_info(self) -> str:
-        return "Removed subInstrument {}".format(self._bad_subInst)
+        return f"Removed subInstrument {self._bad_subInst}"
 
 
 class Empty_condition(ConditionModel):
-    """
-    Place no Condition
+    """Place no Condition
 
     Parameters
-    ============
+    ----------
+
     """
 
     def __init__(self):
@@ -302,8 +300,7 @@ class Empty_condition(ConditionModel):
 
 
 class WarningFlag_Notset(ConditionModel):
-    """
-    Reject the observation if the given warning flag is True, as set through the KW_WARNING flag set by the QC routines
+    """Reject the observation if the given warning flag is True, as set through the KW_WARNING flag set by the QC routines
     """
 
     def __init__(self, flag_name: str, full_flag=False):
@@ -313,6 +310,7 @@ class WarningFlag_Notset(ConditionModel):
             flag_name (str): Name of the flag
             full_flag (bool, optional): If True, applies the condition to search for the exact flag_name (i.e. KW_WARNING(flag_name))
              Otherwise, searches for something in the form of msg = f"QC flag {self.flag_name} meets the bad value". Defaults to False.
+
         """
         self.flag_name = flag_name
         self.full_flag = full_flag
@@ -335,15 +333,14 @@ class WarningFlag_Notset(ConditionModel):
 
     @property
     def cond_info(self) -> str:
-        return "Warning KW flag {} was raised".format(self.flag_name)
+        return f"Warning KW flag {self.flag_name} was raised"
 
 
 class FNAME_condition(ConditionModel):
-    """
-    Flag the observations that have filename inside the filename_list list
+    """Flag the observations that have filename inside the filename_list list
 
     Parameters
-    ============
+    ----------
     filename_list: list
         List of files to either be outright used or list of paths to .txt files from which we can select
         observations
@@ -352,10 +349,14 @@ class FNAME_condition(ConditionModel):
     load_from_file: bool
         If True (default False), use the filename_list parameter to provide a list of files that will be
         selected
+
     """
 
     def __init__(
-        self, filename_list: list, only_keep_filenames=False, load_from_file: bool = False
+        self,
+        filename_list: list,
+        only_keep_filenames=False,
+        load_from_file: bool = False,
     ):
         self._load_from_file = load_from_file
         if self._load_from_file:
@@ -383,24 +384,20 @@ class FNAME_condition(ConditionModel):
                 flag = USER_BLOCKED(message)
             else:
                 flag = VALID
+        elif frame.fname in self._filename_list:
+            flag = VALID
         else:
-            if frame.fname in self._filename_list:
-                flag = VALID
-            else:
-                message = "Filename rejected"
-                flag = USER_BLOCKED(message)
+            message = "Filename rejected"
+            flag = USER_BLOCKED(message)
         return flag
 
     @property
     def cond_info(self) -> str:
-        return "Filename list {} - only keep: {}".format(
-            self._filename_list, self._only_keep_filenames
-        )
+        return f"Filename list {self._filename_list} - only keep: {self._only_keep_filenames}"
 
 
 class SNR_condition(ConditionModel):
-    """
-    Reject observations based on the order-wise SNR. Compares the SNR
+    """Reject observations based on the order-wise SNR. Compares the SNR
     of the valid orders against the minimum SNR that is provided to this
     object.
 

@@ -6,9 +6,7 @@ from pathlib import Path
 current_folder = Path(__file__).parent.parent.absolute()
 
 # FIle where each line is a disk path of a S2D file! Otherwise, list of files
-input_filepath = (
-    "/home/amiguel/phd/spectra_collection/ESPRESSO/TauCeti/smallest_night.txt"
-)
+input_filepath = "/home/amiguel/phd/spectra_collection/ESPRESSO/TauCeti/smallest_night.txt"
 
 instrument = ESPRESSO
 
@@ -87,23 +85,19 @@ for rv_method in [
         root_folder_path=storage_path,
     )
 
-    ModelTell.Generate_Model(
-        dataClass=data, telluric_configs=telluric_template_genesis_configs
-    )
+    ModelTell.Generate_Model(dataClass=data, telluric_configs=telluric_template_genesis_configs)
 
     data.remove_telluric_features(ModelTell)
 
     from SBART.template_creation.StellarModel import StellarModel
 
-    ModelStell = StellarModel(
-        user_configs=stellar_model_configs, root_folder_path=storage_path
-    )
+    ModelStell = StellarModel(user_configs=stellar_model_configs, root_folder_path=storage_path)
 
     from SBART.utils.spectral_conditions import FNAME_condition, KEYWORD_condition
 
-    StellarTemplateConditions = FNAME_condition(
-        ["r.ESPRE.2019-04-25T00:27:44.066_S2D_A.fits"]
-    ) + KEYWORD_condition("airmass", [[0, 1.5]])
+    StellarTemplateConditions = FNAME_condition(["r.ESPRE.2019-04-25T00:27:44.066_S2D_A.fits"]) + KEYWORD_condition(
+        "airmass", [[0, 1.5]]
+    )
 
     ModelStell.Generate_Model(data, stellar_template_genesis_configs, StellarTemplateConditions)
 

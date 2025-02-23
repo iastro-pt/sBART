@@ -2,8 +2,7 @@ from functools import wraps
 
 
 def validator(func):  # pylint: disable=no-self-argument
-    """
-    Used to validate the error flag before running a function.
+    """Used to validate the error flag before running a function.
     Decorator used inside this class
 
     Returns
@@ -21,12 +20,12 @@ def validator(func):  # pylint: disable=no-self-argument
 
 
 def argument_checker(func):  # pylint: disable=no-self-argument
-    """
-    Used to validate the error flag before running a function.
+    """Used to validate the error flag before running a function.
     Decorator used inside this class
 
 
     TODO: understand why this exists and if I am using this... .
+
     Returns
     -------
 

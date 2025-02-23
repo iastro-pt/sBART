@@ -215,17 +215,13 @@ for rv_method in ["classical", "Laplace"]:
         root_folder_path=storage_path,
     )
 
-    ModelTell.Generate_Model(
-        dataClass=data, telluric_configs=telluric_template_genesis_configs
-    )
+    ModelTell.Generate_Model(dataClass=data, telluric_configs=telluric_template_genesis_configs)
 
     data.remove_telluric_features(ModelTell)
 
     from SBART.template_creation.StellarModel import StellarModel
 
-    ModelStell = StellarModel(
-        user_configs=stellar_model_configs, root_folder_path=storage_path
-    )
+    ModelStell = StellarModel(user_configs=stellar_model_configs, root_folder_path=storage_path)
 
     from SBART.utils.spectral_conditions import FNAME_condition, KEYWORD_condition
 

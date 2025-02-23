@@ -1,5 +1,4 @@
-"""
-Base interfaces for the different SBART building blocks.
+"""Base interfaces for the different SBART building blocks.
 
 """
 

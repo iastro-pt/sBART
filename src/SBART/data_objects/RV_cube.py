@@ -1,23 +1,27 @@
 import copy
-import ujson as json
 import os
 import time
 import warnings
 from pathlib import Path
-from typing import List, NoReturn, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import ujson as json
 from astropy.io import fits
 from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
-from SBART.utils import custom_exceptions
-from SBART.utils.BASE import BASE
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.DataUnits import available_data_units
+from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.custom_exceptions import InvalidConfiguration, NoDataError
+from SBART.utils.expected_precision_interval import (
+    convert_to_tab,
+    optimize_intervals_over_array,
+)
 from SBART.utils.math_tools.weighted_std import wstd
 from SBART.utils.paths_tools import build_filename
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus, Status
@@ -28,12 +32,10 @@ from SBART.utils.units import (
     meter_second,
 )
 from SBART.utils.work_packages import Package
-from SBART.utils.expected_precision_interval import optimize_intervals_over_array, convert_to_tab
 
 
 class RV_cube(BASE):
-    """
-    The RV cube stores the result of a SBART run of a given sub-Instrument. It is also responsible for:
+    """The RV cube stores the result of a SBART run of a given sub-Instrument. It is also responsible for:
 
     - Provide a way of accessing SBART and /or CCF results
     - Apply RV corrections (drift, SA)
@@ -50,18 +52,17 @@ class RV_cube(BASE):
         has_orderwise_rvs,
         is_SA_corrected: bool,
     ):
-        """
-        It contains:
+        """It contains:
             - the SA correction value (and applies it)
             - THe (single) drift correction (And applies it)
             - The orderwise RVs, errors and Status
             - The final RV and errors (both raw and corrected)
 
-        TODO:
+        Todo:
             - [ ] add check to see if we actually have data in the order-wise arrays!
             - [ ] Implement eniric interface
-        """
 
+        """
         self.is_SA_corrected = is_SA_corrected
         self._associated_subInst = subInst
 
@@ -109,8 +110,11 @@ class RV_cube(BASE):
             "date_folders",
             "bare_filename",
             "CONTRAST",
+            "CONTRAST_ERR",
             "BIS SPAN",
+            "BIS SPAN_ERR",
             "FWHM",
+            "FWHM_ERR",
         ]
         self.time_key = None
         self.cached_info = {key: [] for key in needed_keys}
@@ -136,6 +140,7 @@ class RV_cube(BASE):
         ----------
         other : RV_cube
             [description]
+
         """
         logger.info("RV cube making copy of {}", other.name)
         self.cached_info = other.cached_info
@@ -199,6 +204,7 @@ class RV_cube(BASE):
             [description]
         eniric_precision : [type]
             [description]
+
         """
         for epoch in range(self._RvErrors_orderwise.shape[0]):
             self.eniric_RV_precision.append(eniric_precision[epoch])
@@ -270,6 +276,7 @@ class RV_cube(BASE):
             [description]
         InvalidConfiguration
             [description]
+
         """
         if not self._loaded_inst_info:
             msg = "RV cube did not load the information from the instrument!"
@@ -298,9 +305,7 @@ class RV_cube(BASE):
             corrected_err = []
             for i, raw_rv in enumerate(final_RVs):
                 corrected_rv.append(raw_rv - self.cached_info["drift"][i])
-                corrected_err.append(
-                    np.sqrt(final_RVs_ERR[i] ** 2 + self.cached_info["drift_ERR"][i] ** 2)
-                )
+                corrected_err.append(np.sqrt(final_RVs_ERR[i] ** 2 + self.cached_info["drift_ERR"][i] ** 2))
 
             final_RVs = corrected_rv
             final_RVs_ERR = corrected_err
@@ -349,6 +354,7 @@ class RV_cube(BASE):
         -------
         [type]
             [description]
+
         """
         times, rvs, uncerts = self.get_RV_timeseries(
             which=which,
@@ -399,8 +405,8 @@ class RV_cube(BASE):
         return self.cached_info["DRS_RV"], self.cached_info["DRS_RV_ERR"]
 
     def get_TM_activity_indicator(self, act_name):
-        """
-        Get the DLW measurements if they exist.Otherwise return array of nans
+        """Get the DLW measurements if they exist.Otherwise return array of nans
+
         Parameters
         ----------
         act_name
@@ -411,8 +417,8 @@ class RV_cube(BASE):
             Values
         list
             Uncertainties
-        """
 
+        """
         nan_list = [np.nan for _ in self.frameIDs]
         try:
             unit = self.get_storage_unit("Indicators")
@@ -438,11 +444,9 @@ class RV_cube(BASE):
 
     @property
     def obs_times(self) -> List[float]:
-        """
-        Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
+        """Provides a "time" of observation. Can either be BJD of MJD (depends on which exists. If both exist,
         returns the BJD
         """
-
         if self.time_key is None:
             found_key = False
 
@@ -469,8 +473,13 @@ class RV_cube(BASE):
         return self._Rv_orderwise.shape[1]
 
     @property
+    def N_obs(self) -> int:
+        """Return the total number of observations"""
+        return self._Rv_orderwise.shape[0]
+
+    @property
     def name(self) -> str:
-        return "RV cube from {}".format(self._associated_subInst)
+        return f"RV cube from {self._associated_subInst}"
 
     @property
     def data(self):
@@ -483,10 +492,12 @@ class RV_cube(BASE):
     @property
     def problematic_orders(self) -> set:
         """Get the orders that should be discarded when computing RVs
+
         Returns
         -------
         [type]
             [description]
+
         """
         return self._OrderStatus.common_bad_orders
 
@@ -522,9 +533,7 @@ class RV_cube(BASE):
             "OBJ": [self.cached_info["target"].true_name for _ in self.obs_times],
             "SA": convert_data(self.compute_SA_correction(), kilometer_second, True),
             "DRIFT": convert_data(self.cached_info["drift"], meter_second, True),
-            "DRIFT_ERR": convert_data(
-                self.cached_info["drift_ERR"], meter_second, True
-            ),
+            "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], meter_second, True),
             "full_path": self.cached_info["date_folders"],
             "filename": [os.path.basename(i) for i in self.cached_info["date_folders"]],
             "frameIDs": self.frameIDs,
@@ -542,8 +551,8 @@ class RV_cube(BASE):
             Path to the "base" folder of the outputs
         savefile : bool, optional
             Store to disk if True. By default True
-        """
 
+        """
         rv_table = Table(["Method", "std [m/s]", "wstd [m/s]", "median err [m/s]"])
         rv_table.set_decimal_places(5)
 
@@ -581,7 +590,7 @@ class RV_cube(BASE):
     def export_skip_reasons(self, dataClassProxy) -> None:
         final_path = build_filename(
             self._internalPaths.get_path_to("metrics", as_posix=False),
-            "DataRejectionSummary_{}_{}".format(self._associated_subInst, self._mode),
+            f"DataRejectionSummary_{self._associated_subInst}_{self._mode}",
             "txt",
         )
 
@@ -592,24 +601,20 @@ class RV_cube(BASE):
             file.write("Summary of data rejection:")
 
             file.write(
-                "\n\tRejected {} out of {} available orders:".format(
-                    len(self.problematic_orders), self._RvErrors_orderwise.shape[1]
-                )
+                f"\n\tRejected {len(self.problematic_orders)} out of {self._RvErrors_orderwise.shape[1]} available orders:",
             )
-            file.write("\n\tCommon orders removed:\n{}\n".format(self.problematic_orders))
+            file.write(f"\n\tCommon orders removed:\n{self.problematic_orders}\n")
 
             file.write("\nFrame-Wise analysis:")
             stellar_template = dataClassProxy.get_stellar_template(self._associated_subInst)
             for current_frameID in dataClassProxy.get_frameIDs_from_subInst(
-                self._associated_subInst, include_invalid=True
+                self._associated_subInst, include_invalid=True,
             ):  # self.frameIDs:
                 fpath = dataClassProxy.get_filename_from_frameID(current_frameID)
-                file.write(
-                    f"\n\tFrame {fpath} ({dataClassProxy.get_KW_from_frameID('ISO-DATE', current_frameID)}):\n"
-                )
+                file.write(f"\n\tFrame {fpath} ({dataClassProxy.get_KW_from_frameID('ISO-DATE', current_frameID)}):\n")
                 if not stellar_template.was_loaded:
                     file.write(
-                        f"\n\t\tIn Stellar Template: {stellar_template.check_if_used_frameID(current_frameID)}\n"
+                        f"\n\t\tIn Stellar Template: {stellar_template.check_if_used_frameID(current_frameID)}\n",
                     )
 
                 current_Frame = dataClassProxy.get_frame_by_ID(current_frameID)
@@ -626,7 +631,10 @@ class RV_cube(BASE):
                     )
                 else:
                     # Completelly rejected file -> all info exists on the actual Frame Object
-                    lines, frame_orderskip_reasons = current_Frame.OrderStatus.description(
+                    (
+                        lines,
+                        frame_orderskip_reasons,
+                    ) = current_Frame.OrderStatus.description(
                         indent_level=2,
                         frameID=current_frameID,
                         include_footer=False,
@@ -649,7 +657,7 @@ class RV_cube(BASE):
             ]:
                 file.write(f"\n\t{skip_name}:")
                 for master_key in ["Rejections", "Warnings"]:
-                    file.write("\n\t\t{}:".format(master_key))
+                    file.write(f"\n\t\t{master_key}:")
                     for flag, description in master_dict[master_key].items():
                         file.write(f"\n\t\t\t{flag}:{description}")
 
@@ -686,8 +694,8 @@ class RV_cube(BASE):
         ----------
         storage_path : str
             Main storage path
-        """
 
+        """
         diagnostics_path = self._internalPaths.get_path_to("plots", as_posix=False)
 
         fig, ax = plt.subplots(3, 1, sharex=True)
@@ -785,15 +793,16 @@ class RV_cube(BASE):
                     )
 
                     ax_full[1].plot(
-                        data[self.problematic_orders], marker="o", linestyle="", alpha=0.3
+                        data[self.problematic_orders],
+                        marker="o",
+                        linestyle="",
+                        alpha=0.3,
                     )
                     ax_full[1].plot(valid_orders, marker="x", linestyle="")
 
                     centered_RVs = valid_RVs - np.nanmedian(valid_RVs)
 
-                    ax_part[0].errorbar(
-                        orders, centered_RVs, valid_orders, marker="o", linestyle=""
-                    )
+                    ax_part[0].errorbar(orders, centered_RVs, valid_orders, marker="o", linestyle="")
 
                     ax_part[1].plot(valid_orders, marker="x", linestyle="")
 
@@ -887,12 +896,12 @@ class RV_cube(BASE):
             Avoid creating a header [with the description of each collumn] in the stored file, by default False
         detailed_table : bool, optional
             write a detailed table with all of the information of the different corrections, by default True
-        """
 
+        """
         data_blocks = self.build_datablock()
         final_path = build_filename(
             self._internalPaths.root_storage_path,
-            "RVs_{}_{}".format(self._associated_subInst, self._mode),
+            f"RVs_{self._associated_subInst}_{self._mode}",
             "txt",
         )
 
@@ -913,7 +922,7 @@ class RV_cube(BASE):
 
         final_path = build_filename(
             self._internalPaths.root_storage_path,
-            "{}_{}_{}".format(star_name, self._associated_subInst, self._mode),
+            f"{star_name}_{self._associated_subInst}_{self._mode}",
             "rdb",
         )
         mode = "a" if append else "w"
@@ -945,6 +954,7 @@ class RV_cube(BASE):
 
         Returns:
             Table/None: tabletexifier.Table with the results if everything went well. Otherwise, defaults to a None
+
         """
         precision_array = self._RvErrors_orderwise
         problem_orders = self.problematic_orders
@@ -984,13 +994,13 @@ class RV_cube(BASE):
                 f"Optimal_Intervals_{self._associated_subInst}",
                 fmt="txt",
             )
-
-            for N_interval in [2, 3]:
-                tab = self.run_cromatic_interval_optimization(
-                    N_intervals=N_interval, min_number_orders=10
-                )
-                if tab is not None:
-                    tab.write_to_file(path=storage_path)
+            if self.N_obs < 200:
+                for N_interval in [2, 3]:
+                    tab = self.run_cromatic_interval_optimization(N_intervals=N_interval, min_number_orders=10)
+                    if tab is not None:
+                        tab.write_to_file(path=storage_path)
+            else:
+                logger.warning("More than 200 observations loaded, skipping optimization of order interval")
         except Exception as e:
             logger.critical(f"Generation of optimal intervals failed due to {e}")
 
@@ -1002,7 +1012,7 @@ class RV_cube(BASE):
             unit.trigger_data_storage()
 
         tf = time.time() - t0
-        logger.info("Finished export of {} to disk. Took {:.2f} seconds".format(self.name, tf))
+        logger.info(f"Finished export of {self.name} to disk. Took {tf:.2f} seconds")
 
     def _store_misc_info(self):
         logger.info("Storing misc information")
@@ -1017,9 +1027,7 @@ class RV_cube(BASE):
             "cached_info": {"target": self.cached_info["target"].json_ready},
         }
         data_out["cached_info"]["ISO-DATE"] = self.cached_info["ISO-DATE"]
-        data_out["cached_info"]["date_folders"] = list(
-            [i.as_posix() for i in self.cached_info["date_folders"]]
-        )
+        data_out["cached_info"]["date_folders"] = list([i.as_posix() for i in self.cached_info["date_folders"]])
 
         data_out["has_orderwise_rvs"] = self.has_orderwise_rvs
         with open(storage_path, mode="w") as file:
@@ -1056,7 +1064,11 @@ class RV_cube(BASE):
         orderwiseRvs, orderwiseErrors, _ = self.data
 
         OBS_date, TM_RV, TM_ERR = self.get_RV_timeseries(
-            "SBART", apply_SA_corr=False, apply_drift_corr=False, as_value=True, units=meter_second
+            "SBART",
+            apply_SA_corr=False,
+            apply_drift_corr=False,
+            as_value=True,
+            units=meter_second,
         )
         OBS_date, prev_RV, prev_ERR = self.get_RV_timeseries(
             "DRS",
@@ -1081,15 +1093,9 @@ class RV_cube(BASE):
             "prevSBART_RV_ERR": prev_sbart_ERR,
             "TM_raw": TM_RV,
             "TM_raw_ERR": TM_ERR,
-            "DRIFT": convert_data(
-                self.cached_info["drift"], new_units=meter_second, as_value=True
-            ),
-            "DRIFT_ERR": convert_data(
-                self.cached_info["drift_ERR"], new_units=meter_second, as_value=True
-            ),
-            "SA": convert_data(
-                self.cached_info["SA_correction"], new_units=meter_second, as_value=True
-            ),
+            "DRIFT": convert_data(self.cached_info["drift"], new_units=meter_second, as_value=True),
+            "DRIFT_ERR": convert_data(self.cached_info["drift_ERR"], new_units=meter_second, as_value=True),
+            "SA": convert_data(self.cached_info["SA_correction"], new_units=meter_second, as_value=True),
             "CONTRAST": self.cached_info["CONTRAST"],
             "FWHM": self.cached_info["FWHM"],
             "BIS SPAN": self.cached_info["BIS SPAN"],
@@ -1116,7 +1122,9 @@ class RV_cube(BASE):
         hdu_RVs = fits.ImageHDU(data=orderwiseRvs, header=header, name="ORDERWISE_RV")
         hdu_ERR = fits.ImageHDU(data=orderwiseErrors, header=header, name="ORDERWISE_ERR")
         hdu_mask = fits.ImageHDU(
-            data=self._OrderStatus.as_boolean().astype(int), header=header, name="GOOD_ORDER_MASK"
+            data=self._OrderStatus.as_boolean().astype(int),
+            header=header,
+            name="GOOD_ORDER_MASK",
         )
 
         hdul = fits.HDUList([hdu, hdu_timeseries, hdu_RVs, hdu_ERR, hdu_mask])
@@ -1186,7 +1194,8 @@ class RV_cube(BASE):
             frameIDs=frameIDs,
             instrument_properties=instrument_info,
             has_orderwise_rvs=has_orderwise_rvs,
-            is_SA_corrected=header_info["HIERARCH is_SA_corrected"],
+            # for backwards compatibility:
+            is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
         )
 
         logger.debug("Loading misc Info:")
@@ -1206,9 +1215,7 @@ class RV_cube(BASE):
         for epoch_index, frameID in enumerate(frameIDs):
             for order, order_bool_status in enumerate(good_order_mask[epoch_index]):
                 if order_bool_status != 1:
-                    new_cube._OrderStatus.add_flag_to_order(
-                        order=order, order_flag=ORDER_SKIP, frameID=frameID
-                    )
+                    new_cube._OrderStatus.add_flag_to_order(order=order, order_flag=ORDER_SKIP, frameID=frameID)
 
         logger.debug("Loading timeseries data")
 
@@ -1235,11 +1242,14 @@ class RV_cube(BASE):
 
         try:
             new_cube.cached_info["CONTRAST"] = timeseries_table["CONTRAST"]
+            new_cube.cached_info["CONTRAST_ERR"] = timeseries_table["CONTRAST_ERR"]
             new_cube.cached_info["FWHM"] = timeseries_table["FWHM"]
+            new_cube.cached_info["FWHM_ERR"] = timeseries_table["FWHM_ERR"]
             new_cube.cached_info["BIS SPAN"] = timeseries_table["BIS SPAN"]
+            new_cube.cached_info["BIS SPAN_ERR"] = timeseries_table["BIS SPAN_ERR"]
         except:
             logger.warning(
-                "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version"
+                "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
             )
 
         new_cube.TM_RVs = convert_to_quantity(timeseries_table["TM_raw"])
@@ -1249,18 +1259,14 @@ class RV_cube(BASE):
         if load_full_flag:
             logger.debug("Loading entire information of the Flags")
 
-            new_cube._OrderStatus = OrderStatus.load_from_json(
-                storage_path=detailed_flags_filename.as_posix()
-            )
+            new_cube._OrderStatus = OrderStatus.load_from_json(storage_path=detailed_flags_filename.as_posix())
 
         if load_work_pkgs:
             logger.debug("Loading work packages")
 
             with open(workpackages_filename) as file:
                 work_packages = json.load(file)
-            converted_work_packages = [
-                Package.create_from_json(elem) for elem in work_packages["work_packages"]
-            ]
+            converted_work_packages = [Package.create_from_json(elem) for elem in work_packages["work_packages"]]
             new_cube.update_worker_information(converted_work_packages)
 
         for unit in available_data_units:

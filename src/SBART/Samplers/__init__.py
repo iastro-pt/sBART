@@ -1,5 +1,4 @@
-"""
-.. _SamplerInit:
+""".. _SamplerInit:
 
 Provide, to the RV model, new radial velocities.
 
@@ -21,9 +20,8 @@ follow a common "logic":
 from .chi_squared_sampler import chi_squared_sampler
 from .Laplace_approx import Laplace_approx
 from .MCMC_sampler import MCMC_sampler
-from .WindowSampler import WindowSampler
 from .RV_content_sampler import RVcontent_sampler
-
+from .WindowSampler import WindowSampler
 
 Sampler_map = {
     "chi_squared": chi_squared_sampler,

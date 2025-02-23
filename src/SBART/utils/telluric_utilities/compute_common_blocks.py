@@ -1,6 +1,5 @@
 check_if_overlap = (
-    lambda block_A, block_B: block_B[0] <= block_A[0] <= block_B[1]
-    or block_A[0] <= block_B[0] <= block_A[1]
+    lambda block_A, block_B: block_B[0] <= block_A[0] <= block_B[1] or block_A[0] <= block_B[0] <= block_A[1]
 )
 
 

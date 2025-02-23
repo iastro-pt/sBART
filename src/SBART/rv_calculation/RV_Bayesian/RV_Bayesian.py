@@ -1,14 +1,20 @@
-from typing import List, NoReturn
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
-from SBART.ModelParameters import ModelComponent
 from SBART.data_objects.RV_cube import RV_cube
+from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit
+from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
+from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
+from SBART.utils.custom_exceptions import InvalidConfiguration
+from SBART.utils.math_tools.weighted_mean import weighted_mean
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
+from SBART.utils.status_codes import SUCCESS
+from SBART.utils.units import meter_second
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -16,20 +22,14 @@ from SBART.utils.UserConfigs import (
     UserParam,
     ValueFromList,
 )
-from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit
-from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
-from SBART.utils.custom_exceptions import InvalidConfiguration
-from SBART.utils.status_codes import SUCCESS
-from SBART.utils.units import meter_second
+
 from .target_function import SBART_target
-from SBART.utils.math_tools.weighted_mean import weighted_mean
 
 plt.rcParams.update({"font.size": 16})
 
 
 class RV_Bayesian(RV_routine):
-    """
-    Class that implements the s-BART algorithm. The default user-parameters represent the algorithm that is described in the paper
+    """Class that implements the s-BART algorithm. The default user-parameters represent the algorithm that is described in the paper
 
     .. warning::
         The current implementation of this class makes use of the outputs from :py:class:`~SBART.rv_calculation.rv_stepping.RV_step`
@@ -54,14 +54,10 @@ class RV_Bayesian(RV_routine):
 
     _default_params = RV_routine._default_params + DefaultValues(
         include_jitter=UserParam(False, constraint=BooleanValue),
-        chromatic_trend=UserParam(
-            "none", ValueFromList(("none", "OrderWise"))
-        ),  # This does nothing
+        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))),  # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
         # only used if we compute order-wise RVs
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        ),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
         PLOT_MODEL_MISSPECIFICATION=UserParam(True, constraint=BooleanValue),
     )
     # Bayesian only accepts linear fit to continuum
@@ -76,9 +72,8 @@ class RV_Bayesian(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
-        Parameters
-        ----------------
+        """Parameters
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -88,17 +83,19 @@ class RV_Bayesian(RV_routine):
             avoid all error propagation (i.e. return zeros)
         compare_metadata: boolean
             If there is a previous result of ROAST compare to see if the input data and ROAST version is the same. If it is, then the computation is halted
+
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
+
         """
         super().__init__(
             N_jobs=processes,
             RV_configs=RV_configs,
             sampler=sampler,
             target=SBART_target,
-            valid_samplers=["Laplace", "MCMC"],
+            valid_samplers=["Laplace", "MCMC", "Window"],
         )
 
         if self._internal_configs["include_jitter"]:
@@ -120,9 +117,7 @@ class RV_Bayesian(RV_routine):
                 # degree N polynomial -> N parameters since we don't want the constant term
                 # Assume that it will be small (and ideally don't exist)
                 param_name = f"trend::{k}"
-                self.sampler.add_extra_param(
-                    ModelComponent(param_name, initial_guess=0, bounds=(None, None))
-                )
+                self.sampler.add_extra_param(ModelComponent(param_name, initial_guess=0, bounds=(None, None)))
                 self.sampler.enable_param(param_name)
                 raise NotImplementedError("Chromatic trend is currently unavailable")
 
@@ -140,7 +135,7 @@ class RV_Bayesian(RV_routine):
     ) -> None:
         if not isinstance(orders_to_skip, str):
             logger.critical(
-                "{} can only use the orders that were skipped by the \chi^2 methodology.",
+                r"{} can only use the orders that were skipped by the \chi^2 methodology.",
                 self.name,
             )
             raise InvalidConfiguration
@@ -157,7 +152,7 @@ class RV_Bayesian(RV_routine):
             logger.exception("No data to process after checking metadata")
         except custom_exceptions.StopComputationError:
             logger.exception("Computation was halted")
-        except Exception as e:
+        except Exception:
             logger.opt(exception=True).critical("Found unknown error")
 
     def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
@@ -175,6 +170,7 @@ class RV_Bayesian(RV_routine):
         -------
         RV_cube
             RV cube filled with all of the information
+
         """
         if self._internal_configs["RV_extraction"] == "order-wise":
             cube = self._orderwise_processment(empty_cube, worker_outputs)
@@ -205,6 +201,7 @@ class RV_Bayesian(RV_routine):
         -------
         RV_cube
             [description]
+
         """
         for pkg in worker_outputs:
             for order_pkg in pkg:
@@ -223,9 +220,7 @@ class RV_Bayesian(RV_routine):
                 )
 
         empty_cube.update_worker_information(worker_outputs)
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]
@@ -234,7 +229,6 @@ class RV_Bayesian(RV_routine):
         return empty_cube
 
     def _epochwise_processment(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
-
         data_unit_act = ActIndicators_Unit(
             available_inds=["DLW"],
             tot_number_orders=empty_cube.N_orders,
@@ -253,7 +247,7 @@ class RV_Bayesian(RV_routine):
                 uncert = epoch_pkg["RV_uncertainty"]
 
                 empty_cube.store_final_RV(frameID, RV, uncert)
-                
+
                 if order_status.is_good_flag:
                     for order, dlw, err in zip(
                         epoch_pkg["order"],
@@ -267,7 +261,6 @@ class RV_Bayesian(RV_routine):
                             ind_value=dlw,
                             ind_err=err,
                         )
-     
 
         # Compute the combined DLW value
         ind, errs = data_unit_act.get_all_orderwise_indicator("DLW")
@@ -281,7 +274,7 @@ class RV_Bayesian(RV_routine):
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
             )
 
         empty_cube.add_extra_storage_unit(data_unit_act)
@@ -321,9 +314,7 @@ class RV_Bayesian(RV_routine):
                     for entry in package["FluxModel_misspecification_from_order"]:
                         full_model_misspec.extend(entry)
 
-                OrderOutliers = np.where(
-                    np.abs(full_model_misspec) > 2
-                )  # differences larger than 2 sigma
+                OrderOutliers = np.where(np.abs(full_model_misspec) > 2)  # differences larger than 2 sigma
                 all_metric__values.extend(full_model_misspec)
 
                 epoch_metric[package["frameID"]]["number_outliers"] = len(OrderOutliers[0])
@@ -337,9 +328,7 @@ class RV_Bayesian(RV_routine):
                 total_valid += epoch_metric[package["frameID"]]["valid_points"]
 
         logger.info(
-            "Outlier [> 2 sigma] percentage : {:.4f} [{}/{} pixels]".format(
-                100 * total_outliers / total_valid, total_outliers, total_valid
-            )
+            f"Outlier [> 2 sigma] percentage : {100 * total_outliers / total_valid:.4f} [{total_outliers}/{total_valid} pixels]",
         )
 
         if self._internal_configs["PLOT_MODEL_MISSPECIFICATION"]:
@@ -355,7 +344,12 @@ class RV_Bayesian(RV_routine):
             plt.xlabel("Sigma distance to model (template)")
             plt.ylabel("Density of pixels")
             [
-                plt.axvline(i, color="red", linestyle="--", label=r"2$\sigma$" if i == -2 else None)
+                plt.axvline(
+                    i,
+                    color="red",
+                    linestyle="--",
+                    label=r"2$\sigma$" if i == -2 else None,
+                )
                 for i in [-2, 2]
             ]
             [
@@ -387,8 +381,7 @@ class RV_Bayesian(RV_routine):
             logger.warning("Skipping the plot of the model missspecification")
 
     def calculate_rvs(self, output):
-        """
-        Store the final RV as computed by the Bayesian method
+        """Store the final RV as computed by the Bayesian method
         """
         # TODO: re-work this function!
         for epoch, data in enumerate(output):

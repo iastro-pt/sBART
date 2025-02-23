@@ -1,5 +1,4 @@
-"""
-Handles the creation of the stellar models
+"""Handles the creation of the stellar models
 """
 
 from pathlib import Path
@@ -21,13 +20,13 @@ from SBART.utils.UserConfigs import (
     ValueFromList,
 )
 
+from .stellar_templates.median_stellar import MedianStellar
 from .stellar_templates.OBS_stellar import OBS_Stellar
 from .stellar_templates.sum_stellar import SumStellar
 
 
 class StellarModel(TemplateFramework):
-    """
-    The StellarModel is responsible for the creation of the stellar template for each sub-Instrument, allowing the user to apply
+    """The StellarModel is responsible for the creation of the stellar template for each sub-Instrument, allowing the user to apply
     :py:mod:`~SBART.utils.spectral_conditions` to select the observations that will be in use for this process.
 
     This object supports the following user parameters:
@@ -55,7 +54,7 @@ class StellarModel(TemplateFramework):
 
     model_type = "Stellar"
 
-    template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar}
+    template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar, "Median": MedianStellar}
 
     _default_params = TemplateFramework._default_params + DefaultValues(
         CREATION_MODE=UserParam("Sum", constraint=ValueFromList(list(template_map.keys()))),
@@ -65,8 +64,7 @@ class StellarModel(TemplateFramework):
     )
 
     def __init__(self, root_folder_path: UI_PATH, user_configs: Optional[UI_DICT] = None):
-        """
-        Instantiation of the object:
+        """Instantiation of the object:
 
         Parameters
         ----------
@@ -74,6 +72,7 @@ class StellarModel(TemplateFramework):
             Path to the folder inside which SBART will store its outputs
         user_configs: Optional[Dict[str, Any]]
             Dictionary with the keys and values of the user parameters that have been described above
+
         """
         super().__init__(mode="", root_folder_path=root_folder_path, user_configs=user_configs)
 
@@ -89,8 +88,7 @@ class StellarModel(TemplateFramework):
         force_computation: bool = False,
         store_templates=True,
     ) -> None:
-        """
-        Apply the spectral conditions to decide which observations to use. Then, returns to the model generation as defined in the parent implementation.
+        """Apply the spectral conditions to decide which observations to use. Then, returns to the model generation as defined in the parent implementation.
 
         Parameters
         ----------
@@ -108,11 +106,10 @@ class StellarModel(TemplateFramework):
             If True [default], store the templates to disk
 
         Notes
-        -------
-
+        -----
         * The conditions that are passed to the StellarModel are **only** used for the creation of the stellar template. This will **not** reject observations from the RV extraction
-        """
 
+        """
         if conditions is not None:
             logger.info("Applying conditions to creation of stellar template")
             self._creation_conditions = conditions
@@ -141,17 +138,13 @@ class StellarModel(TemplateFramework):
                         continue
                     self.iteration_number = iter_number
 
-                    self.RV_source = Path(
-                        self._internal_configs["PREVIOUS_SBART_PATH"]
-                    ).parent.stem
+                    self.RV_source = Path(self._internal_configs["PREVIOUS_SBART_PATH"]).parent.stem
                     break
                 else:
                     msg = "Couldn't find iteration number from user-provided previous sbart path"
                     logger.critical(msg)
                     raise custom_exceptions.InvalidConfiguration(msg)
-                logger.info(
-                    f"Found data from previous sBART runs, starting Iteration {iter_number}"
-                )
+                logger.info(f"Found data from previous sBART runs, starting Iteration {iter_number}")
 
                 dataClass.load_previous_SBART_results(
                     self._internal_configs["PREVIOUS_SBART_PATH"],
@@ -160,9 +153,7 @@ class StellarModel(TemplateFramework):
 
             except custom_exceptions.InvalidConfiguration as e:
                 self.add_to_status(INTERNAL_ERROR)
-                logger.exception(
-                    "SBART RV loading routine failed. Stopping template creation"
-                )
+                logger.exception("SBART RV loading routine failed. Stopping template creation")
                 raise e
         else:
             logger.info("Using CCF RVs as the basis for the creation of the stellar models")
@@ -191,23 +182,19 @@ class StellarModel(TemplateFramework):
             temp.set_interpolation_properties(new_properties)
 
     def get_interpol_modes(self) -> Set[str]:
-        return set((temp.interpol_mode for temp in self.templates.values()))
+        return set(temp.interpol_mode for temp in self.templates.values())
 
     def _compute_template(self, data, subInstrument: str, user_configs: dict):
         chosen_template = self.template_map[self._internal_configs["CREATION_MODE"]]
         key = "ALIGNEMENT_RV_SOURCE"
         if key in user_configs:
-            logger.warning(
-                f"Key <{key}> from Stellar Model over-riding the one from the template configs"
-            )
+            logger.warning(f"Key <{key}> from Stellar Model over-riding the one from the template configs")
         user_configs[key] = self._internal_configs[key]
         stellar_template = chosen_template(subInst=subInstrument, user_configs=user_configs)
 
         try:
-            stellar_template.create_stellar_template(
-                dataClass=data, conditions=self._creation_conditions
-            )
-        except NoDataError as exc:
+            stellar_template.create_stellar_template(dataClass=data, conditions=self._creation_conditions)
+        except NoDataError:
             logger.info(
                 "{} has no available data. The template will be created as an array of zeros",
                 subInstrument,
@@ -233,11 +220,11 @@ class StellarModel(TemplateFramework):
     def load_templates_from_disk(self) -> None:
         """Currently we only have one type of stellar template -> no need for the user to specify it
 
-
         Parameters
         ----------
         path : str
             [description]
+
         """
         super().load_templates_from_disk()
 

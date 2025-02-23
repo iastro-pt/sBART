@@ -1,8 +1,7 @@
+from pathlib import Path
 from typing import NoReturn
 
 import ujson as json
-from pathlib import Path
-
 from loguru import logger
 from matplotlib import pyplot as plt
 
@@ -17,9 +16,9 @@ class Classical_Unit(UnitModel):
     _name = UnitModel._name + _content_name
 
     def __init__(self):
-        """
-        Parameters
+        """Parameters
         ----------
+
         """
         super().__init__(0, 0)
 
@@ -38,22 +37,20 @@ class Classical_Unit(UnitModel):
     def get_ChiSquared_frameID_information(self, frameID: int) -> dict:
         try:
             return self.chi_squared_profile[frameID]
-        except KeyError as exc:
+        except KeyError:
             raise custom_exceptions.NoDataError(f"There is no information from {frameID=}")
 
     def get_ChiSquared_order_information(self, frameID, order):
         try:
             return self.get_ChiSquared_frameID_information(frameID)[order]
-        except KeyError as exc:
+        except KeyError:
             raise custom_exceptions.NoDataError(f"There is no information order {order=}")
 
     def plot_ChiSquared(self, frameID, order, show_plot=True):
         if frameID == "all":
             frames = list(self.chi_squared_profile.keys())
             if len(frames) == 0:
-                raise custom_exceptions.NoDataError(
-                    "There is no chi squared value stored in this dataUnit"
-                )
+                raise custom_exceptions.NoDataError("There is no chi squared value stored in this dataUnit")
         else:
             frames = [frameID]
 
@@ -73,8 +70,7 @@ class Classical_Unit(UnitModel):
         if show_plot:
             plt.show()
             return None, None
-        else:
-            return fig, axis
+        return fig, axis
 
     ###
     # Disk IO operations
@@ -82,7 +78,7 @@ class Classical_Unit(UnitModel):
     def get_storage_filename(self):
         return build_filename(
             og_path=self._internalPaths.root_storage_path,
-            filename=f"RV_step_chi_squared_eval",
+            filename="RV_step_chi_squared_eval",
             fmt="json",
         )
 
@@ -100,12 +96,13 @@ class Classical_Unit(UnitModel):
 
     @classmethod
     def load_from_disk(cls, rv_cube_fpath: Path):
-        """
-        Parameters
+        """Parameters
         ----------
         rv_cube_fpath: path to the RV cube folder. Internally append the folder name from the corresponding data unit
+
         Returns
         -------
+
         """
         super().load_from_disk(rv_cube_fpath)
         new_unit = Classical_Unit()

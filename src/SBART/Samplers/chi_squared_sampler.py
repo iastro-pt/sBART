@@ -1,23 +1,21 @@
-"""
-Chi-squared minimization, for a classical template matching approach.
+"""Chi-squared minimization, for a classical template matching approach.
 """
 
-from typing import Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from loguru import logger
 from scipy.optimize import minimize_scalar
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
-from SBART.utils.UserConfigs import ValueFromList, UserParam, DefaultValues
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
 from SBART.utils.work_packages import Package
 
 
 class chi_squared_sampler(SamplerModel):
-    """
-    The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
+    """The Chi-squared sampler implements a bounded minimization of a chi-squared curve.
 
     This metric is defined in the RV_step worker. After finding the optimal value, fit a parabola to estimate the
     true minimum value and the RV that would be associated with it. It also uses the curvature of the chi squared
@@ -27,15 +25,11 @@ class chi_squared_sampler(SamplerModel):
 
     _name = "chi_squared"
     _default_params = SamplerModel._default_params + DefaultValues(
-        RV_ESTIMATION_MODE=UserParam(
-            "NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False
-        )
+        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False),
     )
 
     def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
-        """
-
-        Parameters
+        """Parameters
         ----------
         rv_step: RV_measurement
             Step to use when computing the numerical derivatives of the metric function (for the parabolic fit)
@@ -44,12 +38,14 @@ class chi_squared_sampler(SamplerModel):
 
         """
         super().__init__(
-            mode="order-wise", RV_step=rv_step, RV_window=rv_prior, user_configs=user_configs
+            mode="order-wise",
+            RV_step=rv_step,
+            RV_window=rv_prior,
+            user_configs=user_configs,
         )
 
     def optimize_orderwise(self, target, target_kwargs: dict) -> Tuple[Package, Flag]:
-        """
-        Compute the RV for an entire order, followed by a parabolic fit to estimate
+        """Compute the RV for an entire order, followed by a parabolic fit to estimate
         uncertainty and better adjust chosen RV
 
         Parameters
@@ -66,10 +62,11 @@ class chi_squared_sampler(SamplerModel):
         -------
         [type]
             [description]
+
         """
         out_pkg = Package(("RV", "RV_uncertainty"))
         init_guess, rv_bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["current_frameID"], rv_units=meter_second
+            frameID=target_kwargs["current_frameID"], rv_units=meter_second,
         )
         apply_parabolic_fit = False
         rv_step = self.RV_step.to(meter_second).value
@@ -90,9 +87,7 @@ class chi_squared_sampler(SamplerModel):
                 minimum_value = optimization_output.x
                 order_status = SUCCESS
 
-                local_rvs = np.arange(
-                    minimum_value - 5 * rv_step, minimum_value + 5.1 * rv_step, rv_step
-                )
+                local_rvs = np.arange(minimum_value - 5 * rv_step, minimum_value + 5.1 * rv_step, rv_step)
                 if local_rvs[0] < rv_bounds[0][0] or local_rvs[-1] > rv_bounds[0][1]:
                     bad_order = True
                     msg = "Optimal RV less than 5 RV_step away from the edges of the window"
@@ -105,16 +100,12 @@ class chi_squared_sampler(SamplerModel):
         elif RV_estimation_mode == "DRS-LIKE":
             local_rvs = np.arange(rv_bounds[0][0], rv_bounds[0][1], rv_step)
 
-            local_curve = list(
-                map(lambda x: self.apply_orderwise(x, target, target_kwargs), local_rvs)
-            )
+            local_curve = list(map(lambda x: self.apply_orderwise(x, target, target_kwargs), local_rvs))
             apply_parabolic_fit = True
             order_status = SUCCESS
 
         else:
-            raise NotImplementedError(
-                f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}"
-            )
+            raise NotImplementedError(f"{self.name} does not implement a RV_ESTIMATION_MODE of {RV_estimation_mode}")
 
         if apply_parabolic_fit:
             try:
@@ -146,7 +137,10 @@ class chi_squared_sampler(SamplerModel):
         else:
             new_target_kwargs = {
                 **target_kwargs,
-                **{"get_minimum_information": True, "SAVE_DISK_SPACE": self.disk_save_enabled},
+
+                    "get_minimum_information": True,
+                    "SAVE_DISK_SPACE": self.disk_save_enabled
+                ,
             }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
@@ -162,17 +156,14 @@ class chi_squared_sampler(SamplerModel):
         return out_pkg, order_status
 
     def _apply_parabolic_fit(self, rvs, chi_squared, rv_step):
-        """
-        Apply the parabolic fit to the chi-square curve to estimate RV and error
+        """Apply the parabolic fit to the chi-square curve to estimate RV and error
         """
         index = np.argmin(chi_squared)
         if len(chi_squared) == 3 and index != 1:
-            raise Exception(
-                f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}"
-            )
+            raise Exception(f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}")
 
         if index - 1 < 0:
-            raise IndexError()
+            raise IndexError
 
         # If we have an index error, the caller will handle it!
         rv_minimum = rvs[index]
@@ -181,14 +172,8 @@ class chi_squared_sampler(SamplerModel):
             chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]
         )
 
-        rv_err = (
-            2
-            * (rv_step**2)
-            / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
-        )
+        rv_err = 2 * (rv_step**2) / (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1])
 
-        a = (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]) / (
-            2 * rv_step**2
-        )
+        a = (chi_squared[index - 1] - 2 * chi_squared[index] + chi_squared[index + 1]) / (2 * rv_step**2)
         b = (chi_squared[index + 1] - chi_squared[index - 1]) / (2 * rv_step)
         return rv, np.sqrt(rv_err), a, b

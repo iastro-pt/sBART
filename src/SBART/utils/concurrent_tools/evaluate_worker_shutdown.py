@@ -16,6 +16,7 @@ def evaluate_shutdown(queue: Queue) -> Tuple[int, int]:
     -------
     Tuple[int, int]
         Goog, bad shutdowns
+
     """
     good_shutdown = 0
     bad_shutdown = 0

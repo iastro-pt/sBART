@@ -1,25 +1,26 @@
-from typing import List, Union, Iterable
+from typing import Iterable, List, Union
+
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
+from SBART.DataUnits import RV_Precision_Unit
 from SBART.utils import custom_exceptions, meter_second
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
+from SBART.utils.types import UI_PATH
 from SBART.utils.UserConfigs import (
+    BooleanValue,
     DefaultValues,
+    PathValue,
     UserParam,
     ValueFromList,
-    PathValue,
-    BooleanValue,
 )
-from SBART.DataUnits import RV_Precision_Unit
-from SBART.utils.types import UI_PATH
+
 from .target_function import target
 
 
 class RV_precision(RV_routine):
-    """
-    Compute the order-wise expected precision, based on the Bouchy et al 2001 paper
+    """Compute the order-wise expected precision, based on the Bouchy et al 2001 paper
 
     Only allows to use the following samplers:
 
@@ -43,9 +44,7 @@ class RV_precision(RV_routine):
     _name = "RV_precision"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        ),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
         RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam(default_value=None, constraint=PathValue),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),
@@ -56,9 +55,8 @@ class RV_precision(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
-        Parameters
-        ----------------
+        """Parameters
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -69,11 +67,11 @@ class RV_precision(RV_routine):
             One of the :py:mod:`~SBART.Samplers` that is accepted by this routine.
 
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
-        """
 
+        """
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
             RV_configs_copy["order_removal_mode"] = "per_subInstrument"
@@ -98,16 +96,19 @@ class RV_precision(RV_routine):
         if self._internal_configs["RV_SOURCE"] == "SBART":
             logger.info("Triggering load of the previous SBART results")
             if self._internal_configs["PREVIOUS_SBART_PATH"] is None:
-                raise custom_exceptions.InvalidConfiguration(
-                    "Can't use the SBART RV source without providing path"
-                )
+                raise custom_exceptions.InvalidConfiguration("Can't use the SBART RV source without providing path")
             dataClass.load_previous_SBART_results(
                 self._internal_configs["PREVIOUS_SBART_PATH"],
                 use_merged_cube=self._internal_configs["USE_MERGED_RVS"],
             )
 
         super().run_routine(
-            dataClass, storage_path, orders_to_skip, store_data, check_metadata, store_cube_to_disk
+            dataClass,
+            storage_path,
+            orders_to_skip,
+            store_data,
+            check_metadata,
+            store_cube_to_disk,
         )
 
     def process_workers_output(self, empty_cube: RV_cube, worker_outputs: List[list]) -> RV_cube:
@@ -136,9 +137,7 @@ class RV_precision(RV_routine):
 
         empty_cube.update_worker_information(worker_outputs)
 
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]

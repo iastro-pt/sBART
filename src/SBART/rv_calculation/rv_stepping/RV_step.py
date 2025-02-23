@@ -4,22 +4,20 @@ import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
-from SBART.DataUnits import Classical_Unit
 from SBART.data_objects.RV_cube import RV_cube
+from SBART.DataUnits import Classical_Unit
 from SBART.utils import custom_exceptions, meter_second
+from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.utils.custom_exceptions import BadTemplateError
-from SBART.DataUnits import RV_Precision_Unit
-from .target_function import target
+
 from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit
 from ...utils.math_tools.weighted_mean import weighted_mean
-from SBART.utils.expected_precision_interval import RVprecUnit_optimization
+from .target_function import target
 
 
 class RV_step(RV_routine):
-    """
-    Classical template matching approach.
+    """Classical template matching approach.
 
     When computing RVs, it automatically uses both "modes" of the *order_removal_mode* user-parameter. This introduces no extra computational cost,
     as it is simply a change in which orders we use for the computation of the weighted mean.
@@ -49,9 +47,7 @@ class RV_step(RV_routine):
     _name = "RV_step"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam(
-            "simple", constraint=ValueFromList(("simple", "with_correction"))
-        )
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
     )
     _default_params.update(
         "CONTINUUM_FIT_TYPE",
@@ -59,9 +55,10 @@ class RV_step(RV_routine):
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
-        """
+        """Main class for RV_step RV extraction
+
         Parameters
-        ----------------
+        ----------
         processes: int
             Total number of cores
         sub_processes: int
@@ -72,11 +69,11 @@ class RV_step(RV_routine):
             One of the :py:mod:`~SBART.Samplers` that is accepted by this routine.
 
         Notes
-        ---------
+        -----
         The configuration of processes/subprocesses is different from the one used to create the stellar template. This can allow for a
         greater control of the CPU burden
-        """
 
+        """
         # TODO: careful, make this pretty!
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
@@ -112,7 +109,7 @@ class RV_step(RV_routine):
             logger.opt(exception=True).info("No data to process after checking metadata")
             return
 
-        except Exception as e:
+        except Exception:
             logger.opt(exception=True).critical("Found unknown error")
             return
 
@@ -124,9 +121,7 @@ class RV_step(RV_routine):
             return
 
         if len(valid_subInst) == 1:
-            logger.debug(
-                "No real need to compute the merged set of valid orders when there is only 1 valid subINst"
-            )
+            logger.debug("No real need to compute the merged set of valid orders when there is only 1 valid subINst")
 
         stellar_model = dataClass.get_stellar_model()
 
@@ -161,9 +156,7 @@ class RV_step(RV_routine):
             cube.load_data_from(original_cube)
             cube.set_merged_mode(list(problem_orders))
 
-            final_rv, final_error = orderwise_combination(
-                cube, self._internal_configs["RV_variance_estimator"]
-            )
+            final_rv, final_error = orderwise_combination(cube, self._internal_configs["RV_variance_estimator"])
             final_rv = [i * meter_second for i in final_rv]
             final_error = [i * meter_second for i in final_error]
             cube.update_computed_RVS(final_rv, final_error)
@@ -183,11 +176,16 @@ class RV_step(RV_routine):
             errs[:, problematic_orders] = np.nan
 
             squared_errors = errs**2
-            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+
+            try:
+                final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+            except:
+                final_ind = [np.nan for _ in final_rv]
+                ind_error = [np.nan for _ in final_rv]
 
             for index, frameID in enumerate(cube.frameIDs):
                 data_unit_act.store_combined_indicators(
-                    frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                    frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
                 )
 
             cube.add_extra_storage_unit(data_unit_act)
@@ -242,9 +240,7 @@ class RV_step(RV_routine):
                     )
         empty_cube.update_worker_information(worker_outputs)
 
-        final_rv, final_error = orderwise_combination(
-            empty_cube, self._internal_configs["RV_variance_estimator"]
-        )
+        final_rv, final_error = orderwise_combination(empty_cube, self._internal_configs["RV_variance_estimator"])
 
         final_rv = [i * meter_second for i in final_rv]
         final_error = [i * meter_second for i in final_error]
@@ -257,11 +253,15 @@ class RV_step(RV_routine):
         errs[:, problematic_orders] = np.nan
 
         squared_errors = errs**2
-        final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+        try:
+            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+        except:
+            final_ind = [np.nan for _ in final_rv]
+            ind_error = [np.nan for _ in final_rv]
 
         for index, frameID in enumerate(empty_cube.frameIDs):
             data_unit_act.store_combined_indicators(
-                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index]
+                frameID, "DLW", ind_value=final_ind[index], ind_err=ind_error[index],
             )
 
         logger.info("Computing optimal precision bins for cromatic division")

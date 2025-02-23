@@ -2,8 +2,7 @@ import numpy as np
 
 
 def first_numerical_derivative(wavelengths, flux, uncertainties):
-    """
-    Computing the numerical first derivative using the np.gradient prescription:
+    """Computing the numerical first derivative using the np.gradient prescription:
     https://numpy.org/doc/stable/reference/generated/numpy.gradient.html
 
     Parameters
@@ -37,11 +36,7 @@ def first_numerical_derivative(wavelengths, flux, uncertainties):
 
             norm_const = H_front * H_back * (H_front + H_back)
 
-            val = (
-                H_back**2 * flux[index + 1]
-                + (H_front**2 - H_back**2) * flux[index]
-                - H_front**2 * flux[index - 1]
-            )
+            val = H_back**2 * flux[index + 1] + (H_front**2 - H_back**2) * flux[index] - H_front**2 * flux[index - 1]
             val = val / norm_const
 
             prop_err = (
@@ -60,8 +55,7 @@ def first_numerical_derivative(wavelengths, flux, uncertainties):
 
 
 def compute_non_uni_step_first_derivative(wavelengths, flux, uncertainties):
-    """
-    Compute the numerical first derivative for a grid of non-constant step sizes
+    """Compute the numerical first derivative for a grid of non-constant step sizes
 
     Derivative and uncertainty are computed with the framework of
     https://www.tandfonline.com/doi/pdf/10.3402/tellusa.v22i1.10155?needAccess=true
@@ -74,15 +68,15 @@ def compute_non_uni_step_first_derivative(wavelengths, flux, uncertainties):
         step_ratio = steps[index] / steps[index - 1]
         deriva.append(
             (flux[index + 1] - flux[index - 1] * step_ratio**2 - (1 - step_ratio**2) * flux[index])
-            / (steps[index] * (1 + step_ratio))
+            / (steps[index] * (1 + step_ratio)),
         )
         error_deriva.append(
             np.sqrt(
                 uncertainties[index + 1] ** 2
                 + (uncertainties[index - 1] * step_ratio**2) ** 2
-                + (uncertainties[index] - uncertainties[index] * step_ratio**2) ** 2
+                + (uncertainties[index] - uncertainties[index] * step_ratio**2) ** 2,
             )
-            / (steps[index] * (1 + step_ratio))
+            / (steps[index] * (1 + step_ratio)),
         )
 
     deriva = np.asarray(deriva)

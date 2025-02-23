@@ -11,8 +11,7 @@ from SBART.utils.units import kilometer_second
 
 class Indicators:
     def __init__(self):
-        """
-        Features - air wavelength, < lower, higher > lower and higher in angstrom
+        """Features - air wavelength, < lower, higher > lower and higher in angstrom
 
         The feature list uses air wavelengths! When comparing with the spectra the
         indicator_window property automatically converts to vacuum wavelengths!!!!
@@ -62,6 +61,7 @@ class Indicators:
             [description]
         Exception
             [description]
+
         """
         if name in self.air_features:
             raise Exception("Keyword already in use")
@@ -73,7 +73,7 @@ class Indicators:
             raise Exception("Wrong format for the window")
 
         if name in self.air_features or name in self.vacuum_features:
-            raise Exception("Feature {} already exists".format(name))
+            raise Exception(f"Feature {name} already exists")
 
         if vacuum_wavelengths:
             self.vacuum_features[name] = region
@@ -89,8 +89,7 @@ class Indicators:
         self._blocked_features = []
 
     def disabled_indicator(self, features: list) -> None:
-        """
-        Receive a list of names that will **not** be removed from the observations
+        """Receive a list of names that will **not** be removed from the observations
         """
         self._blocked_features.extend(features)
 
@@ -128,9 +127,7 @@ class Indicators:
                 tmp.append(central_wave + side)
 
         if len(lines) == 0:
-            logger.warning(
-                "No activity-related features are enabled. Removing nothing from the spectra"
-            )
+            logger.warning("No activity-related features are enabled. Removing nothing from the spectra")
         return lines, out
 
     def get_line_information(self, feature_name, vacuum_wavelength=False):

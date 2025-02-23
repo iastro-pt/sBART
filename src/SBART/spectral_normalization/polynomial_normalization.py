@@ -1,16 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
-from SBART.utils import custom_exceptions
-from loguru import logger
-
 from SBART.spectral_normalization.normalization_base import NormalizationBase
+from SBART.utils import custom_exceptions
 from SBART.utils.UserConfigs import DefaultValues
 
 
 class Polynomial_normalization(NormalizationBase):
-    """
-    Order by order fit (inverse variance weights) of the blaze-corrected S2D spectra using a first degree polynomial. This does
+    """Order by order fit (inverse variance weights) of the blaze-corrected S2D spectra using a first degree polynomial. This does
     not iterate multiple times to remove outliers, leading to a **very** sub-optimal continuum model!
 
     Name of the normalizer: Poly-Norm
@@ -44,9 +40,10 @@ class Polynomial_normalization(NormalizationBase):
         out = np.polyfit(x=wavelengths, y=flux, deg=1, w=1 / uncertainties**2)
 
         optim_result = {"param_vector": out}
-        return *self._apply_orderwise_normalization(
-            wavelengths, flux, uncertainties, param_vector=out
-        ), optim_result
+        return (
+            *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, param_vector=out),
+            optim_result,
+        )
 
     def _apply_orderwise_normalization(self, wavelengths, flux, uncertainties, **kwargs):
         super()._apply_orderwise_normalization(wavelengths, flux, uncertainties, **kwargs)
@@ -65,5 +62,5 @@ class Polynomial_normalization(NormalizationBase):
         for key, value in keys.items():
             if not self._spec_info[key]:
                 raise custom_exceptions.InvalidConfiguration(
-                    f"{self.name} can't normalize spectra that was not {value}"
+                    f"{self.name} can't normalize spectra that was not {value}",
                 )

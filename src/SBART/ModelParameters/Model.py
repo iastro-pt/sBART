@@ -1,8 +1,7 @@
-import ujson as json
 from pathlib import Path
-
 from typing import Dict, List, NoReturn, Tuple, Union
 
+import ujson as json
 from loguru import logger
 
 from SBART.utils import custom_exceptions
@@ -35,8 +34,7 @@ class Model:
         self.components.append(new_param)
 
     def generate_optimizer_inputs(self, frameID, rv_units) -> Tuple[List, List]:
-        """
-        Generate the information needed for the optimization:
+        """Generate the information needed for the optimization:
             - list with the initial guesses
             - list with the bounds of each parameter (for bounded optimization). The format is:
                 [[start, end], [start, None], [None, end], ...]
@@ -96,9 +94,7 @@ class Model:
     def unlock_param(self, param_name):
         self._change_param_settings(param_name, False, mode="lock")
 
-    def store_frameID_results(
-        self, frameID: int, result_vector: List[float], result_flag
-    ) -> NoReturn:
+    def store_frameID_results(self, frameID: int, result_vector: List[float], result_flag) -> NoReturn:
         for comp_index, component in enumerate(self.get_enabled_components()):
             component.store_fit_results(
                 frameID=frameID,
@@ -119,11 +115,10 @@ class Model:
                         component.enable_param()
                     elif mode == "lock":
                         component.lock_param()
-                else:
-                    if mode == "enable":
-                        component.disable_param()
-                    elif mode == "lock":
-                        component.unlock_param()
+                elif mode == "enable":
+                    component.disable_param()
+                elif mode == "lock":
+                    component.unlock_param()
 
         if not found:
             raise custom_exceptions.InvalidConfiguration("Param {} does not exist", param_name)
@@ -169,12 +164,8 @@ class Model:
             for comp in self.get_components(include_disabled=allow_disabled)
         ]
 
-    def get_initial_guess_of_component(
-        self, param_name: str, frameID: int, allow_disabled: bool = False
-    ):
-        return self.get_component_by_name(param_name).get_initial_guess(
-            frameID=frameID, allow_disabled=allow_disabled
-        )
+    def get_initial_guess_of_component(self, param_name: str, frameID: int, allow_disabled: bool = False):
+        return self.get_component_by_name(param_name).get_initial_guess(frameID=frameID, allow_disabled=allow_disabled)
 
     def get_component_by_name(self, param_name):
         for comp in self.components:
@@ -201,7 +192,7 @@ class Model:
     def __str__(self):
         out = "Model:"
         for comp in self.components:
-            out += "\n\t{} - Enabled: {}".format(comp.param_name, comp.is_enabled)
+            out += f"\n\t{comp.param_name} - Enabled: {comp.is_enabled}"
         return out
 
     #####
@@ -212,11 +203,12 @@ class Model:
         full_json = {"components": {}, "result_flags": None}
 
         for component in self.components:
-            full_json["components"] = {**full_json["components"], **component.json_ready()}
+            full_json["components"] = {
+                **full_json["components"],
+                **component.json_ready(),
+            }
 
-        full_json["result_flags"] = {
-            int(d_ID): flag.to_json() for d_ID, flag in self._results_flags.items()
-        }
+        full_json["result_flags"] = {int(d_ID): flag.to_json() for d_ID, flag in self._results_flags.items()}
         with open(storage_path, mode="w") as handle:
             json.dump(full_json, handle, indent=4)
 
@@ -246,9 +238,7 @@ class RV_Model(Model):
         super().__init__(params_of_model)
 
         if params_of_model[0].param_name != "RV":
-            raise custom_exceptions.InvalidConfiguration(
-                "The first component of the model should be the RV"
-            )
+            raise custom_exceptions.InvalidConfiguration("The first component of the model should be the RV")
 
     def get_RV_bounds(self, frameID):
         return self.get_component_by_name("RV").get_bounds(frameID=frameID)

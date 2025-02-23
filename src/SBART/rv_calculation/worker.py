@@ -5,12 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
-from SBART.Quality_Control.outlier_detection import compute_outliers
-
 from SBART.data_objects import DataClass
+from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.utils import find_wavelength_limits
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
-from SBART.utils.custom_exceptions import BadOrderError, InvalidConfiguration, StopComputationError
+from SBART.utils.custom_exceptions import (
+    BadOrderError,
+    InvalidConfiguration,
+    StopComputationError,
+)
 from SBART.utils.status_codes import (
     HIGH_CONTAMINATION,
     INTERNAL_ERROR,
@@ -33,7 +36,7 @@ def worker(
         # open shared memory array to store the computed mask
         # to avoid multiple re-computations of outliers!
         mask_cache, cached_orders, shared_buffers = open_buffer(
-            sampler.shared_buffers, open_type="BayesianCache", buffers=[]
+            sampler.shared_buffers, open_type="BayesianCache", buffers=[],
         )
     else:
         shared_buffers = {}
@@ -77,9 +80,7 @@ def worker(
             output_package["frameID"] = current_epochID
             output_package["order"] = current_order
 
-            obs_rv = dataClassProxy.get_KW_from_frameID(
-                worker_configs["RV_keyword"], current_epochID
-            )
+            obs_rv = dataClassProxy.get_KW_from_frameID(worker_configs["RV_keyword"], current_epochID)
 
             RVLowerBound, RVUpperBound = data["RVprior"]
             order_status = SUCCESS
@@ -141,7 +142,7 @@ def worker(
                     current_order_mask = mask_cache[current_order]
 
                 if current_order in [35, 37, 40, 41, 42] and 0:
-                    plt.title("Order: {}".format(current_order))
+                    plt.title(f"Order: {current_order}")
                     print(
                         len(np.where(~spec_mask == 1)[0]),
                         len(np.where(current_order_mask)[0]),
@@ -167,7 +168,7 @@ def worker(
                     order_status = MASSIVE_RV_PRIOR
                 elif spec_wave[current_order_mask].size < worker_configs["min_pixel_in_order"]:
                     order_status = HIGH_CONTAMINATION(
-                        f"Less than pixels {worker_configs['min_pixel_in_order']} on order"
+                        f"Less than pixels {worker_configs['min_pixel_in_order']} on order",
                     )
                 else:
                     # Apply the sampler for this spectral order
@@ -180,9 +181,7 @@ def worker(
                         "spectra": spec_s2d[current_order_mask],
                         "squared_spectra_uncerts": spec_uncert[current_order_mask] ** 2,
                         "RV step": sampler.RV_step,
-                        "interpol_prop_type": worker_configs[
-                            "uncertainty_prop_type"
-                        ],  # TODO: change these 2 lines!
+                        "interpol_prop_type": worker_configs["uncertainty_prop_type"],  # TODO: change these 2 lines!
                         "worker_configs": worker_configs,
                         "make_plot": current_order in [35, 41] and 0,
                         "current_order": current_order,
@@ -212,22 +211,18 @@ def worker(
 
                     if sampler_mode == "epoch-wise":
                         if full_target_kwargs.get("compute_metrics", False):
-                            outputs = target_function(
-                                data["model_parameters"], **full_target_kwargs
-                            )
+                            outputs = target_function(data["model_parameters"], **full_target_kwargs)
                             for key, value in outputs.items():
                                 output_package[key] = value
                         else:
-                            output_value = target_function(
-                                data["model_parameters"], **full_target_kwargs
-                            )
+                            output_value = target_function(data["model_parameters"], **full_target_kwargs)
                             output_package["log_likelihood_from_order"] = output_value
 
                     elif sampler_mode == "order-wise":
                         optimization_output, order_status = None, SUCCESS
                         if sampler is None:
                             raise InvalidConfiguration(
-                                "When performing order-wise optimization we must provide a sampler"
+                                "When performing order-wise optimization we must provide a sampler",
                             )
 
                         try:
@@ -246,7 +241,7 @@ def worker(
                             logger.critical(f"{temp[template_order_mask]}")
 
                             raise StopComputationError(
-                                f"RV optimization failed on {current_epochID=}, {current_order=}"
+                                f"RV optimization failed on {current_epochID=}, {current_order=}",
                             ) from e
                             # plt.title("{} - {}".format(current_epochID, current_order))
                             # plt.plot(
@@ -274,7 +269,7 @@ def worker(
                 output_package["N_spectral_pixels"] = np.nan
             output_package["status"] = order_status
             out_queue.put(output_package)
-    except Exception as e:
+    except Exception:
         # guarantee that the shared buffers are closed from the worker side
         logger.opt(exception=True).critical("Worker is dead")
     finally:

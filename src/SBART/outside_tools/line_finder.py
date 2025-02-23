@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -9,11 +9,9 @@ from SBART.utils import build_blocks
 from SBART.utils.math_tools.numerical_derivatives import first_numerical_derivative
 
 
-def find_lines_indexes(
-    frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False
-):
-    """
-    Find regions where the spectrum is in a line
+def find_lines_indexes(frame: Frame, skip_orders: Optional[Iterable] = None, include_invalid: bool = False):
+    """Find regions where the spectrum is in a line
+
     Parameters
     ----------
     frame
@@ -34,16 +32,14 @@ def find_lines_indexes(
         if make_plot:
             fig, axis = plt.subplots(2, sharex=True)
 
-        wave, flux, uncert, mask = frame.get_data_from_spectral_order(
-            order, include_invalid=include_invalid
-        )
+        wave, flux, uncert, mask = frame.get_data_from_spectral_order(order, include_invalid=include_invalid)
         first_derivative, errors = first_numerical_derivative(wave, flux, uncert)
         first_derivative = np.asarray(first_derivative)
         derivative_regions = np.where(
             np.logical_or(
                 np.subtract(first_derivative, 2 * np.asarray(errors)) >= 0,
                 np.subtract(first_derivative, -2 * np.asarray(errors)) <= 0,
-            )
+            ),
         )
 
         blocks = build_blocks(derivative_regions)
@@ -52,9 +48,7 @@ def find_lines_indexes(
             pixel_jumps.append(blocks[b_index + 1][0] - blocks[b_index][-1])
         marked_regions = []
         new_block = True
-        for jump_index, jump in enumerate(
-            pixel_jumps
-        ):  # TODO: missing the last block if it is not merged!
+        for jump_index, jump in enumerate(pixel_jumps):  # TODO: missing the last block if it is not merged!
             if new_block:
                 start = blocks[jump_index][0]
                 end = blocks[jump_index][-1]
@@ -75,12 +69,18 @@ def find_lines_indexes(
         is_line[order][marked_regions] = 1
         if make_plot:
             axis[0].scatter(
-                wave[marked_regions], flux[marked_regions], color="red", ls="--", marker="d"
+                wave[marked_regions],
+                flux[marked_regions],
+                color="red",
+                ls="--",
+                marker="d",
             )
             axis[0].plot(wave, flux)
             axis[1].plot(wave, first_derivative, marker="+")
             axis[1].scatter(
-                wave[derivative_regions], first_derivative[derivative_regions], color="blue"
+                wave[derivative_regions],
+                first_derivative[derivative_regions],
+                color="blue",
             )
 
             plt.show()
@@ -95,4 +95,4 @@ if __name__ == "__main__":
 
     frame = ESPRESSO(path / "r.ESPRE.2022-07-06T09:22:31.285_S2D_BLAZE_A.fits", user_configs={})
 
-    find_lines_indexes(frame, list(range(0, 100)))
+    find_lines_indexes(frame, list(range(100)))

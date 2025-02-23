@@ -4,10 +4,11 @@
 # "cimport" is used to import special compile-time information
 # about the numpy module (this is stored in a file numpy.pxd which is
 # currently part of the Cython distribution).
-cimport numpy as np
-cimport cython
-from cython.parallel import prange
 
+cimport cython
+cimport numpy as np
+
+from cython.parallel import prange
 
 ctypedef np.float64_t DTYPE_t
 

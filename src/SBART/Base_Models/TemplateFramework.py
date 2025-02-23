@@ -4,16 +4,15 @@ from typing import List, Optional, Type
 from astropy.io import fits
 from loguru import logger
 
-from SBART.utils.BASE import BASE
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
 from SBART.utils.types import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues
 
 
 class TemplateFramework(BASE):
-    """
-    Base Class for the Stellar and Telluric Models. This class is responsible for:
+    """Base Class for the Stellar and Telluric Models. This class is responsible for:
 
     * Trigger the creation of individual templates for each sub-Instrument
     * Trigerring the template's disk operations (saving and loading)
@@ -35,10 +34,12 @@ class TemplateFramework(BASE):
     _default_params = BASE._default_params + DefaultValues()
 
     def __init__(
-        self, mode: str, root_folder_path: UI_PATH, user_configs: Optional[UI_DICT] = None
+        self,
+        mode: str,
+        root_folder_path: UI_PATH,
+        user_configs: Optional[UI_DICT] = None,
     ):
-        """
-        Parameters
+        """Parameters
         ----------
         mode
             To be deprecated
@@ -46,10 +47,12 @@ class TemplateFramework(BASE):
             Root path to store the data products of sBART
         user_configs
             Configurations for this object, following the provided specifications
+
         """
         logger.info("Starting {} Model", self.__class__.model_type)
         super().__init__(
-            needed_folders={"Stellar": "Stellar", "Telluric": "Telluric"}, user_configs=user_configs
+            needed_folders={"Stellar": "Stellar", "Telluric": "Telluric"},
+            user_configs=user_configs,
         )
         self._internalPaths.add_root_path(root_folder_path, "templates")
 
@@ -71,19 +74,20 @@ class TemplateFramework(BASE):
             The desired template
 
         Raises
-        ---------
+        ------
         BadTemplateError
             If the template was not created
         InvalidConfiguration
             If the subInstrument doesn't exist
+
         """
         try:
             if not self.templates[subInstrument].is_valid:
                 msg = "Template was not created"
                 logger.critical(msg)
                 raise custom_exceptions.BadTemplateError(msg)
-        except KeyError as exc:
-            msg = "There is no {} template from  {}".format(self.name, subInstrument)
+        except KeyError:
+            msg = f"There is no {self.name} template from  {subInstrument}"
             logger.critical(msg)
             raise custom_exceptions.InvalidConfiguration(msg)
 
@@ -111,7 +115,6 @@ class TemplateFramework(BASE):
             If True, trigger the data storage routines after creating the templates
 
         """
-
         logger.debug("Starting the creation of {} models!", self.__class__.model_type)
 
         if attempt_to_load:
@@ -133,22 +136,22 @@ class TemplateFramework(BASE):
                 continue
 
             self.templates[subInst] = self._compute_template(
-                data=dataClass, subInstrument=subInst, user_configs=template_configs
+                data=dataClass, subInstrument=subInst, user_configs=template_configs,
             )
 
             self.templates[subInst].generate_root_path(
-                self._internalPaths.get_path_to(self.__class__.model_type, as_posix=False)
+                self._internalPaths.get_path_to(self.__class__.model_type, as_posix=False),
             )
 
         if store_templates:
             self.store_templates_to_disk()
 
     def load_templates_from_disk(self):
-        """
-        Load templates from disk.
+        """Load templates from disk.
 
         Parameters
         ----------
+
         """
         template_path = self._internalPaths.get_path_to(self.__class__.model_type)
 
@@ -175,9 +178,7 @@ class TemplateFramework(BASE):
             if self.is_type("Telluric"):
                 config_dict["download_path"] = ""
 
-            loaded_temp = self.__class__.template_map[temp_name](
-                temp_subInst, loaded=True, user_configs=config_dict
-            )
+            loaded_temp = self.__class__.template_map[temp_name](temp_subInst, loaded=True, user_configs=config_dict)
 
             try:
                 loaded_temp.load_from_file(root_path=template_path, loading_path=temp_path)
@@ -186,8 +187,7 @@ class TemplateFramework(BASE):
             self.templates[temp_subInst] = loaded_temp
 
     def _find_templates_from_disk(self, which: str) -> List[str]:
-        """
-        Search the storage disk location to find any templates that might have been stored in there
+        """Search the storage disk location to find any templates that might have been stored in there
 
         Parameters
         ----------
@@ -203,8 +203,8 @@ class TemplateFramework(BASE):
         ------
         TemplateNotExistsError
             If it is not possible to find any stored template on the disk path
-        """
 
+        """
         which = which.capitalize()
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
         logger.info(
@@ -213,9 +213,7 @@ class TemplateFramework(BASE):
             which,
         )
         logger.info("\t" + loading_path)
-        available_templates = [
-            i for i in os.listdir(loading_path) if which in i and i.endswith("fits")
-        ]
+        available_templates = [i for i in os.listdir(loading_path) if which in i and i.endswith("fits")]
         logger.info(
             "Found {} available templates: {} of type {}",
             len(available_templates),
@@ -224,18 +222,18 @@ class TemplateFramework(BASE):
         )
 
         if len(available_templates) == 0:
-            logger.warning("Could not find template to load in {}".format(loading_path))
+            logger.warning(f"Could not find template to load in {loading_path}")
             raise custom_exceptions.TemplateNotExistsError()
         return [os.path.join(loading_path, i) for i in available_templates]
 
     def store_templates_to_disk(self, clobber: bool = False) -> None:
-        """
-        Trigger the data storage routine of all templates stored inside the Model
+        """Trigger the data storage routine of all templates stored inside the Model
 
         Parameters
         ----------
         clobber : bool
             Whether to delete and re-write over previous outputs
+
         """
         storage_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
         logger.info(
@@ -248,8 +246,7 @@ class TemplateFramework(BASE):
             template.trigger_data_storage(clobber=clobber)
 
     def is_type(self, to_check: str) -> bool:
-        """
-        Check if the Model is of a given type (i.e. Stellar or Telluric)
+        """Check if the Model is of a given type (i.e. Stellar or Telluric)
 
         Parameters
         ----------

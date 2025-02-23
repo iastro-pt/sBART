@@ -1,13 +1,12 @@
-import ujson as json
 from typing import Any, Dict, List, NoReturn, Optional, Set, Tuple, Union
 
 import numpy as np
+import ujson as json
 from loguru import logger
 
 
 class Flag:
-    """
-    Used to represent a "state" of operation. The majority of them represents failures and/or warnings.
+    """Used to represent a "state" of operation. The majority of them represents failures and/or warnings.
     """
 
     __slots__ = (
@@ -41,11 +40,7 @@ class Flag:
     def __eq__(self, flag_2):
         if not isinstance(flag_2, Flag):
             return False
-        return (
-            (self.name == flag_2.name)
-            and (self.code == flag_2.code)
-            and (self.extra_info == flag_2.extra_info)
-        )
+        return (self.name == flag_2.name) and (self.code == flag_2.code) and (self.extra_info == flag_2.extra_info)
 
     def add_extra_info(self, extra_info: str) -> NoReturn:
         self.extra_info = extra_info
@@ -81,11 +76,11 @@ class Flag:
         return new_flag
 
     def to_json(self) -> Dict[str, Any]:
-        """
-        Returns
+        """Returns
         -------
         Dict[str, Any]
             Flag converted to a json entry, for disk storage purposes
+
         """
         return dict(
             name=self.name,
@@ -99,8 +94,7 @@ class Flag:
 
     @classmethod
     def create_from_json(cls, json_info: Dict[str, Any]):
-        """
-        Create a new Flag object from a json representation
+        """Create a new Flag object from a json representation
 
         Parameters
         ----------
@@ -111,6 +105,7 @@ class Flag:
         -------
         flag:
             The new flag
+
         """
         return Flag(**json_info)
 
@@ -137,7 +132,7 @@ class Status:
         try:
             self._stored_flags.remove(flag)
         except KeyError:
-            logger.warning(f"Trying to remove flag that doesn't exist (flag)")
+            logger.warning("Trying to remove flag that doesn't exist (flag)")
 
     ###
     #   Adding new flags
@@ -210,8 +205,8 @@ class Status:
         return rejection
 
     def description(self, indent_level: int = 0) -> Tuple[List[str], Dict]:
-        """
-        string to directly place on a txt file
+        """String to directly place on a txt file
+
         Returns
         -------
 
@@ -223,27 +218,20 @@ class Status:
 
         message = [base_indent + f"Current Status - valid = {self.is_valid}"]
 
-        message.append(f"\n" + base_indent + indent_character + "Rejection Flags:")
+        message.append("\n" + base_indent + indent_character + "Rejection Flags:")
         if not self.is_valid:
             for flag in self._stored_flags:
                 if not flag.is_good_flag:
-                    message.append(
-                        "\n"
-                        + base_indent
-                        + 2 * indent_character
-                        + f"{flag.name} : {flag.extra_info}"
-                    )
+                    message.append("\n" + base_indent + 2 * indent_character + f"{flag.name} : {flag.extra_info}")
 
                     skip_reasons["Rejections"][flag.name] = flag.description
         else:
-            message.append(f"\n" + base_indent + 2 * indent_character + "No Rejection")
+            message.append("\n" + base_indent + 2 * indent_character + "No Rejection")
 
         if self.has_warnings:
-            message.append(f"\n" + base_indent + indent_character + "Warning Flags:")
+            message.append("\n" + base_indent + indent_character + "Warning Flags:")
             for flag in self._warnings:
-                message.append(
-                    "\n" + base_indent + 2 * indent_character + f"{flag.name} : {flag.extra_info}"
-                )
+                message.append("\n" + base_indent + 2 * indent_character + f"{flag.name} : {flag.extra_info}")
 
                 skip_reasons["Warnings"][flag.name] = flag.description
 
@@ -279,8 +267,8 @@ class OrderStatus:
         self._OrderStatus += VALID
 
     def mimic_status(self, frameID: int, other_status) -> NoReturn:
-        """
-        WARNING: this does not copy the warnings!
+        """WARNING: this does not copy the warnings!
+
         Parameters
         ----------
         frameID
@@ -312,17 +300,11 @@ class OrderStatus:
                 self._OrderStatus[:, order] = self._OrderStatus[:, order] + order_flag
             else:
                 frame_index = self._stored_frameIDs.index(frameID)
-                self._OrderStatus[frame_index, order] = (
-                    self._OrderStatus[frame_index, order] + order_flag
-                )
+                self._OrderStatus[frame_index, order] = self._OrderStatus[frame_index, order] + order_flag
 
-    def worst_rejection_flag_from_frameID(
-        self, frameID: Optional[int] = None, ignore_flags=()
-    ) -> Tuple[str, int]:
+    def worst_rejection_flag_from_frameID(self, frameID: Optional[int] = None, ignore_flags=()) -> Tuple[str, int]:
         flag_count = {}
-        for order, status in enumerate(
-            self.get_status_from_order(frameID=frameID, all_orders=True)
-        ):
+        for order, status in enumerate(self.get_status_from_order(frameID=frameID, all_orders=True)):
             for flag in status.all_flags:
                 if flag in ignore_flags or flag.is_good_flag:
                     continue
@@ -340,10 +322,12 @@ class OrderStatus:
         return max_flag.name, max_count
 
     def get_status_from_order(
-        self, order: Optional[int] = None, frameID: Optional[int] = None, all_orders: bool = False
+        self,
+        order: Optional[int] = None,
+        frameID: Optional[int] = None,
+        all_orders: bool = False,
     ):
-        """
-        Return the status from a given set of orders for one frame
+        """Return the status from a given set of orders for one frame
 
         Parameters
         ----------
@@ -363,15 +347,14 @@ class OrderStatus:
                 return self._OrderStatus[0]
             return self._OrderStatus[0, order]
 
-        elif self._internal_mode == "matrix":
+        if self._internal_mode == "matrix":
             if frameID is None:
                 raise RuntimeError("When we have multiple observations we need a frameID")
 
             epoch = self._stored_frameIDs.index(frameID)
             if all_orders:
                 return self._OrderStatus[epoch, :]
-            else:
-                return self._OrderStatus[epoch, order]
+            return self._OrderStatus[epoch, order]
 
     @property
     def from_frame(self) -> bool:
@@ -380,9 +363,7 @@ class OrderStatus:
     @property
     def bad_orders(self) -> Set[int]:
         if self._internal_mode == "matrix":
-            raise RuntimeError(
-                "bad_orders is only defined at the Frame level. Use the common_bad_orders property"
-            )
+            raise RuntimeError("bad_orders is only defined at the Frame level. Use the common_bad_orders property")
         bad_orders = set()
         for order, order_stat in enumerate(self._OrderStatus[0]):
             if not order_stat.is_valid:
@@ -391,8 +372,8 @@ class OrderStatus:
 
     @property
     def common_bad_orders(self):
-        """
-        Find the common set of spectral orders that is rejected in all epochs
+        """Find the common set of spectral orders that is rejected in all epochs
+
         Returns
         -------
 
@@ -445,9 +426,7 @@ class OrderStatus:
             if include_header:
                 message.append(f"\n{base_indent}FrameID:{frameID}")
 
-            for order_number, status in enumerate(
-                self.get_status_from_order(frameID=frameID, all_orders=True)
-            ):
+            for order_number, status in enumerate(self.get_status_from_order(frameID=frameID, all_orders=True)):
                 for flag in status.all_flags:
                     if not flag.is_good_flag:
                         if flag.name not in fatal_flag_dict:
@@ -465,18 +444,11 @@ class OrderStatus:
                 "\n"
                 + base_indent
                 + indent_character
-                + "Order Rejections (Worst - {} -> N = {}):".format(
-                    *self.worst_rejection_flag_from_frameID(frameID)
-                )
+                + "Order Rejections (Worst - {} -> N = {}):".format(*self.worst_rejection_flag_from_frameID(frameID)),
             )
 
             for key, orders in fatal_flag_dict.items():
-                message.append(
-                    "\n"
-                    + base_indent
-                    + 2 * indent_character
-                    + f"{key} (N = {len(orders)}): {orders}"
-                )
+                message.append("\n" + base_indent + 2 * indent_character + f"{key} (N = {len(orders)}): {orders}")
 
             if len(warning_flag_dict) != 0:
                 message.append("\n" + base_indent + indent_character + "Order Warnings:")
@@ -499,8 +471,8 @@ class OrderStatus:
         return str(self._OrderStatus)
 
     def store_as_json(self, storage_path):
-        """
-        Directly stores to a single file all information inside this class
+        """Directly stores to a single file all information inside this class
+
         Parameters
         ----------
         storage_path
@@ -517,7 +489,7 @@ class OrderStatus:
             "general_confs": {
                 "frameIDs": self._stored_frameIDs if self._internal_mode == "matrix" else None,
                 "N_orders": self._OrderStatus.shape[1],
-            }
+            },
         }
 
         for epoch in range(self._OrderStatus.shape[0]):
@@ -582,7 +554,7 @@ WARNING = Flag("WARNING", value="W", fatal_flag=False, is_good_flag=False, is_wa
 SIGMA_CLIP_REJECTION = Flag("SIGMA CLIP", value="SC")
 USER_BLOCKED = Flag("USER_BLOCKED", value="U")
 FATAL_KW = Flag("FATAL_KW", value="F")
-KW_WARNING = Flag("KW_WARNING", value="KW_W", is_warning=True)
+KW_WARNING = Flag("KW_WARNING", value="KW_W", is_warning=True, fatal_flag=False)
 
 MISSING_FILE = Flag("MISS_FILE", value="M")
 NO_VALID_ORDERS = Flag("NO_VALID_ORDERS", value="NO")
@@ -605,13 +577,9 @@ ACTIVE_WORKER = Flag("SUCCESS", "A")
 
 # Positive codes for problems with the orders
 LOW_SNR = Flag("LOW_SNR", 5, "SNR under the user-set threshold")
-MASSIVE_RV_PRIOR = Flag(
-    "MASSIVE_RV_PRIOR", 4, "Too little spectra left after accountinf for RV window"
-)
+MASSIVE_RV_PRIOR = Flag("MASSIVE_RV_PRIOR", 4, "Too little spectra left after accountinf for RV window")
 BAD_TEMPLATE = Flag("BAD_TEMPLATE", 3, "Could not create stellar template for given order")
-HIGH_CONTAMINATION = Flag(
-    "HIGH_CONTAMINATION", 2, "Too many points removed due to masks + tellurics"
-)
+HIGH_CONTAMINATION = Flag("HIGH_CONTAMINATION", 2, "Too many points removed due to masks + tellurics")
 ORDER_SKIP = Flag("ORDER_SKIP", 1, "Order was skipped")
 
 # negative values for errors in the RV
@@ -627,27 +595,19 @@ MAX_ITER = Flag("MAX ITERATIONS", -3)
 
 QUAL_DATA = Flag("QUAL_DATA", 1, " Qual data different than zero")  # qual data different than zero
 ERROR_THRESHOLD = Flag(
-    "ERROR_THRESHOLD", 2, "Error over specified threshold"
+    "ERROR_THRESHOLD", 2, "Error over specified threshold",
 )  # error threshold over the selected threshold
-INTERPOLATION = Flag(
-    "INTERPOLATION", 4, "Removed due to interpolation"
-)  # removed due to interpolation constraints
+INTERPOLATION = Flag("INTERPOLATION", 4, "Removed due to interpolation")  # removed due to interpolation constraints
 TELLURIC = Flag("TELLURIC", 8, "Telluric feature")  # classified as telluric feature,
-MISSING_DATA = Flag(
-    "MISSING_DATA", 16, "Missing spectral data in the pixel"
-)  # data is missing in the given points,
+MISSING_DATA = Flag("MISSING_DATA", 16, "Missing spectral data in the pixel")  # data is missing in the given points,
 SPECTRAL_MISMATCH = Flag(
-    "SPECTRAL_MISMATCH", 32, "Removed due to outlier routine"
+    "SPECTRAL_MISMATCH", 32, "Removed due to outlier routine",
 )  # mismatch between the template and the spectra
-SATURATION = Flag(
-    "SATURATION", 64, "Saturated Pixel"
-)  # Saturation of the detector; Only used by HARPS
+SATURATION = Flag("SATURATION", 64, "Saturated Pixel")  # Saturation of the detector; Only used by HARPS
 NAN_DATA = Flag("NaN_Pixel", 128, "Nan Value")
 ACTIVITY_LINE = Flag("ACTIVITY_INDICATOR", 256)  # this spectral regions belongs to a marked line
 
-NON_COMMON_WAVELENGTH = Flag(
-    "NON_COMMON_WAVELENGTH", 512
-)  # this spectral regions belongs to a marked line
+NON_COMMON_WAVELENGTH = Flag("NON_COMMON_WAVELENGTH", 512)  # this spectral regions belongs to a marked line
 MULTIPLE_REASONS = Flag("MULTIPLE", 100)  # flagged by more than one reason
 
 if __name__ == "__main__":
@@ -661,11 +621,7 @@ if __name__ == "__main__":
     y.add_flag_to_order(order=2, order_flag=ORDER_SKIP, frameID=1)
 
     print("---*-")
-    print(
-        "".join(
-            y.description(indent_level=1, frameID=1, include_header=False, include_footer=False)[0]
-        )
-    )
+    print("".join(y.description(indent_level=1, frameID=1, include_header=False, include_footer=False)[0]))
 
     # print("".join(y.get_status_from_order(1, 1).description(indent_level=1)))
 

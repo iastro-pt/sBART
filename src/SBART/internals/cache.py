@@ -1,20 +1,15 @@
 import datetime
-import os
 from pathlib import Path
-from pdb import pm
-from typing import List, NoReturn, Optional, Union
 
-from scipy.datasets import download_all
-
-from SBART import __version__ as SBART_version
-from sqlalchemy import create_engine, delete, func, select
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import create_database, database_exists, drop_database
 from loguru import logger
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import create_database, database_exists
 
 resource_path = Path(__file__).parent.parent / "resources"
-from SBART.internals.db_tables import Base, Target, GDAS_profile
 import numpy as np
+
+from SBART.internals.db_tables import Base, GDAS_profile, Target
 
 
 class DB_connection:
@@ -41,11 +36,7 @@ class DB_connection:
 
     def get_GDAS_profile(self, gdas_filename: str):
         with self.sessionmaker() as session:
-            chosen_target = (
-                session.query(GDAS_profile)
-                .filter_by(gdas_filename=gdas_filename)
-                .first()
-            )
+            chosen_target = session.query(GDAS_profile).filter_by(gdas_filename=gdas_filename).first()
         if chosen_target is None:
             raise FileNotFoundError("GDAS profile does not exist")
 
@@ -57,9 +48,7 @@ class DB_connection:
             chosen_target = session.query(Target).filter_by(name=star_name).first()
 
         if chosen_target is None:
-            raise FileNotFoundError(
-                f"Target {star_name} does not have cached information"
-            )
+            raise FileNotFoundError(f"Target {star_name} does not have cached information")
 
         return chosen_target.params
 

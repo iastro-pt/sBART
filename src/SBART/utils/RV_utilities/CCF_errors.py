@@ -3,8 +3,7 @@ import scipy.optimize as opt
 
 
 def RVerror(rv, ccf, eccf=1.0):
-    """
-    Calculate the uncertainty on the radial velocity, following the same steps
+    """Calculate the uncertainty on the radial velocity, following the same steps
     as the ESPRESSO DRS pipeline.
 
     Parameters
@@ -15,8 +14,8 @@ def RVerror(rv, ccf, eccf=1.0):
     The values of the CCF profile.
     eccf : array
     The errors on each value of the CCF profile.
-    """
 
+    """
     ccf_slope = np.gradient(ccf, rv)
     ccf_sum = np.sum((ccf_slope / eccf) ** 2)
     return 1.0 / np.sqrt(ccf_sum)

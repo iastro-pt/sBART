@@ -1,7 +1,6 @@
 import datetime
 import glob
 import os
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -10,25 +9,24 @@ from astropy.io import fits
 from loguru import logger
 from scipy.constants import convert_temperature
 
-from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
 from SBART.utils.RV_utilities import airtovac
 from SBART.utils.status_codes import (
     ERROR_THRESHOLD,
+    KW_WARNING,
     MISSING_DATA,
     NAN_DATA,
     SATURATION,
     SUCCESS,
-    KW_WARNING,
 )
-from SBART.utils.units import kilometer_second, meter_second, convert_data
+from SBART.utils.units import convert_data, kilometer_second, meter_second
+
 from .ESO_PIPELINE import ESO_PIPELINE
 
 
 class HARPS(ESO_PIPELINE):
-    """
-    Interface to handle HARPS data; S1D **not** supported!
+    """Interface to handle HARPS data; S1D **not** supported!
 
     This class also defines 2 sub-Instruments:
 
@@ -68,7 +66,7 @@ class HARPS(ESO_PIPELINE):
         frameID=None,
         quiet_user_params: bool = True,
     ):
-        """
+        """HARPS constructor.
 
         Parameters
         ----------
@@ -80,9 +78,9 @@ class HARPS(ESO_PIPELINE):
             Iterable of subInstruments to fully reject
         frameID
             ID for this observation. Only used for organization purposes by :class:`~SBART.data_objects.DataClass`
-        """
 
-        logger.info("Creating frame from: {}".format(file_path))
+        """
+        logger.info(f"Creating frame from: {file_path}")
 
         coverage = [350, 700]
         # Note: 46 blue orders and 26 red orders. From Table 2.2 of:
@@ -107,9 +105,7 @@ class HARPS(ESO_PIPELINE):
             KW_map = {}
 
         if user_configs["use_old_pipeline"]:
-            file_path, self.ccf_path, self.BIS_file, search_status = self.find_files(
-                file_path
-            )
+            file_path, self.ccf_path, self.BIS_file, search_status = self.find_files(file_path)
 
         super().__init__(
             inst_name="HARPS",
@@ -134,17 +130,15 @@ class HARPS(ESO_PIPELINE):
             self.is_BERV_corrected = False
 
         self.instrument_properties["resolution"] = 115_000
-        self.instrument_properties["EarthLocation"] = EarthLocation.of_site(
-            "La Silla Observatory"
-        )
+        self.instrument_properties["EarthLocation"] = EarthLocation.of_site("La Silla Observatory")
 
         # ? same as for Paranal?
         # https://www.eso.org/sci/facilities/paranal/astroclimate/site.html
         self.instrument_properties["site_pressure"] = 750
+        self.is_blaze_corrected = False
 
     def load_telemetry_info(self, header):
-        """
-        Loads (at least) the following keywords:
+        """Loads (at least) the following keywords:
 
         - relative humidity
         - ambient temperature, in Celsius
@@ -159,33 +153,28 @@ class HARPS(ESO_PIPELINE):
         -------
 
         """
-
         ambi_KWs = {
             "relative_humidity": "RHUM",
             "ambient_temperature": "TEMP",
         }
 
         for name, endKW in ambi_KWs.items():
-            self.observation_info[name] = header[
-                f"HIERARCH {self.KW_identifier} TEL AMBI {endKW}"
-            ]
+            self.observation_info[name] = header[f"HIERARCH {self.KW_identifier} TEL AMBI {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                    self.observation_info[name],
+                    old_scale="Celsius",
+                    new_scale="Kelvin",
                 )
 
         if self.observation_info["relative_humidity"] == 255:
-            logger.warning(
-                f"{self.name} has an invalid value in the humidity sensor..."
-            )
+            logger.warning(f"{self.name} has an invalid value in the humidity sensor...")
             self.observation_info["relative_humidity"] = np.nan
 
         self.observation_info["airmass"] = header["HIERARCH ESO TEL AIRM START"]
 
     def find_files(self, file_name):
-        """
-        Find the CCF and S2D files and BIS files, which should be stored inside the same folder
-        """
+        """Find the CCF and S2D files and BIS files, which should be stored inside the same folder"""
         logger.debug("Searching for the ccf and e2ds files")
 
         search_status = MISSING_DATA("Missing the ccf file")
@@ -197,15 +186,9 @@ class HARPS(ESO_PIPELINE):
             # search for e2ds file
             folder_name = file_name
 
-            e2ds_files = glob.glob(
-                os.path.join(folder_name, "*e2ds_A.fits"), recursive=True
-            )
-            ccf_files = glob.glob(
-                os.path.join(folder_name, "*ccf*A.fits"), recursive=True
-            )
-            bis_files = glob.glob(
-                os.path.join(folder_name, "*bis*A.fits"), recursive=True
-            )
+            e2ds_files = glob.glob(os.path.join(folder_name, "*e2ds_A.fits"), recursive=True)
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
+            bis_files = glob.glob(os.path.join(folder_name, "*bis*A.fits"), recursive=True)
 
             for name, elems in [
                 ("e2ds_A", e2ds_files),
@@ -221,29 +204,22 @@ class HARPS(ESO_PIPELINE):
                     if name != "bis":
                         # The BIS file is not critical for the run
                         raise custom_exceptions.InvalidConfiguration(msg)
-                    else:
-                        logger.critical(msg)
+                    logger.critical(msg)
 
             e2ds_path = e2ds_files[0]
             ccf_path = ccf_files[0]
             bis_path = bis_files[0]
             search_status = SUCCESS("Found all input files")
         else:
-            logger.debug(
-                "Received path of E2DS file; searching for CCF with matching name"
-            )
+            logger.debug("Received path of E2DS file; searching for CCF with matching name")
             folder_name = os.path.dirname(file_name)
             e2ds_path = file_name
             file_start, *_ = os.path.basename(file_name).split("_")
 
             found_CCF = False
             found_BIS = False
-            ccf_files = glob.glob(
-                os.path.join(folder_name, "*ccf*A.fits"), recursive=True
-            )
-            bis_files = glob.glob(
-                os.path.join(folder_name, "*bis*A.fits"), recursive=True
-            )
+            ccf_files = glob.glob(os.path.join(folder_name, "*ccf*A.fits"), recursive=True)
+            bis_files = glob.glob(os.path.join(folder_name, "*bis*A.fits"), recursive=True)
             for file in ccf_files:
                 if file_start in file:
                     ccf_path = file
@@ -254,12 +230,10 @@ class HARPS(ESO_PIPELINE):
                     bis_path = file
                     found_BIS = True
             if found_CCF:
-                logger.info("Found CCF file: {}".format(ccf_path))
+                logger.info(f"Found CCF file: {ccf_path}")
                 search_status = SUCCESS("Found CCF file")
             else:
-                logger.critical(
-                    "Was not able to find CCF file. Marking frame as invalid"
-                )
+                logger.critical("Was not able to find CCF file. Marking frame as invalid")
                 ccf_path = ""
 
             if not found_BIS:
@@ -268,11 +242,9 @@ class HARPS(ESO_PIPELINE):
         return e2ds_path, ccf_path, bis_path, search_status
 
     def build_HARPS_wavelengths(self, hdr):
-        """
-        Compute the wavelength solution to this given spectra (EQ 4.1 of DRS manual)
+        """Compute the wavelength solution to this given spectra (EQ 4.1 of DRS manual)
         Convert from air wavelenbgths to vacuum
         """
-
         # degree of the polynomial
         d = hdr["HIERARCH ESO DRS CAL TH DEG LL"]
         # number of orders
@@ -297,10 +269,7 @@ class HARPS(ESO_PIPELINE):
         # axis 1: all coefficients for the given order
 
         A = np.reshape(
-            [
-                hdr["HIERARCH ESO DRS CAL TH COEFF LL" + str(i)]
-                for i in range(omax * (d + 1))
-            ],
+            [hdr["HIERARCH ESO DRS CAL TH COEFF LL" + str(i)] for i in range(omax * (d + 1))],
             (omax, d + 1),
         )  # slow 30 ms
 
@@ -312,16 +281,10 @@ class HARPS(ESO_PIPELINE):
 
     def _load_old_DRS_KWs(self, header):
         if not self._internal_configs["use_old_pipeline"]:
-            raise custom_exceptions.InvalidConfiguration(
-                "Can't load data from old pipeline without the config"
-            )
+            raise custom_exceptions.InvalidConfiguration("Can't load data from old pipeline without the config")
 
-        self.observation_info["MAX_BERV"] = (
-            header["HIERARCH ESO DRS BERVMX"] * kilometer_second
-        )
-        self.observation_info["BERV"] = (
-            header["HIERARCH ESO DRS BERV"] * kilometer_second
-        )
+        self.observation_info["MAX_BERV"] = header["HIERARCH ESO DRS BERVMX"] * kilometer_second
+        self.observation_info["BERV"] = header["HIERARCH ESO DRS BERV"] * kilometer_second
 
         # Environmental KWs for telfit (also needs airmassm previously loaded)
         ambi_KWs = {
@@ -333,13 +296,13 @@ class HARPS(ESO_PIPELINE):
             self.observation_info[name] = header[f"HIERARCH ESO TEL {endKW}"]
             if "temperature" in name:  # store temperature in KELVIN for TELFIT
                 self.observation_info[name] = convert_temperature(
-                    self.observation_info[name], old_scale="Celsius", new_scale="Kelvin"
+                    self.observation_info[name],
+                    old_scale="Celsius",
+                    new_scale="Kelvin",
                 )
 
         for order in range(self.N_orders):
-            self.observation_info["orderwise_SNRs"].append(
-                header[f"HIERARCH ESO DRS SPE EXT SN{order}"]
-            )
+            self.observation_info["orderwise_SNRs"].append(header[f"HIERARCH ESO DRS SPE EXT SN{order}"])
 
         self.observation_info["airmass"] = header["HIERARCH ESO TEL AIRM START"]
 
@@ -355,14 +318,12 @@ class HARPS(ESO_PIPELINE):
                 # self.logger.info("DRIFT QC has passed")
                 drift = header["HIERARCH ESO DRS DRIFT RV USED"] * meter_second
                 drift_err = header["HIERARCH ESO DRS DRIFT NOISE"] * meter_second
-        except Exception as e:
+        except Exception:
             bad_drift = True
             logger.warning("DRIFT KW does not exist")
 
         if bad_drift:
-            logger.warning(
-                "Due to previous drift-related problems, setting it to zero [m/s]"
-            )
+            logger.warning("Due to previous drift-related problems, setting it to zero [m/s]")
             drift = 0 * meter_second
             drift_err = 0 * meter_second
 
@@ -371,22 +332,18 @@ class HARPS(ESO_PIPELINE):
         self.load_ccf_data()
 
     def load_ccf_data(self) -> None:
-        """
-        Load the necessarfy CCF data from the file!
-        """
+        """Load the necessarfy CCF data from the file!"""
         logger.debug("Loading data from the ccf file")
         header = fits.getheader(self.ccf_path)
 
-        self.observation_info["DRS_RV"] = (
-            header["HIERARCH ESO DRS CCF RV"] * kilometer_second
-        )
+        self.observation_info["DRS_RV"] = header["HIERARCH ESO DRS CCF RV"] * kilometer_second
         self.observation_info["SPEC_TYPE"] = header["HIERARCH ESO DRS CCF MASK"]
 
         RV_err = np.sqrt(
             header["HIERARCH ESO DRS CAL TH ERROR"] ** 2
             +
             # hdulist[0].header['HIERARCH ESO DRS DRIFT NOISE']**2   +
-            (1000 * header["HIERARCH ESO DRS CCF NOISE"]) ** 2
+            (1000 * header["HIERARCH ESO DRS CCF NOISE"]) ** 2,
         )
         self.observation_info["DRS_RV_ERR"] = RV_err * meter_second
 
@@ -396,7 +353,9 @@ class HARPS(ESO_PIPELINE):
 
         # We are missing error in CONTRAST!
         self.observation_info["FWHM_ERR"] = convert_data(
-            2.35 * RV_err * meter_second, new_units=kilometer_second, as_value=True
+            2.35 * RV_err * meter_second,
+            new_units=kilometer_second,
+            as_value=True,
         )
         self.observation_info["BIS SPAN_ERR"] = convert_data(
             np.sqrt(2) * RV_err * meter_second,
@@ -415,15 +374,13 @@ class HARPS(ESO_PIPELINE):
         logger.info("Currently missing QC checks for the old DRS")
 
     def load_old_DRS_S2D(self):
-        """
-        Loads the spectra
+        """Loads the spectra
 
         Returns
         -------
 
         """
         super().load_S2D_data()
-        self.is_blaze_corrected = False
 
         with fits.open(self.file_path) as hdulist:
             # Compute the wavelength solution + BERV correction

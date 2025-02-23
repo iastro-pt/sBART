@@ -1,21 +1,17 @@
-from loguru import logger
-from typing import NoReturn, Dict, Any
+from typing import Any, Dict, NoReturn
 
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.ModelParameters import Model, ModelComponent
 from SBART.utils.UserConfigs import (
-    BooleanValue,
     DefaultValues,
-    UserParam,
-    Positive_Value_Constraint,
     IntegerValue,
+    Positive_Value_Constraint,
+    UserParam,
 )
 
 
 class NormalizationBase(BASE):
-    """
-    **Description:**
+    """**Description:**
 
     Extend a Spectrum object to allow to normalize the fluxes of S1D and S2D spectra.
     This functionality is extended  by allowing to fit & normalize the continuum levels and can be:
@@ -34,7 +30,7 @@ class NormalizationBase(BASE):
 
     _name = "SpecNormBase"
     _default_params = BASE._default_params + DefaultValues(
-        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue)
+        NUMBER_WORKERS=UserParam(2, constraint=Positive_Value_Constraint + IntegerValue),
     )
 
     # If True, we will optimize the model for each spectral order! Otherwise, the NORMALIZER will receive
@@ -43,7 +39,9 @@ class NormalizationBase(BASE):
 
     def __init__(self, obj_info: Dict[str, Any], user_configs, needed_folders=None):
         super().__init__(
-            user_configs=user_configs, needed_folders=needed_folders, quiet_user_params=True
+            user_configs=user_configs,
+            needed_folders=needed_folders,
+            quiet_user_params=True,
         )
         self._spec_info = obj_info
         self._ran_normalization_fit: bool = False
@@ -51,20 +49,19 @@ class NormalizationBase(BASE):
     def launch_epochwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
         self._ensure_epochwise_normalizer()
         if len(loaded_info) != 0:
-            return *self._apply_epoch_normalization(
-                wavelengths, flux, uncertainties, **loaded_info
-            ), loaded_info
+            return (
+                *self._apply_epoch_normalization(wavelengths, flux, uncertainties, **loaded_info),
+                loaded_info,
+            )
         return self._fit_epochwise_normalization(wavelengths, flux, uncertainties)
 
-    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs):
-        ...
+    def _apply_epoch_normalization(self, wavelengths, flux, uncertainties, **kwargs): ...
 
     def _fit_epochwise_normalization(self, wavelengths, flux, uncertainties):
         self._ran_normalization_fit = True
 
     def launch_orderwise_normalization(self, wavelengths, flux, uncertainties, loaded_info):
-        """
-        Launch a normalizer that will be applied to each spectral order (does not need to know order).
+        """Launch a normalizer that will be applied to each spectral order (does not need to know order).
         This will:
         i) Directly apply the normalization from the loaded config values
         ii) Fit the model if it wasn't previously computed!
@@ -84,9 +81,10 @@ class NormalizationBase(BASE):
         self._normalization_sanity_checks()
 
         if len(loaded_info) != 0:
-            return *self._apply_orderwise_normalization(
-                wavelengths, flux, uncertainties, **loaded_info
-            ), loaded_info
+            return (
+                *self._apply_orderwise_normalization(wavelengths, flux, uncertainties, **loaded_info),
+                loaded_info,
+            )
         return self._fit_orderwise_normalization(wavelengths, flux, uncertainties)
 
     def _fit_orderwise_normalization(self, wavelengths, flux, uncertainties):
@@ -104,25 +102,21 @@ class NormalizationBase(BASE):
             raise custom_exceptions.InvalidConfiguration("Can't normalize S1D spectra")
 
     def _ensure_orderwise_normalizer(self):
-        """
-        For internal usage. To call whenever we call a method to fit/apply normalization
+        """For internal usage. To call whenever we call a method to fit/apply normalization
+
         Returns
         -------
 
         """
         if not self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(
-                f"Can't ask for order-wise normalization on {self.name}"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for order-wise normalization on {self.name}")
 
     def _ensure_epochwise_normalizer(self):
-        """
-        For internal usage. To call whenever we call a method to fit/apply normalization
+        """For internal usage. To call whenever we call a method to fit/apply normalization
+
         Returns
         -------
 
         """
         if self.orderwise_application:
-            raise custom_exceptions.InvalidConfiguration(
-                f"Can't ask for epoch-wise normalization on {self.name}"
-            )
+            raise custom_exceptions.InvalidConfiguration(f"Can't ask for epoch-wise normalization on {self.name}")

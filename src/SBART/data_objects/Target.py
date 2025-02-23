@@ -1,19 +1,16 @@
-import os
+from pathlib import Path
 from typing import Any, Dict
 
-from pathlib import Path
 import numpy as np
 from loguru import logger
 
-from SBART import SBART_LOC
+from SBART.utils import custom_exceptions
 from SBART.utils.RV_utilities import secular_acceleration
 from SBART.utils.units import meter_second
-from SBART.utils import custom_exceptions
 
 
 class Target:
-    """
-    Represents an observed object.  This class provides an interface to handle data sanitization and simbad lookups
+    """Represents an observed object.  This class provides an interface to handle data sanitization and simbad lookups
     for the targets that we load from the S2D files.
 
 
@@ -23,15 +20,13 @@ class Target:
     """
 
     def __init__(self, target_list, original_name: str = None, target_dictionary_path=None):
-        """
-
-        Parameters
+        """Parameters
         ----------
         target_list: List[str]
             List of target names that have been collected across all files that have been loaded from disk.
         original_name
-        """
 
+        """
         if len(target_list) == 0:
             msg = "No valid observations. Can't create a target name"
             logger.critical(msg)
@@ -62,7 +57,7 @@ class Target:
                     simbad_resolvable = combination[1]
                     self.KOBE_alias[KOBE_key] = simbad_resolvable
         else:
-            logger.warning("Target dictionary not found in <{}>".format(target_dictionary_path))
+            logger.warning(f"Target dictionary not found in <{target_dictionary_path}>")
 
         target_list = self.clean_targ_list(target_list)
         self.validate_target_list(target_list)
@@ -107,21 +102,19 @@ class Target:
 
     @property
     def secular_acceleration(self):
+        """Return the secular accelaration of the target star, as an astropy.Quantity object
         """
-        Return the secular accelaration of the target star, as an astropy.Quantity object
-        """
-
         if self._simbad_error:
             logger.warning("\tWARNING: Failed connection to SIMBAD!!!!!! SA OF 0 BEING RETURNED")
             self._SA = 0 * meter_second
 
         if np.isnan(self._SA):
             try:
-                logger.info("Querying simbad for {}".format(self.searchable_name(self.true_name)))
+                logger.info(f"Querying simbad for {self.searchable_name(self.true_name)}")
                 self._SA = secular_acceleration(self.searchable_name(self.true_name))
-            except Exception as e:
+            except Exception:
                 logger.opt(exception=True).critical(
-                    "Could not compute the secular accelaration from {}", self.true_name
+                    "Could not compute the secular accelaration from {}", self.true_name,
                 )
                 self._SA = 0 * meter_second
                 self._simbad_error = True
@@ -147,8 +140,7 @@ class Target:
 
     @property
     def true_name(self):
-        """
-        Return the name of a target that is extracted from the header of the .fits files. This name
+        """Return the name of a target that is extracted from the header of the .fits files. This name
         can be overriden if the user provides a new name when instantiating this object
 
         Returns
@@ -159,9 +151,9 @@ class Target:
 
     @property
     def original_name(self):
-        """
-        This is the name that was present in the header of the files (i.e. disregard any kind of
+        """This is the name that was present in the header of the files (i.e. disregard any kind of
         user-provided name)
+
         Returns
         -------
 

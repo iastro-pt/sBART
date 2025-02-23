@@ -1,38 +1,35 @@
-import ujson as json
 from pathlib import Path
-from typing import NoReturn, Union, Optional, Any, Dict, List
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
 
 import numpy as np
+import ujson as json
 from astropy.io import fits
 from loguru import logger
 from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-from SBART.Base_Models.Frame import Frame
 from SBART import __version__
+from SBART.Base_Models.Frame import Frame
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Components import Spectral_Modelling
 from SBART.Masks import Mask
 from SBART.utils import build_filename, custom_exceptions
+from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
+from SBART.utils.custom_exceptions import NoDataError
+from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
+from SBART.utils.status_codes import HIGH_CONTAMINATION, MISSING_DATA, OrderStatus
+from SBART.utils.units import convert_data, kilometer_second
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
     IntegerValue,
-    UserParam,
     Positive_Value_Constraint,
+    UserParam,
 )
-from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
-from SBART.utils.custom_exceptions import (
-    NoDataError,
-)
-from SBART.utils.status_codes import HIGH_CONTAMINATION, MISSING_DATA, OrderStatus
-from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils.units import convert_data, kilometer_second
 
 
 class StellarTemplate(BaseTemplate, Spectral_Modelling):
-    """
-    This object is the parent class of all StellarTemplates, implementing a common set of user configurations, data storage
+    """This object is the parent class of all StellarTemplates, implementing a common set of user configurations, data storage
     operations, among others.
 
     **User parameters:**
@@ -69,12 +66,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             description="If set to True, the RV for the template construction will be set to zero for all observations. By default is False",
         ),
         NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
-        MEMORY_SAVE_MODE=UserParam(
-            False, constraint=BooleanValue
-        ),  # if True, close the S2D files after using them!
-        MINIMUM_NUMBER_OBS=UserParam(
-            3, constraint=IntegerValue
-        ),  # minimum number of OBS to create stellar template
+        MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),  # if True, close the S2D files after using them!
+        MINIMUM_NUMBER_OBS=UserParam(3, constraint=IntegerValue),  # minimum number of OBS to create stellar template
     )
 
     template_type = "Stellar"
@@ -110,8 +103,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     #################################
 
     def create_stellar_template(self, dataClass, conditions) -> None:
-        """
-        Trigger the start of the creatoin of the stellar template
+        """Trigger the start of the creatoin of the stellar template
 
         Parameters
         ----------
@@ -138,15 +130,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         try:
             self.frameIDs_to_use = dataClass.get_frameIDs_from_subInst(self._associated_subInst)
-        except NoDataError as exc:
+        except NoDataError:
             logger.critical(
                 "{} has no valid observations. Not computing {} template",
                 self._associated_subInst,
                 self.__class__.template_type,
             )
-            self.add_to_status(
-                MISSING_DATA("No valid observations from {}".format(self._associated_subInst))
-            )
+            self.add_to_status(MISSING_DATA(f"No valid observations from {self._associated_subInst}"))
 
         self._base_checks_for_template_creation()
 
@@ -174,9 +164,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
                         frameID,
                         flags,
                     )
-                    self._rejection_flags_map[
-                        dataClass.get_filename_from_frameID(frameID, full_path=True)
-                    ] = flags
+                    self._rejection_flags_map[dataClass.get_filename_from_frameID(frameID, full_path=True)] = flags
 
             if len(IDS_to_use) == 0:
                 msg = (
@@ -201,9 +189,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             self.add_to_status(
                 MISSING_DATA(
                     "Can't create stellar template with less than {} observations".format(
-                        self._internal_configs["MINIMUM_NUMBER_OBS"]
-                    )
-                )
+                        self._internal_configs["MINIMUM_NUMBER_OBS"],
+                    ),
+                ),
             )
 
         self._base_checks_for_template_creation()
@@ -211,21 +199,17 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         # TODO: ensure that they all observations are consistent!
         first_frame = dataClass.get_frame_by_ID(self.frameIDs_to_use[0])
         self.is_blaze_corrected = first_frame.check_if_data_correction_enabled("is_blaze_corrected")
-        self.was_telluric_corrected = first_frame.check_if_data_correction_enabled(
-            "was_telluric_corrected"
-        )
+        self.was_telluric_corrected = first_frame.check_if_data_correction_enabled("was_telluric_corrected")
         self.is_skysub = first_frame.is_skysub
         self.is_BERV_corrected = first_frame.check_if_data_correction_enabled("is_BERV_corrected")
-        self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled(
-            "flux_atmos_balance_corrected"
-        )
+        self.flux_atmos_balance_corrected = first_frame.check_if_data_correction_enabled("flux_atmos_balance_corrected")
         self.flux_dispersion_balance_corrected = first_frame.check_if_data_correction_enabled(
-            "flux_dispersion_balance_corrected"
+            "flux_dispersion_balance_corrected",
         )
 
         if self._internal_configs["CONSTANT_RV_GUESS"]:
             logger.warning(
-                "Setting initial guess for template alignement to zero! Thread carefully in those uncharted areas"
+                "Setting initial guess for template alignement to zero! Thread carefully in those uncharted areas",
             )
             self.sourceRVs = [0 * kilometer_second for _ in self.frameIDs_to_use]
         else:
@@ -239,8 +223,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             )
 
     def add_new_frame_to_template(self, frame: Frame):
-        """
-        Allow to inject a new observation into a pre-existing model. This base function checks for
+        """Allow to inject a new observation into a pre-existing model. This base function checks for
         a match on the different flux corrections and ensures that the loaded Flag is set to False,
         so that it is possible to update the disk products afterwards.
 
@@ -253,12 +236,11 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         -------
 
         Raises
-        -------
+        ------
         custom_exceptions.InvalidConfiguration:
             If the flux corrections of the Frame do not match those from the stellar template
 
         """
-
         logger.info("Adding new frame to pre-existing stellar template. Updating model!")
         self._loaded = False
 
@@ -293,9 +275,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         ]:
             if val1 != val2:
                 keep = False
-                logger.warning(
-                    f"Template-frame corrections are different: {name} - template: {val1} - Frame: {val2}"
-                )
+                logger.warning(f"Template-frame corrections are different: {name} - template: {val1} - Frame: {val2}")
 
         if not keep:
             msg = "New frame does not match the corrections from the stellar template"
@@ -323,8 +303,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
     #################################
 
     def check_if_used_frameID(self, frameID: int) -> bool:
-        """
-        Parameters
+        """Parameters
         ----------
         frameID:
             ID of a given observations
@@ -377,6 +356,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
         Returns:
             Dict[str, Any]: Dictonary with key, value information (in json-compatible format) to be stored
+
         """
         return {
             "frameIDs_to_use": self.frameIDs_to_use,
@@ -388,9 +368,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             "flux_atmos_balance_corrected": self.flux_atmos_balance_corrected,
             "_reference_frameID": self._reference_frameID,
             "_reference_filepath": self._reference_filepath,
-            "sourceRVs": convert_data(
-                self.sourceRVs, new_units=kilometer_second, as_value=True
-            ),
+            "sourceRVs": convert_data(self.sourceRVs, new_units=kilometer_second, as_value=True),
             "RV_keyword": self.RV_keyword,
         }
 
@@ -405,7 +383,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         header["VERSION"] = __version__
 
         for key, config_val in self._internal_configs.items():
-            header["HIERARCH {}".format(key)] = config_val
+            header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
         hdus_cubes = [hdu]
@@ -435,13 +413,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
             to_write.write(self._internal_configs.text_pretty_description(indent_level=0))
 
-            to_write.write("\n\nRejected files (N = {})".format(len(self._rejection_flags_map)))
+            to_write.write(f"\n\nRejected files (N = {len(self._rejection_flags_map)})")
             for filepath, flags in self._rejection_flags_map.items():
-                to_write.write("\n\t{}:".format(filepath))
+                to_write.write(f"\n\t{filepath}:")
                 for flag in flags:
                     to_write.write(f"\n\t\t{flag}")
 
-            to_write.write("\n\nEpochs in use (Total = {}): \n".format(len(self.frameIDs_to_use)))
+            to_write.write(f"\n\nEpochs in use (Total = {len(self.frameIDs_to_use)}): \n")
             for path in self.used_fpaths:
                 to_write.write(f"\n{path}")
 
@@ -555,19 +533,23 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         for key, value in json_info.items():
             if key == "RV_keyword":
                 # This one is not supposed to be loaded in the current version
-                continue 
+                continue
             setattr(self, key, value)
 
     # Handle shared memory
-    def convert_to_shared_mem(self):
+    def convert_to_shared_mem(self, custom_size: Optional[Iterable[float]] = None):
         if self._in_shared_mem:
             # Avoid opening multiple arrays!
             logger.info(f"{self.__class__.name} already in shared memory")
-            return
+            return None
         logger.info("Putting the stellar template in shared memory")
         self._in_shared_mem = True
 
-        array_of_zeros = np.zeros(self.wavelengths.shape)
+        if custom_size is None:
+            array_of_zeros = np.zeros(self.wavelengths.shape)
+        else:
+            array_of_zeros = np.zeros(custom_size)
+
         buffer_info, shared_uncerts = create_shared_array(array_of_zeros)
         self.shm["template_errors"] = buffer_info
         uncertainties = shared_uncerts
@@ -576,7 +558,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         self.shm["template"] = buffer_info
         template = shared_temp
 
-        buffer_info, shared_wave = create_shared_array(array_of_zeros)
+        buffer_info, shared_wave = create_shared_array(np.zeros(self.wavelengths.shape))
         self.shm["template_counts"] = buffer_info
         counts = shared_wave
 
@@ -620,9 +602,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
 
     @property
     def storage_name(self) -> str:
-        """
-        Return the storage name for the stellar templates, which will include the name of the method,
+        """Return the storage name for the stellar templates, which will include the name of the method,
         the RV source for the aligmenet
+
         Returns
         -------
 
@@ -644,8 +626,8 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         remove_OB: Optional[Frame] = None,
         include_invalid=False,
     ):
-        """
-        Override of the interpolation algorithm to allow the rejection of OBs
+        """Override of the interpolation algorithm to allow the rejection of OBs
+
         Parameters
         ----------
         order
@@ -661,9 +643,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         """
         self.initialize_modelling_interface()
 
-        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(
-            order, include_invalid
-        )
+        wavelength, flux, uncertainties, mask = self.get_data_from_spectral_order(order, include_invalid)
         desired_inds = ~mask
 
         og_lambda, og_spectra, og_errs = (
@@ -700,7 +680,10 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         og_lambda = shift_function(wave=og_lambda, stellar_RV=shift_RV_by)
 
         try:
-            new_flux, new_errors = self.interpolation_interface.interpolate_spectrum_to_wavelength(
+            (
+                new_flux,
+                new_errors,
+            ) = self.interpolation_interface.interpolate_spectrum_to_wavelength(
                 og_lambda=og_lambda,
                 og_spectra=og_spectra,
                 og_err=og_errs,

@@ -5,7 +5,7 @@ from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 
 def calculate_telluric_mask(data_class, telluric_temp):
     if telluric_temp is None:
-        return
+        return None
     tell_template = telluric_temp.template
     tell_waves = telluric_temp.wavelengths
 
@@ -29,7 +29,7 @@ def calculate_telluric_mask(data_class, telluric_temp):
                         np.logical_and(
                             spectra_wave_order >= lower_wave,
                             spectra_wave_order <= higher_wave,
-                        )
+                        ),
                     )
                 ] = 1
 

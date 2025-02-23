@@ -1,8 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, NoReturn, Optional
-
-from loguru import logger
-from matplotlib import pyplot as plt
+from typing import Any, Dict, Optional
 
 from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools.PathsHandler import Paths
@@ -12,8 +9,7 @@ from SBART.utils.UserConfigs import DefaultValues, InternalParameters
 
 
 class BASE:
-    """
-    Base class, for almost all of SBART objects.
+    """Base class, for almost all of SBART objects.
 
     Inheriting from this class brings a common interface for SBART's User parameters and handling of disk paths.
 
@@ -32,16 +28,12 @@ class BASE:
         start_with_valid_status: bool = True,
         quiet_user_params: bool = False,
     ):
-        self._internal_configs = InternalParameters(
-            self.name, self._default_params, no_logs=quiet_user_params
-        )
+        self._internal_configs = InternalParameters(self.name, self._default_params, no_logs=quiet_user_params)
 
         if user_configs is None:
             user_configs = {}
 
-        self._internalPaths = Paths(
-            root_level_path=root_level_path, preconfigured_paths=needed_folders
-        )
+        self._internalPaths = Paths(root_level_path=root_level_path, preconfigured_paths=needed_folders)
 
         self._internal_configs.receive_user_inputs(user_configs)
         self._needed_folders = needed_folders
@@ -51,12 +43,11 @@ class BASE:
     #   Data storage
     ###
 
-    def trigger_data_storage(self, *args, **kwargs):
-        ...
+    def trigger_data_storage(self, *args, **kwargs): ...
 
     def json_ready(self) -> Dict[str, Any]:
-        """
-        Concerts the current class into a json entry that can be easily saved/loaded to/from disk
+        """Concerts the current class into a json entry that can be easily saved/loaded to/from disk
+
         Returns
         -------
 
@@ -67,7 +58,7 @@ class BASE:
         """ """
         if not isinstance(storage_path, (str, Path)):
             raise custom_exceptions.InvalidConfiguration(
-                f"The root path must be a string or Path object, instead of {storage_path}"
+                f"The root path must be a string or Path object, instead of {storage_path}",
             )
 
         if not isinstance(storage_path, Path):
@@ -86,9 +77,9 @@ class BASE:
         self._status.store_flag(new_flag=new_flag)
 
     def _data_access_checks(self):
-        """
-        Ensure that the status of the sBART object is valid. This is a very broad check of validity that is overloaded
+        """Ensure that the status of the sBART object is valid. This is a very broad check of validity that is overloaded
         in multiple places in the code
+
         Returns
         -------
 
@@ -96,9 +87,7 @@ class BASE:
         if not self.is_valid:
             raise custom_exceptions.InvalidConfiguration(
                 "Attempting to access data from sBART object that is not "
-                "valid. Check previous log messages for further information: {}".format(
-                    self._status
-                )
+                f"valid. Check previous log messages for further information: {self._status}",
             )
 
     def load_from_file(self, root_path, loading_path: str) -> None:
@@ -108,8 +97,7 @@ class BASE:
     #  Properties
     ###
     def is_object_type(self, type_to_check: str) -> bool:
-        """
-        Check if this object is of a given type
+        """Check if this object is of a given type
 
         Parameters
         ----------
@@ -127,7 +115,7 @@ class BASE:
 
     @property
     def name(self) -> str:
-        return "{} - {}".format(self.__class__._object_type, self.__class__._name)
+        return f"{self.__class__._object_type} - {self.__class__._name}"
 
     @property
     def storage_name(self) -> str:

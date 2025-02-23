@@ -1,22 +1,24 @@
 from pathlib import Path
+from typing import Dict, NoReturn, Optional
+
 from loguru import logger
-from typing import NoReturn, Dict, Optional
 
-import numpy as np
-from SBART.utils.BASE import BASE
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList, BooleanValue, PathValue
-
-from SBART.spectral_normalization.normalization_base import NormalizationBase
-from SBART.spectral_normalization import available_normalization_interfaces
-from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils import custom_exceptions
 from SBART.DataUnits import SpecNorm_Unit
+from SBART.spectral_normalization import available_normalization_interfaces
+from SBART.spectral_normalization.normalization_base import NormalizationBase
+from SBART.utils import custom_exceptions
+from SBART.utils.BASE import BASE
+from SBART.utils.UserConfigs import (
+    BooleanValue,
+    DefaultValues,
+    PathValue,
+    UserParam,
+    ValueFromList,
+)
 
 
 class Spectral_Normalization(BASE):
-    """
-
-    Introduces, in a given object, the functionality to normalize the continuum level.
+    """Introduces, in a given object, the functionality to normalize the continuum level.
     In order to inherit from this class, it must also be a children of :class:`SBART.Components.SpectrumComponent.Spectrum`
 
     **User parameters:**
@@ -28,7 +30,6 @@ class Spectral_Normalization(BASE):
     ============================ ================ ================ ======================== ================
 
     Notes:
-
         [1] Name of the spectral normalizers, that are described in :mod:`SBART.spectral_normalization`
 
     *Note:* Also check the **User parameters** of the parent classes for further customization options of SBART
@@ -39,7 +40,8 @@ class Spectral_Normalization(BASE):
     _default_params = BASE._default_params + DefaultValues(
         NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
         NORMALIZATION_MODE=UserParam(
-            "RASSINE", constraint=ValueFromList(list(available_normalization_interfaces.keys()))
+            "RASSINE",
+            constraint=ValueFromList(list(available_normalization_interfaces.keys())),
         ),
         S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
         RASSINE_path=UserParam(mandatory=False, constraint=PathValue, default_value=""),
@@ -60,8 +62,8 @@ class Spectral_Normalization(BASE):
         self._normalization_information: Optional[SpecNorm_Unit] = None
 
     def initialize_normalization_interface(self) -> NoReturn:
-        """
-        Initialize the normalization interface for the currently selected mode!
+        """Initialize the normalization interface for the currently selected mode!
+
         Returns
         -------
 
@@ -87,13 +89,11 @@ class Spectral_Normalization(BASE):
 
         if self._internalPaths.root_storage_path is None:
             logger.critical(
-                f"{self.name} launching normalization interface without a root path. Fallback to current directory"
+                f"{self.name} launching normalization interface without a root path. Fallback to current directory",
             )
-            self.generate_root_path(Path("."))
+            self.generate_root_path(Path())
 
-        self._normalization_interfaces[key].generate_root_path(
-            self._internalPaths.root_storage_path
-        )
+        self._normalization_interfaces[key].generate_root_path(self._internalPaths.root_storage_path)
 
         current_frame_name = self.fname.split(".fits")[0]
         try:  # Generate class to store the normalization parameters
@@ -108,15 +108,13 @@ class Spectral_Normalization(BASE):
                 frame_name=current_frame_name,
                 algo_name=self._internal_configs["NORMALIZATION_MODE"],
             )
-            self._normalization_information.generate_root_path(
-                self._internalPaths.root_storage_path
-            )
+            self._normalization_information.generate_root_path(self._internalPaths.root_storage_path)
 
     def normalize_spectra(self):
-        """
-        TODO: See if we need to parallelize this!
+        """TODO: See if we need to parallelize this!
 
         Launch the normalization of the spectra, using the selected algorithm
+
         Returns
         -------
 
@@ -129,9 +127,7 @@ class Spectral_Normalization(BASE):
             return
         self.initialize_normalization_interface()
 
-        norm_interface = self._normalization_interfaces[
-            self._internal_configs["NORMALIZATION_MODE"]
-        ]
+        norm_interface = self._normalization_interfaces[self._internal_configs["NORMALIZATION_MODE"]]
         if norm_interface.orderwise_application:
             self.trigger_orderwise_method(norm_interface)
         else:
@@ -143,7 +139,12 @@ class Spectral_Normalization(BASE):
 
         wavelengths, flux, uncerts, _ = self.get_data_from_full_spectrum()
 
-        new_waves, new_flux, new_uncert, norm_keys = norm_interface.launch_epochwise_normalization(
+        (
+            new_waves,
+            new_flux,
+            new_uncert,
+            norm_keys,
+        ) = norm_interface.launch_epochwise_normalization(
             wavelengths=wavelengths,
             flux=flux,
             uncertainties=uncerts,
@@ -164,14 +165,16 @@ class Spectral_Normalization(BASE):
     def trigger_orderwise_method(self, norm_interface):
         # TODO: see if we want to parallelize this!
         for order in range(self.N_orders):
-            wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(
-                order, include_invalid=True
-            )
+            wavelengths, flux, uncerts, mask = self.get_data_from_spectral_order(order, include_invalid=True)
 
             mask_to_use = ~mask
             loaded_info = self._normalization_information.get_norm_info_from_order(order)
 
-            new_flux, new_uncerts, norm_keys = norm_interface.launch_orderwise_normalization(
+            (
+                new_flux,
+                new_uncerts,
+                norm_keys,
+            ) = norm_interface.launch_orderwise_normalization(
                 wavelengths=wavelengths[mask_to_use],
                 flux=flux[mask_to_use],
                 uncertainties=uncerts[mask_to_use],

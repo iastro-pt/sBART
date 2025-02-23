@@ -1,5 +1,4 @@
-"""
-Introduce extra functionalities in Classes.
+"""Introduce extra functionalities in Classes.
 
 A class that inherits from the Components will have new functionalities.
 
@@ -9,5 +8,5 @@ A class that inherits from the Components will have new functionalities.
 """
 
 from .Modelling import Spectral_Modelling
-from .SpectrumComponent import Spectrum
 from .Spectral_Normalization import Spectral_Normalization
+from .SpectrumComponent import Spectrum

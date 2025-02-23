@@ -5,8 +5,7 @@ from SBART.utils.math_tools.weighted_mean import weighted_mean
 
 
 def orderwise_combination(RV_cube, variance_estimator) -> RV_cube:
-    """
-    Merge the information from the individual orders.
+    """Merge the information from the individual orders.
 
     Automatically convert the results to meter_second, as this is the internal "selected" units!
 
