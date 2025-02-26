@@ -25,7 +25,9 @@ class Constraint:
     def __radd__(self, other):
         return self.__add__(other)
 
-    def evaluate(self, param_name, value): ...
+    def evaluate(self, param_name, value):
+        for entry in self._constraint_list:
+            entry(param_name, value)
 
     def apply_to_value(self, param_name: str, value: Any) -> NoReturn:
         for evaluator in self._constraint_list:
@@ -79,7 +81,7 @@ class ValueFromDtype(Constraint):
             )
 
 
-class ValueFromList(Constraint):
+class ValueFromIterable(Constraint):
     def __init__(self, available_options: Iterable):
         super().__init__(const_text=f"Value from list <{available_options}>")
         self.available_options = available_options
@@ -91,7 +93,10 @@ class ValueFromList(Constraint):
                 if element not in self.available_options:
                     bad_value = True
                     break
-        elif value not in self.available_options:
+        elif (
+            # The first line ensures that this works for Enums
+            isinstance(self.available_options, type) and not isinstance(value, self.available_options)
+        ) or value not in self.available_options:
             bad_value = True
 
         if bad_value:
@@ -107,7 +112,7 @@ class IterableMustHave(Constraint):
         self.mode = mode
 
         if mode not in ["all", "either"]:
-            raise InternalError("Using the wrong mode")
+            raise InternalError("Using the wrong mode %s", mode)
 
     def evaluate(self, param_name, value) -> NoReturn:
         if not isinstance(value, (list, tuple)):
@@ -321,8 +326,7 @@ class InternalParameters:
 
 
 class DefaultValues:
-    """Holds all of the user parameters that SBART has available for any given object.
-    """
+    """Holds all of the user parameters that SBART has available for any given object."""
 
     def __init__(self, **kwargs):
         self.default_mapping = kwargs
