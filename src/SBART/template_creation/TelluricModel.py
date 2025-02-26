@@ -8,7 +8,7 @@ from SBART.Base_Models.TemplateFramework import TemplateFramework
 from SBART.utils.choices import TELLURIC_EXTENSION, WORKING_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
 from .telluric_templates.telluric_from_tapas import TapasTelluric
 from .telluric_templates.telluric_from_telfit import TelfitTelluric
@@ -56,9 +56,9 @@ class TelluricModel(TemplateFramework):
     template_map = {"Telfit": TelfitTelluric, "Tapas": TapasTelluric}
 
     _default_params = TemplateFramework._default_params + DefaultValues(
-        CREATION_MODE=UserParam(None, constraint=ValueFromList(("tapas", "telfit")), mandatory=True),
-        APPLICATION_MODE=UserParam("removal", constraint=ValueFromList(("removal", "correction"))),
-        EXTENSION_MODE=UserParam(TELLURIC_EXTENSION.LINES, constraint=ValueFromList(TELLURIC_EXTENSION)),
+        CREATION_MODE=UserParam(None, constraint=ValueFromIterable(("tapas", "telfit")), mandatory=True),
+        APPLICATION_MODE=UserParam("removal", constraint=ValueFromIterable(("removal", "correction"))),
+        EXTENSION_MODE=UserParam(TELLURIC_EXTENSION.LINES, constraint=ValueFromIterable(TELLURIC_EXTENSION)),
     )
 
     def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):

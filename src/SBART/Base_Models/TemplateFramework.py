@@ -11,7 +11,7 @@ from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
 
 class TemplateFramework(BASE):
@@ -37,7 +37,7 @@ class TemplateFramework(BASE):
     _default_params = BASE._default_params + DefaultValues(
         SAVE_DISK_SPACE=UserParam(
             DISK_SAVE_MODE.DISABLED,
-            constraint=ValueFromList(DISK_SAVE_MODE),
+            constraint=ValueFromIterable(DISK_SAVE_MODE),
             description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
         ),
     )

@@ -16,7 +16,7 @@ from SBART.utils.custom_exceptions import (
 from SBART.utils.SBARTtypes import UI_DICT
 from SBART.utils.status_codes import INTERNAL_ERROR, SUCCESS, Flag
 from SBART.utils.units import meter_second
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 from SBART.utils.work_packages import Package, WorkerInput
 
 
@@ -53,9 +53,9 @@ class SamplerModel(BASE):
         #     OBSERVATION - only inside a observation
         WINDOW_GENERATION_MODE=UserParam(
             default_value="OBSERVATION",
-            constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
+            constraint=ValueFromIterable(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
         ),
-        STARTING_RV_PIPELINE=UserParam("DRS", constraint=ValueFromList(("DRS", "SBART"))),
+        STARTING_RV_PIPELINE=UserParam("DRS", constraint=ValueFromIterable(("DRS", "SBART"))),
     )
 
     def __init__(

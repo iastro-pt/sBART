@@ -24,7 +24,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     Positive_Value_Constraint,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .Stellar_Template import StellarTemplate
@@ -46,7 +46,7 @@ class SumStellar(StellarTemplate):
 
     method_name = "Sum"
     _default_params = StellarTemplate._default_params + DefaultValues(
-        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
+        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         FLUX_threshold_for_template=UserParam(
             default_value=1,
             constraint=Positive_Value_Constraint,

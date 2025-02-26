@@ -13,7 +13,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     PathValue,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .target_function import target
@@ -44,14 +44,14 @@ class RV_precision(RV_routine):
     _name = "RV_precision"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
-        RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromIterable(("simple", "with_correction"))),
+        RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam(default_value=None, constraint=PathValue),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),
     )
     _default_params.update(
         "CONTINUUM_FIT_TYPE",
-        UserParam("paper", constraint=ValueFromList(("paper", "stretch"))),
+        UserParam("paper", constraint=ValueFromIterable(("paper", "stretch"))),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):

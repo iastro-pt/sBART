@@ -12,7 +12,7 @@ from SBART.utils import custom_exceptions, meter_second
 from SBART.utils.choices import WORKING_MODE
 from SBART.utils.custom_exceptions import BadTemplateError
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
 from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit
 from ...utils.math_tools.weighted_mean import weighted_mean
@@ -50,11 +50,11 @@ class RV_step(RV_routine):
     _name = "RV_step"
 
     _default_params = RV_routine._default_params + DefaultValues(
-        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromIterable(("simple", "with_correction"))),
     )
     _default_params.update(
         "CONTINUUM_FIT_TYPE",
-        UserParam("paper", constraint=ValueFromList(("paper", "stretch"))),
+        UserParam("paper", constraint=ValueFromIterable(("paper", "stretch"))),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):

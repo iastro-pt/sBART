@@ -13,7 +13,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     PathValue,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 
@@ -41,7 +41,7 @@ class Spectral_Normalization(BASE):
         NORMALIZE_SPECTRA=UserParam(False, constraint=BooleanValue),
         NORMALIZATION_MODE=UserParam(
             "RASSINE",
-            constraint=ValueFromList(list(available_normalization_interfaces.keys())),
+            constraint=ValueFromIterable(list(available_normalization_interfaces.keys())),
         ),
         S1D_folder=UserParam(mandatory=False, constraint=PathValue, default_value=""),
         RASSINE_path=UserParam(mandatory=False, constraint=PathValue, default_value=""),

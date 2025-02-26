@@ -5,7 +5,7 @@ from SBART.utils import custom_exceptions
 from SBART.utils.paths_tools.PathsHandler import Paths
 from SBART.utils.status_codes import Flag, Status
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
-from SBART.utils.UserConfigs import DefaultValues, InternalParameters, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, InternalParameters, UserParam, ValueFromIterable
 from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
 
 
@@ -22,12 +22,12 @@ class BASE:
     _default_params = DefaultValues(
         SAVE_DISK_SPACE=UserParam(
             DISK_SAVE_MODE.DISABLED,
-            constraint=ValueFromList(DISK_SAVE_MODE),
+            constraint=ValueFromIterable(DISK_SAVE_MODE),
             description="Save disk space in the outputs if different than None. extreme removes all plots and 'nice too have but not critical' data",
         ),
         WORKING_MODE=UserParam(
             default_value=WORKING_MODE.ONE_SHOT,
-            constraint=ValueFromList(WORKING_MODE),
+            constraint=ValueFromIterable(WORKING_MODE),
             description="How to store the output files. If one-shot, overwrites all txt files, if rolling updates the disk files",
         ),
     )

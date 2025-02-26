@@ -16,7 +16,7 @@ from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.SBARTtypes import RV_measurement
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
 
 class ModelComponent(BASE):
@@ -29,7 +29,7 @@ class ModelComponent(BASE):
         #     OBSERVATION - only inside an observation
         GENERATION_MODE=UserParam(
             default_value="GLOBAL",
-            constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
+            constraint=ValueFromIterable(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
             mandatory=False,
         ),
     )

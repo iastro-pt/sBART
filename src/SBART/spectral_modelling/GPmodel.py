@@ -30,7 +30,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     Positive_Value_Constraint,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 
@@ -51,9 +51,9 @@ class GPSpecModel(ModellingBase):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = ModellingBase._default_params + DefaultValues(
-        GP_KERNEL=UserParam("Matern-5_2", constraint=ValueFromList(["Matern-5_2", "Matern-3_2"])),
+        GP_KERNEL=UserParam("Matern-5_2", constraint=ValueFromIterable(["Matern-5_2", "Matern-3_2"])),
         FORCE_MODEL_GENERATION=UserParam(False, constraint=BooleanValue),
-        POSTERIOR_CHARACTERIZATION=UserParam("minimize", constraint=ValueFromList(["minimize", "MCMC"])),
+        POSTERIOR_CHARACTERIZATION=UserParam("minimize", constraint=ValueFromIterable(["minimize", "MCMC"])),
         OPTIMIZATION_MAX_ITER=UserParam(1000, constraint=Positive_Value_Constraint),
     )
 

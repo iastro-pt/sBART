@@ -11,7 +11,7 @@ from SBART.utils.UserConfigs import (
     IntegerValue,
     Positive_Value_Constraint,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 
@@ -37,11 +37,11 @@ class ScipyInterpolSpecModel(ModellingBase):
     _default_params = ModellingBase._default_params + DefaultValues(
         SPLINE_TYPE=UserParam(
             "cubic",
-            constraint=ValueFromList(["cubic", "quadratic", "pchip", "nearest"]),
+            constraint=ValueFromIterable(["cubic", "quadratic", "pchip", "nearest"]),
         ),
         INTERPOLATION_ERR_PROP=UserParam(
             "interpolation",
-            constraint=ValueFromList(["none", "interpolation", "propagation"]),
+            constraint=ValueFromIterable(["none", "interpolation", "propagation"]),
         ),
         NUMBER_WORKERS=UserParam(1, IntegerValue + Positive_Value_Constraint),
     )
@@ -59,8 +59,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         return
 
     def _store_model_to_disk(self) -> NoReturn:
-        """There is nothing to be stored. Overriding parent implementation to avoid issues
-        """
+        """There is nothing to be stored. Overriding parent implementation to avoid issues"""
         return
 
     def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths, order):
@@ -110,7 +109,9 @@ class ScipyInterpolSpecModel(ModellingBase):
             else:
                 extra = {}
             CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                og_lambda, og_spectra, **extra,
+                og_lambda,
+                og_spectra,
+                **extra,
             )
             new_data = CSplineInterpolator(new_wavelengths)
 
@@ -118,7 +119,9 @@ class ScipyInterpolSpecModel(ModellingBase):
                 new_errors = np.zeros(new_data.shape)
             else:
                 CSplineInterpolator = interpolator_map[self._internal_configs["SPLINE_TYPE"]](
-                    og_lambda, og_err, **extra,
+                    og_lambda,
+                    og_err,
+                    **extra,
                 )
                 new_errors = CSplineInterpolator(new_wavelengths)
         else:

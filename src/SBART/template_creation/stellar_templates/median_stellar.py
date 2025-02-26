@@ -23,7 +23,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     Positive_Value_Constraint,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .Stellar_Template import StellarTemplate
@@ -45,7 +45,7 @@ class MedianStellar(StellarTemplate):
 
     method_name = "Median"
     _default_params = StellarTemplate._default_params + DefaultValues(
-        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
+        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         FLUX_threshold_for_template=UserParam(
             default_value=1,
             constraint=Positive_Value_Constraint,
@@ -67,8 +67,7 @@ class MedianStellar(StellarTemplate):
 
     @custom_exceptions.ensure_invalid_template
     def create_stellar_template(self, dataClass, conditions=None) -> None:
-        """Creating the stellar template
-        """
+        """Creating the stellar template"""
         # removal may change the first common wavelength; make sure
         try:
             super().create_stellar_template(dataClass, conditions)
@@ -242,8 +241,7 @@ class MedianStellar(StellarTemplate):
         self.uncertainties = np.sqrt(np.sum(shr_uncert, axis=1)) / len(self.frameIDs_to_use)
 
     def perform_calculations(self, in_queue, out_queue, buffer_info, **kwargs):
-        """Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!
-        """
+        """Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!"""
         current_subInst = kwargs["subInst"]
         DataClassProxy = kwargs["dataClass"]
         frame_RV_map = kwargs["frame_RV_map"]

@@ -16,7 +16,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     UserParam,
     ValueFromDtype,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .stellar_templates.median_stellar import MedianStellar
@@ -56,8 +56,8 @@ class StellarModel(TemplateFramework):
     template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar, "Median": MedianStellar}
 
     _default_params = TemplateFramework._default_params + DefaultValues(
-        CREATION_MODE=UserParam("Sum", constraint=ValueFromList(list(template_map.keys()))),
-        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromList(["DRS", "SBART"])),
+        CREATION_MODE=UserParam("Sum", constraint=ValueFromIterable(list(template_map.keys()))),
+        ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam("", constraint=ValueFromDtype((str, Path))),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),
     )

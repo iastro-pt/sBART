@@ -8,7 +8,7 @@ from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
 
 class Spectral_Modelling(BASE):
@@ -41,7 +41,7 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam("splines", constraint=ValueFromList(("splines",))),
+        INTERPOL_MODE=UserParam("splines", constraint=ValueFromIterable(("splines",))),
         # We have to add this here, so that the parameters are not rejected by the config validation
         SPLINE_TYPE=UserParam("cubic"),
         INTERPOLATION_ERR_PROP=UserParam("interpolation"),
@@ -111,7 +111,12 @@ class Spectral_Modelling(BASE):
         self.interpolation_interface.set_interpolation_properties(new_properties)
 
     def interpolate_spectrum_to_wavelength(
-        self, order, new_wavelengths, shift_RV_by, RV_shift_mode, include_invalid=False,
+        self,
+        order,
+        new_wavelengths,
+        shift_RV_by,
+        RV_shift_mode,
+        include_invalid=False,
     ):
         self.initialize_modelling_interface()
 

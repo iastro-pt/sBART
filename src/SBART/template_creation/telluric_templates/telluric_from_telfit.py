@@ -30,7 +30,7 @@ from SBART.utils.UserConfigs import (
     StringValue,
     UserParam,
     ValueFromDtype,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .Telluric_Template import TelluricTemplate
@@ -185,7 +185,7 @@ class TelfitTelluric(TelluricTemplate):
             # step size for telluric model wavelengths
             PARAMS_TO_FIT=UserParam(
                 ["pressure", "humidity"],
-                constraint=ValueFromList(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
+                constraint=ValueFromIterable(["temperature", "pressure", "humidity", "co2", "ch4", "n2o"]),
             ),
             USE_GRID_OF_TRANSMITTANCE=UserParam(
                 default_value=False,

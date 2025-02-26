@@ -1,5 +1,4 @@
-"""Chi-squared minimization, for a classical template matching approach.
-"""
+"""Chi-squared minimization, for a classical template matching approach."""
 
 from typing import Any, Dict, Optional, Tuple
 
@@ -10,7 +9,7 @@ from scipy.optimize import minimize_scalar
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
+from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 from SBART.utils.work_packages import Package
 
 
@@ -25,7 +24,7 @@ class chi_squared_sampler(SamplerModel):
 
     _name = "chi_squared"
     _default_params = SamplerModel._default_params + DefaultValues(
-        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromList(("NORMAL", "DRS-LIKE")), mandatory=False),
+        RV_ESTIMATION_MODE=UserParam("NORMAL", constraint=ValueFromIterable(("NORMAL", "DRS-LIKE")), mandatory=False),
     )
 
     def __init__(self, rv_step, rv_prior, user_configs: Optional[Dict[str, Any]] = None):
@@ -66,7 +65,8 @@ class chi_squared_sampler(SamplerModel):
         """
         out_pkg = Package(("RV", "RV_uncertainty"))
         init_guess, rv_bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["current_frameID"], rv_units=meter_second,
+            frameID=target_kwargs["current_frameID"],
+            rv_units=meter_second,
         )
         apply_parabolic_fit = False
         rv_step = self.RV_step.to(meter_second).value
@@ -137,10 +137,8 @@ class chi_squared_sampler(SamplerModel):
         else:
             new_target_kwargs = {
                 **target_kwargs,
-
-                    "get_minimum_information": True,
-                    "SAVE_DISK_SPACE": self.disk_save_enabled
-                ,
+                "get_minimum_information": True,
+                "SAVE_DISK_SPACE": self.disk_save_enabled,
             }
             min_info = target(rv, **new_target_kwargs)
             for key, val in min_info.items():
@@ -156,8 +154,7 @@ class chi_squared_sampler(SamplerModel):
         return out_pkg, order_status
 
     def _apply_parabolic_fit(self, rvs, chi_squared, rv_step):
-        """Apply the parabolic fit to the chi-square curve to estimate RV and error
-        """
+        """Apply the parabolic fit to the chi-square curve to estimate RV and error"""
         index = np.argmin(chi_squared)
         if len(chi_squared) == 3 and index != 1:
             raise Exception(f"Minimum value is not True. adjacent point is smaller: rvs : {rvs} - chi : {chi_squared}")

@@ -20,7 +20,7 @@ from SBART.utils.UserConfigs import (
     DefaultValues,
     IntegerValue,
     UserParam,
-    ValueFromList,
+    ValueFromIterable,
 )
 
 from .target_function import SBART_target
@@ -54,21 +54,21 @@ class RV_Bayesian(RV_routine):
 
     _default_params = RV_routine._default_params + DefaultValues(
         include_jitter=UserParam(False, constraint=BooleanValue),
-        chromatic_trend=UserParam("none", ValueFromList(("none", "OrderWise"))),  # This does nothing
+        chromatic_trend=UserParam("none", ValueFromIterable(("none", "OrderWise"))),  # This does nothing
         trend_degree=UserParam(2, constraint=IntegerValue),
         # only used if we compute order-wise RVs
-        RV_variance_estimator=UserParam("simple", constraint=ValueFromList(("simple", "with_correction"))),
+        RV_variance_estimator=UserParam("simple", constraint=ValueFromIterable(("simple", "with_correction"))),
         PLOT_MODEL_MISSPECIFICATION=UserParam(True, constraint=BooleanValue),
     )
     # Bayesian only accepts linear fit to continuum
     _default_params.update(
         "CONTINUUM_FIT_POLY_DEGREE",
-        UserParam(1, constraint=ValueFromList([1])),
+        UserParam(1, constraint=ValueFromIterable([1])),
     )
 
     _default_params.update(
         "RV_extraction",
-        UserParam("epoch-wise", constraint=ValueFromList(("epoch-wise", "order-wise"))),
+        UserParam("epoch-wise", constraint=ValueFromIterable(("epoch-wise", "order-wise"))),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):

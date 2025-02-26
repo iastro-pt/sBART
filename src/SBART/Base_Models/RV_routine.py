@@ -32,7 +32,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
     ValueFromDtype,
-    ValueFromList,
+    ValueFromIterable,
 )
 from SBART.utils.work_packages import ShutdownPackage
 
@@ -93,22 +93,22 @@ class RV_routine(BASE):
     _default_params = BASE._default_params + DefaultValues(
         uncertainty_prop_type=UserParam(
             "interpolation",
-            constraint=ValueFromList(
+            constraint=ValueFromIterable(
                 ("interpolation", "propagation"),
             ),
             description="Method with which the uncertainty propagation will be done",
         ),
-        RV_extraction=UserParam("order-wise", constraint=ValueFromList(("order-wise",))),
+        RV_extraction=UserParam("order-wise", constraint=ValueFromIterable(("order-wise",))),
         order_removal_mode=UserParam(
             "per_subInstrument",
-            constraint=ValueFromList(("per_subInstrument", "global")),
+            constraint=ValueFromIterable(("per_subInstrument", "global")),
         ),
         sigma_outliers_tolerance=UserParam(
             6,
             constraint=NumericValue,
             description="Sigma-clip for outliers in spectra <-> template comparison",
         ),  # tolerance for outliers in spectra - temp comp
-        outlier_metric=UserParam("Paper", ValueFromList(("Paper", "MAD"))),
+        outlier_metric=UserParam("Paper", ValueFromIterable(("Paper", "MAD"))),
         remove_OBS_from_template=UserParam(
             False,
             BooleanValue,
@@ -131,7 +131,7 @@ class RV_routine(BASE):
                 "frameIDs",
                 "QC",
             ],
-            constraint=ValueFromList(
+            constraint=ValueFromIterable(
                 [
                     "BJD",
                     "MJD",
@@ -160,7 +160,7 @@ class RV_routine(BASE):
             constraint=Positive_Value_Constraint,
             description="If MEMORY_SAVE_MODE is active, only keep thisnumber of observations in memory",
         ),
-        CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromList(("paper",))),
+        CONTINUUM_FIT_TYPE=UserParam("paper", constraint=ValueFromIterable(("paper",))),
         CONTINUUM_FIT_POLY_DEGREE=UserParam(1, constraint=Positive_Value_Constraint + ValueFromDtype((int,))),
         # How we select the wavelength regions to use. TODO: think about this one
         #     GLOBAL - common to all valid frames
@@ -169,7 +169,7 @@ class RV_routine(BASE):
         # Note: All that are not "OBSERVATION" need the spectral_analysis to run first
         COMMON_WAVELENGTHS_MODE=UserParam(
             default_value="OBSERVATION",
-            constraint=ValueFromList(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
+            constraint=ValueFromIterable(("GLOBAL", "SUB-INSTRUMENT", "OBSERVATION")),
         ),
         COMPUTE_SA_CORRECTION=UserParam(
             default_value=True,
