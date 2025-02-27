@@ -381,8 +381,9 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         header["TYPE"] = self.__class__.template_type
         header["subInst"] = self._associated_subInst
         header["VERSION"] = __version__
-
         for key, config_val in self._internal_configs.items():
+            if key in ["SPLINE_TYPE", "INTERPOL_MODE"]:
+                config_val = config_val.name 
             header[f"HIERARCH {key}"] = config_val
         hdu = fits.PrimaryHDU(data=[], header=header)
 
