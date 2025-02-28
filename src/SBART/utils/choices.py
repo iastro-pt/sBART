@@ -1,7 +1,5 @@
 from enum import Enum, auto
 
-# class syntax
-
 
 class DISK_SAVE_MODE(Enum):
     """Enumerator to represent the DISK save mode of a given SBART object."""
@@ -21,3 +19,20 @@ class WORKING_MODE(Enum):
 class TELLURIC_EXTENSION(Enum):
     LINES = "LINES"
     WINDOW = "WINDOW"
+
+
+class SPECTRA_INTERPOL_MODE(Enum):
+    """Enumerator to represent the DISK save mode of a given SBART object."""
+
+    SPLINES = 1
+    GP = 2
+
+
+class SPLINE_INTERPOL_MODE(Enum):
+    """Enumerator to represent the DISK save mode of a given SBART object."""
+
+    CUBIC_SPLINE = 1
+    QUADRATIC_SPLINE = 2
+    PCHIP = 3
+    NEAREST = 4
+    RBF = 5

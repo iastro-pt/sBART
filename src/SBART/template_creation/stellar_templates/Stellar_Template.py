@@ -382,15 +382,13 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
         header["TYPE"] = self.__class__.template_type
         header["subInst"] = self._associated_subInst
         header["VERSION"] = __version__
-
         for key, config_val in self._internal_configs.items():
             if key in ["SAVE_DISK_SPACE"]:
                 continue
 
-            if key in ["WORKING_MODE"]:
-                header[f"HIERARCH {key}"] = config_val.value
-            else:
-                header[f"HIERARCH {key}"] = config_val
+            if key in ["SPLINE_TYPE", "INTERPOL_MODE", "WORKING_MODE"]:
+                config_val = config_val.name
+            header[f"HIERARCH {key}"] = config_val
 
         hdu = fits.PrimaryHDU(data=[], header=header)
 
