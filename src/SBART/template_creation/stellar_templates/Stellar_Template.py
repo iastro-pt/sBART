@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, NoReturn, Optional, Union
 
@@ -386,7 +387,7 @@ class StellarTemplate(BaseTemplate, Spectral_Modelling):
             if key in ["SAVE_DISK_SPACE"]:
                 continue
 
-            if key in ["SPLINE_TYPE", "INTERPOL_MODE", "WORKING_MODE"]:
+            if isinstance(config_val, Enum):
                 config_val = config_val.name
             header[f"HIERARCH {key}"] = config_val
 

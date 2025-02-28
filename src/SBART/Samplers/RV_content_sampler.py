@@ -5,6 +5,7 @@ of the stellar template
 from typing import Tuple
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.units import kilometer_second
 from SBART.utils.work_packages import Package
@@ -31,7 +32,7 @@ class RVcontent_sampler(SamplerModel):
 
         """
         super().__init__(
-            mode="order-wise",
+            mode=RV_EXTRACTION_MODE.ORDER_WISE,
             RV_step=rv_step,
             RV_window=rv_prior,
         )

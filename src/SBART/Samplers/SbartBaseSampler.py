@@ -3,6 +3,7 @@
 **Note:** Not supposed to be used by the user!
 
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -13,6 +14,7 @@ import numpy as np
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.ModelParameters import ModelComponent
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import SUCCESS, Flag
@@ -46,7 +48,7 @@ class SbartBaseSampler(SamplerModel):
         ]
 
         super().__init__(
-            mode="order-wise",
+            mode=RV_EXTRACTION_MODE.ORDER_WISE,
             RV_step=RV_step,
             RV_window=RV_window,
             params_of_model=extra_model_components,

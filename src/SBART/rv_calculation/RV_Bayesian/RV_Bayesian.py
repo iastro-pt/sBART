@@ -9,6 +9,7 @@ from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit
 from SBART.ModelParameters import ModelComponent
 from SBART.utils import custom_exceptions
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.concurrent_tools.create_shared_arr import create_shared_array
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from SBART.utils.math_tools.weighted_mean import weighted_mean
@@ -68,7 +69,10 @@ class RV_Bayesian(RV_routine):
 
     _default_params.update(
         "RV_extraction",
-        UserParam("epoch-wise", constraint=ValueFromIterable(("epoch-wise", "order-wise"))),
+        UserParam(
+            RV_EXTRACTION_MODE.EPOCH_WISE,
+            constraint=ValueFromIterable(RV_EXTRACTION_MODE),
+        ),
     )
 
     def __init__(self, processes: int, RV_configs: dict, sampler):
@@ -172,9 +176,9 @@ class RV_Bayesian(RV_routine):
             RV cube filled with all of the information
 
         """
-        if self._internal_configs["RV_extraction"] == "order-wise":
+        if self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.ORDER_WISE:
             cube = self._orderwise_processment(empty_cube, worker_outputs)
-        elif self._internal_configs["RV_extraction"] == "epoch-wise":
+        elif self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.EPOCH_WISE:
             cube = self._epochwise_processment(empty_cube, worker_outputs)
 
         return cube
@@ -310,7 +314,7 @@ class RV_Bayesian(RV_routine):
                     logger.warning("FrameID {} did not converge.".format(package["frameID"]))
                     continue
                 # it is a list of numpy arrays! in the epoch-wise mode
-                if self._internal_configs["RV_extraction"] == "order-wise":
+                if self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.ORDER_WISE:
                     full_model_misspec = package["FluxModel_misspecification_from_order"]
                 else:
                     full_model_misspec = []
@@ -369,10 +373,10 @@ class RV_Bayesian(RV_routine):
             plt.legend(loc=4, bbox_to_anchor=(0.98, 1), ncol=2)
             plt.tight_layout()
 
-            if self._internal_configs["RV_extraction"] == "order-wise":
+            if self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.ORDER_WISE:
                 # TODO: ensure that this KW actually exists
                 fname = "model_Flux_missspecification_order{}.png".format(package["order"])
-            elif self._internal_configs["RV_extraction"] == "epoch-wise":
+            elif self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.EPOCH_WISE:
                 fname = "model_Flux_missspecification.png"
 
             plt.savefig(
@@ -397,7 +401,7 @@ class RV_Bayesian(RV_routine):
 
     def _open_shared_memory(self, inst_info: dict) -> None:
         """If we are in the <epoch-wise> mode, open a shared memory array to be used as a cache for the updated mask!"""
-        if self._internal_configs["RV_extraction"] == "epoch-wise":
+        if self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.EPOCH_WISE:
             buffer_info, _ = create_shared_array(np.zeros(inst_info["array_size"], dtype=bool))
             self._shared_mem_buffers["mask_cache"] = buffer_info
 
@@ -418,7 +422,7 @@ class RV_Bayesian(RV_routine):
     def storage_name(self):
         name = self.__class__._name
         name = name + "/" + self.sampler.storage_name
-        if self._internal_configs["RV_extraction"] == "order-wise":
+        if self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.ORDER_WISE:
             name = name + "_chromatic"
 
         return name

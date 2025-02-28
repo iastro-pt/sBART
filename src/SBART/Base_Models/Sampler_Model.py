@@ -1,13 +1,14 @@
 import time
 from typing import Iterable, List, NoReturn, Optional, Tuple, Union
 
+import numpy as np
 from astropy.units import Quantity
 from loguru import logger
-import numpy as np
 
-from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
 from SBART.data_objects import DataClass
+from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.custom_exceptions import (
     DeadWorkerError,
     FrameError,
@@ -119,13 +120,11 @@ class SamplerModel(BASE):
             If the mode is not one of the valid options
 
         """
-        valid_modes = ["order-wise", "epoch-wise"]
-        if mode not in valid_modes:
+        if mode not in RV_EXTRACTION_MODE:
             logger.critical(
                 "Input argument <mode = {}> is not valid for {}. Select one from {}",
                 mode,
                 self.name,
-                valid_modes,
             )
             raise InvalidConfiguration
         logger.info("Configured {} to be in mode <{}>", self.name, mode)
@@ -219,7 +218,7 @@ class SamplerModel(BASE):
             [description]
 
         """
-        if self.mode == "epoch-wise":
+        if self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
             raise InvalidConfiguration
         raise NotImplementedError(f"{self.name} does not support orderwise application")
 
@@ -238,7 +237,7 @@ class SamplerModel(BASE):
         -------
 
         """
-        if self.mode != "epoch-wise":
+        if self.mode != RV_EXTRACTION_MODE.EPOCH_WISE:
             raise InvalidConfiguration("Sampler is not in the epoch-wise mode")
 
         run_info = config_dict["run_information"]
@@ -332,9 +331,9 @@ class SamplerModel(BASE):
             msg = f"{self.name} has no valid order for which it can compute RVs"
             raise InvalidConfiguration(msg)
 
-        if self.mode == "order-wise":
+        if self.mode == RV_EXTRACTION_MODE.ORDER_WISE:
             return self._orderwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
-        if self.mode == "epoch-wise":
+        if self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
             return self._epochwise_manager(dataClass, subInst, run_information, package_queue, output_pool)
         raise InvalidConfiguration(f"{self.name} does not support mode <{self.mode}>")
 

@@ -7,6 +7,7 @@ from loguru import logger
 from scipy.optimize import minimize_scalar
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
@@ -37,7 +38,7 @@ class chi_squared_sampler(SamplerModel):
 
         """
         super().__init__(
-            mode="order-wise",
+            mode=RV_EXTRACTION_MODE.ORDER_WISE,
             RV_step=rv_step,
             RV_window=rv_prior,
             user_configs=user_configs,

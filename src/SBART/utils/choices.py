@@ -21,6 +21,20 @@ class TELLURIC_EXTENSION(Enum):
     WINDOW = "WINDOW"
 
 
+class TELLURIC_CREATION_MODE(Enum):
+    tapas = "tapas"
+    telfit = "telfit"
+
+
+class STELLAR_CREATION_MODE(Enum):
+    Sum = "Sum"
+
+
+class TELLURIC_APPLICATION_MODE(Enum):
+    removal = "removal"
+    correction = "correction"
+
+
 class SPECTRA_INTERPOL_MODE(Enum):
     """Enumerator to represent the DISK save mode of a given SBART object."""
 
@@ -36,3 +50,25 @@ class SPLINE_INTERPOL_MODE(Enum):
     PCHIP = 3
     NEAREST = 4
     RBF = 5
+
+
+class INTERPOLATION_ERR_PROP(Enum):
+    """how should we propagate uncertainties"""
+
+    interpolation = 1
+    propagation = 2
+    none = 3
+
+
+class ORDER_REMOVAL_MODE(Enum):
+    """how should we remove orders in the RV extraction"""
+
+    per_subInstrument = 1
+    GLOBAL = 2
+
+
+class RV_EXTRACTION_MODE(Enum):
+    """how should we remove orders in the RV extraction"""
+
+    ORDER_WISE = 1
+    EPOCH_WISE = 2

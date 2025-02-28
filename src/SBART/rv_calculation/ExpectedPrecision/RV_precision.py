@@ -6,6 +6,7 @@ from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits import RV_Precision_Unit
 from SBART.utils import custom_exceptions, meter_second
+from SBART.utils.choices import ORDER_REMOVAL_MODE
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.SBARTtypes import UI_PATH
 from SBART.utils.UserConfigs import (
@@ -74,7 +75,7 @@ class RV_precision(RV_routine):
         """
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
-            RV_configs_copy["order_removal_mode"] = "per_subInstrument"
+            RV_configs_copy["order_removal_mode"] = ORDER_REMOVAL_MODE.per_subInstrument
 
         super().__init__(
             N_jobs=processes,

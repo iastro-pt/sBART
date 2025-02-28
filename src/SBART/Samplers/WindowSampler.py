@@ -4,21 +4,24 @@ It will evaluate the "metric" of a given RV_routine in a pre-determined set of p
 
 from collections import defaultdict
 from typing import Tuple
-from SBART.utils.custom_exceptions import FrameError
+
 import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.Sampler_Model import SamplerModel
+from SBART.utils.choices import RV_EXTRACTION_MODE
+from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
-from SBART.utils.work_packages import Package
 from SBART.utils.units import meter_second
+from SBART.utils.work_packages import Package
+
 
 class WindowSampler(SamplerModel):
     _name = "Window"
 
     def __init__(self, rv_step, rv_window, fixed_window: bool = True):
         super().__init__(
-            mode="order-wise",
+            mode=RV_EXTRACTION_MODE.ORDER_WISE,
             RV_step=rv_step,
             RV_window=rv_window,
         )
@@ -151,13 +154,7 @@ class WindowSampler(SamplerModel):
         return out_pkg, SUCCESS
 
     def compute_epochwise_combination(self, outputs):
-        return np.sum(
-            [
-                pkg["log_likelihood_from_order"]
-                for pkg in outputs
-                if pkg["status"] == SUCCESS
-            ]
-        )
+        return np.sum([pkg["log_likelihood_from_order"] for pkg in outputs if pkg["status"] == SUCCESS])
 
     def process_epochwise_metrics(self, outputs):
         processed_package = defaultdict(list)
@@ -166,9 +163,7 @@ class WindowSampler(SamplerModel):
                 for key, item in pkg.items():
                     processed_package[key].append(item)
         if len(set(processed_package["frameID"])) != 1:
-            raise FrameError(
-                f"Mixing multiple frameIDs {set(processed_package['frameID'])}"
-            )
+            raise FrameError(f"Mixing multiple frameIDs {set(processed_package['frameID'])}")
         processed_package["frameID"] = processed_package["frameID"][0]
 
         return processed_package

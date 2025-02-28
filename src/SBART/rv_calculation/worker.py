@@ -1,13 +1,13 @@
 import traceback
 from multiprocessing import Queue
 
-import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
 from SBART.data_objects import DataClass
 from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.utils import find_wavelength_limits
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
 from SBART.utils.custom_exceptions import (
     BadOrderError,
@@ -32,11 +32,13 @@ def worker(
     worker_configs: dict,
     sampler=None,
 ):
-    if sampler.mode == "epoch-wise":
+    if sampler.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
         # open shared memory array to store the computed mask
         # to avoid multiple re-computations of outliers!
         mask_cache, cached_orders, shared_buffers = open_buffer(
-            sampler.shared_buffers, open_type="BayesianCache", buffers=[],
+            sampler.shared_buffers,
+            open_type="BayesianCache",
+            buffers=[],
         )
     else:
         shared_buffers = {}
@@ -68,7 +70,7 @@ def worker(
                 target_function = data["target_function"]
                 previous_subInst = data["subInst"]
 
-            if sampler_mode == "epoch-wise":
+            if sampler_mode == RV_EXTRACTION_MODE.EPOCH_WISE:
                 if current_epochID != previous_frameID:
                     cached_orders[:] = False
                     previous_frameID = current_epochID
@@ -134,33 +136,12 @@ def worker(
                         # order = current_order
                     )
 
-                    if sampler_mode == "epoch-wise":
+                    if sampler_mode == RV_EXTRACTION_MODE.EPOCH_WISE:
                         mask_cache[current_order][:] = current_order_mask[:]
                         cached_orders[current_order] = True
                 else:
                     # load the cached data (in shared memory!)
                     current_order_mask = mask_cache[current_order]
-
-                if current_order in [35, 37, 40, 41, 42] and 0:
-                    plt.title(f"Order: {current_order}")
-                    print(
-                        len(np.where(~spec_mask == 1)[0]),
-                        len(np.where(current_order_mask)[0]),
-                    )
-                    plt.plot(spec_wave, spec_s2d, color="red", alpha=0.3)
-                    plt.plot(
-                        spec_wave[current_order_mask],
-                        spec_s2d[current_order_mask],
-                        color="black",
-                        marker="x",
-                        linestyle="",
-                    )
-                    # plt.plot(temp_wave, temp, color = 'red')
-                    # plt.gca().twinx().plot(temp_wave, template_order_mask)
-                    plt.figure()
-                    plt.plot(spec_wave, current_order_mask, color="red")
-                    plt.plot(spec_wave, ~spec_mask, color="blue")
-                    plt.show()
 
                 output_package["Total_Flux_Order"] = np.sum(spec_wave[current_order_mask])
 
@@ -209,7 +190,7 @@ def worker(
                         full_target_kwargs["full_S2D_mask"] = current_order_mask
                         full_target_kwargs["previous_RV_OBS"] = obs_rv.to(kilometer_second).value
 
-                    if sampler_mode == "epoch-wise":
+                    if sampler_mode == RV_EXTRACTION_MODE.EPOCH_WISE:
                         if full_target_kwargs.get("compute_metrics", False):
                             outputs = target_function(data["model_parameters"], **full_target_kwargs)
                             for key, value in outputs.items():
@@ -218,7 +199,7 @@ def worker(
                             output_value = target_function(data["model_parameters"], **full_target_kwargs)
                             output_package["log_likelihood_from_order"] = output_value
 
-                    elif sampler_mode == "order-wise":
+                    elif sampler_mode == RV_EXTRACTION_MODE.ORDER_WISE:
                         optimization_output, order_status = None, SUCCESS
                         if sampler is None:
                             raise InvalidConfiguration(

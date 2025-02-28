@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 import numpy as np
 from loguru import logger
 from scipy.misc import derivative
 from scipy.optimize import minimize, minimize_scalar
 
-from SBART.utils.SBARTtypes import RV_measurement
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package
 
 from .SbartBaseSampler import SbartBaseSampler
+
+if TYPE_CHECKING:
+    from SBART.utils.SBARTtypes import RV_measurement
 
 
 class Laplace_approx(SbartBaseSampler):
@@ -39,7 +42,7 @@ class Laplace_approx(SbartBaseSampler):
 
         """
         super().__init__(
-            mode="order-wise",
+            mode=RV_EXTRACTION_MODE.ORDER_WISE,
             RV_step=RV_step,
             RV_window=rv_prior,
             user_configs=user_configs,
@@ -77,10 +80,10 @@ class Laplace_approx(SbartBaseSampler):
             rv_units=meter_second,
         )
 
-        if self.mode == "order-wise":
+        if self.mode == RV_EXTRACTION_MODE.ORDER_WISE:
             internal_func = self.apply_orderwise
             args = (target, target_kwargs)
-        elif self.mode == "epoch-wise":
+        elif self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
             logger.debug("Initial guesses: {}", initial_guesses)
             logger.debug("Param bounds: {}", bounds)
             internal_func = self.apply_epochwise
@@ -165,8 +168,10 @@ class Laplace_approx(SbartBaseSampler):
                 output_pkg[key] = np.nan * meter_second
 
         if optimization_output.success:
-            target_interface = self.apply_orderwise if self.mode == "order-wise" else self.apply_epochwise
-            args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
+            target_interface = (
+                self.apply_orderwise if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else self.apply_epochwise
+            )
+            args = (target, target_kwargs) if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else (target_kwargs,)
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
                 free_RV_target = lambda RV: target_interface(RV, *args)
@@ -186,7 +191,7 @@ class Laplace_approx(SbartBaseSampler):
 
             logger.info(f"Computing post-RV metrics for mode {self.mode}")
 
-            if self.mode == "epoch-wise":
+            if self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
                 target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
                 target_kwargs["run_information"]["target_specific_configs"]["SAVE_DISK_SPACE"] = self.disk_save_enabled
                 target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True

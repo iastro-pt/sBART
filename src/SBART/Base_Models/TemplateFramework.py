@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import contextlib
 import os
-from typing import List, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from astropy.io import fits
 from loguru import logger
@@ -9,9 +11,11 @@ from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.template_creation.telluric_templates.Telluric_Template import TelluricTemplate
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
-from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
+from SBART.utils.choices import DISK_SAVE_MODE, STELLAR_CREATION_MODE, TELLURIC_CREATION_MODE, WORKING_MODE
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
+
+if TYPE_CHECKING:
+    from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 
 
 class TemplateFramework(BASE):
@@ -213,7 +217,7 @@ class TemplateFramework(BASE):
 
             self.templates[temp_subInst] = loaded_temp
 
-    def _find_templates_from_disk(self, which: str) -> List[str]:
+    def _find_templates_from_disk(self, which: TELLURIC_CREATION_MODE | STELLAR_CREATION_MODE) -> list[str]:
         """Search the storage disk location to find any templates that might have been stored in there
 
         Parameters

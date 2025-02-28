@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, NoReturn
+from typing import TYPE_CHECKING, Dict, NoReturn
 
 import numpy as np
 from loguru import logger
@@ -7,9 +7,12 @@ from loguru import logger
 from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
+from SBART.utils.choices import INTERPOLATION_ERR_PROP, SPECTRA_INTERPOL_MODE, SPLINE_INTERPOL_MODE
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
-from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromList
-from SBART.utils.choices import SPECTRA_INTERPOL_MODE, SPLINE_INTERPOL_MODE
+from SBART.utils.UserConfigs import DefaultValues, Positive_Value_Constraint, UserParam, ValueFromIterable
+
+if TYPE_CHECKING:
+    from SBART.spectral_modelling.modelling_base import ModellingBase
 
 
 class Spectral_Modelling(BASE):
@@ -42,11 +45,20 @@ class Spectral_Modelling(BASE):
 
     # TODO: confirm the kernels that we want to allow
     _default_params = BASE._default_params + DefaultValues(
-        INTERPOL_MODE=UserParam(SPECTRA_INTERPOL_MODE.SPLINES, constraint=ValueFromList(SPECTRA_INTERPOL_MODE)),
+        INTERPOL_MODE=UserParam(
+            SPECTRA_INTERPOL_MODE.SPLINES,
+            constraint=ValueFromIterable(SPECTRA_INTERPOL_MODE),
+        ),
         # We have to add this here, so that the parameters are not rejected by the config validation
-        SPLINE_TYPE=UserParam(SPLINE_INTERPOL_MODE.CUBIC_SPLINE, constraint=ValueFromList(SPLINE_INTERPOL_MODE)),
-        INTERPOLATION_ERR_PROP=UserParam("interpolation"),
-        NUMBER_WORKERS=UserParam(1),
+        SPLINE_TYPE=UserParam(
+            SPLINE_INTERPOL_MODE.CUBIC_SPLINE,
+            constraint=ValueFromIterable(SPLINE_INTERPOL_MODE),
+        ),
+        INTERPOLATION_ERR_PROP=UserParam(
+            INTERPOLATION_ERR_PROP.interpolation,
+            constraint=ValueFromIterable(INTERPOLATION_ERR_PROP),
+        ),
+        NUMBER_WORKERS=UserParam(1, constraint=Positive_Value_Constraint),
     )
 
     def __init__(self, **kwargs):

@@ -15,7 +15,13 @@ from SBART.data_objects.RV_outputs import RV_holder
 from SBART.rv_calculation.worker import worker
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.choices import DISK_SAVE_MODE, WORKING_MODE
+from SBART.utils.choices import (
+    DISK_SAVE_MODE,
+    INTERPOLATION_ERR_PROP,
+    ORDER_REMOVAL_MODE,
+    RV_EXTRACTION_MODE,
+    WORKING_MODE,
+)
 from SBART.utils.concurrent_tools.evaluate_worker_shutdown import evaluate_shutdown
 from SBART.utils.custom_exceptions import (
     BadTemplateError,
@@ -92,16 +98,21 @@ class RV_routine(BASE):
 
     _default_params = BASE._default_params + DefaultValues(
         uncertainty_prop_type=UserParam(
-            "interpolation",
+            INTERPOLATION_ERR_PROP.interpolation,
             constraint=ValueFromIterable(
-                ("interpolation", "propagation"),
+                INTERPOLATION_ERR_PROP,
             ),
             description="Method with which the uncertainty propagation will be done",
         ),
-        RV_extraction=UserParam("order-wise", constraint=ValueFromIterable(("order-wise",))),
+        RV_extraction=UserParam(
+            RV_EXTRACTION_MODE.ORDER_WISE,
+            constraint=ValueFromIterable(
+                (RV_EXTRACTION_MODE.ORDER_WISE,),
+            ),
+        ),
         order_removal_mode=UserParam(
-            "per_subInstrument",
-            constraint=ValueFromIterable(("per_subInstrument", "global")),
+            ORDER_REMOVAL_MODE.per_subInstrument,
+            constraint=ValueFromIterable(ORDER_REMOVAL_MODE),
         ),
         sigma_outliers_tolerance=UserParam(
             6,
@@ -296,7 +307,7 @@ class RV_routine(BASE):
                     )
                     self._output_RVcubes.remove_subInstrument_data(subInst)
 
-            is_merged = self._internal_configs["order_removal_mode"] == "global"
+            is_merged = self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL
 
             if is_merged and len(bad_subInst) != len(self._subInsts_to_use):
                 # If using merged, we must always recompute everything!
@@ -414,7 +425,7 @@ class RV_routine(BASE):
                 if self.loaded_from_previous_run:
                     # if we are loading from the orders to skip from a previous run,
                     # the RV cubes of this iteration must follow the same "naming scheme"
-                    is_merged = self._internal_configs["order_removal_mode"] == "global"
+                    is_merged = self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL
                 else:
                     is_merged = False
 
@@ -503,7 +514,7 @@ class RV_routine(BASE):
             logger.opt(exception=True).warning("SubInst {} does not have a valid stellar template", subInst)
             return RV_cube(subInst, valid_IDS, dataClass.get_instrument_information())
 
-        is_merged = self._internal_configs["order_removal_mode"] == "global"
+        is_merged = self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL
         # UGLYYYY!
         self.sampler.is_merged_subInst = is_merged
 
@@ -521,7 +532,7 @@ class RV_routine(BASE):
             dataClass,
             subInst,
             is_merged=is_merged,
-            has_orderwise_rvs=self._internal_configs["RV_extraction"] == "order-wise",
+            has_orderwise_rvs=self._internal_configs["RV_extraction"] == RV_EXTRACTION_MODE.ORDER_WISE,
         )
         cube.update_skip_reason(self.to_skip[subInst], ORDER_SKIP)
 
@@ -617,9 +628,9 @@ class RV_routine(BASE):
 
         """
         logger.debug("Applying order-skip mode")
-        if self._internal_configs["order_removal_mode"] == "per_subInstrument":
+        if self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.per_subInstrument:
             logger.debug("per_subInstrument mode selected. Doing nothing")
-        elif self._internal_configs["order_removal_mode"] == "global":
+        elif self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL:
             logger.debug("Selecting common rejection among all subInstruments. Updating orders to skip")
             bad_orders = set()
             for orders_to_skip in self.to_skip.values():
@@ -685,9 +696,9 @@ class RV_routine(BASE):
             orders_to_skip = {}
 
             for key in self._subInsts_to_use:
-                if self._internal_configs["order_removal_mode"] == "per_subInstrument":
+                if self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.per_subInstrument:
                     orders_to_skip[key] = previous_RV_outputs.get_orders_to_skip(key)
-                elif self._internal_configs["order_removal_mode"] == "global":
+                elif self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL:
                     orders_to_skip[key] = previous_RV_outputs.get_orders_to_skip("merged")
 
         elif isinstance(to_skip, dict):
@@ -698,9 +709,9 @@ class RV_routine(BASE):
         if self.work_mode == WORKING_MODE.ROLLING:
             # In rolling mode we might want to include user inputs
             for key in self._subInsts_to_use:
-                if self._internal_configs["order_removal_mode"] == "per_subInstrument":
+                if self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.per_subInstrument:
                     orders_to_skip[key].extend(self._output_RVcubes.get_orders_to_skip(key))
-                elif self._internal_configs["order_removal_mode"] == "global":
+                elif self._internal_configs["order_removal_mode"] == ORDER_REMOVAL_MODE.GLOBAL:
                     orders_to_skip[key].extend(self._output_RVcubes.get_orders_to_skip("merged"))
         return {i: set(j) for i, j in orders_to_skip.items()}
 

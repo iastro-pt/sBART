@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 
+from SBART.utils.choices import INTERPOLATION_ERR_PROP
 from SBART.utils.math_tools.Cubic_spline import CustomCubicSpline
 
 SPEED_OF_LIGHT = 299792.458
@@ -160,7 +161,7 @@ def interpolate_data(
 
     interpol_locs = new_lambda[valid_indexes]
 
-    if propagate_interpol_errors == "propagation":
+    if propagate_interpol_errors == INTERPOLATION_ERR_PROP.propagation:
         # Custom Cubic spline routine!
         CSplineInterpolator = CustomCubicSpline(
             original_lambda,
@@ -170,11 +171,14 @@ def interpolate_data(
         )
         new_data, new_errors = CSplineInterpolator.interpolate(interpol_locs)
 
-    elif propagate_interpol_errors in ["interpolation", "none"]:
+    elif propagate_interpol_errors in [
+        INTERPOLATION_ERR_PROP.interpolation,
+        INTERPOLATION_ERR_PROP.none,
+    ]:
         CSplineInterpolator = CubicSpline(original_lambda, original_spectrum)
         new_data = CSplineInterpolator(new_lambda[valid_indexes])
 
-        if propagate_interpol_errors == "none":
+        if propagate_interpol_errors == INTERPOLATION_ERR_PROP.none:
             new_errors = np.zeros(new_data.shape)
         else:
             CSplineInterpolator = CubicSpline(original_lambda, original_errors)

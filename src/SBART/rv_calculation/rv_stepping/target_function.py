@@ -1,5 +1,6 @@
 import numpy as np
 
+from SBART.utils.choices import DISK_SAVE_MODE
 from SBART.utils.RV_utilities import compute_DLW, ensure_valid_RV
 from SBART.utils.RV_utilities.continuum_fit import match_continuum_levels
 from SBART.utils.shift_spectra import apply_RVshift
@@ -138,7 +139,7 @@ def target(params, **kwargs):
             # "pix_sum_in_template": pix_sum_in_template,
         }
 
-        if not kwargs["SAVE_DISK_SPACE"]:
+        if kwargs["SAVE_DISK_SPACE"] == DISK_SAVE_MODE.DISABLED:
             data_out["flux_division_residuals"] = residuals
 
         return data_out

@@ -1,11 +1,11 @@
 import os
-from typing import List, Type
+from typing import Type
 
 from loguru import logger
 
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.Base_Models.TemplateFramework import TemplateFramework
-from SBART.utils.choices import TELLURIC_EXTENSION, WORKING_MODE
+from SBART.utils.choices import TELLURIC_APPLICATION_MODE, TELLURIC_CREATION_MODE, TELLURIC_EXTENSION, WORKING_MODE
 from SBART.utils.custom_exceptions import InvalidConfiguration, TemplateNotExistsError
 from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
@@ -56,9 +56,19 @@ class TelluricModel(TemplateFramework):
     template_map = {"Telfit": TelfitTelluric, "Tapas": TapasTelluric}
 
     _default_params = TemplateFramework._default_params + DefaultValues(
-        CREATION_MODE=UserParam(None, constraint=ValueFromIterable(("tapas", "telfit")), mandatory=True),
-        APPLICATION_MODE=UserParam("removal", constraint=ValueFromIterable(("removal", "correction"))),
-        EXTENSION_MODE=UserParam(TELLURIC_EXTENSION.LINES, constraint=ValueFromIterable(TELLURIC_EXTENSION)),
+        CREATION_MODE=UserParam(
+            TELLURIC_CREATION_MODE.telfit,
+            constraint=ValueFromIterable(TELLURIC_CREATION_MODE),
+            mandatory=False,
+        ),
+        APPLICATION_MODE=UserParam(
+            TELLURIC_APPLICATION_MODE.removal,
+            constraint=ValueFromIterable(TELLURIC_APPLICATION_MODE),
+        ),
+        EXTENSION_MODE=UserParam(
+            TELLURIC_EXTENSION.LINES,
+            constraint=ValueFromIterable(TELLURIC_EXTENSION),
+        ),
     )
 
     def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):
@@ -162,9 +172,7 @@ class TelluricModel(TemplateFramework):
 
     # Internal Usage:
 
-    def _find_templates_from_disk(self, which: str) -> List[str]:
-        which = which.capitalize()
-
+    def _find_templates_from_disk(self, which: TELLURIC_CREATION_MODE) -> list[str]:
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type)
         logger.info("Loading {} template from disk inside directory", self.__class__.model_type)
         logger.info("\t" + loading_path)
@@ -175,7 +183,7 @@ class TelluricModel(TemplateFramework):
             raise TemplateNotExistsError()
 
         for fname in os.listdir(loading_path):
-            if which in fname and fname.endswith("fits"):
+            if which.value in fname and fname.endswith("fits"):
                 available_templates.append(fname)
         logger.info(
             "Found {} available templates: {} of type {}",
@@ -195,9 +203,9 @@ class TelluricModel(TemplateFramework):
 
         if creation_mode == "none":
             pass
-        elif creation_mode == "telfit":
+        elif creation_mode == TELLURIC_CREATION_MODE.telfit:
             chosen_template = TelfitTelluric
-        elif creation_mode == "tapas":
+        elif creation_mode == TELLURIC_CREATION_MODE.tapas:
             chosen_template = TapasTelluric
         else:
             raise InvalidConfiguration()
@@ -236,7 +244,7 @@ class TelluricModel(TemplateFramework):
             True if the template will be used to remove telluric features
 
         """
-        return self._internal_configs["APPLICATION_MODE"] == "removal"
+        return self._internal_configs["APPLICATION_MODE"] == TELLURIC_APPLICATION_MODE.removal
 
     @property
     def is_for_correction(self) -> bool:
@@ -246,4 +254,4 @@ class TelluricModel(TemplateFramework):
             True if the template will be used to correct telluric features
 
         """
-        return self._internal_configs["APPLICATION_MODE"] == "correction"
+        return self._internal_configs["APPLICATION_MODE"] == TELLURIC_APPLICATION_MODE.correction

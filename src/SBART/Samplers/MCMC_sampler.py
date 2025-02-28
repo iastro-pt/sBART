@@ -1,5 +1,4 @@
-"""Implements posterior characterization with MCMC algorithm
-"""
+"""Implements posterior characterization with MCMC algorithm"""
 
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -8,6 +7,7 @@ import numpy as np
 from loguru import logger
 
 from SBART.utils import custom_exceptions, meter_second, status_codes
+from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.math_tools import check_variation_inside_interval
 from SBART.utils.status_codes import SUCCESS, WARNING, Flag
 from SBART.utils.UserConfigs import DefaultValues, NumericValue, UserParam
@@ -76,10 +76,9 @@ class MCMC_sampler(SbartBaseSampler):
     )
 
     def __init__(self, RV_step, rv_prior: list, user_configs: Optional[Dict[str, Any]] = None):
-        """Explore the posterior distribution with MCMC
-        """
+        """Explore the posterior distribution with MCMC"""
         super().__init__(
-            mode="epoch-wise",
+            mode=RV_EXTRACTION_MODE.EPOCH_WISE,
             RV_step=RV_step,
             RV_window=rv_prior,
             user_configs=user_configs,
@@ -112,22 +111,23 @@ class MCMC_sampler(SbartBaseSampler):
         ndim = len(params_to_use)
 
         initial_guesses, bounds = self.model_params.generate_optimizer_inputs(
-            frameID=target_kwargs["run_information"]["frameID"], rv_units=meter_second,
+            frameID=target_kwargs["run_information"]["frameID"],
+            rv_units=meter_second,
         )
 
         # TODO: validate this
         starting_pos = [initial_guesses] + 0.1 * np.random.randn(self._internal_configs["N_walkers"], ndim)
 
-        if self.mode == "order-wise":
+        if self.mode == RV_EXTRACTION_MODE.ORDER_WISE:
             internal_func = self.apply_orderwise
-        elif self.mode == "epoch-wise":
+        elif self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
             logger.debug("Initial guesses: {}", initial_guesses)
             logger.debug("Param bounds: {}", bounds)
             internal_func = self.apply_epochwise
             out_pkg["frameID"] = target_kwargs["run_information"]["frameID"]
         else:
             raise custom_exceptions.InvalidConfiguration("Sampler mode <> does not exist", self.mode)
-        args = (target, target_kwargs) if self.mode == "order-wise" else (target_kwargs,)
+        args = (target, target_kwargs) if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else (target_kwargs,)
 
         sampler = emcee.EnsembleSampler(
             self._internal_configs["N_walkers"],
@@ -138,12 +138,14 @@ class MCMC_sampler(SbartBaseSampler):
         )
 
         sampler, order_status, out_pkg, header_info = self.apply_MCMC(
-            sampler=sampler, starting_pos=starting_pos, output_pkg=out_pkg,
+            sampler=sampler,
+            starting_pos=starting_pos,
+            output_pkg=out_pkg,
         )
 
         self.store_metrics(sampler=sampler, target_KWARGS=target_kwargs, header_info=header_info)
 
-        if self.mode == "epoch-wise":
+        if self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
             target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
             target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
             model_misspec, log_likelihood, orders = internal_func(out_pkg["RV"].value, target_kwargs)
@@ -286,7 +288,7 @@ class MCMC_sampler(SbartBaseSampler):
         for header_KW, KW_val in header_info.items():
             header.append(f"\n\t{header_KW} : {KW_val}")
         header.append("\nChains:\n")
-        if self.mode == "order-wise":
+        if self.mode == RV_EXTRACTION_MODE.ORDER_WISE:
             order = target_KWARGS["current_order"]
             fname = base_path / f"frame_{frameID}__order_{order}.txt"
         else:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, List, NoReturn, Optional, Union
 
 import matplotlib.pyplot as plt
@@ -10,13 +9,15 @@ from astropy.time import Time
 from loguru import logger
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from SBART.data_objects import DataClass
 
 from SBART import __version__
 from SBART.Base_Models.Template_Model import BaseTemplate
 from SBART.ModelParameters import Model
 from SBART.utils import custom_exceptions
-from SBART.utils.choices import DISK_SAVE_MODE, TELLURIC_EXTENSION, WORKING_MODE
+from SBART.utils.choices import DISK_SAVE_MODE, TELLURIC_APPLICATION_MODE, TELLURIC_EXTENSION, WORKING_MODE
 from SBART.utils.custom_exceptions import NoDataError
 from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
 from SBART.utils.shift_spectra import (
@@ -77,7 +78,7 @@ class TelluricTemplate(BaseTemplate):
         subInst: str,
         extension_mode: TELLURIC_EXTENSION,
         user_configs: Union[None, dict] = None,
-        application_mode: str = "removal",
+        application_mode: str = TELLURIC_APPLICATION_MODE.removal,
         loaded: bool = False,
     ):
         """Parameters
@@ -505,11 +506,11 @@ class TelluricTemplate(BaseTemplate):
 
     @property
     def for_feature_removal(self) -> bool:
-        return self._application_mode == "removal"
+        return self._application_mode == TELLURIC_APPLICATION_MODE.removal
 
     @property
     def for_feature_correction(self) -> bool:
-        return self._application_mode == "correction"
+        return self._application_mode == TELLURIC_APPLICATION_MODE.correction
 
     def store_metrics(self): ...
 

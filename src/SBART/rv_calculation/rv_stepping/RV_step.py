@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 from loguru import logger
 
 from SBART.Base_Models.RV_routine import RV_routine
-from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits import Classical_Unit
+from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit
 from SBART.utils import custom_exceptions, meter_second
-from SBART.utils.choices import WORKING_MODE
+from SBART.utils.choices import ORDER_REMOVAL_MODE, WORKING_MODE
 from SBART.utils.custom_exceptions import BadTemplateError
+from SBART.utils.math_tools.weighted_mean import weighted_mean
 from SBART.utils.RV_utilities.orderwiseRVcombination import orderwise_combination
 from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 
-from ...DataUnits.Act_Indicator_Unit import ActIndicators_Unit
-from ...utils.math_tools.weighted_mean import weighted_mean
 from .target_function import target
+
+if TYPE_CHECKING:
+    from SBART.data_objects.RV_cube import RV_cube
 
 
 class RV_step(RV_routine):
@@ -80,7 +82,7 @@ class RV_step(RV_routine):
         # TODO: careful, make this pretty!
         RV_configs_copy = RV_configs.copy()
         if RV_configs is not None:
-            RV_configs_copy["order_removal_mode"] = "per_subInstrument"
+            RV_configs_copy["order_removal_mode"] = ORDER_REMOVAL_MODE.per_subInstrument
 
         super().__init__(
             N_jobs=processes,
