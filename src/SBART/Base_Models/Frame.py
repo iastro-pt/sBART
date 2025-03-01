@@ -282,16 +282,16 @@ class Frame(Spectrum, Spectral_Modelling, Spectral_Normalization):
             "EXPTIME": 0,
             "RA": None,
             "DEC": None,
-            "SPEC_TYPE": "",  # This keyword is simply loading the CCF mask...
+            "SPEC_TYPE": "None",  # This keyword is simply loading the CCF mask...
             "DET_BINX": None,
             "DET_BINY": None,
             "seeing": None,
             "MOON PHASE": 0,
             "MOON DISTANCE": 0,
-            "INS MODE": "",
-            "INS NAME": "",
-            "PROG ID": "",
-            "DATE_NIGHT": "",
+            "INS MODE": "None",
+            "INS NAME": "None",
+            "PROG ID": "None",
+            "DATE_NIGHT": "None",
         }
 
         # Used to allow to reject a wavelength region from one order and keep any overlap that might exist on others
