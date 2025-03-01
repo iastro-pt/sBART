@@ -22,6 +22,7 @@ from SBART.utils.UserConfigs import (
 from .stellar_templates.median_stellar import MedianStellar
 from .stellar_templates.OBS_stellar import OBS_Stellar
 from .stellar_templates.sum_stellar import SumStellar
+from .stellar_templates.PHOENIX_STELLAR import PHOENIX
 
 
 class StellarModel(TemplateFramework):
@@ -53,7 +54,12 @@ class StellarModel(TemplateFramework):
 
     model_type = "Stellar"
 
-    template_map = {"Sum": SumStellar, "OBSERVATION": OBS_Stellar, "Median": MedianStellar}
+    template_map = {
+        "Sum": SumStellar,
+        "OBSERVATION": OBS_Stellar,
+        "Median": MedianStellar,
+        "PHOENIX": PHOENIX,
+    }
 
     _default_params = TemplateFramework._default_params + DefaultValues(
         CREATION_MODE=UserParam("Sum", constraint=ValueFromIterable(list(template_map.keys()))),
