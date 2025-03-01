@@ -274,15 +274,18 @@ class RV_Bayesian(RV_routine):
         errs[:, problematic_orders] = np.nan
 
         squared_errors = errs**2
-        final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
+        try:
+            final_ind, ind_error = weighted_mean(ind, squared_errors, "simple")
 
-        for index, frameID in enumerate(empty_cube.frameIDs):
-            data_unit_act.store_combined_indicators(
-                frameID,
-                "DLW",
-                ind_value=final_ind[index],
-                ind_err=ind_error[index],
-            )
+            for index, frameID in enumerate(empty_cube.frameIDs):
+                data_unit_act.store_combined_indicators(
+                    frameID,
+                    "DLW",
+                    ind_value=final_ind[index],
+                    ind_err=ind_error[index],
+                )
+        except Exception as e:
+            logger.critical("Couldn't compute DLW due to", e)
 
         empty_cube.add_extra_storage_unit(data_unit_act)
         empty_cube.update_worker_information(worker_outputs)
