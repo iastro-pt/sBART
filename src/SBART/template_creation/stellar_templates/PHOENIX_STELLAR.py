@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Union
 
 import numpy as np
@@ -6,7 +7,11 @@ from loguru import logger
 
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import PathValue, UserParam, DefaultValues
+from SBART.utils.UserConfigs import (
+    DefaultValues,
+    PathValue,
+    UserParam,
+)
 
 from .Stellar_Template import StellarTemplate
 
