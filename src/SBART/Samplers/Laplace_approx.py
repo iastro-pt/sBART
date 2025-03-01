@@ -7,6 +7,7 @@ from loguru import logger
 from scipy.misc import derivative
 from scipy.optimize import minimize, minimize_scalar
 
+from SBART.utils import custom_exceptions
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 from SBART.utils.units import meter_second
@@ -31,6 +32,7 @@ class Laplace_approx(SbartBaseSampler):
         RV_step: RV_measurement,
         rv_prior: tuple[RV_measurement, RV_measurement],
         user_configs: Optional[dict[str, Any]] = None,
+        approx_tolerance=None,
     ):
         """Parameters
         ----------
@@ -47,6 +49,11 @@ class Laplace_approx(SbartBaseSampler):
             RV_window=rv_prior,
             user_configs=user_configs,
         )
+
+        if approx_tolerance <= 0:
+            msg = f"Can't have a tolerance of {approx_tolerance} for the minimization"
+            raise custom_exceptions.InvalidConfiguration(msg)
+        self.approx_tolerance = approx_tolerance
 
         self._optimizers_map = {
             "scipy": minimize_scalar,
@@ -96,6 +103,7 @@ class Laplace_approx(SbartBaseSampler):
                 bounds=bounds[0],
                 method="bounded",
                 args=args,
+                tol=self.approx_tolerance,
             )
         else:
             optimization_output = minimize(
