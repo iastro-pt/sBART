@@ -33,6 +33,7 @@ class Laplace_approx(SbartBaseSampler):
         rv_prior: tuple[RV_measurement, RV_measurement],
         user_configs: Optional[dict[str, Any]] = None,
         approx_tolerance=None,
+        refine_RV_MAP=False,
     ):
         """Parameters
         ----------
@@ -54,6 +55,7 @@ class Laplace_approx(SbartBaseSampler):
             msg = f"Can't have a tolerance of {approx_tolerance} for the minimization"
             raise custom_exceptions.InvalidConfiguration(msg)
         self.approx_tolerance = approx_tolerance
+        self.refine_RV_MAP = refine_RV_MAP
 
         self._optimizers_map = {
             "scipy": minimize_scalar,
@@ -180,9 +182,23 @@ class Laplace_approx(SbartBaseSampler):
                 self.apply_orderwise if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else self.apply_epochwise
             )
             args = (target, target_kwargs) if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else (target_kwargs,)
+
+            step_size = self.RV_step.to(meter_second).value
+
             if self.N_model_params == 1:
                 # If we only use the "base" S-BART we can simply pass the base functions
+
+                if self.refine_RV_MAP:
+                    local_rvs = np.arange(
+                        posterior_RV_mean_value - 5 * step_size, posterior_RV_mean_value + 5.1 * step_size, step_size
+                    )
+                    local_curve = [target_interface(i, **args) for i in local_rvs]
+                    min_loc = np.argmin(local_curve)
+                    posterior_RV_mean_value = local_rvs[min_loc]
+                    output_pkg["RV"] = posterior_RV_mean_value * meter_second
+
                 free_RV_target = lambda RV: target_interface(RV, *args)
+
             else:
                 # Fix all parameters to MAP estimate and compute the 2nd derivative on RV
                 free_RV_target = lambda RV: target_interface([RV, *optimization_output.x[1:]], *args)
@@ -190,7 +206,7 @@ class Laplace_approx(SbartBaseSampler):
             RV_variance = 1 / derivative(
                 free_RV_target,
                 posterior_RV_mean_value,
-                dx=self.RV_step.to(meter_second).value,
+                dx=step_size,
                 n=2,
                 order=7,
             )
