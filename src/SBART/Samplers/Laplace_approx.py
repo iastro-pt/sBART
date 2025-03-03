@@ -51,7 +51,7 @@ class Laplace_approx(SbartBaseSampler):
             user_configs=user_configs,
         )
 
-        if approx_tolerance <= 0:
+        if approx_tolerance is not None and approx_tolerance <= 0:
             msg = f"Can't have a tolerance of {approx_tolerance} for the minimization"
             raise custom_exceptions.InvalidConfiguration(msg)
         self.approx_tolerance = approx_tolerance
@@ -125,7 +125,9 @@ class Laplace_approx(SbartBaseSampler):
         out_pkg["status"] = order_status
         return out_pkg, order_status
 
-    def process_posterior(self, optimization_output, target, target_kwargs, output_pkg) -> Tuple[Package, Flag]:
+    def process_posterior(
+        self, optimization_output, target, target_kwargs, output_pkg
+    ) -> Tuple[Package, Flag]:
         """Process the results of the application of the Laplace Approximation
 
         Parameters
@@ -179,9 +181,15 @@ class Laplace_approx(SbartBaseSampler):
 
         if optimization_output.success:
             target_interface = (
-                self.apply_orderwise if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else self.apply_epochwise
+                self.apply_orderwise
+                if self.mode == RV_EXTRACTION_MODE.ORDER_WISE
+                else self.apply_epochwise
             )
-            args = (target, target_kwargs) if self.mode == RV_EXTRACTION_MODE.ORDER_WISE else (target_kwargs,)
+            args = (
+                (target, target_kwargs)
+                if self.mode == RV_EXTRACTION_MODE.ORDER_WISE
+                else (target_kwargs,)
+            )
 
             step_size = self.RV_step.to(meter_second).value
 
@@ -190,7 +198,9 @@ class Laplace_approx(SbartBaseSampler):
 
                 if self.refine_RV_MAP:
                     local_rvs = np.arange(
-                        posterior_RV_mean_value - 5 * step_size, posterior_RV_mean_value + 5.1 * step_size, step_size
+                        posterior_RV_mean_value - 5 * step_size,
+                        posterior_RV_mean_value + 5.1 * step_size,
+                        step_size,
                     )
                     local_curve = [target_interface(i, **args) for i in local_rvs]
                     min_loc = np.argmin(local_curve)
@@ -201,7 +211,9 @@ class Laplace_approx(SbartBaseSampler):
 
             else:
                 # Fix all parameters to MAP estimate and compute the 2nd derivative on RV
-                free_RV_target = lambda RV: target_interface([RV, *optimization_output.x[1:]], *args)
+                free_RV_target = lambda RV: target_interface(
+                    [RV, *optimization_output.x[1:]], *args
+                )
 
             RV_variance = 1 / derivative(
                 free_RV_target,
@@ -216,9 +228,15 @@ class Laplace_approx(SbartBaseSampler):
             logger.info(f"Computing post-RV metrics for mode {self.mode}")
 
             if self.mode == RV_EXTRACTION_MODE.EPOCH_WISE:
-                target_kwargs["run_information"]["target_specific_configs"]["compute_metrics"] = True
-                target_kwargs["run_information"]["target_specific_configs"]["SAVE_DISK_SPACE"] = self.disk_save_enabled
-                target_kwargs["run_information"]["target_specific_configs"]["weighted"] = True
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "compute_metrics"
+                ] = True
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "SAVE_DISK_SPACE"
+                ] = self.disk_save_enabled
+                target_kwargs["run_information"]["target_specific_configs"][
+                    "weighted"
+                ] = True
                 min_info = target_interface(optimization_output.x, target_kwargs)
                 for key, val in min_info.items():
                     output_pkg[key] = val
@@ -226,7 +244,9 @@ class Laplace_approx(SbartBaseSampler):
                 target_kwargs["compute_metrics"] = True
                 target_kwargs["weighted"] = True
                 target_kwargs["SAVE_DISK_SPACE"] = self.disk_save_enabled
-                min_info = target_interface(optimization_output.x, target, target_kwargs)
+                min_info = target_interface(
+                    optimization_output.x, target, target_kwargs
+                )
 
                 for key, val in min_info.items():
                     output_pkg[key] = val
