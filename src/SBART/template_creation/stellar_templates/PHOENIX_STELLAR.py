@@ -6,10 +6,7 @@ from loguru import logger
 
 from SBART.Masks import Mask
 from SBART.utils import custom_exceptions
-from SBART.utils.UserConfigs import (
-    PathValue,
-    UserParam,
-)
+from SBART.utils.UserConfigs import PathValue, UserParam, DefaultValues
 
 from .Stellar_Template import StellarTemplate
 
@@ -18,14 +15,13 @@ class PHOENIX(StellarTemplate):
     """Stellar template from a PHOENIX template"""
 
     method_name = "PHOENIX"
-    _default_params = StellarTemplate._default_params
-
-    _default_params.update(
-        "PHOENIX_FILE_PATH",
-        UserParam("", constraint=PathValue, mandatory=False),
+    _default_params = StellarTemplate._default_params + DefaultValues(
+        PHOENIX_FILE_PATH=UserParam("", constraint=PathValue, mandatory=False),
     )
 
-    def __init__(self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False):
+    def __init__(
+        self, subInst: str, user_configs: Union[None, dict] = None, loaded: bool = False
+    ):
         super().__init__(subInst=subInst, user_configs=user_configs, loaded=loaded)
         self._found_error = False
 
