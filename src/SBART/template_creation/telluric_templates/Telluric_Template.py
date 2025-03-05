@@ -444,7 +444,7 @@ class TelluricTemplate(BaseTemplate):
                 highest_wavelength = berv_function(telluric_block[1], BERV=berv + offset)
                 updated_block.append([lowest_wavelength, highest_wavelength])
 
-        elif self._extension_mode == TELLURIC_EXTENSION.LINES:
+        elif self._extension_mode == TELLURIC_EXTENSION.WINDOW:
             berv = self.MAXBERV.to(kilometer_second).value
             lowest_wavelength = berv_function(telluric_block[0], BERV=-berv)
             highest_wavelength = berv_function(telluric_block[1], BERV=berv)
