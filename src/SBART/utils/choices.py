@@ -28,6 +28,10 @@ class TELLURIC_CREATION_MODE(Enum):
 
 class STELLAR_CREATION_MODE(Enum):
     Sum = "Sum"
+    Concatenate = "Concatenate"
+    OBSERVATION = "OBSERVATION"
+    Median = "Median"
+    PHOENIX = "PHOENIX"
 
 
 class TELLURIC_APPLICATION_MODE(Enum):
