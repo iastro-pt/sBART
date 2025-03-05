@@ -1,16 +1,17 @@
 """Handles the creation of the stellar models"""
 
 from pathlib import Path
-from typing import Optional, Set
+from typing import ClassVar, Optional, Set
 
 from loguru import logger
 
 from SBART.Base_Models.TemplateFramework import TemplateFramework
 from SBART.utils import custom_exceptions
+from SBART.utils.choices import STELLAR_CREATION_MODE
 from SBART.utils.custom_exceptions import BadTemplateError, NoDataError
+from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.spectral_conditions import ConditionModel, Empty_condition
 from SBART.utils.status_codes import INTERNAL_ERROR
-from SBART.utils.SBARTtypes import UI_DICT, UI_PATH
 from SBART.utils.UserConfigs import (
     BooleanValue,
     DefaultValues,
@@ -19,15 +20,18 @@ from SBART.utils.UserConfigs import (
     ValueFromIterable,
 )
 
+from .stellar_templates.concatenate import ConcatenateStellar
 from .stellar_templates.median_stellar import MedianStellar
 from .stellar_templates.OBS_stellar import OBS_Stellar
-from .stellar_templates.sum_stellar import SumStellar
 from .stellar_templates.PHOENIX_STELLAR import PHOENIX
+from .stellar_templates.Stellar_Template import StellarTemplate
+from .stellar_templates.sum_stellar import SumStellar
 
 
 class StellarModel(TemplateFramework):
-    """The StellarModel is responsible for the creation of the stellar template for each sub-Instrument, allowing the user to apply
-    :py:mod:`~SBART.utils.spectral_conditions` to select the observations that will be in use for this process.
+    """The StellarModel is responsible for the creation of the stellar template for each sub-Instrument.
+
+    It allows the user to apply :py:mod:`~SBART.utils.spectral_conditions` to select the observations that will be in use for this process.
 
     This object supports the following user parameters:
 
@@ -54,15 +58,16 @@ class StellarModel(TemplateFramework):
 
     model_type = "Stellar"
 
-    template_map = {
-        "Sum": SumStellar,
-        "OBSERVATION": OBS_Stellar,
-        "Median": MedianStellar,
-        "PHOENIX": PHOENIX,
+    template_map: ClassVar[dict[STELLAR_CREATION_MODE, StellarTemplate]] = {
+        STELLAR_CREATION_MODE.Sum: SumStellar,
+        STELLAR_CREATION_MODE.OBSERVATION: OBS_Stellar,
+        STELLAR_CREATION_MODE.Median: MedianStellar,
+        STELLAR_CREATION_MODE.PHOENIX: PHOENIX,
+        STELLAR_CREATION_MODE.Concatenate: ConcatenateStellar,
     }
 
     _default_params = TemplateFramework._default_params + DefaultValues(
-        CREATION_MODE=UserParam("Sum", constraint=ValueFromIterable(list(template_map.keys()))),
+        CREATION_MODE=UserParam(STELLAR_CREATION_MODE.Sum, constraint=ValueFromIterable(STELLAR_CREATION_MODE)),
         ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         PREVIOUS_SBART_PATH=UserParam("", constraint=ValueFromDtype((str, Path))),
         USE_MERGED_RVS=UserParam(False, constraint=BooleanValue),

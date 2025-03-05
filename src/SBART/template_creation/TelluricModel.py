@@ -1,5 +1,5 @@
 import os
-from typing import Type
+from typing import ClassVar, Type
 
 from loguru import logger
 
@@ -58,7 +58,10 @@ class TelluricModel(TemplateFramework):
 
     model_type = "Telluric"
 
-    template_map = {"Telfit": TelfitTelluric, "Tapas": TapasTelluric}
+    template_map: ClassVar[dict[TELLURIC_CREATION_MODE, TelluricTemplate]] = {
+        TELLURIC_CREATION_MODE.telfit: TelfitTelluric,
+        TELLURIC_CREATION_MODE.tapas: TapasTelluric,
+    }
 
     _default_params = TemplateFramework._default_params + DefaultValues(
         CREATION_MODE=UserParam(
@@ -76,9 +79,7 @@ class TelluricModel(TemplateFramework):
         ),
     )
 
-    def __init__(
-        self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT
-    ):
+    def __init__(self, usage_mode: str, root_folder_path: UI_PATH, user_configs: UI_DICT):
         """Instantiation of the object.
 
         Parameters
@@ -92,9 +93,7 @@ class TelluricModel(TemplateFramework):
             Dictionary with the keys and values of the user parameters that have been described above
 
         """
-        super().__init__(
-            mode="", root_folder_path=root_folder_path, user_configs=user_configs
-        )
+        super().__init__(mode="", root_folder_path=root_folder_path, user_configs=user_configs)
 
         logger.info("Starting Telluric Model")
 
@@ -120,9 +119,7 @@ class TelluricModel(TemplateFramework):
             Requested telluric Template
 
         """
-        logger.debug(
-            "Serving {} template to subInstrument {}", self._usage_mode, subInstrument
-        )
+        logger.debug("Serving {} template to subInstrument {}", self._usage_mode, subInstrument)
         if self._usage_mode == "":
             return self.templates["merged"]
         if self._usage_mode == "individual":
@@ -185,18 +182,17 @@ class TelluricModel(TemplateFramework):
 
     def _find_templates_from_disk(self, which: TELLURIC_CREATION_MODE) -> list[str]:
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type)
-        logger.info(
-            "Loading {} template from disk inside directory", self.__class__.model_type
-        )
+        logger.info("Loading {} template from disk inside directory", self.__class__.model_type)
         logger.info("\t" + loading_path)
 
         available_templates = []
+
         if not os.path.exists(loading_path):
             logger.warning(f"Could not find template to load in {loading_path}")
             raise TemplateNotExistsError()
 
         for fname in os.listdir(loading_path):
-            if which.value.capitalize() in fname and fname.endswith("fits"):
+            if which.value in fname and fname.endswith("fits"):
                 available_templates.append(fname)
         logger.info(
             "Found {} available templates: {} of type {}",
@@ -207,12 +203,9 @@ class TelluricModel(TemplateFramework):
         if len(available_templates) == 0:
             logger.critical("Could not find templates to load!")
             raise TemplateNotExistsError()
-
         return [os.path.join(loading_path, i) for i in available_templates]
 
-    def _compute_template(
-        self, data, subInstrument: str, user_configs: dict
-    ) -> TelluricTemplate:
+    def _compute_template(self, data, subInstrument: str, user_configs: dict) -> TelluricTemplate:
         creation_mode = self._internal_configs["CREATION_MODE"]
         logger.info("Using template of type: {}", creation_mode)
 
@@ -225,10 +218,7 @@ class TelluricModel(TemplateFramework):
         else:
             raise InvalidConfiguration()
 
-        if (
-            self.work_mode == WORKING_MODE.ONE_SHOT
-            or self.templates[subInstrument] is None
-        ):
+        if self.work_mode == WORKING_MODE.ONE_SHOT or self.templates[subInstrument] is None:
             tell_template = chosen_template(
                 subInst=subInstrument,
                 user_configs=user_configs,
@@ -241,9 +231,7 @@ class TelluricModel(TemplateFramework):
             if self.is_for_removal:
                 tell_template.create_telluric_template(dataClass=data)
             else:
-                logger.debug(
-                    "Telluric template in removal mode. Fitting from inside dataClass"
-                )
+                logger.debug("Telluric template in removal mode. Fitting from inside dataClass")
 
         else:
             # If this is a rolling mode, we just need to add the new information
@@ -264,10 +252,7 @@ class TelluricModel(TemplateFramework):
             True if the template will be used to remove telluric features
 
         """
-        return (
-            self._internal_configs["APPLICATION_MODE"]
-            == TELLURIC_APPLICATION_MODE.removal
-        )
+        return self._internal_configs["APPLICATION_MODE"] == TELLURIC_APPLICATION_MODE.removal
 
     @property
     def is_for_correction(self) -> bool:
@@ -277,7 +262,4 @@ class TelluricModel(TemplateFramework):
             True if the template will be used to correct telluric features
 
         """
-        return (
-            self._internal_configs["APPLICATION_MODE"]
-            == TELLURIC_APPLICATION_MODE.correction
-        )
+        return self._internal_configs["APPLICATION_MODE"] == TELLURIC_APPLICATION_MODE.correction
