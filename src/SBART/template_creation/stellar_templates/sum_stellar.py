@@ -9,7 +9,7 @@ from tabletexifier import Table
 
 from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
-from SBART.utils import custom_exceptions, open_buffer
+from SBART.utils import choices, custom_exceptions, open_buffer
 from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
 from SBART.utils.custom_exceptions import (
     BadOrderError,
@@ -44,7 +44,8 @@ class SumStellar(StellarTemplate):
 
     """
 
-    method_name = "Sum"
+    method_name = choices.STELLAR_CREATION_MODE.Sum.value
+
     _default_params = StellarTemplate._default_params + DefaultValues(
         ALIGNEMENT_RV_SOURCE=UserParam("DRS", constraint=ValueFromIterable(["DRS", "SBART"])),
         FLUX_threshold_for_template=UserParam(

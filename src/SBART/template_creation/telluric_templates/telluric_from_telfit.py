@@ -34,6 +34,7 @@ from SBART.utils.UserConfigs import (
 )
 
 from .Telluric_Template import TelluricTemplate
+from SBART.utils import choices
 
 if TYPE_CHECKING:
     from SBART.data_objects.DataClass import DataClass
@@ -211,7 +212,7 @@ class TelfitTelluric(TelluricTemplate):
         )
     )
 
-    method_name = "Telfit"
+    method_name = choices.TELLURIC_CREATION_MODE.telfit.value
 
     def __init__(
         self,
