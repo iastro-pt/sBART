@@ -1264,52 +1264,45 @@ class RV_cube(BASE):
 
         for ind, extra in product(["FWHM", "CONTRAST", "BIS SPAN"], ["", "_ERR"]):
             information[f"{ind}{extra}"] = self.cached_info[f"{ind}{extra}"]
-        coldefs = []
-        for key, array in information.items():
-            coldefs.append(fits.Column(name=key, format="D", array=array))
-
-        for key in ["BJD", "MJD"]:
-            array = self.cached_info[key]
-            if array[0] is not None:
-                coldefs.append(fits.Column(name=key, format="D", array=array))
-
-        hdu_timeseries = fits.BinTableHDU.from_columns(coldefs, name="TIMESERIES_DATA")
-
-        header = fits.Header()
-        header["HIERARCH drift_corr"] = self._drift_corrected
+          
+        full_dict = {}
+        full_dict["TIMESERIES_DATA"] = information 
+        
+        header = {}
+        header["drift_corr"] = self._drift_corrected
         header["VERSION"] = self.sBART_version
         header["mode"] = self._mode
-        header["HIERARCH is_SA_corrected"] = self.is_SA_corrected
-        header["HIERARCH array_size_0"] = self.instrument_properties["array_size"][0]
-        header["HIERARCH array_size_1"] = self.instrument_properties["array_size"][1]
-        hdu = fits.PrimaryHDU(data=[], header=header)
+        header["is_SA_corrected"] = self.is_SA_corrected
+        header["array_size_0"] = self.instrument_properties["array_size"][0]
+        header["array_size_1"] = self.instrument_properties["array_size"][1]
 
-        hdul = fits.HDUList([hdu, hdu_timeseries])
-
-        storage_path = build_filename(
-            self._internalPaths.get_path_to("RVcube", as_posix=False),
-            f"CachedInfo_{self._associated_subInst}",
-            fmt="fits",
-        )
-        hdul.writeto(storage_path, overwrite=True)
-        self.orderwise_rvs.store_to_disk(
-            path_to_store=self._internalPaths.get_path_to("RVcube", as_posix=False),
-            associated_subInst=self._associated_subInst,
-        )
+        full_dict["HEADER"] = header 
+        
         text_info = {}
         str_info = ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]
         for key in str_info:
             text_info[key] = self.cached_info[key]
-
-        text_info["root_folder"] = self._internalPaths.root_storage_path.as_posix()
-
+        
+        full_dict["TEXT_INFO"] = text_info
+        
         storage_path = build_filename(
             self._internalPaths.get_path_to("RVcube", as_posix=False),
             f"CachedInfo_{self._associated_subInst}",
             fmt="json",
         )
-        with open(storage_path, mode="w") as tow:
-            json.dump(text_info, tow)
+        with open(storage_path, "w") as tow:
+            json.dump(full_dict,
+                      tow,
+                      indent=4,
+                      )
+            
+        self.orderwise_rvs.store_to_disk(
+            path_to_store=self._internalPaths.get_path_to("RVcube", as_posix=False),
+            associated_subInst=self._associated_subInst,
+        )
+
+        text_info["root_folder"] = self._internalPaths.root_storage_path.as_posix()
+
 
     @classmethod
     def load_cube_from_disk(
@@ -1331,15 +1324,10 @@ class RV_cube(BASE):
         cachedinfo_filename = build_filename(
             subInst_path / "RVcube",
             filename=f"CachedInfo_{subInst}",
-            fmt="fits",
-            SBART_version=SBART_version,
-        )
-        cachedJSONinfo_filename = build_filename(
-            subInst_path / "RVcube",
-            filename=f"CachedInfo_{subInst}",
             fmt="json",
             SBART_version=SBART_version,
         )
+
         detailed_flags_filename = build_filename(
             subInst_path / "RVcube",
             filename=f"DetailedFlags_{subInst}",
@@ -1357,19 +1345,18 @@ class RV_cube(BASE):
 
         # For backwards compatibility retrieve an empty list
 
-        with fits.open(cachedinfo_filename) as hdu:
-            header_info = hdu[0].header
-            timeseries_table = hdu["TIMESERIES_DATA"].data
-
-        with open(cachedJSONinfo_filename) as tor:
-            timeseries_text = json.load(tor)
+        with open(cachedinfo_filename) as tor:
+            timeseries_data = json.load(tor)
+            header_info = timeseries_data["HEADER"]
+            timeseries_table = timeseries_data["TIMESERIES_DATA"]
+            timeseries_text = timeseries_data["TEXT_INFO"] 
 
         instrument_info = {
-            "array_size": [header_info[f"HIERARCH array_size_{i}"] for i in range(2)],
-            "is_drift_corrected": header_info["HIERARCH drift_corr"],
+            "array_size": [header_info[f"array_size_{i}"] for i in range(2)],
+            "is_drift_corrected": header_info["drift_corr"],
         }
-        frameIDs = timeseries_table["FrameID"].astype(int).tolist()
-        QC = timeseries_table["QC"].astype(int).tolist()
+        frameIDs = timeseries_table["FrameID"]
+        QC = timeseries_table["QC"]
 
         has_orderwise_rvs = miscInfo["has_orderwise_rvs"]
         inds = np.where(np.asarray(QC) == 1)[0]
@@ -1383,7 +1370,7 @@ class RV_cube(BASE):
             instrument_properties=instrument_info,
             has_orderwise_rvs=has_orderwise_rvs,
             # for backwards compatibility:
-            is_SA_corrected=header_info.get("HIERARCH is_SA_corrected", False),
+            is_SA_corrected=header_info.get("is_SA_corrected", False),
             invalid_frameIDs=invalid,
             storage_mode="one-shot",
         )
@@ -1406,7 +1393,6 @@ class RV_cube(BASE):
         new_cube.orderwise_rvs = orderwise
         logger.debug("Loading timeseries data")
 
-        convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
         for key in ["BJD", "MJD"]:
             try:
@@ -1422,6 +1408,7 @@ class RV_cube(BASE):
             "drift_ERR": "DRIFT_ERR",
             "BERV": "BERV",
         }
+        convert_to_quantity = lambda data: [elem * meter_second for elem in data]
 
         for internal_kw, storage_kw in entries.items():
             new_cube.cached_info[internal_kw] = convert_to_quantity(timeseries_table[storage_kw])
@@ -1431,7 +1418,7 @@ class RV_cube(BASE):
             "previous_SBART_RV_ERR": "prevSBART_RV_ERR",
         }
         for internal_kw, storage_kw in indexed_entries.items():
-            new_cube.cached_info[internal_kw] = convert_to_quantity(timeseries_table[storage_kw][inds])
+            new_cube.cached_info[internal_kw] = convert_to_quantity(np.asarray(timeseries_table[storage_kw])[inds])
 
         try:
             for ind, extra in product(["FWHM", "CONTRAST", "BIS SPAN"], ["", "_ERR"]):
@@ -1445,8 +1432,8 @@ class RV_cube(BASE):
                 "Missing CCF indicators from previous run. Probably due to loading cube from previous SBART version",
             )
 
-        new_cube.TM_RVs = convert_to_quantity(timeseries_table["TM_raw"][inds])
-        new_cube.TM_RVs_ERR = convert_to_quantity(timeseries_table["TM_raw_ERR"][inds])
+        new_cube.TM_RVs = convert_to_quantity(np.asarray(timeseries_table["TM_raw"])[inds])
+        new_cube.TM_RVs_ERR = convert_to_quantity(np.asarray(timeseries_table["TM_raw_ERR"])[inds])
         new_cube._loaded_inst_info = True
 
         if load_full_flag:
