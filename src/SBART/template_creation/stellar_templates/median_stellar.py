@@ -4,7 +4,6 @@ from multiprocessing import Process, Queue
 from typing import Dict, Optional
 
 import numpy as np
-import tqdm
 from loguru import logger
 
 from SBART.Masks import Mask
