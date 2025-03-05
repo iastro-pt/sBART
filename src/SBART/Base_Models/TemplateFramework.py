@@ -181,6 +181,13 @@ class TemplateFramework(BASE):
             temp_disk_name = os.path.basename(temp_path)
 
             temp_name = temp_disk_name.split("_")[0]
+            for key in self.__class__.template_map:
+                if key.value == temp_name:
+                    temp_name = key
+                    break
+            else:
+                msg = f"Can't load template {temp_name}"
+                raise Exception(msg)
             temp_subInst = temp_disk_name.split("_")[-1].split(".fits")[0]
 
             template_header = fits.getheader(temp_path)
@@ -236,7 +243,7 @@ class TemplateFramework(BASE):
             If it is not possible to find any stored template on the disk path
 
         """
-        which = which.capitalize()
+        which = which.value.capitalize()
         loading_path = self._internalPaths.get_path_to(self.__class__.model_type, as_posix=True)
         logger.info(
             "Loading {} template of type {} from disk inside directory",
