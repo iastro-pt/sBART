@@ -643,9 +643,8 @@ class RV_cube(BASE):
             dlw_err.extend([np.nan for _ in self._invalid_frameIDs])
             SA.extend([np.nan for _ in self._invalid_frameIDs])
             frameIDs.extend(self._invalid_frameIDs)
-            
-        
-         # Dictionary that already contains the data needed for the output
+
+        # Dictionary that already contains the data needed for the output
         out = {
             "RVc": corr_rv,
             "RVc_ERR": corr_err,
@@ -654,7 +653,7 @@ class RV_cube(BASE):
             "DLW": dlw,
             "DLW_ERR": dlw_err,
             "frameIDs": list(map(int, frameIDs)),
-            "SA": SA
+            "SA": SA,
         }
 
         tmp = {
@@ -672,7 +671,7 @@ class RV_cube(BASE):
         for key in ["BJD", "MJD", "INS MODE", "INS NAME", "PROG ID", "DATE_NIGHT", "DRS-VERSION", *ind_keys]:
             tmp[key] = self.cached_info[key]
         inds = np.where(np.asarray(self.QC_flag) == 1)[0]
-        
+
         for key, data in tmp.items():
             if include_invalid_frames:
                 # By default we cache all information
@@ -1264,10 +1263,15 @@ class RV_cube(BASE):
 
         for ind, extra in product(["FWHM", "CONTRAST", "BIS SPAN"], ["", "_ERR"]):
             information[f"{ind}{extra}"] = self.cached_info[f"{ind}{extra}"]
-          
+
+        for key in ["BJD", "MJD"]:
+            array = self.cached_info[key]
+            if array[0] is not None:
+                information[key] = array
+
         full_dict = {}
-        full_dict["TIMESERIES_DATA"] = information 
-        
+        full_dict["TIMESERIES_DATA"] = information
+
         header = {}
         header["drift_corr"] = self._drift_corrected
         header["VERSION"] = self.sBART_version
@@ -1276,33 +1280,33 @@ class RV_cube(BASE):
         header["array_size_0"] = self.instrument_properties["array_size"][0]
         header["array_size_1"] = self.instrument_properties["array_size"][1]
 
-        full_dict["HEADER"] = header 
-        
+        full_dict["HEADER"] = header
+
         text_info = {}
         str_info = ["DRS-VERSION", "DATE_NIGHT", "PROG ID", "INS MODE", "INS NAME", "bare_filename"]
         for key in str_info:
             text_info[key] = self.cached_info[key]
-        
+
         full_dict["TEXT_INFO"] = text_info
-        
+
         storage_path = build_filename(
             self._internalPaths.get_path_to("RVcube", as_posix=False),
             f"CachedInfo_{self._associated_subInst}",
             fmt="json",
         )
         with open(storage_path, "w") as tow:
-            json.dump(full_dict,
-                      tow,
-                      indent=4,
-                      )
-            
+            json.dump(
+                full_dict,
+                tow,
+                indent=4,
+            )
+
         self.orderwise_rvs.store_to_disk(
             path_to_store=self._internalPaths.get_path_to("RVcube", as_posix=False),
             associated_subInst=self._associated_subInst,
         )
 
         text_info["root_folder"] = self._internalPaths.root_storage_path.as_posix()
-
 
     @classmethod
     def load_cube_from_disk(
@@ -1349,7 +1353,7 @@ class RV_cube(BASE):
             timeseries_data = json.load(tor)
             header_info = timeseries_data["HEADER"]
             timeseries_table = timeseries_data["TIMESERIES_DATA"]
-            timeseries_text = timeseries_data["TEXT_INFO"] 
+            timeseries_text = timeseries_data["TEXT_INFO"]
 
         instrument_info = {
             "array_size": [header_info[f"array_size_{i}"] for i in range(2)],
@@ -1392,7 +1396,6 @@ class RV_cube(BASE):
         orderwise = OrderWiseRVs.load_from_disk(subInst_path=subInst_path, SBART_version=SBART_version)
         new_cube.orderwise_rvs = orderwise
         logger.debug("Loading timeseries data")
-
 
         for key in ["BJD", "MJD"]:
             try:
