@@ -354,14 +354,18 @@ class SamplerModel(BASE):
         for chunk in chunks:
             # count the packages per chunk!
             n_packages = 0
+            bad_ids = []
             for frame_id in chunk:
                 try:
                     _ = dataClass.load_frame_by_ID(frame_id)
                 except FrameError:  # noqa: PERF203
                     logger.warning("RunTimeRejection of frameID = {}", frame_id)
+                    bad_ids.append(frame_id)
                     continue
 
             for frame_id in chunk:
+                if frame_id in bad_ids:
+                    continue
                 for order in run_info["valid_orders"]:
                     worker_in_pkg = self._generate_WorkerIn_Package(frame_id, order, run_info, subInst)
                     package_queue.put(worker_in_pkg)
