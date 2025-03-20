@@ -54,6 +54,14 @@ class SPLINE_INTERPOL_MODE(Enum):
     PCHIP = 3
     NEAREST = 4
     RBF = 5
+    SMOOTH_CUBIC_SPLINE = 6
+
+
+class FLUX_SMOOTH_CONFIGS(Enum):
+    """Enumerator to flux smoothing applied at template construction"""
+
+    NONE = 1
+    SAVGOL = 2
 
 
 class INTERPOLATION_ERR_PROP(Enum):
