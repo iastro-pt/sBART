@@ -1,15 +1,16 @@
 import time
 import traceback
 from multiprocessing import Process, Queue
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 import numpy as np
 from loguru import logger
-from tabletexifier import Table
+from scipy.signal import savgol_filter
 
 from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import choices, custom_exceptions, open_buffer
+from SBART.utils.choices import FLUX_SMOOTH_CONFIGS
 from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
 from SBART.utils.custom_exceptions import (
     BadOrderError,
@@ -28,6 +29,9 @@ from SBART.utils.UserConfigs import (
 )
 
 from .Stellar_Template import StellarTemplate
+
+if TYPE_CHECKING:
+    from tabletexifier import Table
 
 
 class SumStellar(StellarTemplate):
@@ -52,6 +56,11 @@ class SumStellar(StellarTemplate):
             default_value=1,
             constraint=Positive_Value_Constraint,
             description="Flux threshold for masking the spectral template. Set to one to avoid possible numerical issues with near-zero values",
+        ),
+        FLUX_SMOOTH_CONFIGS=UserParam(
+            default_value=FLUX_SMOOTH_CONFIGS.NONE,
+            constraint=ValueFromIterable(FLUX_SMOOTH_CONFIGS),
+            description="Configure a possible flux smoothing before template construction",
         ),
     )
 
@@ -427,6 +436,13 @@ class SumStellar(StellarTemplate):
                     except Exception as e:
                         logger.critical("Interpolation failed due to: {}", e)
                         raise e
+
+                    if self._internal_configs["FLUX_SMOOTH_CONFIGS"] == FLUX_SMOOTH_CONFIGS.SAVGOL:
+                        interp_ord = savgol_filter(
+                            interp_ord,
+                            window_length=15,
+                            polyorder=2,
+                        )
 
                     stellar_template[order][wavelengths_to_interpolate] += interp_ord
                     stellar_template_errors[order][wavelengths_to_interpolate] += interp_err**2
