@@ -18,6 +18,7 @@ from SBART.utils.UserConfigs import DefaultValues, UserParam, ValueFromIterable
 from .telluric_templates.telluric_from_tapas import TapasTelluric
 from .telluric_templates.telluric_from_telfit import TelfitTelluric
 from .telluric_templates.Telluric_Template import TelluricTemplate
+from .telluric_templates.telluric_from_OHemission import OHemissionTelluric
 
 
 class TelluricModel(TemplateFramework):
@@ -61,6 +62,7 @@ class TelluricModel(TemplateFramework):
     template_map: ClassVar[dict[TELLURIC_CREATION_MODE, TelluricTemplate]] = {
         TELLURIC_CREATION_MODE.telfit: TelfitTelluric,
         TELLURIC_CREATION_MODE.tapas: TapasTelluric,
+        TELLURIC_CREATION_MODE.OHemission: OHemissionTelluric,
     }
 
     _default_params = TemplateFramework._default_params + DefaultValues(
