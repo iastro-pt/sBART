@@ -226,7 +226,7 @@ class TelluricTemplate(BaseTemplate):
             self.MAXBERV = max(new_berv_max, self.MAXBERV)
         else:
             self.BERVS.extend(BERVS)
-            self.MAXBERV = max_bervs[np.argmax(unitless_max_bervs)]
+            self.MAXBERV = max_bervs[np.argmax(np.abs(unitless_max_bervs))]
 
     def _search_reference_frame(self, dataclass: DataClass) -> Union[int, float]:
         """Select the frame that will be used to construct the telluric template
@@ -445,7 +445,7 @@ class TelluricTemplate(BaseTemplate):
                 updated_block.append([lowest_wavelength, highest_wavelength])
 
         elif self._extension_mode == TELLURIC_EXTENSION.WINDOW:
-            berv = self.MAXBERV.to(kilometer_second).value
+            berv = self.MAXBERV.to(kilometer_second).value + 15/1000
             lowest_wavelength = berv_function(telluric_block[0], BERV=-berv)
             highest_wavelength = berv_function(telluric_block[1], BERV=berv)
             updated_block.append([lowest_wavelength, highest_wavelength])
@@ -548,7 +548,7 @@ class TelluricTemplate(BaseTemplate):
         header["MAX_BERV"] = convert_data(self.MAXBERV, new_units=kilometer_second, as_value=True)
 
         for key, config_val in self._internal_configs.items():
-            if "path" in key or "user_" in key or isinstance(config_val, (list, tuple)):
+            if "path" in key.lower() or "user_" in key or isinstance(config_val, (list, tuple)):
                 continue
 
             if "FIT" in key:
@@ -556,7 +556,7 @@ class TelluricTemplate(BaseTemplate):
 
             if key in ["SAVE_DISK_SPACE"]:
                 continue
-
+            
             if key in ["WORKING_MODE"]:
                 header[f"HIERARCH {key}"] = config_val.value
             else:
