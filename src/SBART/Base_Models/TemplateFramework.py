@@ -205,7 +205,7 @@ class TemplateFramework(BASE):
                 if key == "WORKING_MODE":
                     config_dict[key] = getattr(WORKING_MODE, template_header[f"HIERARCH {key}"])
                 else:
-                    config_dict[key] = template_header[f"HIERARCH {key}"]
+                    config_dict[key] = template_header.get(f"HIERARCH {key}", "")
 
             if self.is_type("Telluric"):
                 config_dict["download_path"] = ""
