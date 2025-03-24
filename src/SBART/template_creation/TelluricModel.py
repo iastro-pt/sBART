@@ -217,6 +217,8 @@ class TelluricModel(TemplateFramework):
             chosen_template = TelfitTelluric
         elif creation_mode == TELLURIC_CREATION_MODE.tapas:
             chosen_template = TapasTelluric
+        elif creation_mode == TELLURIC_CREATION_MODE.OHemission:
+            chosen_template = OHemissionTelluric
         else:
             raise InvalidConfiguration()
 

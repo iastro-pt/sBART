@@ -34,7 +34,7 @@ class OHemissionTelluric(TelluricTemplate):
         ),
     )
 
-    method_name = choices.TELLURIC_CREATION_MODE.telfit.value
+    method_name = choices.TELLURIC_CREATION_MODE.OHemission.value
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ class OHemissionTelluric(TelluricTemplate):
         wavelengths, tell_spectra = datable["lam"], datable["flux"]
 
         template = np.zeros_like(tell_spectra)
-        template[np.where(template != 0)] = 1
+        template[np.where(tell_spectra != 0)] = 1
         self.template = template
 
         # ! no median filtering (might still be needed in the future)
