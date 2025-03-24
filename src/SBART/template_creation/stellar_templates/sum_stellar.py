@@ -62,16 +62,28 @@ class SumStellar(StellarTemplate):
             constraint=ValueFromIterable(FLUX_SMOOTH_CONFIGS),
             description="Configure a possible flux smoothing before template construction",
         ),
+        FLUX_SMOOTH_WINDOW_SIZE=UserParam(
+            default_value=15,
+            constraint=Positive_Value_Constraint,
+            mandatory=False,
+            description="Number of points that will be used for the filter to smooth the spectra",
+        ),
+        FLUX_SMOOTH_DEG=UserParam(
+            default_value=2,
+            constraint=Positive_Value_Constraint,
+            mandatory=False,
+            description="Degree of the polynomial that will be used for the filter to smooth the spectra",
+        ),
     )
 
     def __init__(self, subInst: str, user_configs: Optional[Dict] = None, loaded: bool = False):
         if "FLUX_SMOOTH_CONFIGS" in user_configs:
             # Ensure that we don't face issues when loading from disk
-            if isinstance(user_configs["FLUX_SMOOTH_CONFIGS"], (str, )):
+            if isinstance(user_configs["FLUX_SMOOTH_CONFIGS"], (str,)):
                 for key in FLUX_SMOOTH_CONFIGS:
                     if key.name == user_configs["FLUX_SMOOTH_CONFIGS"]:
-                        new_key = key 
-                        break 
+                        new_key = key
+                        break
                 else:
                     raise custom_exceptions.InternalError("Can't recognize KW on file")
                 user_configs["FLUX_SMOOTH_CONFIGS"] = new_key
@@ -451,8 +463,8 @@ class SumStellar(StellarTemplate):
                     if self._internal_configs["FLUX_SMOOTH_CONFIGS"] == FLUX_SMOOTH_CONFIGS.SAVGOL:
                         interp_ord = savgol_filter(
                             interp_ord,
-                            window_length=15,
-                            polyorder=2,
+                            window_length=self._internal_configs["FLUX_SMOOTH_WINDOW_SIZE"],
+                            polyorder=self._internal_configs["FLUX_SMOOTH_DEG"],
                         )
 
                     stellar_template[order][wavelengths_to_interpolate] += interp_ord
