@@ -65,6 +65,17 @@ class SumStellar(StellarTemplate):
     )
 
     def __init__(self, subInst: str, user_configs: Optional[Dict] = None, loaded: bool = False):
+        if "FLUX_SMOOTH_CONFIGS" in user_configs:
+            # Ensure that we don't face issues when loading from disk
+            if isinstance(user_configs["FLUX_SMOOTH_CONFIGS"], (str, )):
+                for key in FLUX_SMOOTH_CONFIGS:
+                    if key.name == user_configs["FLUX_SMOOTH_CONFIGS"]:
+                        new_key = key 
+                        break 
+                else:
+                    raise custom_exceptions.InternalError("Can't recognize KW on file")
+                user_configs["FLUX_SMOOTH_CONFIGS"] = new_key
+
         super().__init__(subInst=subInst, user_configs=user_configs, loaded=loaded)
 
         if not loaded:
