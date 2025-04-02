@@ -72,6 +72,7 @@ class ScipyInterpolSpecModel(ModellingBase):
         og_spectra,
         og_err,
         new_wavelengths,
+        order,
         apply_smooth: FLUX_SMOOTH_CONFIGS | None = None,
         smooth_configs: dict | None = None,
     ):
