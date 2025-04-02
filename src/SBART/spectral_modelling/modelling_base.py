@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, Dict, NoReturn
 
 from loguru import logger
@@ -12,6 +13,7 @@ from SBART.utils.UserConfigs import (
     Positive_Value_Constraint,
     UserParam,
 )
+from SBART.utils.choices import FLUX_SMOOTH_CONFIGS
 
 
 class ModellingBase(BASE):
@@ -59,7 +61,15 @@ class ModellingBase(BASE):
             # logger.info(f"Parameters of order {order} already exist on memory. Not fitting a new model")
             raise custom_exceptions.AlreadyLoaded
 
-    def interpolate_spectrum_to_wavelength(self, og_lambda, og_spectra, og_err, new_wavelengths): ...
+    def interpolate_spectrum_to_wavelength(
+        self,
+        og_lambda,
+        og_spectra,
+        og_err,
+        new_wavelengths,
+        apply_smooth: FLUX_SMOOTH_CONFIGS | None = None,
+        smooth_configs: dict | None = None,
+    ): ...
 
     def set_interpolation_properties(self, new_properties) -> NoReturn:
         self._internal_configs.update_configs_with_values(new_properties)
@@ -113,7 +123,8 @@ class ModellingBase(BASE):
             filename_start = f"Template_{self.object_info['subInstrument']}"
         else:
             raise custom_exceptions.InvalidConfiguration(
-                "Spectral modelling can't save results for {}", self._object_type,
+                "Spectral modelling can't save results for {}",
+                self._object_type,
             )
 
         return filename_start

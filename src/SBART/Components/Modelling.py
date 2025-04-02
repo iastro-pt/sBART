@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, NoReturn
 
@@ -7,7 +9,7 @@ from loguru import logger
 from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.choices import INTERPOLATION_ERR_PROP, SPECTRA_INTERPOL_MODE, SPLINE_INTERPOL_MODE
+from SBART.utils.choices import FLUX_SMOOTH_CONFIGS, INTERPOLATION_ERR_PROP, SPECTRA_INTERPOL_MODE, SPLINE_INTERPOL_MODE
 from SBART.utils.shift_spectra import apply_RVshift, remove_RVshift
 from SBART.utils.UserConfigs import DefaultValues, Positive_Value_Constraint, UserParam, ValueFromIterable
 
@@ -130,6 +132,8 @@ class Spectral_Modelling(BASE):
         shift_RV_by,
         RV_shift_mode,
         include_invalid=False,
+        apply_smooth: FLUX_SMOOTH_CONFIGS | None = None,
+        smooth_configs: dict | None = None,
     ):
         self.initialize_modelling_interface()
 
@@ -161,6 +165,8 @@ class Spectral_Modelling(BASE):
                 og_err=og_errs,
                 new_wavelengths=new_wavelengths,
                 order=order,
+                apply_smooth=apply_smooth,
+                smooth_configs=smooth_configs,
             )
         except custom_exceptions.StopComputationError as exc:
             logger.critical("Interpolation of {} has failed", self.name)

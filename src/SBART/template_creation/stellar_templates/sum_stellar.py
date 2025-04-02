@@ -10,7 +10,7 @@ from scipy.signal import savgol_filter
 from SBART.Base_Models.Frame import Frame
 from SBART.Masks import Mask
 from SBART.utils import choices, custom_exceptions, open_buffer
-from SBART.utils.choices import FLUX_SMOOTH_CONFIGS
+from SBART.utils.choices import FLUX_SMOOTH_CONFIGS, FLUX_SMOOTH_ORDER
 from SBART.utils.concurrent_tools.close_interfaces import close_buffers, kill_workers
 from SBART.utils.custom_exceptions import (
     BadOrderError,
@@ -32,6 +32,8 @@ from .Stellar_Template import StellarTemplate
 
 if TYPE_CHECKING:
     from tabletexifier import Table
+
+    from SBART.data_objects.DataClass import DataClass
 
 
 class SumStellar(StellarTemplate):
@@ -73,6 +75,12 @@ class SumStellar(StellarTemplate):
             constraint=Positive_Value_Constraint,
             mandatory=False,
             description="Degree of the polynomial that will be used for the filter to smooth the spectra",
+        ),
+        FLUX_SMOOTH_ORDER=UserParam(
+            default_value=FLUX_SMOOTH_ORDER.AFTER,
+            constraint=ValueFromIterable(FLUX_SMOOTH_ORDER),
+            mandatory=False,
+            description="Order in which we smooth the flux (before, after or both)",
         ),
     )
 
@@ -390,8 +398,18 @@ class SumStellar(StellarTemplate):
     def perform_calculations(self, in_queue, out_queue, buffer_info, **kwargs):
         """Compute the stellar template from the input S2D data. Accesses the data from shared memory arrays!"""
         current_subInst = kwargs["subInst"]
-        DataClassProxy = kwargs["dataClass"]
+        DataClassProxy: DataClass = kwargs["dataClass"]
         frame_RV_map = kwargs["frame_RV_map"]
+
+        if self._internal_configs["FLUX_SMOOTH_ORDER"] in [FLUX_SMOOTH_ORDER.BEFORE, FLUX_SMOOTH_ORDER.BOTH]:
+            apply_smooth = self._internal_configs["FLUX_SMOOTH_CONFIGS"]
+            smooth_configs = {
+                "FLUX_SMOOTH_WINDOW_SIZE": self._internal_configs["FLUX_SMOOTH_WINDOW_SIZE"],
+                "FLUX_SMOOTH_DEG": self._internal_configs["FLUX_SMOOTH_DEG"],
+            }
+        else:
+            apply_smooth = None
+            smooth_configs = {}
 
         shared_buffers = []
         (
@@ -454,13 +472,17 @@ class SumStellar(StellarTemplate):
                             shift_RV_by=current_epochRV,
                             RV_shift_mode="remove",
                             include_invalid=False,
+                            smooth_configs=smooth_configs,
+                            apply_smooth=apply_smooth,
                         )
 
                     except Exception as e:
                         logger.critical("Interpolation failed due to: {}", e)
                         raise e
 
-                    if self._internal_configs["FLUX_SMOOTH_CONFIGS"] == FLUX_SMOOTH_CONFIGS.SAVGOL:
+                    if self._internal_configs["FLUX_SMOOTH_CONFIGS"] == FLUX_SMOOTH_CONFIGS.SAVGOL and (
+                        self._internal_configs["FLUX_SMOOTH_ORDER"] in [FLUX_SMOOTH_ORDER.AFTER, FLUX_SMOOTH_ORDER.BOTH]
+                    ):
                         interp_ord = savgol_filter(
                             interp_ord,
                             window_length=self._internal_configs["FLUX_SMOOTH_WINDOW_SIZE"],

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -26,7 +26,7 @@ from SBART.data_objects.RV_outputs import RV_holder
 from SBART.data_objects.Target import Target
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
-from SBART.utils.choices import DISK_SAVE_MODE
+from SBART.utils.choices import DISK_SAVE_MODE, FLUX_SMOOTH_CONFIGS
 from SBART.utils.custom_exceptions import FrameError, InvalidConfiguration, NoDataError
 from SBART.utils.shift_spectra import apply_RVshift
 from SBART.utils.status_codes import (  # for entire frame; for individual pixels
@@ -76,10 +76,10 @@ class DataClass(BASE):
         storage_path: UI_PATH,
         instrument: Type[Frame],
         instrument_options: dict,
-        reject_subInstruments: Optional[Iterable[str]] = None,
+        reject_subInstruments: Iterable[str] | None = None,
         target_name: str = None,
-        sigma_clip_RVs: Optional[float] = None,
-        target_dictionary_path: Optional[UI_PATH] = None,
+        sigma_clip_RVs: float | None = None,
+        target_dictionary_path: UI_PATH | None = None,
     ):
         """Parameters
         ----------
@@ -605,6 +605,8 @@ class DataClass(BASE):
         shift_RV_by,
         RV_shift_mode,
         include_invalid=False,
+        apply_smooth: FLUX_SMOOTH_CONFIGS | None = None,
+        smooth_configs: dict | None = None,
     ):
         """Interpolate a given order to a new wavelength solution"""
         frame = self.get_frame_by_ID(frameID)
@@ -614,6 +616,8 @@ class DataClass(BASE):
             shift_RV_by=shift_RV_by,
             RV_shift_mode=RV_shift_mode,
             include_invalid=include_invalid,
+            apply_smooth=apply_smooth,
+            smooth_configs=smooth_configs,
         )
 
     def get_frame_arrays_by_ID(self, frameID: int):

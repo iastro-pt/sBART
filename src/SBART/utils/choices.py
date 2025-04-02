@@ -65,6 +65,14 @@ class FLUX_SMOOTH_CONFIGS(Enum):
     SAVGOL = 2
 
 
+class FLUX_SMOOTH_ORDER(Enum):
+    """The order in which the smooth is applied"""
+
+    BEFORE = 1
+    AFTER = 2
+    BOTH = 3
+
+
 class INTERPOLATION_ERR_PROP(Enum):
     """how should we propagate uncertainties"""
 
