@@ -411,6 +411,10 @@ class SumStellar(StellarTemplate):
             apply_smooth = None
             smooth_configs = {}
 
+        if self._internal_configs["FLUX_SMOOTH_CONFIGS"] == FLUX_SMOOTH_CONFIGS.NONE:
+            apply_smooth = None
+            smooth_configs = {}
+
         shared_buffers = []
         (
             stellar_template,
