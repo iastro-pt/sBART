@@ -4,7 +4,6 @@ from typing import NoReturn
 
 import numpy as np
 from scipy.interpolate import CubicSpline, PchipInterpolator, RBFInterpolator, interp1d
-from scipy.signal import savgol_filter
 
 from SBART.spectral_modelling.modelling_base import ModellingBase
 from SBART.utils import custom_exceptions
@@ -94,15 +93,7 @@ class ScipyInterpolSpecModel(ModellingBase):
             If the fit for this order failed
 
         """
-        if apply_smooth == FLUX_SMOOTH_CONFIGS.SAVGOL:
-            og_spectra = savgol_filter(
-                og_spectra,
-                window_length=smooth_configs["FLUX_SMOOTH_WINDOW_SIZE"],
-                polyorder=smooth_configs["FLUX_SMOOTH_DEG"],
-            )
-        elif apply_smooth is not None:
-            msg = "Smooth configuration not recognized"
-            raise custom_exceptions.InternalError(msg)
+
         propagate_interpol_errors = self._internal_configs["INTERPOLATION_ERR_PROP"]
 
         interpolator_map = {

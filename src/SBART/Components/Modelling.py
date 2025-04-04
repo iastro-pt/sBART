@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, NoReturn
 
 import numpy as np
 from loguru import logger
+from scipy.signal import savgol_filter
 
 from SBART.spectral_modelling import GPSpecModel, ScipyInterpolSpecModel
 from SBART.utils import custom_exceptions
@@ -145,6 +146,17 @@ class Spectral_Modelling(BASE):
             flux[desired_inds],
             uncertainties[desired_inds],
         )
+
+        if apply_smooth == FLUX_SMOOTH_CONFIGS.SAVGOL:
+            og_spectra = savgol_filter(
+                flux,
+                window_length=smooth_configs["FLUX_SMOOTH_WINDOW_SIZE"],
+                polyorder=smooth_configs["FLUX_SMOOTH_DEG"],
+            )[desired_inds]
+
+        elif apply_smooth is not None:
+            msg = "Smooth configuration not recognized"
+            raise custom_exceptions.InternalError(msg)
 
         if RV_shift_mode == "apply":
             shift_function = apply_RVshift
