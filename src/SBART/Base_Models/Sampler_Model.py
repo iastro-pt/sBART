@@ -1,6 +1,7 @@
 import time
 from typing import Iterable, List, NoReturn, Optional, Tuple, Union
 
+from SBART.utils import custom_exceptions
 import numpy as np
 from astropy.units import Quantity
 from loguru import logger
@@ -487,6 +488,10 @@ class SamplerModel(BASE):
     def enable_memory_savings(self, nobs: int):
         logger.info("{} enabling memory saving mode", self.name)
         self.mem_save_enabled = True
+        if nobs <= 0:
+            msg = f"Must have at least 1 observation open in memory ({nobs=})"
+            raise custom_exceptions.InternalError(msg)
+        self._max_number_obs = nobs
 
     def disable_memory_savings(self):
         logger.info("{} disabling memory saving mode", self.name)
