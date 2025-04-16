@@ -11,13 +11,13 @@ from typing import TYPE_CHECKING, Iterable, Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import ujson as json
+from ASTRA.data_objects.Target import Target
 from astropy.io import fits
 from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
 from SBART.Components.OrderWiseRVs import OrderWiseRVs
-from SBART.data_objects.Target import Target
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
@@ -36,7 +36,7 @@ from SBART.utils.work_packages import Package
 
 if TYPE_CHECKING:
     from SBART.Base_Models.UnitModel import UnitModel
-    from SBART.data_objects.DataClass import DataClass
+    from ASTRA.data_objects.DataClass import DataClass
     from SBART.utils.SBARTtypes import RV_measurement
 
 

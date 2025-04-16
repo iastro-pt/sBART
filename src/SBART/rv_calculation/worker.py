@@ -4,7 +4,7 @@ from multiprocessing import Queue
 import numpy as np
 from loguru import logger
 
-from SBART.data_objects import DataClass
+from ASTRA.data_objects.DataClass import DataClass
 from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.utils import find_wavelength_limits
 from SBART.utils.choices import RV_EXTRACTION_MODE
@@ -174,11 +174,11 @@ def worker(
                         "SAVE_DISK_SPACE": worker_configs["SAVE_DISK_SPACE"],
                     }
 
-                    if worker_configs["remove_OBS_from_template"]:
-                        # We need to pass the frame if we want to remove the OBs from the template
-                        target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID)
-                    else:
-                        target_kwargs["frame"] = None
+                    # if worker_configs["remove_OBS_from_template"]:
+                    #     # We need to pass the frame if we want to remove the OBs from the template
+                    #     target_kwargs["frame"] = dataClassProxy.get_frame_by_ID(current_epochID)
+                    # else:
+                    #     target_kwargs["frame"] = None
 
                     full_target_kwargs = {
                         **target_kwargs,

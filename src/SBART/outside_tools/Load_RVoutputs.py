@@ -38,14 +38,14 @@ def find_RVoutputs(
     """
 
     found = False
-    most_recent_version = find_latest_version(path, enable_logs=enable_logs)
+    all_files = list(path.glob("**/full_RVlist*txt"))[0]
+
+    most_recent_version = find_latest_version(all_files.parent, enable_logs=enable_logs)
 
     outs = RV_holder.load_from_disk(
         pathlib.Path(path),
         load_work_pkgs=load_work_pkgs,
         load_full_flags=load_full_flags,
-        SBART_version=(
-            SBART_version if SBART_version is not None else most_recent_version
-        ),
+        SBART_version=(SBART_version if SBART_version is not None else most_recent_version),
     )
     return outs

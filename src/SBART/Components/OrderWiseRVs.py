@@ -17,7 +17,8 @@ from SBART.utils.paths_tools import build_filename
 from SBART.utils.status_codes import ORDER_SKIP, Flag, OrderStatus
 
 if TYPE_CHECKING:
-    from SBART.data_objects.DataClass import DataClass
+    from ASTRA.data_objects.DataClass import DataClass
+
     from SBART.utils.SBARTtypes import UI_PATH
 
 

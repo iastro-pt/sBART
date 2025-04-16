@@ -434,8 +434,9 @@ class RV_holder(BASE):
     ):
         high_level_path = ensure_path_from_input(high_level_path, ensure_existence=True)
         logger.info("Loading RV outputs from {}", high_level_path)
+        all_files = list(high_level_path.glob("**/full_RVlist*txt"))[0]
 
-        most_recent_version = find_latest_version(high_level_path)
+        most_recent_version = find_latest_version(all_files.parent, enable_logs=False)
 
         SBART_version = SBART_version if SBART_version is not None else most_recent_version
 

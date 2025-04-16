@@ -9,7 +9,6 @@ from loguru import logger
 
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.Components.OrderWiseRVs import OrderWiseRVs
-from SBART.utils import custom_exceptions
 from SBART.utils.json_ready_converter import json_ready_converter
 from SBART.utils.paths_tools import build_filename
 

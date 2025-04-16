@@ -1,12 +1,13 @@
 import time
-from typing import Iterable, List, NoReturn, Optional, Tuple, Union
+from collections.abc import Iterable
+from typing import List, NoReturn, Optional, Tuple, Union
 
 from SBART.utils import custom_exceptions
 import numpy as np
+from ASTRA.data_objects import DataClass
 from astropy.units import Quantity
 from loguru import logger
 
-from SBART.data_objects import DataClass
 from SBART.ModelParameters import ModelComponent, RV_component, RV_Model
 from SBART.utils.BASE import BASE
 from SBART.utils.choices import RV_EXTRACTION_MODE

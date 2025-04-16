@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from multiprocessing import Process, Queue
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, NoReturn, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -120,10 +121,10 @@ class RV_routine(BASE):
             description="Sigma-clip for outliers in spectra <-> template comparison",
         ),  # tolerance for outliers in spectra - temp comp
         outlier_metric=UserParam("Paper", ValueFromIterable(("Paper", "MAD"))),
-        remove_OBS_from_template=UserParam(
-            False,
-            BooleanValue,
-        ),
+        # remove_OBS_from_template=UserParam(
+        #     False,
+        #     BooleanValue,
+        # ),
         min_block_size=UserParam(
             50,
             constraint=Positive_Value_Constraint,
@@ -586,7 +587,7 @@ class RV_routine(BASE):
             "OUTLIER_TOLERANCE": self._internal_configs["sigma_outliers_tolerance"],
             "MAX_ITERATIONS": 100,
             "METRIC_TO_USE": self._internal_configs["outlier_metric"],
-            "remove_OBS_from_template": self._internal_configs["remove_OBS_from_template"],
+            # "remove_OBS_from_template": self._internal_configs["remove_OBS_from_template"],
             "min_block_size": self._internal_configs["min_block_size"],
             "min_pixel_in_order": dataClassProxy.min_pixel_in_order(),
             "uncertainty_prop_type": self._internal_configs["uncertainty_prop_type"],
