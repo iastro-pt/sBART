@@ -40,6 +40,7 @@ def run_target(
     sampler_configs=None,
     log_to_terminal=False,
     target_dictionary_path=None,
+    skip_telluric_mask=False,
 ):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
@@ -83,20 +84,20 @@ def run_target(
 
     telluric_model_configs = user_configs.get("TELLURIC_MODEL_CONFIGS", {})
     telluric_template_configs = user_configs.get("TELLURIC_TEMPLATE_CONFIGS", {})
+    if not skip_telluric_mask:
+        ModelTell = TelluricModel(
+            usage_mode="individual",
+            user_configs=telluric_model_configs,
+            root_folder_path=storage_path if share_telluric is None else share_telluric,
+        )
 
-    ModelTell = TelluricModel(
-        usage_mode="individual",
-        user_configs=telluric_model_configs,
-        root_folder_path=storage_path if share_telluric is None else share_telluric,
-    )
-
-    ModelTell.Generate_Model(
-        dataClass=data,
-        telluric_configs=telluric_template_configs,
-        force_computation=force_telluric_creation,
-        store_templates=True,
-    )
-    data.remove_telluric_features(ModelTell)
+        ModelTell.Generate_Model(
+            dataClass=data,
+            telluric_configs=telluric_template_configs,
+            force_computation=force_telluric_creation,
+            store_templates=True,
+        )
+        data.remove_telluric_features(ModelTell)
 
     stellar_model_configs = user_configs.get("STELLAR_MODEL_CONFIGS", {})
     stellar_template_configs = user_configs.get("STELLAR_TEMPLATE_CONFIGS", {})
