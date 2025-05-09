@@ -9,7 +9,7 @@ try:
 
     CYTHON_UNAVAILABLE = False
 except ImportError:
-    logger.critical("Cython interface is not found, please make sure that the installation went smoothly (no matmul)")
+    logger.critical("s-BART Cython interface is not found, please make sure that the installation went smoothly (no matmul)")
     CYTHON_UNAVAILABLE = True
 
 from .find_nearby_wavelengths import find_close_lambdas
