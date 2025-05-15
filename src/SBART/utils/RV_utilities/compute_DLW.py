@@ -1,55 +1,78 @@
-
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 
 from SBART.utils.math_tools.numerical_derivatives import (
+    compute_finite_differences_spectral_derivatives,
     compute_non_uni_step_first_derivative,
 )
+from SBART.utils.RV_utilities.create_spectral_blocks import build_blocks
+from SBART.utils.shift_spectra import SPEED_OF_LIGHT
 
 
-def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
-    # Compute second derivation of the template
+def compute_DLW(
+    spec_wave,
+    spec_flux,
+    spec_variance,
+    temp_flux,
+    temp_variance,
+    spectra_binary_mask,
+):
+    blocks = build_blocks(spectra_binary_mask)
 
-    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
-    deriv_1 = derivative
-    # plt.plot(spec_wave[1:-1], deriv_1)
+    A = 0
+    B = 0
+    sigma_A = 0
+    sigma_B = 0
+    for block in blocks:
+        # Iterate over blocks of "consecutive" points (i.e., no gaps in the data)
 
-    derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
-    derivative = np.asarray(derivative)
-    errors = np.asarray(errors)
+        # TODO: properly compute uncertainty
+        first, derivative = compute_finite_differences_spectral_derivatives(spec_wave[block], temp_flux[block])
 
-    spec_wave = spec_wave[2:-2]
-    spec_flux = spec_flux[2:-2]
-    temp_flux = temp_flux[2:-2]
-    spec_variance = spec_variance[2:-2]
-    temp_variance = temp_variance[2:-2]
+        # Skip over the first/last two points to avoid numerical instability
+        derivative = derivative[2:-2]
+        derivative_errors = spec_variance[block][2:-2]
 
-    # derivative *= spec_wave**2
-    weights = np.divide(1, errors**2 + spec_variance)
+        # derivative, errors = compute_non_uni_step_first_derivative(spec_wave, temp_flux, np.sqrt(temp_variance))
+        # deriv_1 = derivative
+        # # plt.plot(spec_wave[1:-1], deriv_1)
 
-    squared_derivative = derivative**2
-    squared_derivative_errors = errors**2
-    residuals = spec_flux - temp_flux
+        # derivative, errors = compute_non_uni_step_first_derivative(spec_wave, derivative, errors)
+        # derivative = np.asarray(derivative)
+        # derivative_errors = np.asarray(errors)
 
-    # plt.plot(spec_wave, residuals, color="black")
-    # plt.plot(spec_wave, derivative)
+        spec_wave = spec_wave[block][2:-2]
+        spec_flux = spec_flux[block][2:-2]
+        temp_flux = temp_flux[block][2:-2]
+        spec_variance = spec_variance[block][2:-2]
+        temp_variance = temp_variance[block][2:-2]
 
-    squared_residuals = residuals**2
-    squared_weights = weights**2
-    A = np.dot(weights * derivative, residuals)
-    B = np.dot(weights, squared_derivative)
+        weights = np.divide(1, spec_variance)
 
-    res_variance = temp_variance + spec_variance
-    sigma_A = np.sum(
-        squared_weights
-        * squared_derivative
-        * squared_residuals
-        * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals),
-    )
-    sigma_B = np.sum(squared_weights * (2 * derivative * errors) ** 2)
+        squared_derivative = derivative**2
+        squared_derivative_errors = derivative_errors**2
+        residuals = spec_flux - temp_flux
 
-    dlw = A / B
+        # plt.plot(spec_wave, residuals, color="black")
+        # plt.plot(spec_wave, derivative)
+
+        squared_residuals = residuals**2
+        squared_weights = weights**2
+
+        A += np.dot(weights * derivative, residuals)
+        B += np.dot(weights, squared_derivative)
+
+        res_variance = temp_variance + spec_variance
+        sigma_A += np.sum(
+            squared_weights
+            * squared_derivative
+            * squared_residuals
+            * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals),
+        )
+        sigma_B += np.sum(squared_weights * (2 * derivative * derivative_errors) ** 2)
+
+    dlw = -1 * A / B
     cov_dlw = dlw**2 * (sigma_A / A**2 + sigma_B / B**2)
 
     if cov_dlw < 0:
@@ -57,9 +80,6 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
         err_dlw = np.nan
     else:
         err_dlw = np.sqrt(cov_dlw)
-
-    def scale_fit(_, val):
-        return val * derivative
 
     # print("og", dlw)
     # dlw = sc.curve_fit(
@@ -73,7 +93,6 @@ def compute_DLW(spec_wave, spec_flux, spec_variance, temp_flux, temp_variance):
 
 
 if __name__ == "__main__":
-    print("oasidoas")
 
     def normal_f(x, mu, sigma):
         """Gaussiana clássica"""
@@ -82,35 +101,39 @@ if __name__ == "__main__":
 
         return np.asarray(princip / (sigma * (2 * np.pi) ** 0.5))
 
-    spec = np.linspace(6000, 6500, 2000)
-    print(spec.size)
+    spec = np.linspace(6000, 6020, 2000)
+    center = np.median(spec)
 
-    sigma = 10
-    d_sigma = 0.1
-    amp = 100
-    offset = 10000
+    print(spec.size)
+    sigma = 6 * center / SPEED_OF_LIGHT  # FWHM of 7km/s
+    max_jump = 10 / 1000 * center / SPEED_OF_LIGHT  # Delta FWHM of 0.1 km/s
+    amp = 1
+    offset = 10
+
     fig, axis = plt.subplots()
-    for d_sigma in np.linspace(-0.5, 0.5, 50):
-        gauss = offset - amp * normal_f(spec, np.mean(spec), sigma)
-        gauss_mod = offset - amp * normal_f(spec, np.mean(spec), sigma + d_sigma)
+    for d_sigma in np.linspace(-max_jump, max_jump, 100):
+        gauss = offset - amp * normal_f(spec, center, sigma)
+        gauss_mod = offset - amp * normal_f(spec, center, sigma + d_sigma)
+
         dlw, err = compute_DLW(
             spec,
-            spec_flux=gauss,
-            spec_variance=(0.05 * spec) ** 2,
-            temp_flux=gauss_mod,
-            temp_variance=(0.01 * gauss_mod) ** 2,
+            spec_flux=gauss / np.median(gauss),
+            spec_variance=(np.ones_like(spec) * offset) ** 0.5,
+            temp_flux=gauss_mod / np.median(gauss_mod),
+            temp_variance=(np.ones_like(spec) * offset / 2) ** 0.5,
+            spectra_binary_mask=np.where(np.ones_like(spec, dtype=bool)),
         )
 
-        injected = sigma * d_sigma
-        print("injected", injected, "\n--//--")
+        expected = sigma * d_sigma
         axis.errorbar(
-            100 * d_sigma / sigma,
-            100 * (dlw - injected) / injected,
+            d_sigma,
+            dlw / d_sigma,
             err,
             color="black",
             marker="x",
             ls="",
         )
+
     axis.set_ylabel("100*(DLW - injected)/injected")
     axis.set_xlabel(r"100*$\Delta \sigma / \sigma$")
 

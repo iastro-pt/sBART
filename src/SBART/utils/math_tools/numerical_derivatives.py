@@ -81,3 +81,12 @@ def compute_non_uni_step_first_derivative(wavelengths, flux, uncertainties):
 
     deriva = np.asarray(deriva)
     return deriva, error_deriva
+
+
+def compute_finite_differences_spectral_derivatives(wavelength, flux):
+    """First and second flux derivatives through a gradient based approach."""
+    # First derivative dF/dλ
+    d_flux = np.gradient(flux, wavelength)
+    # Second derivative d²F/dλ²
+    d2_flux = np.gradient(d_flux, wavelength)
+    return d_flux, d2_flux
