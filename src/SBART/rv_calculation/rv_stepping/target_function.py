@@ -74,6 +74,7 @@ def target(params, **kwargs):
                 spec_variance=kwargs["squared_spectra_uncerts"][indexes],
                 temp_flux=interpolated_template,
                 temp_variance=normalized_uncerts**2,
+                spectra_binary_mask=indexes,
             )
         except:
             dlw, dlw_err = np.nan, np.nan
