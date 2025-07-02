@@ -8,9 +8,6 @@ Base Models
    :toctree: summary
     :recursive:
 
-    Frame
     RV_routine
     Sampler_Model
-    Template_Model
-    TemplateFramework
     UnitModel

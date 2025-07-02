@@ -3,7 +3,7 @@ name = "SBART"
 version = "1.0.0"
 description = "sBART model for RV extraction"
 readme = "README.md"
-requires-python = ">=3.11,<=3.12.8"
+requires-python = ">=3.11,<=3.12.11"
 dependencies = [
     "astra-spectra",
     "astropy>=7.0.1",
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools",  "numpy"]
+requires = ["setuptools", "wheel", "cython>=3.0.0", "numpy"]
 build-backend = "setuptools.build_meta"
 
 

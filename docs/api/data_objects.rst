@@ -13,9 +13,6 @@ Available Interfaces
 .. autosummary::
    :toctree: summary
 
-    DataClass
     RV_cube
     RV_outputs
-    Target
-    MetaData
 

@@ -8,6 +8,3 @@ Components
    :toctree: summary
     :recursive:
 
-    Modelling
-    Spectral_Normalization
-    SpectrumComponent

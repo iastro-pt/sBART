@@ -10,4 +10,3 @@ Data Units
 
     Act_Indicator_Unit
     ClassicalUnit
-    SpecNormUnit

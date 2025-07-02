@@ -1,0 +1,8 @@
+numpy<2.0.0
+Sphinx ~= 5.0.0
+sphinx-autodoc-typehints ~= 1.18.1
+nbsphinx ~= 0.8.8
+ipython ~= 8.2.0
+ipykernel ~= 6.13.0
+jupyter ~= 1.0.0
+sphinx-book-theme ~= 1.0.0

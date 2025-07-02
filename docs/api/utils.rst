@@ -11,8 +11,6 @@ Public
     :recursive:
 
     shift_spectra
-    spectral_conditions
-    types
     units
     UserConfigs
     custom_exceptions
@@ -26,6 +24,4 @@ Internals
 
     parameter_validators
     RV_utilities
-    tapas_downloader
-    telluric_utilities
 

@@ -1,19 +1,24 @@
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from pathlib import Path
-from setuptools import find_packages
+
+# Ensure numpy is available before defining extensions
+import numpy
 
 # Try to use Cython if available
 try:
     from Cython.Build import cythonize
+
     use_cython = True
 except ImportError:
     use_cython = False
 
 ext = ".pyx" if use_cython else ".c"
+
 ext_modules = [
     Extension(
         "SBART.utils.cython_codes.matmul.second_term",
         [f"src/SBART/utils/cython_codes/matmul/second_term{ext}"],
+        include_dirs=[numpy.get_include()],
     )
 ]
 

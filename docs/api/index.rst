@@ -13,8 +13,6 @@ Public interface
     :maxdepth: 1
 
     data_objects
-    Instruments
-    template_creation
     rv_calculation
     Samplers
     Quality_Control
@@ -29,9 +27,7 @@ Low-level interface
 
     Base_Models
     Components
-    Masks
     DataUnits
-    spectral_normalization
 
 
 

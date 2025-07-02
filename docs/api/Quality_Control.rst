@@ -10,6 +10,5 @@ Quality Control
 .. autosummary::
    :toctree: summary
 
-    activity_indicators
     outlier_detection
 
