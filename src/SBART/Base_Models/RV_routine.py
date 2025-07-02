@@ -400,6 +400,8 @@ class RV_routine(BASE):
                     storage_path=self._internalPaths.root_storage_path,
                     storage_mode=self._internal_configs["WORKING_MODE"],
                     compute_SA_values=self._internal_configs["COMPUTE_SA_CORRECTION"],
+                    iteration_number=self.iteration_number,
+                    RV_source=self._name,
                 )
                 self._output_RVcubes.update_disk_saving_level(self.disk_save_level)
 

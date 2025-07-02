@@ -64,6 +64,8 @@ class RV_holder(BASE):
         storage_path: Path,
         storage_mode: str,
         compute_SA_values: bool,
+        iteration_number: int,
+        RV_source: str,
     ):
         super().__init__(
             user_configs={},
@@ -73,6 +75,13 @@ class RV_holder(BASE):
             },
             root_level_path=storage_path,
         )
+
+        # Iteration number of the current RV stored in here
+        self.iteration_number = iteration_number
+
+        # Source for the RVs that currently exist on this object
+        self.RV_source = RV_source
+
         self._compute_SA_values = compute_SA_values
         self._storage_mode = storage_mode
         self.output_keys = None
@@ -454,12 +463,24 @@ class RV_holder(BASE):
 
         logger.debug("Found {} subInstruments: {}".format(len(available_subInsts), available_subInsts))
 
+        for entry in high_level_path.parts:
+            if "Iteration" in entry:
+                iter_number = int(entry.split("_")[-1])
+                break
+        else:
+            msg = f"Could not find iteration number on current path ({high_level_path})"
+            logger.warning(msg)
+            raise InternalError(msg)
+
+        source = high_level_path.stem
         new_holder = RV_holder(
             subInsts=available_subInsts,
             output_keys=[],
             storage_path=high_level_path,
             storage_mode="one-shot",
             compute_SA_values=True,
+            iteration_number=iter_number,
+            RV_source=source,
         )
 
         for path in high_level_path.iterdir():
