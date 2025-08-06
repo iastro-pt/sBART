@@ -2,15 +2,15 @@ import traceback
 from multiprocessing import Queue
 
 import numpy as np
+from ASTRA.data_objects.DataClass import DataClass
+from ASTRA.utils.custom_exceptions import BadOrderError
 from loguru import logger
 
-from ASTRA.data_objects.DataClass import DataClass
 from SBART.Quality_Control.outlier_detection import compute_outliers
 from SBART.utils import find_wavelength_limits
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.concurrent_tools.open_buffers import open_buffer
 from SBART.utils.custom_exceptions import (
-    BadOrderError,
     InvalidConfiguration,
     StopComputationError,
 )
