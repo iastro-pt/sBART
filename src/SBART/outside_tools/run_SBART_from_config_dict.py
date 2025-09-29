@@ -5,6 +5,7 @@ from pathlib import Path
 from ASTRA.data_objects import DataClassManager
 from ASTRA.Instruments import instrument_dict as instrument_name_map
 from SBART.outside_tools.create_logger import setup_SBART_logger
+from ASTRA.utils.create_logger import setup_ASTRA_logger
 from ASTRA.Quality_Control.activity_indicators import Indicators
 from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
 from SBART.rv_calculation.rv_stepping.RV_step import RV_step
@@ -13,7 +14,7 @@ from ASTRA.template_creation.StellarModel import StellarModel
 from ASTRA.template_creation.TelluricModel import TelluricModel
 from SBART.utils.custom_exceptions import InvalidConfiguration
 from ASTRA.utils.spectral_conditions import Empty_condition
-
+from SBART.outside_tools.Load_RVoutputs import find_RVoutputs
 
 def config_update_with_fallback_to_default(
     config_dict, SBART_key_name, user_configs, user_key_name=None
@@ -41,6 +42,7 @@ def run_target(
     log_to_terminal=False,
     target_dictionary_path=None,
     skip_telluric_mask=False,
+    iter_number:int = 0
 ):
     for path in [share_telluric, share_stellar]:
         if path is not None and not os.path.exists(path):
@@ -52,12 +54,16 @@ def run_target(
     RV_limits = user_configs["RV_limits"]
 
     instrument_configs = user_configs.get("INSTRUMENT_CONFIGS", {})
+    log_path = os.path.join(storage_path, "logs")
+    
     setup_SBART_logger(
-        os.path.join(storage_path, "logs"),
+        log_path,
         rv_method,
         instrument=instrument,
         log_to_terminal=log_to_terminal,
     )
+
+    setup_ASTRA_logger(storage_path=log_path, log_to_terminal=log_to_terminal)
 
     manager = DataClassManager()
     manager.start()
@@ -101,7 +107,14 @@ def run_target(
 
     stellar_model_configs = user_configs.get("STELLAR_MODEL_CONFIGS", {})
     stellar_template_configs = user_configs.get("STELLAR_TEMPLATE_CONFIGS", {})
-
+    
+    if iter_number > 0:
+        print("input", input_fpath)
+        print("previous", stellar_model_configs["PREVIOUS_SBART_PATH"])
+        holder = find_RVoutputs(stellar_model_configs["PREVIOUS_SBART_PATH"])
+    else:
+        holder = None
+        
     ModelStell = StellarModel(
         user_configs=stellar_model_configs,
         root_folder_path=storage_path if share_stellar is None else share_stellar,
@@ -117,6 +130,7 @@ def run_target(
             stellar_template_configs,
             StellarTemplateConditions,
             force_computation=force_stellar_creation,
+            previous_sbart_rv=holder
         )
         ModelStell.store_templates_to_disk(storage_path)
     except InvalidConfiguration:
