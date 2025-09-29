@@ -20,6 +20,8 @@ from SBART.utils.choices import WORKING_MODE
 from SBART.utils.custom_exceptions import InternalError, InvalidConfiguration, NoComputedRVsError
 from SBART.utils.paths_tools import build_filename, ensure_path_from_input, find_latest_version
 
+from SBART.utils import custom_exceptions
+
 if TYPE_CHECKING:
     from SBART.data_objects import DataClass
 
@@ -64,8 +66,12 @@ class RV_holder(BASE):
         storage_path: Path,
         storage_mode: str,
         compute_SA_values: bool,
+<<<<<<< HEAD
         iteration_number: int,
         RV_source: str,
+=======
+        iteration_number: int = 0
+>>>>>>> a7bda5a... Track iteration numbers
     ):
         super().__init__(
             user_configs={},
@@ -90,6 +96,7 @@ class RV_holder(BASE):
 
         self._merged_cubes: dict[str, None | RV_cube] = {subInst: None for subInst in subInsts}
         self.update_output_keys(output_keys)
+        self.iteration_number = iteration_number
 
     def update_output_keys(self, keys):
         self.output_keys = keys
@@ -443,6 +450,15 @@ class RV_holder(BASE):
     ):
         high_level_path = ensure_path_from_input(high_level_path, ensure_existence=True)
         logger.info("Loading RV outputs from {}", high_level_path)
+
+        path_parts = high_level_path.parts
+        for part in path_parts:
+            if "Iteration" in part:
+                iteration_number = int(part.split("_")[-1])
+                break
+        else:
+            raise custom_exceptions.NoComputedRVsError(f"{high_level_path=} does not match expected format")
+        
         all_files = list(high_level_path.glob("**/full_RVlist*txt"))[0]
 
         most_recent_version = find_latest_version(all_files.parent, enable_logs=False)
@@ -479,8 +495,7 @@ class RV_holder(BASE):
             storage_path=high_level_path,
             storage_mode="one-shot",
             compute_SA_values=True,
-            iteration_number=iter_number,
-            RV_source=source,
+            iteration_number=iteration_number
         )
 
         for path in high_level_path.iterdir():
