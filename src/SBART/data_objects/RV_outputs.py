@@ -66,12 +66,8 @@ class RV_holder(BASE):
         storage_path: Path,
         storage_mode: str,
         compute_SA_values: bool,
-<<<<<<< HEAD
-        iteration_number: int,
-        RV_source: str,
-=======
+        RV_source,
         iteration_number: int = 0
->>>>>>> a7bda5a... Track iteration numbers
     ):
         super().__init__(
             user_configs={},
@@ -495,7 +491,8 @@ class RV_holder(BASE):
             storage_path=high_level_path,
             storage_mode="one-shot",
             compute_SA_values=True,
-            iteration_number=iteration_number
+            iteration_number=iteration_number,
+            RV_source=source
         )
 
         for path in high_level_path.iterdir():
