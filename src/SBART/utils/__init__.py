@@ -1,6 +1,6 @@
 """Utilies for SBART application"""
 
-from SBART import sbart_logger as logger
+from SBART.utils.create_logger import sbart_logger as logger
 
 from .concurrent_tools.open_buffers import open_buffer
 

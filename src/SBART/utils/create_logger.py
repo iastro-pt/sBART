@@ -3,8 +3,8 @@
 import sys
 
 from loguru import logger
+from pathlib import Path
 
-# Keep a reference to ASTRA's sink IDs so we can remove them later if needed
 _SBART_SINKS = []
 _SBART_INITIALIZED = False
 
@@ -13,8 +13,13 @@ sbart_logger = logger.bind(module="SBART")
 logger.disable("SBART")
 
 
-def setup_sbart_logger(
-    RV_method: str, log_path=None, level="INFO", log_to_terminal=True, write_to_file=True, append_to_file=True
+def setup_SBART_logger(
+    RV_method: str,
+    log_path=None,
+    level="INFO",
+    log_to_terminal=True,
+    write_to_file=True,
+    append_to_file=True,
 ):
     """Configure SBART's logger dynamically.
 
@@ -27,6 +32,9 @@ def setup_sbart_logger(
     console : bool
         Whether to also log to stdout.
     """
+
+    if isinstance(log_path, str):
+        log_path = Path(log_path)
     global _SBART_INITIALIZED, _SBART_SINKS
 
     if _SBART_INITIALIZED:

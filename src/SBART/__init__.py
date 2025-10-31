@@ -13,13 +13,12 @@ warnings.simplefilter("always", UserWarning)
 
 import os
 
-from SBART import sbart_logger as logger
 from SBART.utils.create_logger import sbart_logger, setup_SBART_logger
 
 if os.environ.get("NO_GRAPHICAL_BACKEND", "False") == "True":
     import matplotlib.pyplot as plt
 
-    logger.warning("sbart disabling graphical backend for matplotlib")
+    sbart_logger.warning("sbart disabling graphical backend for matplotlib")
     plt.switch_backend("agg")
 
 
