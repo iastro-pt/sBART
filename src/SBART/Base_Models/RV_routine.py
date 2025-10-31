@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any, Dict, NoReturn, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.data_objects.MetaData import MetaData
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.data_objects.RV_outputs import RV_holder
@@ -349,6 +349,8 @@ class RV_routine(BASE):
             orders that the previous run used!. By default ()
 
         """
+        logger.info(f"Starting RV extraction through {self.name}")
+
         if isinstance(storage_path, str):
             # Emsure pathlib path
             storage_path = Path(storage_path)

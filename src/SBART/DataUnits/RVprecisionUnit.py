@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Any, Dict, List, NoReturn
 
 import ujson as json
-from loguru import logger
 from tabletexifier import Table
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.utils import custom_exceptions
 from SBART.utils.json_ready_converter import json_ready_converter

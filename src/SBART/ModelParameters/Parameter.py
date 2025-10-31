@@ -10,8 +10,7 @@ try:
 except ImportError:
     MISSING_JAX_DEPENDENCY = True
 
-from loguru import logger
-
+from SBART import sbart_logger as logger
 from SBART.Quality_Control import ensure_value_in_window
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE

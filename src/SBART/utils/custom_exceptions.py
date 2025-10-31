@@ -1,29 +1,24 @@
-from loguru import logger
+from SBART import sbart_logger as logger
 
 
 class Error(Exception):
     """Base class for exceptions in this module."""
 
 
-
 class FrameError(Error):
     """Raised when a INVALID S2D file is opened!"""
-
 
 
 class AlreadyLoaded(Error):
     """Raised when we try to load something that was already loaded!"""
 
 
-
 class BadOrderError(Error):
     """Raised when we access a bad order"""
 
 
-
 class NoConvergenceError(Error):
     """Raised when we access data from a fit that did not converge"""
-
 
 
 class NoComputedRVsError(Error):
@@ -37,20 +32,16 @@ class NoComputedRVsError(Error):
     """
 
 
-
 class DeadWorkerError(Error):
     """Used when a worker finds a problem"""
-
 
 
 class NoDataError(Error):
     """Used when all loaded frames are blocked/invalid"""
 
 
-
 class InvalidConfiguration(Error):
     """Used when a given configuration falls outside the accepted values"""
-
 
 
 class TemplateNotExistsError(Error):

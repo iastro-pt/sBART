@@ -9,10 +9,9 @@ try:
     MISSING_iCCF = False
 except ImportError:
     MISSING_iCCF = True
-from loguru import logger
-
-from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
+from SBART import sbart_logger as logger
 from SBART.utils.SBARTtypes import unitless_data_vector
+from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag
 
 
 def fit_CCF_gaussian(

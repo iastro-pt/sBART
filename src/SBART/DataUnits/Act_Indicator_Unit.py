@@ -5,8 +5,8 @@ from typing import List, NoReturn
 
 import numpy as np
 import ujson as json
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.UnitModel import UnitModel
 from SBART.Components.OrderWiseRVs import OrderWiseRVs
 from SBART.utils.json_ready_converter import json_ready_converter

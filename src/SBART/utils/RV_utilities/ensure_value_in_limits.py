@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from loguru import logger
+from SBART import sbart_logger as logger
 
 
 def ensure_valid_RV(tentative_RV: float, effective_RV_limits: Iterable[float]):

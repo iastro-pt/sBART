@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import ujson as json
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils import build_filename, custom_exceptions
 from SBART.utils.json_ready_converter import json_ready_converter
 

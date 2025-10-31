@@ -3,9 +3,9 @@
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
-from loguru import logger
 from scipy.optimize import minimize_scalar
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.status_codes import CONVERGENCE_FAIL, SUCCESS, Flag

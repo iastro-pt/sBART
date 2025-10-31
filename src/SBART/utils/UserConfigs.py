@@ -1,10 +1,10 @@
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, NoReturn, Optional, Iterable
+from typing import Any, Dict, Iterable, NoReturn, Optional
 
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils.custom_exceptions import InternalError, InvalidConfiguration
 
 

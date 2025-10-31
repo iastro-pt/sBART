@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import emcee
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions, meter_second, status_codes
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.math_tools import check_variation_inside_interval

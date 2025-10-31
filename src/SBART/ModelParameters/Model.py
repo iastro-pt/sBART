@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict, List, NoReturn, Tuple, Union
 
 import ujson as json
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions
-from SBART.utils.status_codes import Flag
 from SBART.utils.SBARTtypes import RV_measurement
+from SBART.utils.status_codes import Flag
 from SBART.utils.units import convert_data
 
 

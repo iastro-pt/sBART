@@ -6,8 +6,8 @@ from collections import defaultdict
 from typing import Tuple
 
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.custom_exceptions import FrameError

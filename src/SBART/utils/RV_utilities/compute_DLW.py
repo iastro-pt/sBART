@@ -1,7 +1,7 @@
 import numpy as np
-from loguru import logger
 from matplotlib import pyplot as plt
 
+from SBART import sbart_logger as logger
 from SBART.utils.math_tools.numerical_derivatives import (
     compute_finite_differences_spectral_derivatives,
     compute_non_uni_step_first_derivative,

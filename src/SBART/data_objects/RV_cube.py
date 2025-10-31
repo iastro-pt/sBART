@@ -13,10 +13,10 @@ import numpy as np
 import ujson as json
 from ASTRA.data_objects.Target import Target
 from astropy.io import fits
-from loguru import logger
 from tabletexifier import Table
 
 from SBART import __version__
+from SBART import sbart_logger as logger
 from SBART.Components.OrderWiseRVs import OrderWiseRVs
 from SBART.DataUnits import available_data_units
 from SBART.utils import custom_exceptions

@@ -1,8 +1,7 @@
 import os
 
-from loguru import logger
-
 from SBART import __version__, __version_info__
+from SBART import sbart_logger as logger
 from SBART.utils.custom_exceptions import NoDataError
 
 

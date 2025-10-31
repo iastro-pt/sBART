@@ -1,8 +1,7 @@
-
 import numpy as np
-from loguru import logger
 from scipy import optimize
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions
 
 

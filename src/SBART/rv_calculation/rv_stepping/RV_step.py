@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.RV_routine import RV_routine
 from SBART.DataUnits import Classical_Unit
 from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit

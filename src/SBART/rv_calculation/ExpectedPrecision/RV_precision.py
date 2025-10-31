@@ -1,7 +1,6 @@
 from typing import Iterable, List, Union
 
-from loguru import logger
-
+from SBART import sbart_logger as logger
 from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits import RV_Precision_Unit

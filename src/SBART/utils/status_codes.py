@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 from typing import Any, Dict, Iterable, List, NoReturn, Optional, Set, Tuple, Union
 
 import numpy as np
 import ujson as json
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions
 
 

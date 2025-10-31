@@ -1,6 +1,6 @@
-from loguru import logger
 from tabletexifier import Table
 
+from SBART import sbart_logger as logger
 from SBART.utils.units import convert_data
 
 try:
@@ -154,7 +154,9 @@ def optimize_intervals_over_array(list_of_orders, array_of_precisions, N_interva
         raise Exception("Something went wrong")
 
     intervals = generate_all_possible_combinations(
-        list_of_orders, N_intervals=N_intervals, min_interval_size=min_interval_size,
+        list_of_orders,
+        N_intervals=N_intervals,
+        min_interval_size=min_interval_size,
     )
 
     if len(intervals) == 0:

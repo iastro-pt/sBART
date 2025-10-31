@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 import numpy as np
-from loguru import logger
 from scipy.optimize import minimize, minimize_scalar
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.scipy_derivative import derivative

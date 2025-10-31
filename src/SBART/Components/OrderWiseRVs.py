@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.io import fits
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.utils import custom_exceptions
 from SBART.utils.BASE import BASE
 from SBART.utils.expected_precision_interval import convert_to_tab, optimize_intervals_over_array

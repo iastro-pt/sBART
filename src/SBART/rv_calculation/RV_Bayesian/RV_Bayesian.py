@@ -2,8 +2,8 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
-from loguru import logger
 
+from SBART import sbart_logger as logger
 from SBART.Base_Models.RV_routine import RV_routine
 from SBART.data_objects.RV_cube import RV_cube
 from SBART.DataUnits.Act_Indicator_Unit import ActIndicators_Unit
