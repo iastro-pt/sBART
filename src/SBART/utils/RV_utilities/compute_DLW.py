@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from SBART import sbart_logger as logger
+from SBART.utils.create_logger import sbart_logger as logger
 from SBART.utils.math_tools.numerical_derivatives import (
     compute_finite_differences_spectral_derivatives,
     compute_non_uni_step_first_derivative,
@@ -28,7 +28,9 @@ def compute_DLW(
         # Iterate over blocks of "consecutive" points (i.e., no gaps in the data)
 
         # TODO: properly compute uncertainty
-        first, derivative = compute_finite_differences_spectral_derivatives(spec_wave[block], temp_flux[block])
+        first, derivative = compute_finite_differences_spectral_derivatives(
+            spec_wave[block], temp_flux[block]
+        )
 
         # Skip over the first/last two points to avoid numerical instability
         derivative = derivative[2:-2]
@@ -68,7 +70,10 @@ def compute_DLW(
             squared_weights
             * squared_derivative
             * squared_residuals
-            * (squared_derivative_errors / squared_derivative + res_variance / squared_residuals),
+            * (
+                squared_derivative_errors / squared_derivative
+                + res_variance / squared_residuals
+            ),
         )
         sigma_B += np.sum(squared_weights * (2 * derivative * derivative_errors) ** 2)
 

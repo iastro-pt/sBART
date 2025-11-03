@@ -1,6 +1,3 @@
-from SBART import sbart_logger as logger
-
-
 class Error(Exception):
     """Base class for exceptions in this module."""
 
@@ -77,6 +74,8 @@ def ensure_invalid_template(func):
         try:
             func(self, *args, **kwargs)
         except Exception:
+            from SBART import sbart_logger as logger
+
             self.mark_as_invalid()
             logger.opt(exception=True).critical("Template creation failed")
 

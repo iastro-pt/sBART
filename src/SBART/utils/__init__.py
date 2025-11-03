@@ -1,7 +1,5 @@
 """Utilies for SBART application"""
 
-from SBART.utils.create_logger import sbart_logger as logger
-
 from .concurrent_tools.open_buffers import open_buffer
 
 try:
@@ -9,6 +7,8 @@ try:
 
     CYTHON_UNAVAILABLE = False
 except ImportError:
+    from SBART.utils.create_logger import sbart_logger as logger
+
     logger.critical(
         "s-BART Cython interface is not found, please make sure that the installation went smoothly (no matmul)"
     )

@@ -2,7 +2,7 @@ import math
 import os
 from pathlib import Path
 
-from ASTRA.data_objects import DataClassManager
+from ASTRA.data_objects import DataClassManager, DataClass
 from ASTRA.Instruments import instrument_dict as instrument_name_map
 from SBART import setup_SBART_logger
 from ASTRA.utils.create_logger import setup_ASTRA_logger
@@ -55,10 +55,10 @@ def run_target(
     RV_limits = user_configs["RV_limits"]
 
     instrument_configs = user_configs.get("INSTRUMENT_CONFIGS", {})
-    log_path = os.path.join(storage_path, "logs")
+    log_path = storage_path / "logs"
 
     setup_SBART_logger(
-        log_path=input_fpath,
+        log_path=log_path,
         RV_method=rv_method,
         log_to_terminal=log_to_terminal,
     )
@@ -68,7 +68,7 @@ def run_target(
     manager = DataClassManager()
     manager.start()
 
-    data = manager.DataClass(
+    data = DataClass(
         input_fpath,
         storage_path=storage_path,
         instrument=instrument,
@@ -114,7 +114,6 @@ def run_target(
         holder = find_RVoutputs(stellar_model_configs["PREVIOUS_SBART_PATH"])
     else:
         holder = None
-
     ModelStell = StellarModel(
         user_configs=stellar_model_configs,
         root_folder_path=storage_path if share_stellar is None else share_stellar,
