@@ -1,6 +1,6 @@
 [project]
 name = "SBART"
-version = "1.0.1"
+version = "1.0.2"
 description = "sBART model for RV extraction"
 readme = "README.md"
 requires-python = ">=3.11,<=3.12.11"
@@ -8,6 +8,7 @@ dependencies = [
     "astra-spectra",
     "astropy>=7.0.1",
     "astroquery>=0.4.10",
+    "cibuildwheel>=3.3.0",
     "corner>=2.2.3",
     "emcee>=3.1.6",
     "loguru>=0.7.3",
@@ -43,9 +44,6 @@ showcontent = true
 
 [tool.ruff.lint]
 select = ["ALL"]
-
-[tool.uv.sources]
-astra-spectra = { path = "../ASTRA", editable = true }
 
 [dependency-groups]
 dev = [

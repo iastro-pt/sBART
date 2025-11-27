@@ -1,6 +1,6 @@
 """SBART library."""
 
-version = "1.0.0"
+version = "1.0.2"
 
 __version__ = version.replace(".", "-")
 __version_info__ = (int(i) for i in __version__.split("-"))

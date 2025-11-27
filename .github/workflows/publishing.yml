@@ -22,7 +22,7 @@ jobs:
       - name: Install Python 3.12
         run: uv python install 3.12
       - name: Build
-        run: uv build
+        run:  uv run cibuildwheel --output-dir dist
       # Check that basic features work and we didn't miss to include crucial files
       - name: Publish
         run: uv publish
