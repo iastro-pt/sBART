@@ -1,3 +1,4 @@
 include src/SBART/resources/*
 include src/SBART/outside_tools/*
 include src/SBART/utils/cython_codes/matmul/second_term.c
+include src/SBART/utils/cython_codes/matmul/second_term.pyx
