@@ -1,8 +1,6 @@
-from setuptools import setup, Extension, find_packages
-from pathlib import Path
-
 # Ensure numpy is available before defining extensions
 import numpy
+from setuptools import Extension, find_packages, setup
 
 # Try to use Cython if available
 try:
