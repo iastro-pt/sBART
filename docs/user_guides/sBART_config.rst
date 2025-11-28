@@ -17,26 +17,7 @@ where we present:
 
 
 On top of that, each SBART object also has a "Base", which can introduce extra "User Parameters" that are also
-available to be configured.
-
-.. note::
-
-    Lets take a look at a specific case, the one from :py:class:`~SBART.Instruments.ESPRESSO`.
-    This class provides two "User parameters. However, its "Base" is the  :py:class:`~SBART.Base_Models.Frame`
-    class, which introduces 4 other "User parameters".
-
-    Thus, the user can change the following fields of a given ESPRESSO observation:
-
-    - apply_FluxCorr
-    - Telluric_Corrected
-    - bypass_QualCheck
-    - reject_order_percentage
-    - minimum_order_SNR
-    - spectra_format
-
-Each different piece of SBART defines a set of parameters, which the user can override by providing
-a python dictionary, where the keys are the name of the parameter, and the values are the desired
-value. The user-provided values are then passed by a validation stage, raising an Exception if the
+available to be configured. Each different object of SBART defines a set of parameters, which the user can override by providing a python dictionary, where the keys are the name of the parameter, and the values are the desired value. The user-provided values are then passed by a validation stage, raising an Exception if the
 user-provided value does not comply with the conditions that the parameter imposes.
 
 .. note::
