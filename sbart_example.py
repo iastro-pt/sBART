@@ -1,26 +1,36 @@
-import sys
-
-from SBART.Instruments import ESPRESSO, HARPS
+import os
 from pathlib import Path
+
+import emcee
+from ASTRA import setup_ASTRA_logger
+from ASTRA.data_objects import DataClassManager
+from ASTRA.Instruments import ESPRESSO
+from ASTRA.Quality_Control.activity_indicators import Indicators
+from ASTRA.template_creation.StellarModel import StellarModel
+from ASTRA.template_creation.TelluricModel import TelluricModel
+from ASTRA.utils.choices import TELLURIC_CREATION_MODE
+from ASTRA.utils.spectral_conditions import FNAME_condition, KEYWORD_condition
+
+from SBART import setup_SBART_logger
+from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
+from SBART.rv_calculation.rv_stepping.RV_step import RV_step
+from SBART.Samplers import Laplace_approx, MCMC_sampler, chi_squared_sampler
+from SBART.utils.units import meter_second
 
 current_folder = Path(__file__).parent.parent.absolute()
 
 # FIle where each line is a disk path of a S2D file! Otherwise, list of files
-input_filepath = "/home/amiguel/phd/spectra_collection/ESPRESSO/TauCeti/smallest_night.txt"
-
+input_filepath = list(set(Path("/home/amiguel/Downloads/archive(2)").glob("**/*e2ds_A.fits")))
 instrument = ESPRESSO
 
 # Folder in which SBART will store its outputs
-storage_path = current_folder / "sBART_private/to_delete"
+storage_path = Path("/tmp") / "to_delete"
+storage_path.mkdir(exist_ok=True)
 
-
-from SBART.utils.units import meter_second
-
-# rv_method = "classical"  # Either classical or Laplace or MCMC
 
 for rv_method in [
-    # "classical",
-    "Laplace"
+    "classical",
+    "Laplace",
 ]:
     # Define the step that will be used for numerical calculations near max/min points
     RVstep = 0.1 * meter_second
@@ -29,15 +39,18 @@ for rv_method in [
     RV_limits = [200 * meter_second, 200 * meter_second]
 
     # List with orders to "throw" away
-    orders_to_skip = list(range(160))
+    orders_to_skip = list(range(60))
     # Number of cores to use
     N_cores = 10
 
     # For the S2D loading stage
-    inst_options = {"minimum_order_SNR": 2, "apply_FluxCorr": True}
+    inst_options = {
+        "minimum_order_SNR": 2,
+        "apply_FluxCorr": True,
+    }
 
     # For the creation of the Telluric Model (i.e. the "template generator")
-    telluric_model_configs = {"CREATION_MODE": "telfit"}
+    telluric_model_configs = {"CREATION_MODE": TELLURIC_CREATION_MODE.telfit}
 
     # For the creation of the individual Telluric templates
     telluric_template_genesis_configs = {"continuum_percentage_drop": 1}
@@ -51,16 +64,16 @@ for rv_method in [
 
     confsRV = {"MEMORY_SAVE_MODE": False}
 
-    from SBART.outside_tools.create_logger import setup_SBART_logger
-
     setup_SBART_logger(
-        storage_path=storage_path / "logs",
+        log_path=storage_path / "logs",
         RV_method=rv_method,
-        instrument=instrument,
         log_to_terminal=True,
     )
 
-    from SBART.data_objects import DataClassManager, DataClass
+    setup_ASTRA_logger(
+        storage_path=storage_path / "logs",
+        log_to_terminal=True,
+    )
 
     manager = DataClassManager()
     manager.start()
@@ -72,12 +85,8 @@ for rv_method in [
         instrument_options=inst_options,
     )
 
-    from SBART.Quality_Control.activity_indicators import Indicators
-
     inds = Indicators()
     data.remove_activity_lines(inds)
-
-    from SBART.template_creation.TelluricModel import TelluricModel
 
     ModelTell = TelluricModel(
         usage_mode="individual",
@@ -89,11 +98,7 @@ for rv_method in [
 
     data.remove_telluric_features(ModelTell)
 
-    from SBART.template_creation.StellarModel import StellarModel
-
     ModelStell = StellarModel(user_configs=stellar_model_configs, root_folder_path=storage_path)
-
-    from SBART.utils.spectral_conditions import FNAME_condition, KEYWORD_condition
 
     StellarTemplateConditions = FNAME_condition(["r.ESPRE.2019-04-25T00:27:44.066_S2D_A.fits"]) + KEYWORD_condition(
         "airmass", [[0, 1.5]]
@@ -104,17 +109,6 @@ for rv_method in [
     ModelStell.store_templates_to_disk(storage_path)
 
     data.ingest_StellarModel(ModelStell)
-
-    from SBART.rv_calculation.RV_Bayesian.RV_Bayesian import RV_Bayesian
-    from SBART.rv_calculation.rv_stepping.RV_step import RV_step
-    from SBART.rv_calculation.ExpectedPrecision.RV_precision import RV_precision
-    from SBART.Samplers import (
-        chi_squared_sampler,
-        Laplace_approx,
-        MCMC_sampler,
-    )
-
-    import os, emcee
 
     if rv_method == "classical":
         sampler = chi_squared_sampler(RVstep, RV_limits, user_configs={})
@@ -144,7 +138,7 @@ for rv_method in [
             RV_configs=confsRV,
             sampler=sampler,
         )
-        orders = os.path.join(storage_path, "Iteration_0/RV_step")
+        orders = storage_path / "Iteration_0/RV_step"
     else:
         raise Exception
 
