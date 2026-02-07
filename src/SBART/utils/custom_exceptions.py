@@ -2,10 +2,6 @@ class Error(Exception):
     """Base class for exceptions in this module."""
 
 
-class FrameError(Error):
-    """Raised when a INVALID S2D file is opened!"""
-
-
 class AlreadyLoaded(Error):
     """Raised when we try to load something that was already loaded!"""
 

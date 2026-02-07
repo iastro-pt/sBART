@@ -4,6 +4,7 @@ from typing import List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 from ASTRA.data_objects import DataClass
+from ASTRA.utils.custom_exceptions import FrameError
 from astropy.units import Quantity
 
 from SBART import sbart_logger as logger
@@ -13,7 +14,6 @@ from SBART.utils.BASE import BASE
 from SBART.utils.choices import RV_EXTRACTION_MODE
 from SBART.utils.custom_exceptions import (
     DeadWorkerError,
-    FrameError,
     InvalidConfiguration,
 )
 from SBART.utils.SBARTtypes import UI_DICT
