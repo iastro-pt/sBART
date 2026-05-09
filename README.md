@@ -5,7 +5,7 @@
 
 s-BART: A semi-Bayesian implementation of template matching for precise Radial Velocities
 
-If you use the pipeline, cite the paper:
+If you use the pipeline, cite the papers:
 
 ```
 @article{ Silva_2022,
@@ -18,6 +18,26 @@ If you use the pipeline, cite the paper:
     volume = 663,
     pages = "A143",
 }
+
+@ARTICLE{2026JOSS...11.9413S,
+       author = {{Silva}, Andr{\'e} and {Faria}, J. and {Santos}, Nuno and {Sousa}, S{\'e}rgio and {Viana}, Pedro and {Martins}, J.},
+        title = "{ASTRA: A Python Package for Cross-Instrument Stellar and Telluric Template Construction}",
+      journal = {The Journal of Open Source Software},
+     keywords = {astronomy, Python, Cython, Instrumentation and Methods for Astrophysics, Earth and Planetary Astrophysics, Solar and Stellar Astrophysics},
+         year = 2026,
+        month = jan,
+       volume = {11},
+       number = {117},
+          eid = {9413},
+        pages = {9413},
+          doi = {10.21105/joss.09413},
+archivePrefix = {arXiv},
+       eprint = {2601.10439},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2026JOSS...11.9413S},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
 ```
 
 For more information, check the docs: https://sbart.readthedocs.io/en/latest/
