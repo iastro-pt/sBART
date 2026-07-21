@@ -10,7 +10,7 @@ import numpy as np
 from SBART import sbart_logger as logger
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.utils.choices import RV_EXTRACTION_MODE
-from SBART.utils.custom_exceptions import FrameError
+from ASTRA.utils.custom_exceptions import FrameError
 from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.units import meter_second
 from SBART.utils.work_packages import Package

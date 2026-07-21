@@ -15,10 +15,10 @@ import numpy as np
 from SBART.Base_Models.Sampler_Model import SamplerModel
 from SBART.ModelParameters import ModelComponent
 from SBART.utils.choices import RV_EXTRACTION_MODE
-from SBART.utils.custom_exceptions import FrameError
 from SBART.utils.SBARTtypes import RV_measurement
 from SBART.utils.status_codes import SUCCESS, Flag
 from SBART.utils.work_packages import Package
+from ASTRA.utils.custom_exceptions import FrameError
 
 
 class SbartBaseSampler(SamplerModel):
