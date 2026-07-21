@@ -22,7 +22,8 @@ python:
   install:
     - method: uv
       command: sync
-
+      groups:
+        - docs
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/conf.py
