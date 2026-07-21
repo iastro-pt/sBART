@@ -172,6 +172,7 @@ def worker(
                             RVUpperBound.to(meter_second).value,
                         ),
                         "SAVE_DISK_SPACE": worker_configs["SAVE_DISK_SPACE"],
+                        "current_order_mask": current_order_mask,
                     }
 
                     # if worker_configs["remove_OBS_from_template"]:

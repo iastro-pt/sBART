@@ -68,6 +68,7 @@ def match_continuum_levels(
     fit_degree: int,
     continuum_type: str,
     template_uncertainties=None,
+    get_continuum_model: bool = False,
 ):
     """Match the continuum level of the template to that of the provided observation.
     If the template uncertainties are passed, it will also update them, accounting for the
@@ -106,5 +107,10 @@ def match_continuum_levels(
 
     if template_uncertainties is not None and continuum_type == "paper":
         normalized_uncertainties = continuum_model * template_uncertainties
-        return normalized_template, normalized_uncertainties, coeffs, spec_ratio
-    return normalized_template, coeffs, spec_ratio
+        if not get_continuum_model:
+            return normalized_template, normalized_uncertainties, coeffs, spec_ratio
+        return normalized_template, normalized_uncertainties, coeffs, spec_ratio, cont_model
+
+    if not get_continuum_model:
+        return normalized_template, coeffs, spec_ratio
+    return normalized_template, coeffs, spec_ratio, cont_model
