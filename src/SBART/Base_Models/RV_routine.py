@@ -146,6 +146,7 @@ class RV_routine(BASE):
             constraint=ValueFromIterable(
                 [
                     "BJD",
+                    "JD",
                     "MJD",
                     "RVc",
                     "RVc_ERR",
@@ -164,7 +165,7 @@ class RV_routine(BASE):
                 ],
             )
             + IterableMustHave(("RVc", "RVc_ERR"))
-            + IterableMustHave(("MJD", "BJD"), mode="either"),
+            + IterableMustHave(("MJD", "BJD", "JD"), mode="either"),
         ),  # RV_cube keys to store the outputs
         MEMORY_SAVE_MODE=UserParam(False, constraint=BooleanValue),
         MAX_NUMBER_OF_OPEN_OBS=UserParam(

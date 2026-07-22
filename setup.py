@@ -25,7 +25,7 @@ if use_cython:
 
 setup(
     name="SBART",
-    version="1.1.1",
+    version="1.1.2",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     ext_modules=ext_modules,

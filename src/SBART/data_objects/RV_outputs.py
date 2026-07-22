@@ -44,6 +44,7 @@ class RV_holder(BASE):
     _valid_keys = [
         "BJD",
         "MJD",
+        "JD",
         "RVc",
         "RVc_ERR",
         "OBJ",
@@ -353,7 +354,7 @@ class RV_holder(BASE):
         if self.output_keys is None:
             self.output_keys = []
 
-        time_keys = ["BJD", "MJD"]
+        time_keys = ["BJD", "MJD", "JD"]
         if len(self.output_keys) == 0:
             logger.warning("Output keys is an empty list... Manually creating the output array")
             self.output_keys.append(time_keys[0])
