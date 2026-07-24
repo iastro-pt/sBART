@@ -68,7 +68,7 @@ def run_target(
     manager = DataClassManager()
     manager.start()
 
-    data = DataClass(
+    data = manager.DataClass(
         input_fpath,
         storage_path=storage_path,
         instrument=instrument,
